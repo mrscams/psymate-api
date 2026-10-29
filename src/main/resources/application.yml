@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: psymate-api
+  profiles:
+    default: local
+  modulith:
+    events:
+      jdbc:
+        schema-initialization:
+          enabled: false
+  flyway:
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  name: PsyMate
+
+versioning:
+  grace-period: 5m
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:postgresql://localhost:5432/psymate
+    username: psymate
+    password: psymate
+  mail:
+    host: localhost
+    port: 1025
+
+app:
+  mail:
+    from: test@gmail.com
+
+---
+# Profil test : la base vient de Testcontainers (@ServiceConnection).
+spring:
+  config:
+    activate:
+      on-profile: test
+
+app:
+  mail:
+    from: test@gmail.com

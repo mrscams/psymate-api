@@ -1,0 +1,192 @@
+# Schéma attendu après V01 (docs/E-modele-donnees.md E4). Table -> colonnes, à mettre à jour avec chaque migration.
+auth_token:
+  - id
+  - practitioner_id
+  - kind
+  - token_hash
+  - payload
+  - expires_at
+  - consumed_at
+  - created_ip
+  - created_at
+emotion:
+  - code
+  - scope
+  - tenant_id
+  - practitioner_id
+  - family
+  - intensity_level
+  - valence
+  - arousal
+  - label_fr
+  - label_en
+  - label_normalized
+  - vocabulary_version
+  - active
+  - promoted_to
+  - created_by
+  - created_at
+entry_type:
+  - code
+  - label_fr
+  - label_en
+  - detail_table
+  - has_duration
+  - sort_order
+  - active
+event_publication:
+  - id
+  - listener_id
+  - event_type
+  - serialized_event
+  - publication_date
+  - completion_date
+  - status
+  - completion_attempts
+  - last_resubmission_date
+link_type:
+  - code
+  - directed
+  - label_fr
+  - label_en
+  - inverse_label_fr
+  - inverse_label_en
+  - allowed_source_types
+  - allowed_target_types
+  - line_style
+  - sort_order
+  - active
+patient:
+  - id
+  - tenant_id
+  - owner_id
+  - display_name
+  - first_name
+  - last_name
+  - birth_date
+  - pronoun
+  - phone
+  - email
+  - context
+  - follow_up
+  - current_version
+  - clinical_rev
+  - archived_at
+  - created_at
+  - updated_at
+patient_access:
+  - id
+  - tenant_id
+  - patient_id
+  - practitioner_id
+  - role
+  - granted_by
+  - granted_at
+  - revoked_at
+patient_device:
+  - id
+  - tenant_id
+  - patient_id
+  - platform
+  - pairing_code_hash
+  - pairing_expires_at
+  - token_hash
+  - push_token_enc
+  - paired_at
+  - last_seen_at
+  - revoked_at
+  - created_by
+  - created_at
+patient_flag:
+  - id
+  - patient_id
+  - kind
+  - reason
+  - set_by
+  - set_at
+  - cleared_by
+  - cleared_at
+patient_submission:
+  - id
+  - tenant_id
+  - patient_id
+  - device_id
+  - submitted_at
+  - period_from
+  - period_to
+  - item_count
+  - status
+  - session_id
+  - attached_at
+  - attached_by
+patient_version:
+  - id
+  - patient_id
+  - version
+  - snapshot
+  - reason
+  - author_id
+  - created_at
+practitioner:
+  - id
+  - tenant_id
+  - email
+  - email_normalized
+  - email_confirmed_at
+  - password_hash
+  - first_name
+  - last_name
+  - display_name
+  - locale
+  - profession
+  - role
+  - phone
+  - professional_number
+  - address_street
+  - address_postal_code
+  - address_city
+  - remote_only
+  - verification_status
+  - verified_at
+  - verified_by
+  - suspended_at
+  - purge_after
+  - preferences
+  - totp_secret_enc
+  - totp_enabled_at
+  - failed_logins
+  - locked_until
+  - last_login_at
+  - created_at
+  - updated_at
+security_event:
+  - id
+  - practitioner_id
+  - actor_id
+  - kind
+  - ip
+  - user_agent
+  - details
+  - occurred_at
+spring_session:
+  - primary_id
+  - session_id
+  - creation_time
+  - last_access_time
+  - max_inactive_interval
+  - expiry_time
+  - principal_name
+spring_session_attributes:
+  - session_primary_id
+  - attribute_name
+  - attribute_bytes
+tenant:
+  - id
+  - name
+  - created_at
+totp_recovery_code:
+  - id
+  - practitioner_id
+  - code_hash
+  - used_at
+  - created_at

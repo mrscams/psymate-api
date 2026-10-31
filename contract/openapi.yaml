@@ -1602,7 +1602,7 @@ paths:
       - patient-controller
   /api/public/directory:
     get:
-      operationId: search
+      operationId: searchPublicDirectory
       parameters:
       - in: query
         name: q
@@ -1690,7 +1690,7 @@ paths:
       - public-directory-controller
   /api/public/directory/practitioners/{slug}:
     get:
-      operationId: profile
+      operationId: getPublicPractitionerProfile
       parameters:
       - in: path
         name: slug

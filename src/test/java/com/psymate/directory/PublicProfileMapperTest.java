@@ -64,4 +64,20 @@ class PublicProfileMapperTest {
     assertThat(p.professionalNumber()).isEqualTo("ADELI-1");
     assertThat(p.verified()).isFalse();
   }
+
+  @Test
+  void excerptCutsAtLastSpace() {
+    assertThat(PublicProfileMapper.excerpt("court")).isEqualTo("court");
+    String cut = PublicProfileMapper.excerpt("abcdefghi ".repeat(30));
+    assertThat(cut).endsWith("abcdefghi…").hasSizeLessThanOrEqualTo(201);
+  }
+
+  @Test
+  void ipv6IsGroupedBySlash64() {
+    assertThat(PublicRateLimitFilter.key("2001:db8:1:2:0:0:0:1"))
+        .isEqualTo(PublicRateLimitFilter.key("2001:db8:1:2:ffff:0:0:9"));
+    assertThat(PublicRateLimitFilter.key("2001:db8:1:3::1"))
+        .isNotEqualTo(PublicRateLimitFilter.key("2001:db8:1:2::1"));
+    assertThat(PublicRateLimitFilter.key("10.0.0.1")).isEqualTo("10.0.0.1");
+  }
 }

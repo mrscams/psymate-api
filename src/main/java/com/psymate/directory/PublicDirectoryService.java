@@ -13,18 +13,24 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.function.Function;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-/** Recherche et fiche publiques. La profession et la vérification viennent d'identity. */
+/**
+ * Recherche et fiche publiques. La profession et la vérification viennent d'identity en un seul
+ * appel par lot. Au plus {@link PublicDirectoryRepository#MAX_CANDIDATES} profils sont traités en
+ * mémoire avant pagination : total et facettes portent sur ce lot.
+ */
 @Service
 class PublicDirectoryService {
 
   static final int PAGE_SIZE = 20;
   static final double DEFAULT_RADIUS_KM = 25;
+  static final int MAX_Q = 100;
+  static final int MAX_LIST = 20;
   private static final List<String> SORTS = List.of("relevance", "distance", "name");
 
   private final PublicDirectoryRepository repository;
@@ -36,30 +42,28 @@ class PublicDirectoryService {
   }
 
   SearchResult search(Criteria criteria, List<String> professions, int page) {
-    if (!SORTS.contains(criteria.sort())) {
-      throw ProfileException.of(HttpStatus.BAD_REQUEST, "INVALID_SORT", "Tri inconnu.");
-    }
-    if (criteria.lat() != null != (criteria.lng() != null)) {
-      throw ProfileException.of(
-          HttpStatus.BAD_REQUEST, "INVALID_LOCATION", "lat et lng vont ensemble.");
-    }
+    validate(criteria, professions, page);
+    List<Row> rows = repository.search(criteria);
+    Map<UUID, PractitionerView> views =
+        practitioners.findAll(rows.stream().map(Row::practitionerId).toList());
     List<Card> all = new ArrayList<>();
-    for (Row r : repository.search(criteria)) {
-      Optional<PractitionerView> view = practitioners.find(r.practitionerId());
-      String profession = view.map(PractitionerView::profession).orElse(null);
-      if (!professions.isEmpty() && !professions.contains(profession)) {
+    for (Row r : rows) {
+      PractitionerView view = views.get(r.practitionerId());
+      if (view == null) {
+        continue; // praticien introuvable : jamais listé
+      }
+      if (!professions.isEmpty() && !professions.contains(view.profession())) {
         continue;
       }
-      boolean verified = view.map(v -> "approved".equals(v.verificationStatus())).orElse(false);
       all.add(
           new Card(
               r.slug(),
               r.displayName(),
-              profession,
+              view.profession(),
               r.titleLabel(),
-              verified,
+              "approved".equals(view.verificationStatus()),
               PublicProfileMapper.photoUrl(r.photoAssetKey()),
-              r.bioExcerpt(),
+              PublicProfileMapper.excerpt(r.bioExcerpt()),
               r.specialties(),
               r.audiences(),
               r.modalities(),
@@ -74,29 +78,76 @@ class PublicDirectoryService {
             facet(all, Card::modalities),
             facet(all, Card::audiences),
             facet(all, Card::languages));
-    int safePage = Math.max(page, 1);
-    int from = Math.min((safePage - 1) * PAGE_SIZE, all.size());
+    int from = (int) Math.min((long) (page - 1) * PAGE_SIZE, all.size());
     List<Card> items = all.subList(from, Math.min(from + PAGE_SIZE, all.size()));
     int totalPages = (all.size() + PAGE_SIZE - 1) / PAGE_SIZE;
-    return new SearchResult(items, safePage, PAGE_SIZE, all.size(), totalPages, facets);
+    return new SearchResult(items, page, PAGE_SIZE, all.size(), totalPages, facets);
   }
 
   PublicProfile profile(String slug) {
-    var detail =
-        repository
-            .findPublished(slug)
-            .orElseThrow(
-                () ->
-                    ProfileException.of(
-                        HttpStatus.NOT_FOUND, "PROFILE_NOT_FOUND", "Profil introuvable."));
-    Optional<PractitionerView> view = practitioners.find(detail.practitionerId());
-    String profession = view.map(PractitionerView::profession).orElse(null);
-    boolean verified = view.map(v -> "approved".equals(v.verificationStatus())).orElse(false);
+    var detail = repository.findPublished(slug).orElseThrow(PublicDirectoryService::notFound);
+    PractitionerView view =
+        practitioners.findAll(List.of(detail.practitionerId())).get(detail.practitionerId());
+    if (view == null) {
+      throw notFound();
+    }
     String number =
         detail.showProfessionalNumber()
             ? practitioners.professionalNumber(detail.practitionerId()).orElse(null)
             : null;
-    return PublicProfileMapper.toPublic(detail, profession, verified, number);
+    return PublicProfileMapper.toPublic(
+        detail, view.profession(), "approved".equals(view.verificationStatus()), number);
+  }
+
+  private static ProfileException notFound() {
+    return ProfileException.of(HttpStatus.NOT_FOUND, "PROFILE_NOT_FOUND", "Profil introuvable.");
+  }
+
+  private static void validate(Criteria c, List<String> professions, int page) {
+    List<ProfileException.FieldError> errors = new ArrayList<>();
+    if (!SORTS.contains(c.sort())) {
+      errors.add(new ProfileException.FieldError("sort", "Tri inconnu."));
+    }
+    if (c.q() != null && c.q().length() > MAX_Q) {
+      errors.add(new ProfileException.FieldError("q", "100 caractères au maximum."));
+    }
+    if (c.city() != null && c.city().length() > MAX_Q) {
+      errors.add(new ProfileException.FieldError("city", "100 caractères au maximum."));
+    }
+    if ((c.lat() == null) != (c.lng() == null)) {
+      errors.add(new ProfileException.FieldError("lat", "lat et lng vont ensemble."));
+    }
+    if (c.lat() != null && !(c.lat() >= -90 && c.lat() <= 90)) {
+      errors.add(new ProfileException.FieldError("lat", "Entre -90 et 90."));
+    }
+    if (c.lng() != null && !(c.lng() >= -180 && c.lng() <= 180)) {
+      errors.add(new ProfileException.FieldError("lng", "Entre -180 et 180."));
+    }
+    if (!(c.radiusKm() > 0 && c.radiusKm() <= 1000)) {
+      errors.add(new ProfileException.FieldError("radiusKm", "Entre 0 (exclu) et 1000 km."));
+    }
+    checkList(errors, "professions", professions);
+    checkList(errors, "modalities", c.modalities());
+    checkList(errors, "audiences", c.audiences());
+    checkList(errors, "languages", c.languages());
+    if (page < 1) {
+      errors.add(new ProfileException.FieldError("page", "Au moins 1."));
+    }
+    if (!errors.isEmpty()) {
+      throw new ProfileException(
+          HttpStatus.BAD_REQUEST,
+          "INVALID_PARAMETERS",
+          "Paramètres de recherche invalides.",
+          errors,
+          Map.of());
+    }
+  }
+
+  private static void checkList(
+      List<ProfileException.FieldError> errors, String field, List<String> values) {
+    if (values != null && values.size() > MAX_LIST) {
+      errors.add(new ProfileException.FieldError(field, "20 valeurs au maximum."));
+    }
   }
 
   private static List<FacetCount> facet(List<Card> cards, Function<Card, List<String>> values) {

@@ -28,7 +28,7 @@ class PublicDirectoryController {
   }
 
   @GetMapping
-  ResponseEntity<SearchResult> search(
+  ResponseEntity<SearchResult> searchPublicDirectory(
       @RequestParam(required = false) String q,
       @RequestParam(required = false) String city,
       @RequestParam(required = false) Double lat,
@@ -59,7 +59,7 @@ class PublicDirectoryController {
   }
 
   @GetMapping("/practitioners/{slug}")
-  ResponseEntity<PublicProfile> profile(@PathVariable String slug) {
+  ResponseEntity<PublicProfile> getPublicPractitionerProfile(@PathVariable String slug) {
     return ResponseEntity.ok().cacheControl(CACHE).body(service.profile(slug));
   }
 }

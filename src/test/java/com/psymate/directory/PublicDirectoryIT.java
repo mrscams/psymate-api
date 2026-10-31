@@ -289,4 +289,98 @@ class PublicDirectoryIT {
     // Une autre adresse n'est pas touchée.
     mvc.perform(anon("/api/public/directory")).andExpect(status().isOk());
   }
+
+  @Test
+  void filtersNameSortAndAccepting() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    String city = "Filtre" + tag;
+    UUID b = practitioner("Bravo", "approved", null);
+    UUID a = practitioner("Alpha", "approved", null);
+    UUID c = practitioner("Charlie", "approved", null);
+    jdbc.update("update practitioner set profession = 'coach' where id = ?", c);
+    profile(b, "b-" + tag, "Bravo", true, "x", city, null);
+    profile(
+        a,
+        "a-" + tag,
+        "Alpha",
+        true,
+        "x",
+        city,
+        "update practitioner_profile set modalities = '{in_person}', audiences = '{children}',"
+            + " languages = '{en}', availability = 'closed'");
+    profile(c, "c-" + tag, "Charlie", true, "x", city, null);
+    String base = "/api/public/directory?city=" + city;
+    mvc.perform(anon(base + "&sort=name"))
+        .andExpect(jsonPath("$.items[0].displayName").value("Alpha"))
+        .andExpect(jsonPath("$.items[1].displayName").value("Bravo"))
+        .andExpect(jsonPath("$.items[2].displayName").value("Charlie"));
+    mvc.perform(anon(base + "&professions=coach"))
+        .andExpect(jsonPath("$.total").value(1))
+        .andExpect(jsonPath("$.items[0].slug").value("c-" + tag));
+    mvc.perform(anon(base + "&modalities=in_person"))
+        .andExpect(jsonPath("$.total").value(1))
+        .andExpect(jsonPath("$.items[0].slug").value("a-" + tag));
+    mvc.perform(anon(base + "&audiences=children")).andExpect(jsonPath("$.total").value(1));
+    mvc.perform(anon(base + "&languages=en")).andExpect(jsonPath("$.total").value(1));
+    mvc.perform(anon(base + "&accepting=true")).andExpect(jsonPath("$.total").value(2));
+  }
+
+  @Test
+  void invalidParametersGiveProblemJson400() throws Exception {
+    for (String qs :
+        new String[] {
+          "lat=45",
+          "sort=bogus",
+          "q=" + "x".repeat(101),
+          "lat=95&lng=4",
+          "lat=45&lng=200",
+          "radiusKm=0",
+          "radiusKm=1001",
+          "page=0",
+          "page=abc",
+          "lat=abc&lng=4",
+          "languages=" + String.join(",", java.util.Collections.nCopies(21, "fr"))
+        }) {
+      mvc.perform(anon("/api/public/directory?" + qs))
+          .andExpect(status().isBadRequest())
+          .andExpect(
+              org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                  .contentTypeCompatibleWith("application/problem+json"))
+          .andExpect(jsonPath("$.status").value(400));
+    }
+  }
+
+  @Test
+  void publicRoutesSetNoCookieAndCacheHeaders() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    UUID id = practitioner("Cache " + tag, "approved", null);
+    profile(id, "cache-" + tag, "Cache " + tag, true, null, "Lyon", null);
+    var ok =
+        mvc.perform(anon("/api/public/directory/practitioners/cache-" + tag))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse();
+    assertThat(ok.getHeader("Set-Cookie")).isNull();
+    assertThat(ok.getHeader("Cache-Control")).contains("public").contains("max-age=60");
+    var list = mvc.perform(anon("/api/public/directory")).andReturn().getResponse();
+    assertThat(list.getHeader("Set-Cookie")).isNull();
+    assertThat(list.getHeader("Cache-Control")).contains("public").contains("max-age=60");
+    var notFound =
+        mvc.perform(anon("/api/public/directory/practitioners/nope-" + tag))
+            .andExpect(status().isNotFound())
+            .andReturn()
+            .getResponse();
+    assertThat(notFound.getHeader("Cache-Control")).isEqualTo("no-store");
+    assertThat(notFound.getHeader("Set-Cookie")).isNull();
+  }
+
+  @Test
+  void longBioIsCutAtWordBoundary() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    UUID id = practitioner("Long " + tag, "approved", null);
+    profile(id, "long-" + tag, "Long " + tag, true, "mot ".repeat(100), "Lyon", null);
+    mvc.perform(anon("/api/public/directory?q=Long " + tag))
+        .andExpect(jsonPath("$.items[0].bioExcerpt").value(org.hamcrest.Matchers.endsWith("mot…")))
+        .andExpect(jsonPath("$.items[0].photoUrl").doesNotExist());
+  }
 }

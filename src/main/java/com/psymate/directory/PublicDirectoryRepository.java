@@ -83,6 +83,9 @@ class PublicDirectoryRepository {
       "(plainto_tsquery('french', f_unaccent(:q)) || plainto_tsquery('simple', f_unaccent(:q)))";
   private static final String SIMILARITY = "similarity(f_unaccent(display_name), f_unaccent(:q))";
 
+  /** Borne dure du lot traité en mémoire avant pagination (filtre profession, facettes). */
+  static final int MAX_CANDIDATES = 500;
+
   private final JdbcClient jdbc;
 
   PublicDirectoryRepository(JdbcClient jdbc) {
@@ -95,7 +98,7 @@ class PublicDirectoryRepository {
     StringBuilder sql =
         new StringBuilder(
             "select practitioner_id, slug, display_name, title_label, photo_asset_key,"
-                + " left(bio, 200) as bio_excerpt, specialties, audiences, modalities, languages,"
+                + " left(bio, 201) as bio_excerpt, specialties, audiences, modalities, languages,"
                 + " city, availability, ");
     sql.append(geo ? "case when geo is null then null else " + DISTANCE + " end" : "null::float8");
     sql.append(" as distance_km from practitioner_profile where published");
@@ -129,7 +132,7 @@ class PublicDirectoryRepository {
     } else if ("relevance".equals(c.sort())) {
       sql.append("published_at desc nulls last, ");
     }
-    sql.append("lower(display_name), slug");
+    sql.append("lower(display_name), slug limit ").append(MAX_CANDIDATES);
     JdbcClient.StatementSpec spec = jdbc.sql(sql.toString());
     for (Object[] p : params) {
       spec = spec.param((String) p[0], p[1]);

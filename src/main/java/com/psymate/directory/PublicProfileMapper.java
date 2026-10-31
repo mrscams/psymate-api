@@ -6,10 +6,29 @@ import com.psymate.directory.PublicDirectoryRepository.Detail;
 /** Règles d'affichage des contacts (A4.10) : un champ non coché n'est jamais émis. */
 final class PublicProfileMapper {
 
+  static final int EXCERPT_LENGTH = 200;
+
   private PublicProfileMapper() {}
 
+  /**
+   * Toujours null tant que la route /public/media/{key} n'existe pas (tâche médias) : la clé de
+   * stockage brute n'est jamais exposée.
+   */
   static String photoUrl(String assetKey) {
-    return assetKey == null || assetKey.isBlank() ? null : "/public/media/" + assetKey;
+    return null;
+  }
+
+  /** Coupe au dernier espace avant la limite et ajoute « … » ; texte court inchangé. */
+  static String excerpt(String bio) {
+    if (bio == null || bio.length() <= EXCERPT_LENGTH) {
+      return bio;
+    }
+    String cut = bio.substring(0, EXCERPT_LENGTH);
+    int space = cut.lastIndexOf(' ');
+    if (space > 0) {
+      cut = cut.substring(0, space);
+    }
+    return cut.stripTrailing() + "…";
   }
 
   static PublicProfile toPublic(

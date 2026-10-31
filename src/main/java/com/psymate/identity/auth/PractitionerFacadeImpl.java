@@ -1,6 +1,8 @@
 package com.psymate.identity.auth;
 
 import com.psymate.identity.api.PractitionerFacade;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,6 +23,29 @@ class PractitionerFacadeImpl implements PractitionerFacade {
     this.practitioners = practitioners;
     this.json = json;
     this.jdbc = jdbc;
+  }
+
+  @Override
+  public Map<UUID, PractitionerView> findAll(Collection<UUID> ids) {
+    if (ids.isEmpty()) {
+      return Map.of();
+    }
+    Map<UUID, PractitionerView> out = new HashMap<>();
+    jdbc.sql(
+            "select id, tenant_id, profession, verification_status from practitioner"
+                + " where id = any(?)")
+        .param(ids.toArray(UUID[]::new))
+        .query(
+            (rs, i) ->
+                new PractitionerView(
+                    rs.getObject("id", UUID.class),
+                    rs.getObject("tenant_id", UUID.class),
+                    rs.getString("profession"),
+                    rs.getString("verification_status"),
+                    Map.of()))
+        .list()
+        .forEach(v -> out.put(v.id(), v));
+    return out;
   }
 
   @Override

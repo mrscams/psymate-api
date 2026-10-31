@@ -6,13 +6,19 @@ import com.psymate.identity.auth.AuthDtos.EmailConfirmRequest;
 import com.psymate.identity.auth.AuthDtos.EmailResendRequest;
 import com.psymate.identity.auth.AuthDtos.LoginRequest;
 import com.psymate.identity.auth.AuthDtos.MeResponse;
+import com.psymate.identity.auth.AuthDtos.OtpRequiredResponse;
 import com.psymate.identity.auth.AuthDtos.PasswordResetConfirmRequest;
 import com.psymate.identity.auth.AuthDtos.PasswordResetRequest;
 import com.psymate.identity.auth.AuthDtos.RegisterRequest;
 import com.psymate.identity.auth.AuthDtos.RegisterResponse;
+import com.psymate.identity.auth.AuthDtos.RevokedSessionsResponse;
 import com.psymate.identity.auth.AuthDtos.SessionResponse;
 import com.psymate.identity.auth.AuthExceptions.InvalidCredentialsException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -25,10 +31,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -49,7 +53,7 @@ class AuthController {
   static final String REGISTER_STATUS = "confirmation_email_sent";
 
   private final AuthService service;
-  private final AuthenticationManager authenticationManager;
+  private final LoginService loginService;
   private final SecurityContextRepository securityContextRepository;
   private final SecurityContextHolderStrategy strategy =
       SecurityContextHolder.getContextHolderStrategy();
@@ -58,12 +62,12 @@ class AuthController {
 
   AuthController(
       AuthService service,
-      AuthenticationManager authenticationManager,
+      LoginService loginService,
       SecurityContextRepository securityContextRepository,
       @Value("${app.auth.session-default}") Duration sessionDefault,
       @Value("${app.auth.session-remember-me}") Duration sessionRememberMe) {
     this.service = service;
-    this.authenticationManager = authenticationManager;
+    this.loginService = loginService;
     this.securityContextRepository = securityContextRepository;
     this.sessionDefault = sessionDefault;
     this.sessionRememberMe = sessionRememberMe;
@@ -146,25 +150,47 @@ class AuthController {
   }
 
   @PostMapping("/login")
-  ResponseEntity<MeResponse> login(
+  @Operation(
+      operationId = "login",
+      summary = "Connexion : 200 session, 202 code 2FA requis, 401, 403, 423 (Retry-After)")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        content = @Content(schema = @Schema(implementation = MeResponse.class))),
+    @ApiResponse(
+        responseCode = "202",
+        content = @Content(schema = @Schema(implementation = OtpRequiredResponse.class)))
+  })
+  ResponseEntity<Object> login(
       @Valid @RequestBody LoginRequest r,
       HttpServletRequest request,
       HttpServletResponse response) {
-    Authentication result;
-    try {
-      result =
-          authenticationManager.authenticate(
-              UsernamePasswordAuthenticationToken.unauthenticated(
-                  AuthService.normalizeEmail(r.email()), r.password()));
-    } catch (AuthenticationException e) {
-      throw new InvalidCredentialsException();
+    LoginService.Outcome outcome =
+        loginService.login(r.email(), r.password(), r.otp(), request.getRemoteAddr());
+    if (outcome instanceof LoginService.Outcome.OtpRequired) {
+      return ResponseEntity.accepted().body(new OtpRequiredResponse(true));
     }
-    PractitionerPrincipal principal = (PractitionerPrincipal) result.getPrincipal();
-    CurrentPractitioner current = principal.current();
-
-    startSession(current, result.getAuthorities(), r.rememberMe(), request, response);
+    PractitionerRow row = ((LoginService.Outcome.Authenticated) outcome).practitioner();
+    List<GrantedAuthority> authorities =
+        List.of(new SimpleGrantedAuthority("ROLE_" + row.role().toUpperCase(Locale.ROOT)));
+    CurrentPractitioner current = service.toCurrent(row);
+    startSession(current, authorities, Boolean.TRUE.equals(r.rememberMe()), request, response);
     service.recordLogin(current.id());
     return ResponseEntity.ok(toMe(current));
+  }
+
+  @PostMapping("/sessions/revoke-others")
+  @Operation(
+      operationId = "revokeOtherSessions",
+      summary = "Déconnecte tous les autres appareils (la session courante est conservée)")
+  RevokedSessionsResponse revokeOthers(
+      @org.springframework.security.core.annotation.AuthenticationPrincipal
+          CurrentPractitioner current,
+      HttpServletRequest request) {
+    int revoked =
+        service.revokeOtherSessions(
+            current.id(), request.getSession().getId(), request.getRemoteAddr());
+    return new RevokedSessionsResponse(revoked);
   }
 
   @PostMapping("/logout")

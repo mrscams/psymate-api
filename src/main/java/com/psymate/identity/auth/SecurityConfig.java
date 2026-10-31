@@ -64,7 +64,10 @@ class SecurityConfig {
 
   @Bean
   SecurityFilterChain securityFilterChain(
-      HttpSecurity http, SecurityContextRepository repo, PractitionerRepository practitioners)
+      HttpSecurity http,
+      SecurityContextRepository repo,
+      PractitionerRepository practitioners,
+      TotpRepository totp)
       throws Exception {
     http
         // CSRF désactivé : l'API n'accepte que du JSON (application/json, jamais un formulaire
@@ -88,6 +91,7 @@ class SecurityConfig {
                     .anyRequest()
                     .permitAll())
         .addFilterAfter(new EmailConfirmationFilter(practitioners, repo), AuthorizationFilter.class)
+        .addFilterAfter(new AdminTwoFactorFilter(totp), EmailConfirmationFilter.class)
         .exceptionHandling(
             ex ->
                 ex.authenticationEntryPoint(

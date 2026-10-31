@@ -80,14 +80,30 @@ class EmailConfirmationIT {
     return token;
   }
 
+  /**
+   * Session d'un compte email_pending. Depuis M1-11 la connexion est refusée (403) pour ce statut :
+   * on ouvre la session le temps d'un passage en docs_pending, puis on remet l'état et on
+   * rafraîchit le principal via /api/auth/session.
+   */
   private Cookie login(String email) throws Exception {
+    setStatus(email, "docs_pending");
     MvcResult r =
         postJson(
             "/api/auth/login",
             Map.of("email", email, "password", PASSWORD, "rememberMe", false),
             null);
     assertThat(r.getResponse().getStatus()).isEqualTo(200);
-    return r.getResponse().getCookie("SESSION");
+    Cookie cookie = r.getResponse().getCookie("SESSION");
+    setStatus(email, "email_pending");
+    mvc.perform(get("/api/auth/session").cookie(cookie)).andReturn();
+    return cookie;
+  }
+
+  private void setStatus(String email, String status) {
+    jdbc.update(
+        "update practitioner set verification_status = ? where email_normalized = ?",
+        status,
+        email);
   }
 
   private int confirm(String token) throws Exception {

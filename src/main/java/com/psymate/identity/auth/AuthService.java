@@ -222,6 +222,14 @@ class AuthService {
     practitioners.touchLastLogin(id, clock.instant());
   }
 
+  /** Révoque les sessions autres que la courante et le consigne (session_revoked). */
+  int revokeOtherSessions(UUID id, String currentSessionId, String ip) {
+    int n = practitioners.deleteOtherSessions(id, currentSessionId);
+    practitioners.insertSecurityEvent(
+        id, "session_revoked", ip, "{\"scope\":\"others\",\"count\":" + n + "}", clock.instant());
+    return n;
+  }
+
   Optional<PractitionerRow> find(UUID id) {
     return practitioners.findById(id);
   }

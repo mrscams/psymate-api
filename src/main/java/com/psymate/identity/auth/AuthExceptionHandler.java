@@ -1,16 +1,22 @@
 package com.psymate.identity.auth;
 
+import com.psymate.identity.auth.AuthExceptions.AccountLockedException;
+import com.psymate.identity.auth.AuthExceptions.AccountSuspendedException;
 import com.psymate.identity.auth.AuthExceptions.EmailAlreadyConfirmedException;
+import com.psymate.identity.auth.AuthExceptions.EmailNotConfirmedException;
 import com.psymate.identity.auth.AuthExceptions.FieldValidationException;
 import com.psymate.identity.auth.AuthExceptions.InvalidCredentialsException;
+import com.psymate.identity.auth.AuthExceptions.InvalidSecondFactorException;
 import com.psymate.identity.auth.AuthExceptions.InvalidTokenException;
 import com.psymate.identity.auth.AuthExceptions.PasswordPolicyException;
 import com.psymate.identity.auth.AuthExceptions.TooManyRequestsException;
+import com.psymate.identity.auth.AuthExceptions.TwoFactorStateException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +28,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /**
  * Erreurs RFC 9457 (application/problem+json) avec errors[] par champ, limitées à AuthController.
  */
-@RestControllerAdvice(assignableTypes = AuthController.class)
+@RestControllerAdvice(assignableTypes = {AuthController.class, TwoFactorController.class})
 class AuthExceptionHandler {
 
   private final AuthMessages messages;
@@ -136,5 +142,66 @@ class AuthExceptionHandler {
             messages.get("error.rate.title", locale),
             messages.get("error.rate.detail", locale));
     return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(pd);
+  }
+
+  @ExceptionHandler(AccountLockedException.class)
+  ResponseEntity<ProblemDetail> locked(AccountLockedException ex, Locale locale) {
+    ProblemDetail pd =
+        problem(
+            HttpStatus.LOCKED,
+            "ACCOUNT_LOCKED",
+            messages.get("error.locked.title", locale),
+            messages.get("error.locked.detail", locale));
+    pd.setProperty("retryAfterSeconds", ex.retryAfterSeconds());
+    return ResponseEntity.status(HttpStatus.LOCKED)
+        .header(HttpHeaders.RETRY_AFTER, Long.toString(ex.retryAfterSeconds()))
+        .body(pd);
+  }
+
+  @ExceptionHandler(EmailNotConfirmedException.class)
+  ResponseEntity<ProblemDetail> emailNotConfirmed(Locale locale) {
+    ProblemDetail pd =
+        problem(
+            HttpStatus.FORBIDDEN,
+            "EMAIL_NOT_CONFIRMED",
+            messages.get("error.emailPending.title", locale),
+            messages.get("error.emailPending.detail", locale));
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(pd);
+  }
+
+  @ExceptionHandler(AccountSuspendedException.class)
+  ResponseEntity<ProblemDetail> suspended(Locale locale) {
+    ProblemDetail pd =
+        problem(
+            HttpStatus.FORBIDDEN,
+            "ACCOUNT_SUSPENDED",
+            messages.get("error.suspended.title", locale),
+            messages.get("error.suspended.detail", locale));
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(pd);
+  }
+
+  @ExceptionHandler(InvalidSecondFactorException.class)
+  ResponseEntity<ProblemDetail> secondFactor(InvalidSecondFactorException ex, Locale locale) {
+    String code = "code".equals(ex.field()) ? "INVALID_CODE" : "INVALID_PASSWORD";
+    ProblemDetail pd =
+        problem(
+            HttpStatus.UNPROCESSABLE_CONTENT,
+            "VALIDATION_FAILED",
+            messages.get("error.validation.title", locale),
+            messages.get("error.validation.detail", locale));
+    pd.setProperty(
+        "errors", List.of(error(ex.field(), code, messages.get("error." + code, locale))));
+    return ResponseEntity.unprocessableContent().body(pd);
+  }
+
+  @ExceptionHandler(TwoFactorStateException.class)
+  ResponseEntity<ProblemDetail> twoFactorState(TwoFactorStateException ex, Locale locale) {
+    ProblemDetail pd =
+        problem(
+            HttpStatus.CONFLICT,
+            ex.code(),
+            messages.get("error.twofactor.title", locale),
+            messages.get("error." + ex.code(), locale));
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
   }
 }

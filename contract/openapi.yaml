@@ -252,6 +252,10 @@ components:
           maxLength: 254
           minLength: 0
           type: string
+        otp:
+          maxLength: 32
+          minLength: 0
+          type: string
         password:
           maxLength: 200
           minLength: 0
@@ -311,6 +315,11 @@ components:
         undoneAt:
           format: date-time
           type: string
+      type: object
+    OtpRequiredResponse:
+      properties:
+        otpRequired:
+          type: boolean
       type: object
     PasswordResetConfirmRequest:
       properties:
@@ -484,6 +493,13 @@ components:
         websiteUrl:
           type: string
       type: object
+    RecoveryCodesResponse:
+      properties:
+        recoveryCodes:
+          items:
+            type: string
+          type: array
+      type: object
     RegisterRequest:
       properties:
         address:
@@ -539,6 +555,12 @@ components:
       properties:
         labelFr:
           type: string
+      type: object
+    RevokedSessionsResponse:
+      properties:
+        revoked:
+          format: int32
+          type: integer
       type: object
     SessionResponse:
       properties:
@@ -599,6 +621,36 @@ components:
           items:
             type: string
           type: array
+      type: object
+    TwoFactorDisableRequest:
+      properties:
+        code:
+          maxLength: 32
+          minLength: 0
+          type: string
+        password:
+          maxLength: 200
+          minLength: 0
+          type: string
+      required:
+      - code
+      - password
+      type: object
+    TwoFactorEnableResponse:
+      properties:
+        otpauthUri:
+          type: string
+        secret:
+          type: string
+      type: object
+    TwoFactorVerifyRequest:
+      properties:
+        code:
+          maxLength: 32
+          minLength: 0
+          type: string
+      required:
+      - code
       type: object
     UpdateProfileRequest:
       properties:
@@ -768,6 +820,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/MeResponse'
           description: OK
+        '202':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OtpRequiredResponse'
+          description: Accepted
+      summary: 'Connexion : 200 session, 202 code 2FA requis, 401, 403, 423 (Retry-After)'
       tags:
       - auth-controller
   /api/auth/logout:
@@ -856,6 +915,19 @@ paths:
       summary: État courant de la session (statut de vérification à jour)
       tags:
       - auth-controller
+  /api/auth/sessions/revoke-others:
+    post:
+      operationId: revokeOtherSessions
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RevokedSessionsResponse'
+          description: OK
+      summary: Déconnecte tous les autres appareils (la session courante est conservée)
+      tags:
+      - auth-controller
   /api/auth/signup:
     post:
       deprecated: true
@@ -882,6 +954,66 @@ paths:
       summary: Alias déprécié de POST /api/auth/register
       tags:
       - auth-controller
+  /api/me/2fa/disable:
+    post:
+      operationId: disableTwoFactor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorDisableRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+      summary: Désactive la 2FA (mot de passe et code TOTP ou de secours)
+      tags:
+      - two-factor-controller
+  /api/me/2fa/enable:
+    post:
+      operationId: enableTwoFactor
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TwoFactorEnableResponse'
+          description: OK
+      summary: Génère le secret TOTP (en attente) et l'URI otpauth:// du QR code
+      tags:
+      - two-factor-controller
+  /api/me/2fa/recovery-codes/regenerate:
+    post:
+      operationId: regenerateRecoveryCodes
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RecoveryCodesResponse'
+          description: OK
+      summary: Remplace les codes de secours par 10 nouveaux (anciens invalidés)
+      tags:
+      - two-factor-controller
+  /api/me/2fa/verify:
+    post:
+      operationId: verifyTwoFactor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorVerifyRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RecoveryCodesResponse'
+          description: OK
+      summary: Vérifie le premier code, active la 2FA et renvoie 10 codes de secours (une fois)
+      tags:
+      - two-factor-controller
   /api/me/emotions:
     post:
       operationId: create_1

@@ -7,12 +7,6 @@ final class AuthExceptions {
 
   private AuthExceptions() {}
 
-  static class DuplicateEmailException extends RuntimeException {
-    DuplicateEmailException() {
-      super("email already registered");
-    }
-  }
-
   static class InvalidCredentialsException extends RuntimeException {
     InvalidCredentialsException() {
       super("invalid credentials");
@@ -35,6 +29,33 @@ final class AuthExceptions {
 
     List<String> codes() {
       return codes;
+    }
+  }
+
+  /** Erreurs de validation par champ détectées par le service (adresse, téléphone). */
+  static class FieldValidationException extends RuntimeException {
+    private final List<String[]> errors;
+
+    /** Chaque entrée : { champ, code, clé de message }. */
+    FieldValidationException(List<String[]> errors) {
+      super("invalid fields");
+      this.errors = errors;
+    }
+
+    List<String[]> errors() {
+      return errors;
+    }
+  }
+
+  static class EmailAlreadyConfirmedException extends RuntimeException {
+    EmailAlreadyConfirmedException() {
+      super("email already confirmed");
+    }
+  }
+
+  static class TooManyRequestsException extends RuntimeException {
+    TooManyRequestsException() {
+      super("too many requests");
     }
   }
 }

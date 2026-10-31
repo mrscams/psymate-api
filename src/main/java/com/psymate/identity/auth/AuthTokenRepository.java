@@ -51,4 +51,16 @@ class AuthTokenRepository {
         .query(UUID.class)
         .optional();
   }
+
+  /** Nombre de jetons du type créés depuis {@code since} (limites de renvoi), consommés ou non. */
+  int countCreatedSince(UUID practitionerId, String kind, Instant since) {
+    return jdbc.sql(
+            "select count(*) from auth_token where practitioner_id = :p and kind = :k and"
+                + " created_at >= :since")
+        .param("p", practitionerId)
+        .param("k", kind)
+        .param("since", Timestamp.from(since))
+        .query(Integer.class)
+        .single();
+  }
 }

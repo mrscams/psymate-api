@@ -1,9 +1,11 @@
 package com.psymate.identity.auth;
 
-import com.psymate.identity.auth.AuthExceptions.DuplicateEmailException;
+import com.psymate.identity.auth.AuthExceptions.EmailAlreadyConfirmedException;
+import com.psymate.identity.auth.AuthExceptions.FieldValidationException;
 import com.psymate.identity.auth.AuthExceptions.InvalidCredentialsException;
 import com.psymate.identity.auth.AuthExceptions.InvalidTokenException;
 import com.psymate.identity.auth.AuthExceptions.PasswordPolicyException;
+import com.psymate.identity.auth.AuthExceptions.TooManyRequestsException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -76,24 +78,6 @@ class AuthExceptionHandler {
     return ResponseEntity.unprocessableContent().body(pd);
   }
 
-  @ExceptionHandler(DuplicateEmailException.class)
-  ResponseEntity<ProblemDetail> duplicate(Locale locale) {
-    ProblemDetail pd =
-        problem(
-            HttpStatus.CONFLICT,
-            "EMAIL_ALREADY_REGISTERED",
-            messages.get("error.duplicate.title", locale),
-            messages.get("error.duplicate.detail", locale));
-    pd.setProperty(
-        "errors",
-        List.of(
-            error(
-                "email",
-                "EMAIL_ALREADY_REGISTERED",
-                messages.get("error.duplicate.detail", locale))));
-    return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
-  }
-
   @ExceptionHandler(InvalidCredentialsException.class)
   ResponseEntity<ProblemDetail> credentials(Locale locale) {
     ProblemDetail pd =
@@ -114,5 +98,43 @@ class AuthExceptionHandler {
             messages.get("error.token.title", locale),
             messages.get("error.token.detail", locale));
     return ResponseEntity.status(HttpStatus.GONE).body(pd);
+  }
+
+  @ExceptionHandler(FieldValidationException.class)
+  ResponseEntity<ProblemDetail> fields(FieldValidationException ex, Locale locale) {
+    List<Map<String, String>> errors = new ArrayList<>();
+    for (String[] e : ex.errors()) {
+      errors.add(error(e[0], e[1], messages.get(e[2], locale)));
+    }
+    ProblemDetail pd =
+        problem(
+            HttpStatus.UNPROCESSABLE_CONTENT,
+            "VALIDATION_FAILED",
+            messages.get("error.validation.title", locale),
+            messages.get("error.validation.detail", locale));
+    pd.setProperty("errors", errors);
+    return ResponseEntity.unprocessableContent().body(pd);
+  }
+
+  @ExceptionHandler(EmailAlreadyConfirmedException.class)
+  ResponseEntity<ProblemDetail> alreadyConfirmed(Locale locale) {
+    ProblemDetail pd =
+        problem(
+            HttpStatus.CONFLICT,
+            "EMAIL_ALREADY_CONFIRMED",
+            messages.get("error.confirmed.title", locale),
+            messages.get("error.confirmed.detail", locale));
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
+  }
+
+  @ExceptionHandler(TooManyRequestsException.class)
+  ResponseEntity<ProblemDetail> tooMany(Locale locale) {
+    ProblemDetail pd =
+        problem(
+            HttpStatus.TOO_MANY_REQUESTS,
+            "TOO_MANY_REQUESTS",
+            messages.get("error.rate.title", locale),
+            messages.get("error.rate.detail", locale));
+    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(pd);
   }
 }

@@ -63,15 +63,9 @@ class AuthIT {
 
   private MvcResult signup(String email, String password, String profession) throws Exception {
     String body =
-        json.writeValueAsString(
-            Map.of(
-                "email", email,
-                "password", password,
-                "firstName", "Maya",
-                "lastName", "Kaddour",
-                "profession", profession));
+        json.writeValueAsString(RegistrationFixtures.payload(email, password, profession));
     return mvc.perform(
-            post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content(body))
+            post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
         .andReturn();
   }
 
@@ -98,14 +92,19 @@ class AuthIT {
         .body();
   }
 
-  /** Corps texte du dernier e-mail reçu par l'adresse, ou null. L'envoi est asynchrone. */
+  /**
+   * Corps texte du dernier e-mail de réinitialisation reçu par l'adresse, ou null (envoi
+   * asynchrone).
+   */
   private String lastMailText(String to) throws Exception {
     long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
     while (true) {
       JsonNode found =
           json.readTree(
               mailpitGet(
-                  "/api/v1/search?query=" + URLEncoder.encode("to:" + to, StandardCharsets.UTF_8)));
+                  "/api/v1/search?query="
+                      + URLEncoder.encode(
+                          "to:" + to + " subject:\"passe\"", StandardCharsets.UTF_8)));
       if (!found.path("messages").isEmpty()) {
         String id = found.path("messages").get(0).path("ID").asString();
         return json.readTree(mailpitGet("/api/v1/message/" + id)).path("Text").asString();
@@ -288,12 +287,20 @@ class AuthIT {
   }
 
   @Test
-  void alreadyRegisteredEmailGives409() throws Exception {
+  void alreadyRegisteredEmailGivesSame201AndCreatesNoSecondAccount() throws Exception {
     String email = newEmail();
-    assertThat(signup(email, PASSWORD, "psychologist").getResponse().getStatus()).isEqualTo(201);
+    MvcResult first = signup(email, PASSWORD, "psychologist");
     MvcResult dup = signup(email.toUpperCase(), PASSWORD, "coach");
-    assertThat(dup.getResponse().getStatus()).isEqualTo(409);
-    assertThat(dup.getResponse().getContentType()).contains("application/problem+json");
+    assertThat(first.getResponse().getStatus()).isEqualTo(201);
+    assertThat(dup.getResponse().getStatus()).isEqualTo(201);
+    assertThat(dup.getResponse().getContentAsString())
+        .isEqualTo(first.getResponse().getContentAsString());
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from practitioner where email_normalized = ?",
+                Integer.class,
+                email))
+        .isEqualTo(1);
   }
 
   @Test
@@ -367,7 +374,8 @@ class AuthIT {
     Map<String, Object> row =
         jdbc.queryForMap(
             "select token_hash, kind, expires_at, consumed_at from auth_token t join practitioner"
-                + " p on p.id = t.practitioner_id where p.email_normalized = ?",
+                + " p on p.id = t.practitioner_id where p.email_normalized = ? and t.kind ="
+                + " 'password_reset'",
             email);
     assertThat(row.get("kind")).isEqualTo("password_reset");
     assertThat(row.get("token_hash")).isEqualTo(AuthService.sha256(token)).isNotEqualTo(token);

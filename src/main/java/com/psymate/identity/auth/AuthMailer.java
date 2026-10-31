@@ -34,13 +34,38 @@ class AuthMailer {
 
   void sendPasswordReset(String to, String token, Locale locale) {
     String link = webBaseUrl + "/reset-password?token=" + token;
+    send(
+        to,
+        messages.get("mail.reset.subject", locale, appName),
+        messages.get("mail.reset.body", locale, appName, link, 30));
+  }
+
+  /** Lien de confirmation d'e-mail (24 h, usage unique). */
+  void sendEmailConfirmation(String to, String token, Locale locale) {
+    String link = webBaseUrl + "/confirmer-email/" + token;
+    send(
+        to,
+        messages.get("mail.confirm.subject", locale, appName),
+        messages.get("mail.confirm.body", locale, appName, link, 24));
+  }
+
+  /** Information envoyée quand une inscription vise une adresse déjà utilisée. */
+  void sendAccountExists(String to, Locale locale) {
+    String link = webBaseUrl + "/connexion";
+    send(
+        to,
+        messages.get("mail.exists.subject", locale, appName),
+        messages.get("mail.exists.body", locale, appName, link));
+  }
+
+  private void send(String to, String subject, String text) {
     try {
       MimeMessage message = sender.createMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
       helper.setFrom(from, appName);
       helper.setTo(to);
-      helper.setSubject(messages.get("mail.reset.subject", locale, appName));
-      helper.setText(messages.get("mail.reset.body", locale, appName, link, 30));
+      helper.setSubject(subject);
+      helper.setText(text);
       sender.send(message);
     } catch (jakarta.mail.MessagingException | UnsupportedEncodingException e) {
       throw new org.springframework.mail.MailPreparationException(e);

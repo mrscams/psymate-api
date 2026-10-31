@@ -60,13 +60,24 @@ class PractitionerRepository {
         .update();
   }
 
-  void insertPractitioner(PractitionerRow p, String emailNormalized, Instant now) {
+  /** Coordonnées professionnelles saisies à l'inscription (A10.2). */
+  record Contact(
+      String phone,
+      String professionalNumber,
+      String street,
+      String postalCode,
+      String city,
+      boolean remoteOnly) {}
+
+  void insertPractitioner(PractitionerRow p, String emailNormalized, Contact c, Instant now) {
     jdbc.sql(
             "insert into practitioner (id, tenant_id, email, email_normalized, password_hash,"
                 + " first_name, last_name, display_name, locale, profession, role,"
-                + " verification_status, preferences, created_at, updated_at) values (:id,"
-                + " :tenant, :email, :norm, :hash, :fn, :ln, :dn, :locale, :prof, 'practitioner',"
-                + " 'email_pending', cast(:prefs as jsonb), :now, :now)")
+                + " verification_status, preferences, phone, professional_number, address_street,"
+                + " address_postal_code, address_city, remote_only, created_at, updated_at) values"
+                + " (:id, :tenant, :email, :norm, :hash, :fn, :ln, :dn, :locale, :prof,"
+                + " 'practitioner', 'email_pending', cast(:prefs as jsonb), :phone, :pro, :street,"
+                + " :postal, :city, :remote, :now, :now)")
         .param("id", p.id())
         .param("tenant", p.tenantId())
         .param("email", p.email())
@@ -78,6 +89,46 @@ class PractitionerRepository {
         .param("locale", p.locale())
         .param("prof", p.profession())
         .param("prefs", p.preferencesJson())
+        .param("phone", c.phone())
+        .param("pro", c.professionalNumber())
+        .param("street", c.street())
+        .param("postal", c.postalCode())
+        .param("city", c.city())
+        .param("remote", c.remoteOnly())
+        .param("now", Timestamp.from(now))
+        .update();
+  }
+
+  /** Passe email_pending à docs_pending et pose email_confirmed_at (A10.3). */
+  void confirmEmail(UUID id, Instant now) {
+    jdbc.sql(
+            "update practitioner set email_confirmed_at = :now, updated_at = :now,"
+                + " verification_status = case when verification_status = 'email_pending'"
+                + " then 'docs_pending' else verification_status end where id = :id")
+        .param("now", Timestamp.from(now))
+        .param("id", id)
+        .update();
+  }
+
+  void updateEmail(UUID id, String email, String emailNormalized, Instant now) {
+    jdbc.sql(
+            "update practitioner set email = :e, email_normalized = :n, updated_at = :now"
+                + " where id = :id")
+        .param("e", email)
+        .param("n", emailNormalized)
+        .param("now", Timestamp.from(now))
+        .param("id", id)
+        .update();
+  }
+
+  void insertSecurityEvent(UUID practitionerId, String kind, String ip, Instant now) {
+    jdbc.sql(
+            "insert into security_event (id, practitioner_id, kind, ip, occurred_at) values"
+                + " (:id, :p, :k, cast(:ip as inet), :now)")
+        .param("id", UUID.randomUUID())
+        .param("p", practitionerId)
+        .param("k", kind)
+        .param("ip", ip)
         .param("now", Timestamp.from(now))
         .update();
   }

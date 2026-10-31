@@ -44,4 +44,11 @@ class PasswordPolicyTest {
   void nullIsRefused() {
     assertThat(check(null)).containsExactly(PasswordPolicy.TOO_SHORT);
   }
+
+  @Test
+  void localListOfCommonPasswordsIsApplied() {
+    // « unbelievable » figure dans la liste locale de 10 000 mots de passe courants.
+    assertThat(check("Unbelievable")).containsExactly(PasswordPolicy.COMPROMISED);
+    assertThat(PasswordPolicy.compromisedCount()).isGreaterThanOrEqualTo(10_000);
+  }
 }

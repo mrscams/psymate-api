@@ -16,6 +16,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.session.web.http.CookieSerializer;
@@ -62,7 +63,8 @@ class SecurityConfig {
   }
 
   @Bean
-  SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository repo)
+  SecurityFilterChain securityFilterChain(
+      HttpSecurity http, SecurityContextRepository repo, PractitionerRepository practitioners)
       throws Exception {
     http
         // CSRF désactivé : l'API n'accepte que du JSON (application/json, jamais un formulaire
@@ -73,7 +75,10 @@ class SecurityConfig {
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(
+                        "/api/auth/register",
                         "/api/auth/signup",
+                        "/api/auth/email/confirm",
+                        "/api/auth/email/resend",
                         "/api/auth/login",
                         "/api/auth/logout",
                         "/api/auth/password-reset/**")
@@ -82,6 +87,7 @@ class SecurityConfig {
                     .authenticated()
                     .anyRequest()
                     .permitAll())
+        .addFilterAfter(new EmailConfirmationFilter(practitioners, repo), AuthorizationFilter.class)
         .exceptionHandling(
             ex ->
                 ex.authenticationEntryPoint(

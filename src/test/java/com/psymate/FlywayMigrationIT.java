@@ -168,4 +168,75 @@ class FlywayMigrationIT {
       }
     }
   }
+
+  @Test
+  void v03CreatesExactlyTheFourVerificationTables() {
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select version from flyway_schema_history where success order by"
+                        + " installed_rank",
+                    String.class))
+        .contains("03");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select table_name from information_schema.tables where table_schema ="
+                        + " 'public' and table_name in ('verification_document',"
+                        + " 'verification_decision', 'document_access_log',"
+                        + " 'practitioner_appeal')",
+                    String.class))
+        .containsExactlyInAnyOrder(
+            "verification_document",
+            "verification_decision",
+            "document_access_log",
+            "practitioner_appeal");
+  }
+
+  @Test
+  void v03AppendOnlyTablesRefuseUpdateAndDeleteForAppRole() throws Exception {
+    for (String table : List.of("verification_decision", "document_access_log")) {
+      for (String privilege : List.of("UPDATE", "DELETE")) {
+        assertThat(
+                jdbc()
+                    .queryForObject(
+                        "select has_table_privilege('psymate_app', ?, ?)",
+                        Boolean.class,
+                        table,
+                        privilege))
+            .as(table + " " + privilege)
+            .isFalse();
+      }
+      for (String privilege : List.of("SELECT", "INSERT")) {
+        assertThat(
+                jdbc()
+                    .queryForObject(
+                        "select has_table_privilege('psymate_app', ?, ?)",
+                        Boolean.class,
+                        table,
+                        privilege))
+            .as(table + " " + privilege)
+            .isTrue();
+      }
+    }
+    try (Connection connection = dataSource.getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("set role psymate_app");
+      try {
+        for (String table : List.of("verification_decision", "document_access_log")) {
+          assertThatThrownBy(
+                  () -> statement.execute("update " + table + " set id = id where false"))
+              .isInstanceOf(SQLException.class)
+              .extracting(e -> ((SQLException) e).getSQLState())
+              .isEqualTo("42501");
+          assertThatThrownBy(() -> statement.execute("delete from " + table + " where false"))
+              .isInstanceOf(SQLException.class)
+              .extracting(e -> ((SQLException) e).getSQLState())
+              .isEqualTo("42501");
+        }
+      } finally {
+        statement.execute("reset role");
+      }
+    }
+  }
 }

@@ -91,6 +91,7 @@ class SecurityConfig {
                         "/api/auth/email/change",
                         "/api/auth/login",
                         "/api/auth/password/change",
+                        "/api/me/appeal",
                         "/api/auth/logout",
                         "/api/auth/password-reset/**")
                     .permitAll()

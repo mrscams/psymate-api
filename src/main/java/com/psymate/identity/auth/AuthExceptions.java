@@ -73,6 +73,13 @@ final class AuthExceptions {
     }
   }
 
+  /** Recours (M1-14b) demandé par un compte qui n'est ni refusé ni suspendu : 409. */
+  static class AccountNotSuspendedException extends RuntimeException {
+    AccountNotSuspendedException() {
+      super("account not suspended");
+    }
+  }
+
   /** Compte de bootstrap (M7-08) : le mot de passe à usage unique doit d'abord être remplacé. */
   static class PasswordChangeRequiredException extends RuntimeException {
     PasswordChangeRequiredException() {

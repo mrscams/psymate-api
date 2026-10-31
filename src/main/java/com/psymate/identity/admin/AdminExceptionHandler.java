@@ -10,8 +10,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/** Erreurs RFC 9457 (application/problem+json) de l'administration des dossiers. */
-@RestControllerAdvice(assignableTypes = AdminVerificationController.class)
+/**
+ * Erreurs RFC 9457 (application/problem+json) de l'administration : dossiers, comptes, journal,
+ * recours.
+ */
+@RestControllerAdvice(
+    assignableTypes = {
+      AdminVerificationController.class,
+      AdminPractitionerController.class,
+      AdminJournalController.class,
+      AppealController.class
+    })
 class AdminExceptionHandler {
 
   private final AdminMessages messages;

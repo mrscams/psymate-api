@@ -13,6 +13,7 @@ import com.psymate.directory.api.ProfileUnpublished;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.PractitionerRejected;
+import com.psymate.identity.api.PractitionerSuspended;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
@@ -253,5 +254,32 @@ class PublicationGateIT {
     publishRejected(id);
     await().atMost(Duration.ofSeconds(60)).until(() -> completedRejections(id) == 1);
     assertThat(unpublishedEvents(id)).isZero();
+  }
+
+  /** M1-14b : la suspension manuelle dépublie la fiche comme un refus. */
+  @Test
+  void suspendedPractitionerIsUnpublished() throws Exception {
+    UUID id = practitioner("approved");
+    RequestPostProcessor auth = as(id);
+    putProfile(auth, COMPLETE);
+    mvc.perform(post("/api/me/profile/publish").with(auth)).andExpect(status().isNoContent());
+    String slug = slugOf(id);
+    mvc.perform(anon("/api/public/directory/practitioners/" + slug)).andExpect(status().isOk());
+
+    jdbc.update("update practitioner set verification_status = 'suspended' where id = ?", id);
+    tx.executeWithoutResult(
+        s -> publisher.publish(new PractitionerSuspended(tenant, id, "psychologist")));
+
+    await()
+        .atMost(Duration.ofSeconds(60))
+        .pollInterval(Duration.ofMillis(200))
+        .untilAsserted(
+            () ->
+                mvc.perform(anon("/api/public/directory/practitioners/" + slug))
+                    .andExpect(status().isNotFound()));
+    await().atMost(Duration.ofSeconds(60)).until(() -> unpublishedEvents(id) == 1);
+    mvc.perform(post("/api/me/profile/publish").with(auth))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.missing[0]").value("verification"));
   }
 }

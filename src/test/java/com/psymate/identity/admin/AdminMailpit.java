@@ -36,7 +36,12 @@ final class AdminMailpit {
 
   /** Texte du dernier e-mail pour ce destinataire et ce sujet ; null après 10 s d'attente. */
   String lastText(String to, String subject) throws Exception {
-    long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
+    return lastText(to, subject, Duration.ofSeconds(10));
+  }
+
+  /** Comme lastText, avec une attente maximale choisie (envoi lent ou file d'envoi chargée). */
+  String lastText(String to, String subject, Duration wait) throws Exception {
+    long deadline = System.nanoTime() + wait.toNanos();
     while (true) {
       JsonNode found = search(to, subject);
       if (!found.path("messages").isEmpty()) {

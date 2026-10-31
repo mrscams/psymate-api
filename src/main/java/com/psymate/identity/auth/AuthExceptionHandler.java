@@ -1,6 +1,7 @@
 package com.psymate.identity.auth;
 
 import com.psymate.identity.auth.AuthExceptions.AccountLockedException;
+import com.psymate.identity.auth.AuthExceptions.AccountNotSuspendedException;
 import com.psymate.identity.auth.AuthExceptions.AccountSuspendedException;
 import com.psymate.identity.auth.AuthExceptions.EmailNotConfirmedException;
 import com.psymate.identity.auth.AuthExceptions.FieldValidationException;
@@ -26,9 +27,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * Erreurs RFC 9457 (application/problem+json) avec errors[] par champ, limitées à AuthController.
+ * Erreurs RFC 9457 (application/problem+json) avec errors[] par champ, limitées aux contrôleurs
+ * d'authentification et à ceux qui portent AuthErrorScope (recours, M1-14b).
  */
-@RestControllerAdvice(assignableTypes = {AuthController.class, TwoFactorController.class})
+@RestControllerAdvice(
+    assignableTypes = {AuthController.class, TwoFactorController.class, AuthErrorScope.class})
 class AuthExceptionHandler {
 
   private final AuthMessages messages;
@@ -156,6 +159,17 @@ class AuthExceptionHandler {
             messages.get("error.suspended.title", locale),
             messages.get("error.suspended.detail", locale));
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(pd);
+  }
+
+  @ExceptionHandler(AccountNotSuspendedException.class)
+  ResponseEntity<ProblemDetail> notSuspended(Locale locale) {
+    ProblemDetail pd =
+        problem(
+            HttpStatus.CONFLICT,
+            "ACCOUNT_NOT_SUSPENDED",
+            messages.get("error.notSuspended.title", locale),
+            messages.get("error.notSuspended.detail", locale));
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
   }
 
   @ExceptionHandler(PasswordChangeRequiredException.class)

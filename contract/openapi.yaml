@@ -1,5 +1,99 @@
 components:
   schemas:
+    AccountDetailDto:
+      properties:
+        appeals:
+          items:
+            $ref: '#/components/schemas/AppealSummaryDto'
+          type: array
+        city:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        decisions:
+          items:
+            $ref: '#/components/schemas/DecisionItemDto'
+          type: array
+        displayName:
+          type: string
+        email:
+          type: string
+        id:
+          format: uuid
+          type: string
+        lastLoginAt:
+          format: date-time
+          type: string
+        profession:
+          type: string
+        purgeAt:
+          format: date-time
+          type: string
+        role:
+          type: string
+        suspendedAt:
+          format: date-time
+          type: string
+        twoFactorEnabled:
+          type: boolean
+        verification:
+          $ref: '#/components/schemas/VerificationDto'
+      type: object
+    AccountItemDto:
+      properties:
+        city:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        id:
+          format: uuid
+          type: string
+        lastLoginAt:
+          format: date-time
+          type: string
+        profession:
+          type: string
+        purgeAt:
+          format: date-time
+          type: string
+        role:
+          type: string
+        suspendedAt:
+          format: date-time
+          type: string
+        twoFactorEnabled:
+          type: boolean
+        verification:
+          $ref: '#/components/schemas/VerificationDto'
+      type: object
+    AccountListDto:
+      properties:
+        counts:
+          additionalProperties:
+            format: int32
+            type: integer
+          type: object
+        items:
+          items:
+            $ref: '#/components/schemas/AccountItemDto'
+          type: array
+        nextCursor:
+          type: string
+      type: object
+    ActorDto:
+      properties:
+        displayName:
+          type: string
+        id:
+          format: uuid
+          type: string
+      type: object
     Address:
       properties:
         city:
@@ -22,6 +116,99 @@ components:
         postalCode:
           type: string
         street:
+          type: string
+      type: object
+    AppealCreatedDto:
+      properties:
+        id:
+          format: uuid
+          type: string
+        status:
+          type: string
+        submittedAt:
+          format: date-time
+          type: string
+      type: object
+    AppealDecisionRequest:
+      properties:
+        messageToPractitioner:
+          type: string
+        outcome:
+          type: string
+      type: object
+    AppealItemDto:
+      properties:
+        decisionAdminId:
+          format: uuid
+          type: string
+        decisionId:
+          format: uuid
+          type: string
+        decisionKind:
+          type: string
+        id:
+          format: uuid
+          type: string
+        message:
+          type: string
+        outcome:
+          type: string
+        practitionerDisplayName:
+          type: string
+        practitionerId:
+          format: uuid
+          type: string
+        responseMessage:
+          type: string
+        reviewedAt:
+          format: date-time
+          type: string
+        reviewedBy:
+          format: uuid
+          type: string
+        submittedAt:
+          format: date-time
+          type: string
+      type: object
+    AppealListDto:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AppealItemDto'
+          type: array
+        nextCursor:
+          type: string
+      type: object
+    AppealRequest:
+      properties:
+        email:
+          type: string
+        message:
+          type: string
+        otp:
+          type: string
+        password:
+          type: string
+      type: object
+    AppealSummaryDto:
+      properties:
+        decisionId:
+          format: uuid
+          type: string
+        id:
+          format: uuid
+          type: string
+        message:
+          type: string
+        outcome:
+          type: string
+        responseMessage:
+          type: string
+        reviewedAt:
+          format: date-time
+          type: string
+        submittedAt:
+          format: date-time
           type: string
       type: object
     Card:
@@ -161,6 +348,20 @@ components:
           items:
             type: string
           type: array
+      type: object
+    CreateRequest:
+      properties:
+        code:
+          type: string
+        kind:
+          type: string
+        labelEn:
+          type: string
+        labelFr:
+          type: string
+        sortOrder:
+          format: int32
+          type: integer
       type: object
     DecisionDto:
       properties:
@@ -596,6 +797,61 @@ components:
         labelFr:
           type: string
       type: object
+    ItemDto:
+      properties:
+        active:
+          type: boolean
+        code:
+          type: string
+        kind:
+          type: string
+        labelEn:
+          type: string
+        labelFr:
+          type: string
+        sortOrder:
+          format: int32
+          type: integer
+        usedByPublishedProfiles:
+          format: int32
+          type: integer
+      type: object
+    JournalDto:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/JournalItemDto'
+          type: array
+        nextCursor:
+          type: string
+      type: object
+    JournalItemDto:
+      properties:
+        actor:
+          $ref: '#/components/schemas/ActorDto'
+        actorType:
+          type: string
+        at:
+          format: date-time
+          type: string
+        details:
+          additionalProperties: {}
+          type: object
+        id:
+          format: uuid
+          type: string
+        kind:
+          type: string
+        practitionerDisplayName:
+          type: string
+        practitionerId:
+          format: uuid
+          type: string
+        source:
+          type: string
+        summary:
+          type: string
+      type: object
     LinkTypeView:
       properties:
         allowedSourceTypes:
@@ -623,6 +879,13 @@ components:
         sortOrder:
           format: int32
           type: integer
+      type: object
+    ListDto:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ItemDto'
+          type: array
       type: object
     LoginRequest:
       properties:
@@ -693,6 +956,11 @@ components:
         undoneAt:
           format: date-time
           type: string
+      type: object
+    OtpRequiredDto:
+      properties:
+        otpRequired:
+          type: boolean
       type: object
     OtpRequiredResponse:
       properties:
@@ -770,6 +1038,18 @@ components:
           type: string
         visibility:
           type: string
+      type: object
+    PatchRequest:
+      properties:
+        active:
+          type: boolean
+        labelEn:
+          type: string
+        labelFr:
+          type: string
+        sortOrder:
+          format: int32
+          type: integer
       type: object
     PatientDto:
       properties:
@@ -1092,6 +1372,22 @@ components:
           format: date-time
           type: string
       type: object
+    ReactivateDto:
+      properties:
+        decisionId:
+          format: uuid
+          type: string
+        id:
+          format: uuid
+          type: string
+        verificationStatus:
+          type: string
+      type: object
+    ReasonRequest:
+      properties:
+        reason:
+          type: string
+      type: object
     RecordContactRequest:
       properties:
         body:
@@ -1271,6 +1567,20 @@ components:
       - message
       - name
       type: object
+    SuspendDto:
+      properties:
+        decisionId:
+          format: uuid
+          type: string
+        id:
+          format: uuid
+          type: string
+        suspendedAt:
+          format: date-time
+          type: string
+        verificationStatus:
+          type: string
+      type: object
     TagDto:
       properties:
         id:
@@ -1437,6 +1747,229 @@ info:
   version: 0.3.0
 openapi: 3.1.0
 paths:
+  /api/admin/appeals:
+    get:
+      operationId: listAdminAppeals
+      parameters:
+      - in: query
+        name: status
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: cursor
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: limit
+        required: false
+        schema:
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AppealListDto'
+          description: OK
+      summary: Recours (status open par défaut, decided ou all), pagination par curseur ; les plus anciens d'abord pour open
+      tags:
+      - appeal-controller
+  /api/admin/appeals/{id}/decision:
+    post:
+      operationId: decideAdminAppeal
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppealDecisionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AppealItemDto'
+          description: OK
+      summary: Accepte ou rejette un recours (accepted réactive le compte) ; l'administrateur doit différer de l'auteur de la décision contestée
+      tags:
+      - appeal-controller
+  /api/admin/journal:
+    get:
+      operationId: listAdminJournal
+      parameters:
+      - in: query
+        name: kind
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: practitionerId
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: actorId
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: from
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: to
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: cursor
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: limit
+        required: false
+        schema:
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JournalDto'
+          description: OK
+      summary: Journal d'administration (décisions et événements, plus récents d'abord), pagination par curseur ; jamais d'adresse IP
+      tags:
+      - admin-journal-controller
+  /api/admin/practitioners:
+    get:
+      operationId: listAdminPractitioners
+      parameters:
+      - in: query
+        name: q
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: status
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: role
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: profession
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: cursor
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: limit
+        required: false
+        schema:
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AccountListDto'
+          description: OK
+      summary: Comptes des praticiens (recherche q, filtres status, role, profession), pagination par curseur, compteurs par statut
+      tags:
+      - admin-practitioner-controller
+  /api/admin/practitioners/{id}:
+    get:
+      operationId: getAdminPractitioner
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AccountDetailDto'
+          description: OK
+      summary: 'Compte d''un praticien : état, décisions et recours'
+      tags:
+      - admin-practitioner-controller
+  /api/admin/practitioners/{id}/reactivate:
+    post:
+      operationId: reactivateAdminPractitioner
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ReactivateDto'
+          description: OK
+      summary: Réactive un compte suspendu ou refusé (motif d'au moins 20 caractères)
+      tags:
+      - admin-practitioner-controller
+  /api/admin/practitioners/{id}/suspend:
+    post:
+      operationId: suspendAdminPractitioner
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SuspendDto'
+          description: OK
+      summary: 'Suspend un compte (motif d''au moins 20 caractères) : sessions révoquées, e-mail au praticien, fiche publique dépubliée'
+      tags:
+      - admin-practitioner-controller
   /api/admin/verifications:
     get:
       operationId: listAdminVerifications
@@ -1614,6 +2147,73 @@ paths:
       summary: URL signée de 5 minutes pour ouvrir un justificatif
       tags:
       - admin-verification-controller
+  /api/admin/vocabulary/directory:
+    get:
+      operationId: listAdminDirectoryVocabulary
+      parameters:
+      - in: query
+        name: kind
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ListDto'
+          description: OK
+      summary: Spécialités et publics de l'annuaire, actifs ou non, avec le nombre de fiches publiées qui les utilisent
+      tags:
+      - directory-vocabulary-admin-controller
+    post:
+      operationId: createAdminDirectoryVocabulary
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ItemDto'
+          description: OK
+      summary: Ajoute une spécialité ou un public (409 VOCABULARY_EXISTS si le code existe)
+      tags:
+      - directory-vocabulary-admin-controller
+  /api/admin/vocabulary/directory/{kind}/{code}:
+    patch:
+      operationId: updateAdminDirectoryVocabulary
+      parameters:
+      - in: path
+        name: kind
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: code
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ItemDto'
+          description: OK
+      summary: Modifie libellés, rang ou activation (409 VOCABULARY_IN_USE pour désactiver un code utilisé par une fiche publiée)
+      tags:
+      - directory-vocabulary-admin-controller
   /api/auth/email/change:
     post:
       operationId: changeEmail
@@ -2105,6 +2705,53 @@ paths:
       summary: Vérifie le premier code, active la 2FA et renvoie 10 codes de secours (une fois)
       tags:
       - two-factor-controller
+  /api/me/appeal:
+    post:
+      operationId: submitAppeal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppealRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AppealCreatedDto'
+          description: Created
+        '202':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OtpRequiredDto'
+          description: Mot de passe correct, 2FA active et code manquant
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Identifiants incorrects (message unique) ou code 2FA faux
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: ACCOUNT_NOT_SUSPENDED, APPEAL_NOT_ALLOWED, APPEAL_ALREADY_OPEN ou APPEAL_ALREADY_USED
+        '423':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Verrouillage après 5 échecs (15 min)
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai
+              style: simple
+      summary: 'Dépose le recours d''un compte refusé ou suspendu (public : e-mail + mot de passe) : 201, 202 code 2FA requis, 401, 403, 409, 422, 423. Un seul recours par décision.'
+      tags:
+      - appeal-controller
   /api/me/emotions:
     post:
       operationId: create_1

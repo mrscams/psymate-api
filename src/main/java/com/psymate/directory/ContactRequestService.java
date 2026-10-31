@@ -4,6 +4,7 @@ import com.psymate.directory.ContactMailer.ContactMessage;
 import com.psymate.directory.ContactRequestRepository.NewRequest;
 import com.psymate.directory.ContactRequestRepository.Recipient;
 import com.psymate.identity.api.PractitionerFacade;
+import com.psymate.shared.ratelimit.RateLimiter;
 import jakarta.annotation.PreDestroy;
 import java.time.Clock;
 import java.time.Duration;
@@ -121,7 +122,7 @@ class ContactRequestService {
             subject,
             r.message(),
             createdAt,
-            ipHasher.hash(IpBuckets.key(remoteAddr), createdAt.toLocalDate()),
+            ipHasher.hash(RateLimiter.ipKey(remoteAddr), createdAt.toLocalDate()),
             createdAt,
             createdAt.plus(RETENTION));
     tx.executeWithoutResult(status -> repository.insert(row));

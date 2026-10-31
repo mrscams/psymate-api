@@ -1,6 +1,12 @@
 package com.psymate.identity.auth;
 
-import java.nio.charset.StandardCharsets;
+import com.psymate.shared.audit.AuditFilter;
+import com.psymate.shared.audit.AuditWriter;
+import com.psymate.shared.problem.ErrorCode;
+import com.psymate.shared.problem.ProblemWriter;
+import com.psymate.shared.problem.Problems;
+import com.psymate.shared.ratelimit.RateLimitFilter;
+import com.psymate.shared.ratelimit.RateLimitFilters;
 import java.time.Clock;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,7 +15,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderNotFoundException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -73,7 +78,9 @@ class SecurityConfig {
       HttpSecurity http,
       SecurityContextRepository repo,
       PractitionerRepository practitioners,
-      TotpRepository totp)
+      TotpRepository totp,
+      RateLimitFilters rateLimits,
+      AuditWriter audit)
       throws Exception {
     http
         // CSRF désactivé : l'API n'accepte que du JSON (application/json, jamais un formulaire
@@ -105,34 +112,33 @@ class SecurityConfig {
                     .permitAll())
         .addFilterAfter(new EmailConfirmationFilter(practitioners, repo), AuthorizationFilter.class)
         .addFilterAfter(new AdminTwoFactorFilter(totp), EmailConfirmationFilter.class)
+        // Après l'authentification et les garde-fous du compte : un 401, un 403 ou un compte
+        // refusé ne consomme pas de jeton, et la session est déjà chargée (règle « session »,
+        // 600 / min, G Q24). Les requêtes sans session ne sont pas comptées ici.
+        .addFilterAfter(rateLimits.forRule("session"), AdminTwoFactorFilter.class)
+        // Journal d'audit des accès patient (G Q29), après la limite : un 429 n'a rien lu.
+        .addFilterAfter(new AuditFilter(audit), RateLimitFilter.class)
         .exceptionHandling(
             ex ->
                 ex.authenticationEntryPoint(
-                        (request, response, e) -> {
-                          response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                          response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-                          response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                          response
-                              .getWriter()
-                              .write(
-                                  "{\"type\":\"about:blank\",\"title\":\"Non authentifié\","
-                                      + "\"status\":401,\"code\":\"UNAUTHENTICATED\","
-                                      + "\"detail\":\"Authentification requise.\"}");
-                        })
+                        (request, response, e) ->
+                            ProblemWriter.write(
+                                response,
+                                Problems.of(
+                                    HttpStatus.UNAUTHORIZED,
+                                    ErrorCode.UNAUTHENTICATED,
+                                    "Non authentifié",
+                                    "Authentification requise.")))
                     // Seule règle d'autorisation au-delà d'authenticated() : /api/admin/**.
                     .accessDeniedHandler(
-                        (request, response, e) -> {
-                          response.setStatus(HttpStatus.FORBIDDEN.value());
-                          response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-                          response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                          response
-                              .getWriter()
-                              .write(
-                                  "{\"type\":\"about:blank\",\"title\":\"Accès réservé à"
-                                      + " l'administration\",\"status\":403,"
-                                      + "\"code\":\"ADMIN_ROLE_REQUIRED\",\"detail\":\"Cette"
-                                      + " ressource est réservée aux administrateurs.\"}");
-                        }));
+                        (request, response, e) ->
+                            ProblemWriter.write(
+                                response,
+                                Problems.of(
+                                    HttpStatus.FORBIDDEN,
+                                    ErrorCode.ADMIN_ROLE_REQUIRED,
+                                    "Accès réservé à l'administration",
+                                    "Cette ressource est réservée aux administrateurs."))));
     return http.build();
   }
 }

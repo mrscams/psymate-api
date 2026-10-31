@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T12:27:02.712Z",
+  "task": "M1-13",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Corrections de revue : handler d'upload partagé (UPLOAD_TOO_LARGE), purge robuste par ligne, orientation EXIF, tests de limites",
+  "notes": "verify vert 168 tests. Contrat additif.",
+  "next": "Fusion PR #12 puis tag v0.2.0 avec M1-12",
+  "pr": "https://github.com/mrscams/psymate-api/pull/12",
+  "branch": "worktree-M1-13",
+  "checkout": "M1-13"
+}

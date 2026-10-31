@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-31T08:03:45.686Z",
+  "task": "M0-04",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant(s), 4 à corriger, 6 remarque(s)",
+  "notes": "aucun bloquant; a corriger: cookie remember-me sans Max-Age, timing reset request, profil local ecrase MAIL_HOST, aucun test de session invalidee apres reset ni de double confirmation",
+  "branch": "worktree-M0-04",
+  "checkout": "M0-04"
+}

@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-31T07:40:41.868Z",
+  "task": "PROJET",
+  "agent": "claude",
+  "status": "done",
+  "summary": "PR #4 (suivi d'avancement, skill progress-log) fusionnee dans main.",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

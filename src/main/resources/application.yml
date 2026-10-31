@@ -10,6 +10,13 @@ spring:
           enabled: false
   flyway:
     locations: classpath:db/migration
+  session:
+    jdbc:
+      initialize-schema: never
+    timeout: 12h
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
 
 server:
   port: 8080
@@ -22,6 +29,12 @@ management:
 
 app:
   name: PsyMate
+  # Base des liens envoyes par e-mail (frontend), a surcharger par environnement.
+  web:
+    base-url: ${APP_WEB_BASE_URL:http://localhost:5173}
+  auth:
+    session-default: 12h
+    session-remember-me: 30d
 
 versioning:
   grace-period: 5m
@@ -35,9 +48,6 @@ spring:
     url: jdbc:postgresql://localhost:5432/psymate
     username: psymate
     password: psymate
-  mail:
-    host: localhost
-    port: 1025
 
 app:
   mail:
@@ -53,3 +63,9 @@ spring:
 app:
   mail:
     from: test@gmail.com
+
+management:
+  health:
+    mail:
+      # Pas de SMTP dans les tests qui ne demarrent pas Mailpit.
+      enabled: false

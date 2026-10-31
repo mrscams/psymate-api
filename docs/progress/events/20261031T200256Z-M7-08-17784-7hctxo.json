@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T20:02:56.110Z",
+  "task": "M7-08",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 24 fusionnee dans main (compte admin de bootstrap, make admin, changement de mot de passe)",
+  "next": "M1-14b peut demarrer (couloir identity libre)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/24",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

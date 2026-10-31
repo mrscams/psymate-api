@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T21:27:09.096Z",
+  "task": "M1-14B",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 25 fusionnee dans main (admin : comptes, suspension, journal V10, recours, vocabulaire annuaire ; correctif chemins encodes) ; vague V6 terminee",
+  "next": "Tag contract-v0.8.1 ; lot 7 : M2-01, M3-01, M4-02, M7-02",
+  "pr": "https://github.com/mrscams/psymate-api/pull/25",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

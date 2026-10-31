@@ -456,7 +456,7 @@ paths:
       - auth-controller
   /api/me/emotions:
     post:
-      operationId: create_2
+      operationId: create_1
       requestBody:
         content:
           application/json:
@@ -541,7 +541,7 @@ paths:
       - my-emotion-controller
   /api/patients:
     get:
-      operationId: list_1
+      operationId: listPatients
       parameters:
       - in: query
         name: q
@@ -585,7 +585,7 @@ paths:
       tags:
       - patient-controller
     post:
-      operationId: create_1
+      operationId: createPatient
       requestBody:
         content:
           application/json:
@@ -603,7 +603,7 @@ paths:
       - patient-controller
   /api/patients/{id}:
     delete:
-      operationId: archive
+      operationId: archivePatient
       parameters:
       - in: path
         name: id
@@ -617,7 +617,7 @@ paths:
       tags:
       - patient-controller
     get:
-      operationId: get
+      operationId: getPatient
       parameters:
       - in: path
         name: id
@@ -635,7 +635,7 @@ paths:
       tags:
       - patient-controller
     patch:
-      operationId: patch
+      operationId: patchPatient
       parameters:
       - in: path
         name: id
@@ -661,7 +661,7 @@ paths:
       - patient-controller
   /api/patients/{id}/flags:
     post:
-      operationId: addFlag
+      operationId: addPatientFlag
       parameters:
       - in: path
         name: id
@@ -686,7 +686,7 @@ paths:
       - patient-controller
   /api/patients/{id}/flags/{kind}:
     delete:
-      operationId: clearFlag
+      operationId: clearPatientFlag
       parameters:
       - in: path
         name: id
@@ -710,7 +710,7 @@ paths:
       - patient-controller
   /api/patients/{id}/restore:
     post:
-      operationId: restore
+      operationId: restorePatient
       parameters:
       - in: path
         name: id
@@ -729,7 +729,7 @@ paths:
       - patient-controller
   /api/patients/{id}/tags:
     put:
-      operationId: replaceTags
+      operationId: replacePatientTags
       parameters:
       - in: path
         name: id
@@ -754,7 +754,7 @@ paths:
       - patient-controller
   /api/patients/{id}/versions:
     get:
-      operationId: versions
+      operationId: listPatientVersions
       parameters:
       - in: path
         name: id

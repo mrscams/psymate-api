@@ -34,7 +34,7 @@ class PatientController {
   }
 
   @GetMapping
-  PatientPage list(
+  PatientPage listPatients(
       @RequestParam(required = false) String q,
       @RequestParam(defaultValue = "false") boolean archived,
       @RequestParam(required = false) String tag,
@@ -46,49 +46,49 @@ class PatientController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  PatientDto create(@RequestBody CreatePatientRequest request) {
+  PatientDto createPatient(@RequestBody CreatePatientRequest request) {
     return patients.create(request);
   }
 
   @GetMapping("/{id}")
-  PatientDto get(@PathVariable UUID id) {
+  PatientDto getPatient(@PathVariable UUID id) {
     return patients.get(id);
   }
 
   @PatchMapping("/{id}")
-  PatientDto patch(@PathVariable UUID id, @RequestBody Map<String, Object> body) {
+  PatientDto patchPatient(@PathVariable UUID id, @RequestBody Map<String, Object> body) {
     return patients.patch(id, body);
   }
 
   @GetMapping("/{id}/versions")
-  List<VersionDto> versions(@PathVariable UUID id) {
+  List<VersionDto> listPatientVersions(@PathVariable UUID id) {
     return patients.versions(id);
   }
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  void archive(@PathVariable UUID id) {
+  void archivePatient(@PathVariable UUID id) {
     patients.archive(id);
   }
 
   @PostMapping("/{id}/restore")
-  PatientDto restore(@PathVariable UUID id) {
+  PatientDto restorePatient(@PathVariable UUID id) {
     return patients.restore(id);
   }
 
   @PostMapping("/{id}/flags")
   @ResponseStatus(HttpStatus.CREATED)
-  PatientDto addFlag(@PathVariable UUID id, @RequestBody FlagRequest request) {
+  PatientDto addPatientFlag(@PathVariable UUID id, @RequestBody FlagRequest request) {
     return patients.addFlag(id, request);
   }
 
   @DeleteMapping("/{id}/flags/{kind}")
-  PatientDto clearFlag(@PathVariable UUID id, @PathVariable String kind) {
+  PatientDto clearPatientFlag(@PathVariable UUID id, @PathVariable String kind) {
     return patients.clearFlag(id, kind);
   }
 
   @PutMapping("/{id}/tags")
-  PatientDto replaceTags(@PathVariable UUID id, @RequestBody TagsRequest request) {
+  PatientDto replacePatientTags(@PathVariable UUID id, @RequestBody TagsRequest request) {
     return patients.replaceTags(id, request.tags());
   }
 }

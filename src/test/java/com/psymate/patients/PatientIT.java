@@ -11,7 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.patients.api.PatientArchived;
 import com.psymate.patients.api.PatientCreated;
+import com.psymate.patients.api.PatientUpdated;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +44,12 @@ class PatientIT {
   static class CreatedListener {
     @ApplicationModuleListener
     void on(PatientCreated event) {}
+
+    @ApplicationModuleListener
+    void on(PatientUpdated event) {}
+
+    @ApplicationModuleListener
+    void on(PatientArchived event) {}
   }
 
   @TestConfiguration(proxyBeanMethods = false)
@@ -166,6 +174,66 @@ class PatientIT {
             Integer.class,
             "%" + id + "%");
     assertThat(n).isEqualTo(1);
+  }
+
+  private int publications(String eventType, String patientId) {
+    return jdbc.queryForObject(
+        "select count(*) from event_publication where event_type like ? and serialized_event like ?",
+        Integer.class,
+        "%" + eventType,
+        "%" + patientId + "%");
+  }
+
+  @Test
+  void patchAndArchivePublishTheirEvents() throws Exception {
+    String id = createPatientNamed("Events");
+    send(patch("/api/patients/" + id), "{\"phone\":\"0102\"}").andExpect(status().isOk());
+    mvc.perform(delete("/api/patients/" + id).with(auth)).andExpect(status().isNoContent());
+    assertThat(publications("PatientCreated", id)).isEqualTo(1);
+    assertThat(publications("PatientUpdated", id)).isEqualTo(1);
+    assertThat(publications("PatientArchived", id)).isEqualTo(1);
+  }
+
+  @Test
+  void failedCreationLeavesNoPatientAndNoEvent() throws Exception {
+    send(post("/api/patients"), "{\"displayName\":\"Rollback\",\"tags\":[\"pasdetag\"]}")
+        .andExpect(status().isUnprocessableEntity());
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from patient where owner_id = ?", Integer.class, alice))
+        .isZero();
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from event_publication where serialized_event like ?",
+                Integer.class,
+                "%" + alice + "%"))
+        .isZero();
+  }
+
+  @Test
+  void duplicateFlagKindsAtCreationAre409AndNothingIsInserted() throws Exception {
+    send(
+            post("/api/patients"),
+            "{\"displayName\":\"Dup\",\"flags\":[{\"kind\":\"risk\"},{\"kind\":\"risk\"}]}")
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("FLAG_ALREADY_ACTIVE"));
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from patient where owner_id = ?", Integer.class, alice))
+        .isZero();
+  }
+
+  @Test
+  void archivedPatientRejectsFlagsAndTagsButCanBeRestored() throws Exception {
+    String id = createPatientNamed("Figée");
+    mvc.perform(delete("/api/patients/" + id).with(auth)).andExpect(status().isNoContent());
+    send(post("/api/patients/" + id + "/flags"), "{\"kind\":\"risk\"}")
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("PATIENT_ARCHIVED"));
+    mvc.perform(delete("/api/patients/" + id + "/flags/risk").with(auth))
+        .andExpect(status().isConflict());
+    send(put("/api/patients/" + id + "/tags"), "{\"tags\":[]}").andExpect(status().isConflict());
+    mvc.perform(post("/api/patients/" + id + "/restore").with(auth)).andExpect(status().isOk());
   }
 
   // ---- propriété

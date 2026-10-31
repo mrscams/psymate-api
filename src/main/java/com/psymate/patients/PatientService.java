@@ -80,7 +80,14 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Override
   @Transactional(readOnly = true)
   public boolean ownedBy(UUID patientId, UUID practitionerId) {
-    return repo.ownership(patientId).filter(o -> o.ownerId().equals(practitionerId)).isPresent();
+    return repo.ownership(patientId)
+        .filter(o -> o.ownerId().equals(practitionerId))
+        .filter(
+            o ->
+                CurrentPractitioner.get()
+                    .map(me -> me.tenantId().equals(o.tenantId()))
+                    .orElse(true))
+        .isPresent();
   }
 
   @Override
@@ -99,6 +106,13 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Transactional(readOnly = true)
   public void requireOwned(UUID patientId) {
     owned(patientId);
+  }
+
+  private static void requireActive(Ownership o) {
+    if (o.archived()) {
+      throw PatientException.of(
+          HttpStatus.CONFLICT, "PATIENT_ARCHIVED", "Patient archivé : restaurez-le d'abord.");
+    }
   }
 
   private Ownership owned(UUID patientId) {
@@ -183,6 +197,12 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
       checkFlag(flags.get(i), "flags[" + i + "]", problems);
     }
     throwIfAny(problems);
+    Set<String> kinds = new LinkedHashSet<>();
+    for (FlagRequest fl : flags) {
+      if (fl != null && !kinds.add(fl.kind())) {
+        throw flagConflict();
+      }
+    }
 
     UUID id = UUID.randomUUID();
     PatientDto draft =
@@ -205,11 +225,7 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
             null);
     List<UUID> tagIds = resolveTags(r.tags());
     repo.insert(id, me.tenantId(), me.id(), draft);
-    Set<String> seen = new LinkedHashSet<>();
     for (FlagRequest f : flags) {
-      if (!seen.add(f.kind())) {
-        throw flagConflict();
-      }
       repo.insertFlag(id, f.kind(), blankToNull(f.reason()), me.id());
     }
     if (!tagIds.isEmpty()) {
@@ -223,10 +239,7 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   PatientDto patch(UUID id, Map<String, Object> body) {
     CurrentPractitioner me = me();
     Ownership o = owned(id);
-    if (o.archived()) {
-      throw PatientException.of(
-          HttpStatus.CONFLICT, "PATIENT_ARCHIVED", "Patient archivé : restaurez-le d'abord.");
-    }
+    requireActive(o);
     List<FieldProblem> problems = new ArrayList<>();
     for (String key : body.keySet()) {
       if (!PATCHABLE.contains(key)) {
@@ -298,7 +311,7 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Transactional
   PatientDto addFlag(UUID id, FlagRequest f) {
     CurrentPractitioner me = me();
-    owned(id);
+    requireActive(owned(id));
     List<FieldProblem> problems = new ArrayList<>();
     checkFlag(f, "flag", problems);
     throwIfAny(problems);
@@ -317,7 +330,7 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Transactional
   PatientDto clearFlag(UUID id, String kind) {
     CurrentPractitioner me = me();
-    owned(id);
+    requireActive(owned(id));
     if (!FLAG_KINDS.contains(kind)) {
       throw PatientException.invalid("kind", "Drapeau inconnu : watch, risk ou shared_care.");
     }
@@ -332,7 +345,7 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Transactional
   PatientDto replaceTags(UUID id, List<String> labels) {
     CurrentPractitioner me = me();
-    owned(id);
+    requireActive(owned(id));
     repo.replaceTags(id, resolveTags(labels));
     events.publish(new PatientUpdated(me.tenantId(), id, me.id()));
     return repo.find(id).orElseThrow();

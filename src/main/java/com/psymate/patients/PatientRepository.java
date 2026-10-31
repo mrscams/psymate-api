@@ -34,9 +34,13 @@ class PatientRepository {
   private final JdbcClient jdbc;
   private final JsonMapper json;
 
-  PatientRepository(JdbcClient jdbc, JsonMapper json) {
+  private final com.psymate.vocabulary.api.TagFacade tagFacade;
+
+  PatientRepository(
+      JdbcClient jdbc, JsonMapper json, com.psymate.vocabulary.api.TagFacade tagFacade) {
     this.jdbc = jdbc;
     this.json = json;
+    this.tagFacade = tagFacade;
   }
 
   String toJson(Object o) {
@@ -286,16 +290,28 @@ class PatientRepository {
                       new FlagDto(
                           rs.getString(2), rs.getString(3), rs.getObject(4, OffsetDateTime.class)));
             });
-    Map<UUID, List<TagDto>> tags = new HashMap<>();
-    jdbc.sql(
-            "select pt.patient_id, t.id, t.label from patient_tag pt join tag t on t.id = pt.tag_id"
-                + " where pt.patient_id = any(:ids) and t.archived_at is null order by t.label")
+    Map<UUID, List<UUID>> tagIdsByPatient = new HashMap<>();
+    jdbc.sql("select patient_id, tag_id from patient_tag where patient_id = any(:ids)")
         .param("ids", ids)
         .query(
             (rs) -> {
-              tags.computeIfAbsent(rs.getObject(1, UUID.class), k -> new ArrayList<>())
-                  .add(new TagDto(rs.getObject(2, UUID.class), rs.getString(3)));
+              tagIdsByPatient
+                  .computeIfAbsent(rs.getObject(1, UUID.class), k -> new ArrayList<>())
+                  .add(rs.getObject(2, UUID.class));
             });
+    Map<UUID, String> labels =
+        tagFacade.labelsByIds(
+            tagIdsByPatient.values().stream().flatMap(List::stream).distinct().toList());
+    Map<UUID, List<TagDto>> tags = new HashMap<>();
+    tagIdsByPatient.forEach(
+        (pid, tids) ->
+            tags.put(
+                pid,
+                tids.stream()
+                    .filter(labels::containsKey)
+                    .map(t -> new TagDto(t, labels.get(t)))
+                    .sorted(java.util.Comparator.comparing(TagDto::label))
+                    .toList()));
     List<PatientDto> out = new ArrayList<>();
     for (PatientDto p : patients) {
       out.add(

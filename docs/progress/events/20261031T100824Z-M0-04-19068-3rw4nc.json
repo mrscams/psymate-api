@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T10:08:24.340Z",
+  "task": "M0-04",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 7 fusionnee dans main (identite minimale : inscription, connexion, tenant, reinitialisation)",
+  "next": "M0-05 et M1-01 peuvent demarrer ; brancher le CurrentPractitionerPort de vocabulary sur identity.api",
+  "pr": "https://github.com/mrscams/psymate-api/pull/7",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

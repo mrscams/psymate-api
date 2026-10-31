@@ -58,6 +58,14 @@ class PractitionerFacadeImpl implements PractitionerFacade {
   }
 
   @Override
+  public Optional<String> emailOf(UUID id) {
+    return jdbc.sql("select email from practitioner where id = ?")
+        .param(id)
+        .query(String.class)
+        .optional();
+  }
+
+  @Override
   public Optional<PractitionerView> find(UUID id) {
     return practitioners
         .findById(id)

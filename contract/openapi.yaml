@@ -817,6 +817,47 @@ components:
         url:
           type: string
       type: object
+    SubmitContactRequest:
+      description: Message d'un visiteur à un praticien, relayé par e-mail.
+      properties:
+        consent:
+          description: Consentement au traitement du message ; doit valoir true
+          type: boolean
+        email:
+          description: E-mail du visiteur (réponse du praticien)
+          format: email
+          maxLength: 320
+          minLength: 0
+          type: string
+        formShownAt:
+          description: Instant (ISO 8601, UTC) d'affichage du formulaire ; un envoi dans les 3 s est ignoré
+          format: date-time
+          type: string
+        message:
+          description: Message
+          maxLength: 4000
+          minLength: 0
+          type: string
+        name:
+          description: Nom du visiteur
+          maxLength: 200
+          minLength: 0
+          type: string
+        subject:
+          description: Objet (optionnel)
+          maxLength: 200
+          minLength: 0
+          type: string
+        website:
+          description: 'Piège anti-spam (honeypot) : champ caché, doit rester vide'
+          type: string
+      required:
+      - consent
+      - email
+      - formShownAt
+      - message
+      - name
+      type: object
     TagDto:
       properties:
         id:
@@ -2043,6 +2084,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicProfile'
           description: OK
+      tags:
+      - public-directory-controller
+  /api/public/directory/practitioners/{slug}/contact:
+    post:
+      description: Répond 202 sans corps pour tout envoi bien formé, y compris un envoi ignoré en silence (honeypot, formulaire soumis en moins de 3 s, fiche inconnue ou non publiée).
+      operationId: submitContactRequest
+      parameters:
+      - in: path
+        name: slug
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitContactRequest'
+        required: true
+      responses:
+        '202':
+          description: Accepté (ou ignoré en silence)
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Champs invalides (errors[] par champ)
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Plus de 5 envois par heure depuis cette adresse (en-tête Retry-After)
+      summary: Envoie un message au praticien (relayé par e-mail, non rattaché à un dossier)
       tags:
       - public-directory-controller
   /api/tags:

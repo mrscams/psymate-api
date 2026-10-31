@@ -19,7 +19,9 @@ class PublicSecurityConfig {
   @Bean
   @Order(1)
   SecurityFilterChain publicDirectoryChain(
-      HttpSecurity http, @Value("${app.directory.rate-limit-per-minute:60}") int limitPerMinute)
+      HttpSecurity http,
+      @Value("${app.directory.rate-limit-per-minute:60}") int limitPerMinute,
+      @Value("${app.directory.contact-limit-per-hour:5}") int contactLimitPerHour)
       throws Exception {
     http.securityMatcher("/api/public/**")
         .csrf(csrf -> csrf.disable())
@@ -28,7 +30,10 @@ class PublicSecurityConfig {
         // le remplacer par no-cache.
         .headers(h -> h.cacheControl(c -> c.disable()))
         .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-        .addFilterBefore(new PublicRateLimitFilter(limitPerMinute), AuthorizationFilter.class);
+        .addFilterBefore(new PublicRateLimitFilter(limitPerMinute), AuthorizationFilter.class)
+        // Après la limite de lecture (60 / min) : ce seau 5 / h ne concerne que POST …/contact.
+        .addFilterAfter(
+            new ContactRateLimitFilter(contactLimitPerHour), PublicRateLimitFilter.class);
     return http.build();
   }
 }

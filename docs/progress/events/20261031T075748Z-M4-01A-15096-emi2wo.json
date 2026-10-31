@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T07:57:48.400Z",
+  "task": "M4-01A",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Events minimal : DomainEventPublisher, DomainEvent, registre Modulith JDBC sur event_publication ; 3 IT verts, verify vert (25 tests)",
+  "notes": "Aucune migration (V01 identique au schema V2 de Modulith 2.1.2) ; aucune dependance ajoutee ; completion-mode laisse au defaut update, a poser explicitement en M4-01 ; PostgresTestConfig rendue publique ; revue : 0 bloquant, test de deserialisation ajoute",
+  "next": "M1-03 peut emettre ses evenements",
+  "pr": "https://github.com/mrscams/psymate-api/pull/5",
+  "branch": "worktree-M4-01a",
+  "checkout": "M4-01a"
+}

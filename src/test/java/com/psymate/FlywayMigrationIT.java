@@ -96,7 +96,9 @@ class FlywayMigrationIT {
             "event_publication_serialized_event_hash_idx",
             "event_publication_by_completion_date_idx",
             "ix_patient_device_patient",
-            "ix_submission_patient_pending");
+            "ix_submission_patient_pending",
+            "ux_tag_practitioner_label",
+            "ix_patient_tag_tag");
   }
 
   @Test

@@ -15,6 +15,15 @@ components:
           minLength: 0
           type: string
       type: object
+    AddressDto:
+      properties:
+        city:
+          type: string
+        postalCode:
+          type: string
+        street:
+          type: string
+      type: object
     Consents:
       properties:
         privacy:
@@ -64,6 +73,16 @@ components:
             type: string
           type: array
       type: object
+    DecisionDto:
+      properties:
+        decidedAt:
+          format: date-time
+          type: string
+        kind:
+          type: string
+        message:
+          type: string
+      type: object
     DirectoryVocabularyDto:
       properties:
         audiences:
@@ -82,6 +101,33 @@ components:
           items:
             $ref: '#/components/schemas/Item'
           type: array
+      type: object
+    DocumentDto:
+      properties:
+        id:
+          format: uuid
+          type: string
+        issuer:
+          type: string
+        mime:
+          type: string
+        purged:
+          type: boolean
+        reviewedStatus:
+          type: string
+        sizeBytes:
+          format: int32
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+        uploadedAt:
+          format: date-time
+          type: string
+        year:
+          format: int32
+          type: integer
       type: object
     EmailChangeRequest:
       properties:
@@ -346,6 +392,28 @@ components:
         nextCursor:
           type: string
       type: object
+    ProfessionalInfoDto:
+      properties:
+        address:
+          $ref: '#/components/schemas/AddressDto'
+        phone:
+          type: string
+        professionalNumber:
+          type: string
+        remoteOnly:
+          type: boolean
+      type: object
+    ProfessionalInfoRequest:
+      properties:
+        address:
+          $ref: '#/components/schemas/AddressDto'
+        phone:
+          type: string
+        professionalNumber:
+          type: string
+        remoteOnly:
+          type: boolean
+      type: object
     ProfileDto:
       properties:
         address:
@@ -488,6 +556,14 @@ components:
         verificationStatus:
           type: string
       type: object
+    SignedUrlDto:
+      properties:
+        expiresAt:
+          format: date-time
+          type: string
+        url:
+          type: string
+      type: object
     TagDto:
       properties:
         id:
@@ -578,6 +654,34 @@ components:
         titleLabel:
           type: string
         websiteUrl:
+          type: string
+      type: object
+    VerificationDto:
+      properties:
+        decisions:
+          items:
+            $ref: '#/components/schemas/DecisionDto'
+          type: array
+        documents:
+          items:
+            $ref: '#/components/schemas/DocumentDto'
+          type: array
+        missing:
+          items:
+            type: string
+          type: array
+        profession:
+          type: string
+        professionalInfo:
+          $ref: '#/components/schemas/ProfessionalInfoDto'
+        recommended:
+          items:
+            type: string
+          type: array
+        status:
+          type: string
+        submittedAt:
+          format: date-time
           type: string
       type: object
     VersionDto:
@@ -863,6 +967,25 @@ paths:
           description: OK
       tags:
       - my-emotion-controller
+  /api/me/professional-info:
+    patch:
+      operationId: updateProfessionalInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfessionalInfoRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ProfessionalInfoDto'
+          description: OK
+      summary: Met à jour n° professionnel, téléphone, adresse et exercice à distance
+      tags:
+      - verification-controller
   /api/me/profile:
     get:
       operationId: get
@@ -938,6 +1061,162 @@ paths:
           description: OK
       tags:
       - profile-controller
+  /api/me/verification:
+    get:
+      operationId: getVerification
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/VerificationDto'
+          description: OK
+      summary: État du dossier professionnel, justificatifs, pièces manquantes
+      tags:
+      - verification-controller
+  /api/me/verification/documents:
+    post:
+      operationId: uploadDocument
+      parameters:
+      - in: query
+        name: type
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: title
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: issuer
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: year
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                file:
+                  format: binary
+                  type: string
+              type: object
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DocumentDto'
+          description: OK
+      summary: Dépose un justificatif (PDF, JPEG ou PNG, 10 Mo au maximum)
+      tags:
+      - verification-controller
+  /api/me/verification/documents/{id}:
+    delete:
+      operationId: deleteDocument
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          description: OK
+      summary: Retire un justificatif (docs_pending ou needs_more seulement)
+      tags:
+      - verification-controller
+    get:
+      operationId: getDocument
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DocumentDto'
+          description: OK
+      summary: Métadonnées d'un justificatif (403 s'il appartient à un autre praticien)
+      tags:
+      - verification-controller
+  /api/me/verification/documents/{id}/file:
+    get:
+      operationId: getDocumentFile
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: query
+        name: exp
+        required: false
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: sig
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                format: byte
+                type: string
+          description: OK
+      summary: Sert le justificatif déchiffré (URL signée, praticien propriétaire)
+      tags:
+      - verification-controller
+  /api/me/verification/documents/{id}/url:
+    get:
+      operationId: getDocumentUrl
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SignedUrlDto'
+          description: OK
+      summary: URL signée de 5 minutes pour lire le justificatif déchiffré
+      tags:
+      - verification-controller
+  /api/me/verification/submit:
+    post:
+      operationId: submitVerification
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/VerificationDto'
+          description: OK
+      summary: Soumet le dossier pour vérification (409 avec les pièces manquantes)
+      tags:
+      - verification-controller
   /api/patients:
     get:
       operationId: listPatients

@@ -1,4 +1,4 @@
-package com.psymate.directory;
+package com.psymate.shared;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -17,9 +17,9 @@ class UploadSizeExceptionHandlerTest {
 
   @RestController
   static class Failing {
-    @PostMapping("/upload")
+    @PostMapping("/api/me/verification/documents")
     void upload() {
-      throw new MaxUploadSizeExceededException(5L * 1024 * 1024);
+      throw new MaxUploadSizeExceededException(26L * 1024 * 1024);
     }
   }
 
@@ -29,9 +29,9 @@ class UploadSizeExceptionHandlerTest {
         MockMvcBuilders.standaloneSetup(new Failing())
             .setControllerAdvice(new UploadSizeExceptionHandler())
             .build();
-    mvc.perform(post("/upload"))
+    mvc.perform(post("/api/me/verification/documents"))
         .andExpect(status().is(413))
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
-        .andExpect(jsonPath("$.code").value("PHOTO_TOO_LARGE"));
+        .andExpect(jsonPath("$.code").value("UPLOAD_TOO_LARGE"));
   }
 }

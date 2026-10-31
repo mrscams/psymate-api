@@ -74,6 +74,17 @@ components:
       - privacy
       - terms
       type: object
+    ContactDto:
+      properties:
+        address:
+          $ref: '#/components/schemas/AddressDto'
+        phone:
+          type: string
+        professionalNumber:
+          type: string
+        remoteOnly:
+          type: boolean
+      type: object
     CreateEmotionRequest:
       properties:
         family:
@@ -123,6 +134,41 @@ components:
         message:
           type: string
       type: object
+    DecisionItemDto:
+      properties:
+        adminId:
+          format: uuid
+          type: string
+        checklist:
+          additionalProperties: {}
+          type: object
+        decidedAt:
+          format: date-time
+          type: string
+        id:
+          format: uuid
+          type: string
+        internalNote:
+          type: string
+        kind:
+          type: string
+        messageToPractitioner:
+          type: string
+      type: object
+    DecisionRequest:
+      properties:
+        checklist:
+          additionalProperties: {}
+          type: object
+        force:
+          type: boolean
+        internalNote:
+          type: string
+        kind:
+          type: string
+        messageToPractitioner:
+          type: string
+      type: object
     DirectoryVocabularyDto:
       properties:
         audiences:
@@ -168,6 +214,50 @@ components:
         year:
           format: int32
           type: integer
+      type: object
+    DossierDto:
+      properties:
+        contact:
+          $ref: '#/components/schemas/ContactDto'
+        createdAt:
+          format: date-time
+          type: string
+        decisions:
+          items:
+            $ref: '#/components/schemas/DecisionItemDto'
+          type: array
+        displayName:
+          type: string
+        documents:
+          items:
+            $ref: '#/components/schemas/DocumentDto'
+          type: array
+        email:
+          type: string
+        emailConfirmedAt:
+          format: date-time
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        locale:
+          type: string
+        overdue:
+          type: boolean
+        practitionerId:
+          format: uuid
+          type: string
+        profession:
+          type: string
+        submittedAt:
+          format: date-time
+          type: string
+        verificationStatus:
+          type: string
+        verifiedAt:
+          format: date-time
+          type: string
       type: object
     EmailChangeRequest:
       properties:
@@ -710,6 +800,39 @@ components:
         websiteUrl:
           type: string
       type: object
+    QueueDto:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/QueueItemDto'
+          type: array
+        nextCursor:
+          type: string
+      type: object
+    QueueItemDto:
+      properties:
+        city:
+          type: string
+        displayName:
+          type: string
+        documentsCount:
+          format: int32
+          type: integer
+        missingHints:
+          items:
+            type: string
+          type: array
+        overdue:
+          type: boolean
+        practitionerId:
+          format: uuid
+          type: string
+        profession:
+          type: string
+        submittedAt:
+          format: date-time
+          type: string
+      type: object
     RegisterRequest:
       properties:
         address:
@@ -764,6 +887,11 @@ components:
     RenameEmotionRequest:
       properties:
         labelFr:
+          type: string
+      type: object
+    ReviewRequest:
+      properties:
+        reviewedStatus:
           type: string
       type: object
     RevokedSessionsResponse:
@@ -1024,6 +1152,183 @@ info:
   version: 0.7.0
 openapi: 3.1.0
 paths:
+  /api/admin/verifications:
+    get:
+      operationId: listAdminVerifications
+      parameters:
+      - in: query
+        name: status
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: sort
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: cursor
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: limit
+        required: false
+        schema:
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/QueueDto'
+          description: OK
+      summary: File des dossiers à vérifier (under_review ou needs_more), pagination par curseur
+      tags:
+      - admin-verification-controller
+  /api/admin/verifications/{practitionerId}:
+    get:
+      operationId: getAdminVerification
+      parameters:
+      - in: path
+        name: practitionerId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DossierDto'
+          description: OK
+      summary: 'Dossier d''un praticien : identité, coordonnées, justificatifs, décisions'
+      tags:
+      - admin-verification-controller
+  /api/admin/verifications/{practitionerId}/decision:
+    post:
+      operationId: decideAdminVerification
+      parameters:
+      - in: path
+        name: practitionerId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DecisionDto'
+          description: OK
+      summary: Approuve, demande un complément ou refuse (décision append-only)
+      tags:
+      - admin-verification-controller
+  /api/admin/verifications/{practitionerId}/documents/{docId}:
+    patch:
+      operationId: reviewAdminDocument
+      parameters:
+      - in: path
+        name: practitionerId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: path
+        name: docId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DocumentDto'
+          description: OK
+      summary: Qualifie un justificatif (pending, conform, non_conform)
+      tags:
+      - admin-verification-controller
+  /api/admin/verifications/{practitionerId}/documents/{docId}/file:
+    get:
+      operationId: getAdminDocumentFile
+      parameters:
+      - in: path
+        name: practitionerId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: path
+        name: docId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: query
+        name: exp
+        required: false
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: sig
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                format: byte
+                type: string
+          description: OK
+      summary: Sert le justificatif déchiffré (URL signée) et consigne l'accès
+      tags:
+      - admin-verification-controller
+  /api/admin/verifications/{practitionerId}/documents/{docId}/url:
+    get:
+      operationId: getAdminDocumentUrl
+      parameters:
+      - in: path
+        name: practitionerId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: path
+        name: docId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SignedUrlDto'
+          description: OK
+      summary: URL signée de 5 minutes pour ouvrir un justificatif
+      tags:
+      - admin-verification-controller
   /api/auth/email/change:
     post:
       operationId: changeEmail

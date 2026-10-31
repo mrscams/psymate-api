@@ -23,6 +23,7 @@ class TwoFactorService {
   static final String ALREADY_ENABLED = "TWO_FACTOR_ALREADY_ENABLED";
   static final String NOT_ENABLED = "TWO_FACTOR_NOT_ENABLED";
   static final String NOT_STARTED = "TWO_FACTOR_NOT_STARTED";
+  static final String ADMIN_REQUIRED = "TWO_FACTOR_REQUIRED_FOR_ADMIN";
 
   /** Secret en Base32 et URI otpauth:// du QR code, montrés une seule fois. */
   record Enrollment(String secret, String otpauthUri) {}
@@ -92,6 +93,10 @@ class TwoFactorService {
   @Transactional
   public void disable(UUID id, String password, String code, String ip) {
     PractitionerRow row = practitioners.findById(id).orElseThrow(InvalidCredentialsException::new);
+    // Un administrateur ne peut pas désactiver sa 2FA (M1-14) ; refus avant tout contrôle de code.
+    if ("admin".equals(row.role())) {
+      throw new TwoFactorStateException(ADMIN_REQUIRED);
+    }
     TotpState state = totp.find(id);
     if (!state.enabled()) {
       throw new TwoFactorStateException(NOT_ENABLED);

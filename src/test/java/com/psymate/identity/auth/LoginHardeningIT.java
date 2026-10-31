@@ -219,10 +219,11 @@ class LoginHardeningIT extends AbstractLoginIT {
     assertThat(denied.getResponse().getStatus()).isEqualTo(403);
     assertThat(body(denied).path("code").asString()).isEqualTo("TWO_FACTOR_REQUIRED");
 
-    // Un praticien ordinaire n'est pas concerné par ce filtre (la route n'existe pas encore).
+    // Un praticien ordinaire est refusé pour son rôle, avant tout contrôle de 2FA (M1-14).
     Cookie plain = session(account());
     MvcResult other = mvc.perform(get("/api/admin/verifications").cookie(plain)).andReturn();
-    assertThat(other.getResponse().getContentAsString()).doesNotContain("TWO_FACTOR_REQUIRED");
+    assertThat(other.getResponse().getStatus()).isEqualTo(403);
+    assertThat(body(other).path("code").asString()).isEqualTo("ADMIN_ROLE_REQUIRED");
 
     // Admin avec 2FA active : le filtre laisse passer.
     jdbc.update(

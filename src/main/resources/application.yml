@@ -45,6 +45,28 @@ app:
   contract:
     # Version du contrat OpenAPI publie ; a bumper avant de poser un tag contract-vX.Y.Z.
     version: 0.5.0
+  # Limitation de debit (G Q24, Bucket4j, shared.ratelimit). Une regle = un motif de chemin (decode),
+  # des methodes optionnelles (toutes si absent), la cle de comptage (ip : IPv6 regroupee en /64 ;
+  # session : id de session HTTP, les requetes sans session ne sont pas comptees), un nombre de
+  # requetes et la periode de rechargement. Valeurs de la decision Q24 : ne pas les changer ici.
+  rate-limits:
+    rules:
+      public-directory:
+        pattern: /api/public/**
+        key: ip
+        limit: 60
+        period: 1m
+      public-contact:
+        pattern: /api/public/directory/practitioners/*/contact
+        methods: POST
+        key: ip
+        limit: 5
+        period: 1h
+      session:
+        pattern: /api/**
+        key: session
+        limit: 600
+        period: 1m
   auth:
     session-default: 12h
     session-remember-me: 30d

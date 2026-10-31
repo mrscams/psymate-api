@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.psymate.shared.problem.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,7 +28,7 @@ class UploadSizeExceptionHandlerTest {
   void multipartSizeErrorBecomesProblemJson413() throws Exception {
     MockMvc mvc =
         MockMvcBuilders.standaloneSetup(new Failing())
-            .setControllerAdvice(new UploadSizeExceptionHandler())
+            .setControllerAdvice(new GlobalExceptionHandler())
             .build();
     mvc.perform(post("/api/me/verification/documents"))
         .andExpect(status().is(413))

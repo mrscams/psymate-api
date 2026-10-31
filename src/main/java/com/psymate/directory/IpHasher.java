@@ -33,7 +33,10 @@ class IpHasher {
     }
   }
 
-  /** {@code normalizedIp} : adresse déjà normalisée (IPv6 en /64, voir {@link IpBuckets#key}). */
+  /**
+   * {@code normalizedIp} : adresse déjà normalisée (IPv6 en /64, voir {@link
+   * com.psymate.shared.ratelimit.RateLimiter#ipKey}).
+   */
   String hash(String normalizedIp, LocalDate dayUtc) {
     try {
       Mac mac = Mac.getInstance("HmacSHA256");

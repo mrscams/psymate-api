@@ -1,6 +1,6 @@
 package com.psymate.directory;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.psymate.shared.ratelimit.RateLimitFilters;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,10 +21,7 @@ class PublicSecurityConfig {
 
   @Bean
   @Order(1)
-  SecurityFilterChain publicDirectoryChain(
-      HttpSecurity http,
-      @Value("${app.directory.rate-limit-per-minute:60}") int limitPerMinute,
-      @Value("${app.directory.contact-limit-per-hour:5}") int contactLimitPerHour)
+  SecurityFilterChain publicDirectoryChain(HttpSecurity http, RateLimitFilters rateLimits)
       throws Exception {
     http.securityMatcher("/api/public/**")
         .csrf(csrf -> csrf.disable())
@@ -33,10 +30,11 @@ class PublicSecurityConfig {
         // le remplacer par no-cache.
         .headers(h -> h.cacheControl(c -> c.disable()))
         .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-        .addFilterBefore(new PublicRateLimitFilter(limitPerMinute), AuthorizationFilter.class)
-        // Après la limite de lecture (60 / min) : ce seau 5 / h ne concerne que POST …/contact.
-        .addFilterAfter(
-            new ContactRateLimitFilter(contactLimitPerHour), PublicRateLimitFilter.class);
+        // Règles de shared (app.rate-limits.rules) : 60 / min / IP sur toute la chaîne ...
+        .addFilterBefore(rateLimits.forRule("public-directory"), AuthorizationFilter.class)
+        // ... puis, après elle, 5 / h / IP qui ne concerne que POST …/contact. Même position
+        // d'ancrage : à ordre égal, Spring Security garde l'ordre d'ajout.
+        .addFilterBefore(rateLimits.forRule("public-contact"), AuthorizationFilter.class);
     return http.build();
   }
 }

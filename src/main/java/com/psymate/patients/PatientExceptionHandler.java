@@ -1,5 +1,7 @@
 package com.psymate.patients;
 
+import com.psymate.shared.problem.AdviceOrder;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -7,6 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
 /** Erreurs RFC 9457 limitées au contrôleur du module patients. */
+@Order(AdviceOrder.MODULE)
 @RestControllerAdvice(assignableTypes = PatientController.class)
 class PatientExceptionHandler {
 

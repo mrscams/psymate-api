@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T23:30:52.613Z",
+  "task": "M7-02",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "RateLimiter Bucket4j configurable (app.rate-limits : 60/min/IP annuaire, 5/h/IP contact, 600/min/session), AuditFilter patient.read/patient.write dans security_event, ErrorCode/Problems/GlobalExceptionHandler RFC 9457 ; verify vert (237 unit, 641 IT)",
+  "notes": "Limites directory migrées 1 pour 1 ; verrou de login et limites resend non migrés (règles métier en base). Revue : bloquant corrigé (précédence des advices de module via AdviceOrder.MODULE + règle ArchUnit, sinon le filet global attrapait les exceptions de vocabulary). Audit : entryId/linkId/sessionId sans résolution du patient (shared sans dépendance). Contrat inchangé 0.5.0.",
+  "next": "Fusionner quand peu de branches sont ouvertes (shared est lu par tous : relancer la CI des branches ouvertes). Harmoniser type/instance entre réponses MVC et ProblemWriter si voulu ; les modules peuvent adopter Problems/ProblemException.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/29",
+  "branch": "worktree-M7-02",
+  "checkout": "M7-02"
+}

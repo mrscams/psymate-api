@@ -1,10 +1,12 @@
 package com.psymate.search;
 
 import com.psymate.search.SearchRequestException.FieldProblem;
+import com.psymate.shared.problem.AdviceOrder;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
  * Erreurs RFC 9457 (application/problem+json) de la recherche : 400 SEARCH_BAD_REQUEST avec
  * errors[] = [{field, code, message}], et les 403 / 404 de la garde de propriété du patient.
  */
+@Order(AdviceOrder.MODULE)
 @RestControllerAdvice(assignableTypes = SearchController.class)
 class SearchExceptionHandler {
 

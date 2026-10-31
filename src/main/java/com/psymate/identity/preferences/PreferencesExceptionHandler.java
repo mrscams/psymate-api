@@ -1,5 +1,6 @@
 package com.psymate.identity.preferences;
 
+import com.psymate.shared.problem.AdviceOrder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** Erreurs RFC 9457 des préférences : 422 avec errors[] par clé fautive. */
+@Order(AdviceOrder.MODULE)
 @RestControllerAdvice(assignableTypes = PreferencesController.class)
 class PreferencesExceptionHandler {
 

@@ -1,6 +1,8 @@
 package com.psymate.directory;
 
+import com.psymate.shared.problem.AdviceOrder;
 import java.util.List;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -15,6 +17,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  * Erreurs RFC 9457 limitées aux contrôleurs du module directory. Les erreurs ne sont jamais mises
  * en cache (la chaîne publique désactive le Cache-Control automatique).
  */
+@Order(AdviceOrder.MODULE)
 @RestControllerAdvice(
     assignableTypes = {
       ProfileController.class,

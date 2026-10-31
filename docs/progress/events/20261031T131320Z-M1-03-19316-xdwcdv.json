@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T13:13:20.179Z",
+  "task": "M1-03",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 13 fusionnee dans main (entrees, V05, grace 1h15, seance d'accueil)",
+  "next": "M1-04, M4-01, M1-14, M5-03 debloquees (V5) ; reste de V4 : M1-12, M5-02, M1-11",
+  "pr": "https://github.com/mrscams/psymate-api/pull/13",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

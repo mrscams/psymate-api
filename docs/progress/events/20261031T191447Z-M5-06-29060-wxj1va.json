@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T19:14:47.134Z",
+  "task": "M5-06",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Publication conditionnée à la vérification : publish exige approved (409 missing verification en tête), abonné PractitionerRejected dépublie (idempotent, hors requête), verified porté par M5-02 testé ; PublicationGateIT (6), verify vert.",
+  "notes": "PractitionerSuspended absent (M1-14b) : seul PractitionerRejected consommé. Idempotence par UPDATE ... and published, sans EventDeduplicator. Lecture publique sans filtre de statut (M5-02 inchangé) ; course étroite publish/refus documentée dans la PR. Contrat inchangé, aucune migration ni dépendance.",
+  "next": "Fusionner la PR ; à M1-14b, ajouter l'écoute de PractitionerSuspended dans PractitionerStatusListener.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/21",
+  "branch": "worktree-M5-06",
+  "checkout": "M5-06"
+}

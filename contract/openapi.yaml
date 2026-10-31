@@ -64,6 +64,16 @@ components:
         verified:
           type: boolean
       type: object
+    CloseSessionRequest:
+      properties:
+        durationMin:
+          format: int32
+          maximum: 600
+          minimum: 1
+          type: integer
+        summary:
+          type: string
+      type: object
     Consents:
       properties:
         privacy:
@@ -90,6 +100,34 @@ components:
         family:
           type: string
         labelFr:
+          type: string
+      type: object
+    CreateEntryRequest:
+      properties:
+        body:
+          type: string
+        feeling:
+          $ref: '#/components/schemas/EntryFeelingRequest'
+        medication:
+          $ref: '#/components/schemas/EntryMedicationRequest'
+        occurred:
+          $ref: '#/components/schemas/EntryOccurredRequest'
+        session:
+          $ref: '#/components/schemas/EntrySessionRequest'
+        sessionId:
+          format: uuid
+          type: string
+        status:
+          type: string
+        tags:
+          items:
+            type: string
+          type: array
+        title:
+          type: string
+        type:
+          type: string
+        visibility:
           type: string
       type: object
     CreatePatientRequest:
@@ -316,6 +354,159 @@ components:
         scope:
           type: string
       type: object
+    EntryDto:
+      properties:
+        archivedAt:
+          format: date-time
+          type: string
+        authorType:
+          type: string
+        body:
+          type: string
+        feeling:
+          $ref: '#/components/schemas/EntryFeelingDto'
+        id:
+          format: uuid
+          type: string
+        linkCount:
+          format: int32
+          type: integer
+        medication:
+          $ref: '#/components/schemas/EntryMedicationDto'
+        occurred:
+          $ref: '#/components/schemas/EntryOccurredDto'
+        patientId:
+          format: uuid
+          type: string
+        recordedAt:
+          format: date-time
+          type: string
+        session:
+          $ref: '#/components/schemas/EntrySessionDto'
+        sessionId:
+          format: uuid
+          type: string
+        status:
+          type: string
+        tags:
+          items:
+            type: string
+          type: array
+        title:
+          type: string
+        type:
+          type: string
+        version:
+          format: int32
+          type: integer
+        visibility:
+          type: string
+      type: object
+    EntryFeelingDto:
+      properties:
+        arousal:
+          format: int32
+          type: integer
+        emotionCode:
+          type: string
+        family:
+          type: string
+        intensity:
+          format: int32
+          type: integer
+        valence:
+          format: int32
+          type: integer
+      type: object
+    EntryFeelingRequest:
+      properties:
+        emotionCode:
+          type: string
+        intensity:
+          format: int32
+          type: integer
+      type: object
+    EntryMedicationDto:
+      properties:
+        dosage:
+          type: string
+        frequency:
+          type: string
+        molecule:
+          type: string
+        periodFrom:
+          format: date
+          type: string
+        periodTo:
+          format: date
+          type: string
+        prescriber:
+          type: string
+      type: object
+    EntryMedicationRequest:
+      properties:
+        dosage:
+          type: string
+        frequency:
+          type: string
+        molecule:
+          type: string
+        periodFrom:
+          format: date
+          type: string
+        periodTo:
+          format: date
+          type: string
+        prescriber:
+          type: string
+      type: object
+    EntryOccurredDto:
+      properties:
+        from:
+          format: date-time
+          type: string
+        label:
+          type: string
+        precision:
+          type: string
+        to:
+          format: date-time
+          type: string
+      type: object
+    EntryOccurredRequest:
+      properties:
+        from:
+          format: date-time
+          type: string
+        label:
+          type: string
+        precision:
+          type: string
+        to:
+          format: date-time
+          type: string
+      type: object
+    EntrySessionDto:
+      properties:
+        closedAt:
+          format: date-time
+          type: string
+        durationMin:
+          format: int32
+          type: integer
+        kind:
+          type: string
+        modality:
+          type: string
+      type: object
+    EntrySessionRequest:
+      properties:
+        durationMin:
+          format: int32
+          type: integer
+        modality:
+          type: string
+      type: object
     EntryTypeView:
       properties:
         code:
@@ -329,6 +520,26 @@ components:
         labelFr:
           type: string
         sortOrder:
+          format: int32
+          type: integer
+      type: object
+    EntryVersionDto:
+      properties:
+        authorId:
+          format: uuid
+          type: string
+        authorType:
+          type: string
+        body:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        reason:
+          type: string
+        title:
+          type: string
+        version:
           format: int32
           type: integer
       type: object
@@ -534,6 +745,31 @@ components:
           type: string
       required:
       - email
+      type: object
+    PatchEntryRequest:
+      properties:
+        body:
+          type: string
+        feeling:
+          $ref: '#/components/schemas/EntryFeelingRequest'
+        medication:
+          $ref: '#/components/schemas/EntryMedicationRequest'
+        occurred:
+          $ref: '#/components/schemas/EntryOccurredRequest'
+        reason:
+          type: string
+        session:
+          $ref: '#/components/schemas/EntrySessionRequest'
+        status:
+          type: string
+        tags:
+          items:
+            type: string
+          type: array
+        title:
+          type: string
+        visibility:
+          type: string
       type: object
     PatientDto:
       properties:
@@ -856,6 +1092,23 @@ components:
           format: date-time
           type: string
       type: object
+    RecordContactRequest:
+      properties:
+        body:
+          minLength: 1
+          type: string
+        modality:
+          minLength: 1
+          pattern: phone|email
+          type: string
+        occurredFrom:
+          format: date-time
+          type: string
+      required:
+      - body
+      - modality
+      - occurredFrom
+      type: object
     RegisterRequest:
       properties:
         address:
@@ -967,6 +1220,15 @@ components:
           type: string
         url:
           type: string
+      type: object
+    StartSessionRequest:
+      properties:
+        modality:
+          minLength: 1
+          pattern: in_person|video|phone|email
+          type: string
+      required:
+      - modality
       type: object
     SubmitContactRequest:
       description: Message d'un visiteur à un praticien, relayé par e-mail.
@@ -1172,7 +1434,7 @@ components:
 info:
   description: API de PsyMate, suivi clinique pour psychologues, psychiatres et coachs.
   title: PsyMate API
-  version: 0.8.1
+  version: 0.3.0
 openapi: 3.1.0
 paths:
   /api/admin/verifications:
@@ -1626,6 +1888,103 @@ paths:
       summary: Alias déprécié de POST /api/auth/register
       tags:
       - auth-controller
+  /api/entries/{id}:
+    delete:
+      operationId: archiveEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: No Content
+      tags:
+      - entry-controller
+    get:
+      operationId: getEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EntryDto'
+          description: OK
+      tags:
+      - entry-controller
+    patch:
+      operationId: patchEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchEntryRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EntryDto'
+          description: OK
+      tags:
+      - entry-controller
+  /api/entries/{id}/restore:
+    post:
+      operationId: restoreEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EntryDto'
+          description: OK
+      tags:
+      - entry-controller
+  /api/entries/{id}/versions:
+    get:
+      operationId: listEntryVersions
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                items:
+                  $ref: '#/components/schemas/EntryVersionDto'
+                type: array
+          description: OK
+      tags:
+      - entry-controller
   /api/me/2fa/disable:
     post:
       operationId: disableTwoFactor
@@ -2243,6 +2602,31 @@ paths:
           description: OK
       tags:
       - patient-controller
+  /api/patients/{id}/entries:
+    post:
+      operationId: createEntry
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEntryRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EntryDto'
+          description: OK
+      tags:
+      - entry-controller
   /api/patients/{id}/flags:
     post:
       operationId: addPatientFlag
@@ -2311,6 +2695,75 @@ paths:
           description: OK
       tags:
       - patient-controller
+  /api/patients/{id}/sessions/contact:
+    post:
+      operationId: recordContact
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordContactRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EntryDto'
+          description: OK
+      tags:
+      - session-controller
+  /api/patients/{id}/sessions/current:
+    get:
+      operationId: getCurrentSession
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EntryDto'
+          description: OK
+      tags:
+      - session-controller
+  /api/patients/{id}/sessions/start:
+    post:
+      operationId: startSession
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartSessionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EntryDto'
+          description: OK
+      tags:
+      - session-controller
   /api/patients/{id}/tags:
     put:
       operationId: replacePatientTags
@@ -2497,6 +2950,31 @@ paths:
       summary: Envoie un message au praticien (relayé par e-mail, non rattaché à un dossier)
       tags:
       - public-directory-controller
+  /api/sessions/{id}/close:
+    post:
+      operationId: closeSession
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseSessionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EntryDto'
+          description: OK
+      tags:
+      - session-controller
   /api/tags:
     get:
       operationId: list

@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T19:35:13.168Z",
+  "task": "M7-05",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 22 fusionnee dans main (ReservesConformanceIT, 4 Disabled : M2-01 x2, M1-05, M6-05)",
+  "next": "Reactiver le test contrat apres M1-05",
+  "pr": "https://github.com/mrscams/psymate-api/pull/22",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

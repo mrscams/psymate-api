@@ -29,8 +29,12 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -109,7 +113,9 @@ public class EntryService {
     if (time == null) {
       content = withTime(content, new TimeSpan(now, now, TimeSpan.Precision.EXACT, null));
     }
-    return write(me.tenantId(), me.id(), patientId, command.type(), sessionId, content, now);
+    UUID id = write(me.tenantId(), me.id(), patientId, command.type(), sessionId, content, now);
+    writeTags(id, command.tagIds());
+    return id;
   }
 
   /**
@@ -196,8 +202,12 @@ public class EntryService {
     if (merged.feeling() != null && merged.feeling() != current.feeling()) {
       merged = withFeeling(merged, correctedAffect(current.feeling(), merged.feeling()));
     }
+    boolean tagsChanged = replaceTagsIfChanged(entryId, command.tagIds());
     if (merged.equals(current)) {
-      return new CorrectionResult(entryId, entry.currentVersion(), false, false);
+      if (tagsChanged) {
+        patients.touchClinicalRev(entry.patientId());
+      }
+      return new CorrectionResult(entryId, entry.currentVersion(), tagsChanged, false);
     }
 
     Instant now = clock.instant();
@@ -259,7 +269,47 @@ public class EntryService {
             entry.currentVersion()));
   }
 
+  // ---- restauration
+
+  /**
+   * Désarchive l'entrée (A7 : archived → final). Sans effet si elle n'est pas archivée. Aucun
+   * événement : A4.8 n'en définit pas pour la restauration ; patient.clinical_rev est incrémenté.
+   */
+  @Transactional
+  public void restore(UUID entryId) {
+    currentPractitioner();
+    Entry entry = lockOwned(entryId);
+    if (!entry.archived()) {
+      return;
+    }
+    repo.unarchive(entryId, clock.instant());
+    patients.touchClinicalRev(entry.patientId());
+  }
+
   // ---- internes
+
+  /** Pose les tags (déjà résolus) d'une entrée neuve ; sans effet si la liste est vide. */
+  private void writeTags(UUID entryId, List<UUID> tagIds) {
+    if (tagIds != null && !tagIds.isEmpty()) {
+      repo.replaceTags(entryId, List.copyOf(new LinkedHashSet<>(tagIds)));
+    }
+  }
+
+  /**
+   * Remplace les tags de l'entrée s'ils diffèrent ; nul : inchangés. Les tags ne sont pas dans
+   * entry_version : ce changement ne crée jamais de version.
+   */
+  private boolean replaceTagsIfChanged(UUID entryId, List<UUID> wanted) {
+    if (wanted == null) {
+      return false;
+    }
+    Set<UUID> target = new LinkedHashSet<>(wanted);
+    if (new HashSet<>(repo.tagIds(entryId)).equals(target)) {
+      return false;
+    }
+    repo.replaceTags(entryId, List.copyOf(target));
+    return true;
+  }
 
   private CurrentPractitioner currentPractitioner() {
     return CurrentPractitioner.get()

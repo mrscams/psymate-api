@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T19:44:35.469Z",
+  "task": "M1-05",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 23 fusionnee dans main (endpoints entrees et seances, MapStruct 1.6.3)",
+  "next": "Tag contract-v0.3.0 ; lot 7 debloque (M2-01, M3-01, M4-02, M7-02) ; reactiver le test contrat de M7-05",
+  "pr": "https://github.com/mrscams/psymate-api/pull/23",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

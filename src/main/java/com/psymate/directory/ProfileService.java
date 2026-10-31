@@ -5,9 +5,13 @@ import com.psymate.directory.api.ProfilePublished;
 import com.psymate.directory.api.ProfileUnpublished;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.identity.api.PractitionerFacade;
+import com.psymate.identity.api.PractitionerFacade.PractitionerView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,15 +23,22 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 class ProfileService {
 
   private static final int SLUG_ATTEMPTS = 5;
+  private static final String APPROVED = "approved";
 
   private final ProfileRepository repo;
   private final PhotoStorage storage;
   private final DomainEventPublisher events;
+  private final PractitionerFacade practitioners;
 
-  ProfileService(ProfileRepository repo, PhotoStorage storage, DomainEventPublisher events) {
+  ProfileService(
+      ProfileRepository repo,
+      PhotoStorage storage,
+      DomainEventPublisher events,
+      PractitionerFacade practitioners) {
     this.repo = repo;
     this.storage = storage;
     this.events = events;
+    this.practitioners = practitioners;
   }
 
   private static CurrentPractitioner me() {
@@ -121,7 +132,13 @@ class ProfileService {
   public void publish() {
     CurrentPractitioner p = me();
     ProfileDto profile = get();
-    List<String> missing = missingForPublication(p, profile);
+    boolean verified =
+        practitioners
+            .find(p.id())
+            .map(PractitionerView::verificationStatus)
+            .map(APPROVED::equals)
+            .orElse(false);
+    List<String> missing = missingForPublication(p, profile, verified);
     if (!missing.isEmpty()) {
       throw new ProfileException(
           HttpStatus.CONFLICT,
@@ -145,11 +162,30 @@ class ProfileService {
   }
 
   /**
-   * Éléments manquants pour publier : displayName, profession, city, contact (au moins un moyen de
+   * Dépublie le profil d'un praticien hors requête HTTP (réaction à un événement d'identité, par
+   * exemple un refus de dossier). Idempotent : sans profil, ou si le profil n'est déjà plus publié,
+   * rien n'est fait et aucun événement n'est émis ; ProfileUnpublished n'est publié que si l'état a
+   * réellement changé.
+   */
+  @Transactional
+  public void unpublishByPractitioner(UUID tenantId, UUID practitionerId) {
+    Optional<String> slug = repo.findSlug(practitionerId);
+    if (slug.isPresent() && repo.setPublished(practitionerId, false)) {
+      events.publish(new ProfileUnpublished(tenantId, practitionerId, slug.get()));
+    }
+  }
+
+  /**
+   * Éléments manquants pour publier, dans cet ordre : verification (dossier non approuvé par
+   * l'administration, voir A10.1), displayName, profession, city, contact (au moins un moyen de
    * contact affiché et renseigné).
    */
-  static List<String> missingForPublication(CurrentPractitioner p, ProfileDto profile) {
+  static List<String> missingForPublication(
+      CurrentPractitioner p, ProfileDto profile, boolean verified) {
     List<String> missing = new ArrayList<>();
+    if (!verified) {
+      missing.add("verification");
+    }
     if (blank(profile.displayName())) {
       missing.add("displayName");
     }
@@ -166,8 +202,6 @@ class ProfileService {
     if (!contact) {
       missing.add("contact");
     }
-    // M5-06 : ajouter ici la condition verification_status = approved (via identity.api),
-    // avec un motif dédié dans "missing".
     return missing;
   }
 

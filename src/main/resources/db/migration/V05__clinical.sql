@@ -130,3 +130,39 @@ CREATE TABLE entry_chunk (
 
 -- Table append-only (E4, A4.8) : aucune modification ni suppression d'une version pour le role applicatif.
 REVOKE UPDATE, DELETE ON entry_version FROM psymate_app;
+
+-- Règle de grâce (A4.8) et G Q9 : la modification en place d'une version 1 est la seule écriture
+-- permise sur entry_version pour le rôle applicatif (G Q31). Les colonnes autorisées sont
+-- title, body, payload ; un trigger borne le reste. La fenêtre réelle (versioning.grace-period,
+-- 1 h 15 min, G Q31) est appliquée par GraceRule ; l'heure ci-dessous n'est qu'un garde-fou dur. DELETE reste
+-- interdit.
+GRANT UPDATE (title, body, payload) ON entry_version TO psymate_app;
+
+CREATE FUNCTION trg_entry_version_grace() RETURNS trigger AS $$
+BEGIN
+  IF NEW.id IS DISTINCT FROM OLD.id
+     OR NEW.entry_id IS DISTINCT FROM OLD.entry_id
+     OR NEW.version IS DISTINCT FROM OLD.version
+     OR NEW.reason IS DISTINCT FROM OLD.reason
+     OR NEW.author_id IS DISTINCT FROM OLD.author_id
+     OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+    RAISE EXCEPTION 'entry_version est append-only : seuls title, body et payload peuvent changer (A4.8)';
+  END IF;
+  IF OLD.version <> 1 THEN
+    RAISE EXCEPTION 'entry_version : seule la version 1 est modifiable en place (A4.8)';
+  END IF;
+  IF EXISTS (SELECT 1 FROM entry_version v WHERE v.entry_id = OLD.entry_id AND v.version >= 2) THEN
+    RAISE EXCEPTION 'entry_version : une version suivante existe, la version 1 est figée (A4.8)';
+  END IF;
+  IF EXISTS (SELECT 1 FROM entry e WHERE e.id = OLD.entry_id AND e.link_count > 0) THEN
+    RAISE EXCEPTION 'entry_version : l''entrée est liée, la version 1 est figée (A4.8)';
+  END IF;
+  IF OLD.created_at < now() - interval '2 hours' THEN
+    RAISE EXCEPTION 'entry_version : hors fenêtre de grâce (A4.8)';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_entry_version_grace BEFORE UPDATE ON entry_version
+  FOR EACH ROW EXECUTE FUNCTION trg_entry_version_grace();

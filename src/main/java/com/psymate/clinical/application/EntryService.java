@@ -63,7 +63,7 @@ public class EntryService {
       DomainEventPublisher events,
       JsonMapper json,
       Clock clock,
-      @Value("${versioning.grace-period:5m}") Duration gracePeriod) {
+      @Value("${versioning.grace-period:75m}") Duration gracePeriod) {
     this.repo = repo;
     this.validators = validators;
     this.guard = guard;
@@ -156,7 +156,7 @@ public class EntryService {
     repo.insertVersion(
         versionId, id, 1, content.title(), content.body(), payload(content), null, authorId, now);
     insertDetail(id, type, content);
-    repo.bumpClinicalRev(patientId);
+    patients.touchClinicalRev(patientId);
     events.publish(new EntryCreated(tenantId, id, patientId, type.code(), 1));
     return id;
   }
@@ -193,7 +193,7 @@ public class EntryService {
       repo.updateVersionInPlace(
           currentVersion.id(), merged.title(), merged.body(), payload(merged));
       updateDetail(entryId, entry.type(), merged);
-      repo.bumpClinicalRev(entry.patientId());
+      patients.touchClinicalRev(entry.patientId());
       return new CorrectionResult(entryId, entry.currentVersion(), true, false);
     }
 
@@ -212,7 +212,7 @@ public class EntryService {
     repo.updateEntryContent(
         entryId, merged.status(), merged.visibility(), merged.time(), versionId, next, now);
     updateDetail(entryId, entry.type(), merged);
-    repo.bumpClinicalRev(entry.patientId());
+    patients.touchClinicalRev(entry.patientId());
     events.publish(
         new EntryCorrected(
             entry.tenantId(),
@@ -235,7 +235,7 @@ public class EntryService {
       return;
     }
     repo.archive(entryId, clock.instant());
-    repo.bumpClinicalRev(entry.patientId());
+    patients.touchClinicalRev(entry.patientId());
     events.publish(
         new EntryArchived(
             entry.tenantId(),

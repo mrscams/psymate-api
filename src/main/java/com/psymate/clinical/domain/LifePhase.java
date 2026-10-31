@@ -7,8 +7,7 @@ import java.util.Optional;
 
 /** Phases de vie (A4.2), bornées en années depuis la date de naissance du patient. */
 public enum LifePhase {
-  CHILDHOOD("enfance", 0, 12),
-  ADOLESCENCE("adolescence", 12, 18);
+  CHILDHOOD("enfance", 0, 12);
 
   private final String labelFr;
   private final int fromYears;

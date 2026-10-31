@@ -206,7 +206,7 @@ public class EntryRepository {
   public boolean isSessionOfPatient(UUID sessionId, UUID patientId) {
     return jdbc.sql(
                 "select count(*) from entry where id = :s and patient_id = :p"
-                    + " and type = 'session'")
+                    + " and type = 'session' and archived_at is null")
             .param("s", sessionId)
             .param("p", patientId)
             .query(Integer.class)
@@ -451,16 +451,6 @@ public class EntryRepository {
         .param("modality", s.modality())
         .param("duration", s.durationMin())
         .param("closed", odt(s.closedAt()))
-        .update();
-  }
-
-  /**
-   * Incrémente patient.clinical_rev (E3.4 ; E7 O10 tranché par G Q30 : « application (services
-   * clinical/linking) »). Seule écriture du module sur la table patient.
-   */
-  public void bumpClinicalRev(UUID patientId) {
-    jdbc.sql("update patient set clinical_rev = clinical_rev + 1 where id = :id")
-        .param("id", patientId)
         .update();
   }
 }

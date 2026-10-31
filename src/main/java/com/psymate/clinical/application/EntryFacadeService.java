@@ -11,7 +11,10 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Implémentation de la façade de lecture exposée aux autres modules. */
+/**
+ * Implémentation de la façade de lecture exposée aux autres modules. Aucune réponse ne révèle
+ * l'existence d'une entrée dont le patient n'appartient pas au praticien courant (ADR-09).
+ */
 @Service
 @Transactional(readOnly = true)
 class EntryFacadeService implements EntryFacade {
@@ -24,34 +27,40 @@ class EntryFacadeService implements EntryFacade {
     this.patients = patients;
   }
 
+  /** Patient de l'entrée, seulement s'il appartient au praticien courant. */
+  private Optional<UUID> ownedPatientOf(UUID entryId) {
+    Optional<CurrentPractitioner> me = CurrentPractitioner.get();
+    if (me.isEmpty()) {
+      return Optional.empty();
+    }
+    return repo.patientOf(entryId).filter(p -> patients.ownedBy(p, me.get().id()));
+  }
+
   @Override
   public boolean exists(UUID entryId) {
-    return repo.patientOf(entryId).isPresent();
+    return ownedPatientOf(entryId).isPresent();
   }
 
   @Override
   public boolean belongsToPatient(UUID entryId, UUID patientId) {
-    return repo.patientOf(entryId).filter(patientId::equals).isPresent();
+    return ownedPatientOf(entryId).filter(patientId::equals).isPresent();
   }
 
   @Override
   public Optional<String> typeOf(UUID entryId) {
-    return repo.typeOf(entryId).map(EntryType::code);
+    return ownedPatientOf(entryId).flatMap(p -> repo.typeOf(entryId)).map(EntryType::code);
   }
 
   @Override
   public boolean sameOwnedPatient(UUID entryA, UUID entryB) {
-    Optional<UUID> a = repo.patientOf(entryA);
-    Optional<UUID> b = repo.patientOf(entryB);
-    if (a.isEmpty() || b.isEmpty() || !a.get().equals(b.get())) {
-      return false;
-    }
-    return CurrentPractitioner.get().map(p -> patients.ownedBy(a.get(), p.id())).orElse(false);
+    Optional<UUID> a = ownedPatientOf(entryA);
+    return a.isPresent() && a.equals(ownedPatientOf(entryB));
   }
 
   @Override
   public Optional<EntryVersionView> currentVersionOf(UUID entryId) {
-    return repo.currentVersion(entryId)
+    return ownedPatientOf(entryId)
+        .flatMap(p -> repo.currentVersion(entryId))
         .map(
             v ->
                 new EntryVersionView(

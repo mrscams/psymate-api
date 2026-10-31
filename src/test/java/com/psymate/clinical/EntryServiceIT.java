@@ -46,6 +46,11 @@ import org.springframework.web.server.ResponseStatusException;
 @RecordApplicationEvents
 class EntryServiceIT {
 
+  /** Fenêtre de grâce : 1 h 15 (versioning.grace-period = 75m). */
+  private static final Duration WITHIN_GRACE = Duration.ofMinutes(74);
+
+  private static final Duration AFTER_GRACE = Duration.ofMinutes(76);
+
   @Autowired private EntryService service;
   @Autowired private EntryFacade facade;
   @Autowired private JdbcTemplate jdbc;
@@ -60,7 +65,7 @@ class EntryServiceIT {
   void setUp() {
     fx = new ClinicalFixtures(jdbc);
     patient = fx.newPatient(LocalDate.of(1990, 4, 2));
-    clock.set(Instant.parse("2026-10-30T10:00:00Z"));
+    clock.set(Instant.now());
     session = service.create(patient, sessionCommand());
   }
 
@@ -472,7 +477,7 @@ class EntryServiceIT {
   void correctionWithinGraceByTheSameAuthorCreatesNoVersionNorEvent() {
     UUID id = service.create(patient, note("coquile"));
     events.clear();
-    clock.advance(Duration.ofMinutes(4));
+    clock.advance(WITHIN_GRACE);
 
     CorrectionResult r = service.correct(id, correctBody("coquille"));
 
@@ -493,7 +498,7 @@ class EntryServiceIT {
   void correctionAfterFiveMinutesCreatesVersionTwoAndEvent() {
     UUID id = service.create(patient, note("v1"));
     events.clear();
-    clock.advance(Duration.ofMinutes(5));
+    clock.advance(AFTER_GRACE);
 
     CorrectionResult r = service.correct(id, correctBody("v2"));
 
@@ -524,9 +529,9 @@ class EntryServiceIT {
   @Test
   void secondCorrectionWithinGraceWindowCreatesAVersionOnceOneExists() {
     UUID id = service.create(patient, note("v1"));
-    clock.advance(Duration.ofMinutes(10));
+    clock.advance(AFTER_GRACE);
     service.correct(id, correctBody("v2"));
-    clock.set(Instant.parse("2026-10-30T10:10:30Z"));
+    clock.advance(Duration.ofSeconds(30));
     CorrectionResult r = service.correct(id, correctBody("v3"));
     assertThat(r.versioned()).isTrue();
     assertThat(r.version()).isEqualTo(3);
@@ -545,7 +550,7 @@ class EntryServiceIT {
   @Test
   void correctionWithoutChangeWritesNothing() {
     UUID id = service.create(patient, note("v1"));
-    clock.advance(Duration.ofHours(1));
+    clock.advance(AFTER_GRACE);
     events.clear();
     CorrectionResult r = service.correct(id, correctBody("v1"));
     assertThat(r.changed()).isFalse();
@@ -555,12 +560,12 @@ class EntryServiceIT {
 
   @Test
   void correctingEachTypeUpdatesItsDetailTable() {
-    clock.advance(Duration.ofHours(1));
+    clock.advance(AFTER_GRACE);
     UUID feeling = service.create(patient, of(EntryType.FEELING, session));
     UUID medication = service.create(patient, of(EntryType.MEDICATION, session));
     UUID sessionEntry = service.create(patient, sessionCommand());
     UUID situation = service.create(patient, of(EntryType.SITUATION, session));
-    clock.advance(Duration.ofHours(1));
+    clock.advance(AFTER_GRACE);
 
     service.correct(
         feeling,
@@ -640,7 +645,7 @@ class EntryServiceIT {
   @Test
   void correctingAnotherPractitionersEntryIsForbidden() {
     UUID id = service.create(patient, note("v1"));
-    clock.advance(Duration.ofHours(1));
+    clock.advance(AFTER_GRACE);
     fx.authenticate(fx.newPractitioner());
     assertThatThrownBy(() -> service.correct(id, correctBody("piratage")))
         .isInstanceOf(ResponseStatusException.class);
@@ -658,7 +663,7 @@ class EntryServiceIT {
     assertThat(events.stream(EntryArchived.class).count()).isEqualTo(1);
     service.archive(id);
     assertThat(events.stream(EntryArchived.class).count()).as("idempotent").isEqualTo(1);
-    clock.advance(Duration.ofHours(1));
+    clock.advance(AFTER_GRACE);
     assertThatThrownBy(() -> service.correct(id, correctBody("x")))
         .isInstanceOfSatisfying(
             ClinicalException.class,
@@ -673,7 +678,7 @@ class EntryServiceIT {
     UUID id = service.create(patient, note("rev"));
     clock.advance(Duration.ofSeconds(10));
     service.correct(id, correctBody("rev2"));
-    clock.advance(Duration.ofHours(1));
+    clock.advance(AFTER_GRACE);
     service.correct(id, correctBody("rev3"));
     service.archive(id);
     long after =
@@ -713,5 +718,37 @@ class EntryServiceIT {
             });
     fx.authenticate(fx.newPractitioner());
     assertThat(facade.sameOwnedPatient(id, session)).as("autre praticien").isFalse();
+  }
+
+  @Test
+  void facadeDoesNotLeakEntriesOfAnotherPractitioner() {
+    UUID id = service.create(patient, note("secret"));
+    fx.authenticate(fx.newPractitioner());
+    assertThat(facade.exists(id)).isFalse();
+    assertThat(facade.belongsToPatient(id, patient)).isFalse();
+    assertThat(facade.typeOf(id)).isEmpty();
+    assertThat(facade.currentVersionOf(id)).isEmpty();
+    assertThat(facade.sameOwnedPatient(id, session)).isFalse();
+    SecurityContextHolder.clearContext();
+    assertThat(facade.exists(id)).as("sans principal").isFalse();
+  }
+
+  @Test
+  void archivedSessionCannotReceiveEntries() {
+    UUID other = service.create(patient, sessionCommand());
+    service.archive(other);
+    assertThatThrownBy(() -> service.create(patient, of(EntryType.EVENT, other)))
+        .isInstanceOfSatisfying(
+            ClinicalException.class,
+            e -> assertThat(e.error()).isEqualTo(ClinicalError.SESSION_INVALID));
+  }
+
+  @Test
+  void archivingAnotherPractitionersEntryIsForbidden() {
+    UUID id = service.create(patient, note("v1"));
+    fx.authenticate(fx.newPractitioner());
+    assertThatThrownBy(() -> service.archive(id)).isInstanceOf(ResponseStatusException.class);
+    assertThat(count("select count(*) from entry where id = ? and archived_at is null", id))
+        .isEqualTo(1);
   }
 }

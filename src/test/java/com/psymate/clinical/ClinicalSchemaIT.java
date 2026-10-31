@@ -130,7 +130,7 @@ class ClinicalSchemaIT {
       try {
         for (String sql :
             List.of(
-                "update entry_version set title = title where false",
+                "update entry_version set id = id where false",
                 "delete from entry_version where false")) {
           assertThatThrownBy(() -> statement.execute(sql))
               .as(sql)

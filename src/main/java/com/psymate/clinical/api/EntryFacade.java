@@ -6,7 +6,7 @@ import java.util.UUID;
 /** Lecture minimale des entrées pour les autres modules (linking, overview, search…). */
 public interface EntryFacade {
 
-  /** L'entrée existe (archivée ou non). */
+  /** L'entrée existe (archivée ou non) et son patient appartient au praticien courant. */
   boolean exists(UUID entryId);
 
   /** L'entrée existe et appartient à ce patient. */

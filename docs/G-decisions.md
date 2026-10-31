@@ -35,6 +35,7 @@
 | Q15 | Spécialités et publics de l'annuaire : **liste fermée**, servie par `GET /api/vocabulary/directory`, **modifiable par l'admin** (seed initial en V04 + petit endpoint `/api/admin/vocabulary/directory` dans M1-14b). Pas de saisie libre. |
 | Q29 | Journal admin : une seule table `security_event` + vue `admin_journal_v` (E7 O8). |
 | Q30 | `patient.clinical_rev` incrémenté par l'application (E7 O10). |
+| Q31 | `entry_version` : UPDATE interdit à `psymate_app` sauf `title`/`body`/`payload` de la version 1 dans la fenêtre de grâce, encadré par trigger (M1-03). Fenêtre de grâce : 1 h 15 min (décision du 2026-10-31, remplace les 5 min de A4.8) ; `versioning.grace-period = 75m`. |
 | — | Durée de séance par défaut : `sessions.defaultDurationMin = 60` (préférence, fiche 14). |
 
 ## G4. Périmètre, bêta, plus tard

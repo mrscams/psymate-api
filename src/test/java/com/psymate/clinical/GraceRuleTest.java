@@ -17,7 +17,7 @@ class GraceRuleTest {
 
   private static final Instant CREATED = Instant.parse("2026-10-30T10:00:00Z");
   private static final UUID AUTHOR = UUID.randomUUID();
-  private static final GraceRule RULE = new GraceRule(Duration.ofMinutes(5));
+  private static final GraceRule RULE = new GraceRule(Duration.ofMinutes(75));
 
   private static Entry entry(int linkCount) {
     return new Entry(
@@ -41,13 +41,13 @@ class GraceRuleTest {
 
   @Test
   void appliesForSameAuthorWithinWindowWithoutLinkOrVersion() {
-    assertThat(RULE.allows(entry(0), AUTHOR, 1, CREATED.plusSeconds(299))).isTrue();
+    assertThat(RULE.allows(entry(0), AUTHOR, 1, CREATED.plus(Duration.ofMinutes(74)))).isTrue();
   }
 
   @Test
   void doesNotApplyAtOrAfterFiveMinutes() {
-    assertThat(RULE.allows(entry(0), AUTHOR, 1, CREATED.plus(Duration.ofMinutes(5)))).isFalse();
-    assertThat(RULE.allows(entry(0), AUTHOR, 1, CREATED.plus(Duration.ofHours(1)))).isFalse();
+    assertThat(RULE.allows(entry(0), AUTHOR, 1, CREATED.plus(Duration.ofMinutes(75)))).isFalse();
+    assertThat(RULE.allows(entry(0), AUTHOR, 1, CREATED.plus(Duration.ofMinutes(76)))).isFalse();
   }
 
   @Test

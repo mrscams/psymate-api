@@ -276,8 +276,6 @@ class ReservesConformanceIT {
 
   // ---- 5. contrat (R13 : authorType en lecture seulement)
 
-  // À réactiver au lot M1-05 (EntryDto entre dans contract/openapi.yaml).
-  @Disabled("M1-05 : EntryDto pas encore dans contract/openapi.yaml")
   @Test
   @SuppressWarnings("unchecked")
   void contractExposesAuthorTypeOnlyInResponses() throws IOException {

@@ -17,6 +17,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.MismatchedInputException;
@@ -25,7 +26,8 @@ import tools.jackson.databind.exc.MismatchedInputException;
  * Erreurs RFC 9457 (application/problem+json) des contrôleurs clinical : errors[] = [{field, code,
  * message}] pour les 422, statut HTTP du domaine pour les erreurs métier, 403 pour la propriété.
  */
-@RestControllerAdvice(assignableTypes = {EntryController.class, SessionController.class})
+@RestControllerAdvice(
+    assignableTypes = {EntryController.class, SessionController.class, TimelineController.class})
 class ClinicalExceptionHandler {
 
   /** Entrée de errors[] telle que le client la reçoit. */
@@ -80,6 +82,13 @@ class ClinicalExceptionHandler {
           new FieldProblem(fe.getField(), FieldProblem.codeOf(String.valueOf(fe.getCode()))));
     }
     return validation(problems, locale);
+  }
+
+  /** Paramètre de requête illisible (date non ISO, entier, booléen) : 422 sur ce paramètre. */
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  ProblemDetail parameter(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+    Locale locale = messages.localeOf(request);
+    return validation(List.of(new FieldProblem(ex.getName(), "INVALID_FORMAT")), locale);
   }
 
   /** Corps illisible : 422 par champ si Jackson sait lequel (date, UUID, nombre), sinon 400. */

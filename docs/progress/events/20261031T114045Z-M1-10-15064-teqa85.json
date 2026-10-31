@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T11:40:45.948Z",
+  "task": "M1-10",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Corrections de revue : DomainEventPublisher, course changeEmail, IP normalisee, consent_given, timing robuste",
+  "notes": "Merge origin/main (conflits contrat et expected-schema resolus). verify vert.",
+  "next": "M1-11",
+  "pr": "https://github.com/mrscams/psymate-api/pull/11",
+  "branch": "worktree-M1-10",
+  "checkout": "M1-10"
+}

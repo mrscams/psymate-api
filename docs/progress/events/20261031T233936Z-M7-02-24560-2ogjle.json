@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T23:39:36.781Z",
+  "task": "M7-02",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 29 fusionnee dans main (RateLimiter partage, AuditFilter, erreurs RFC 9457 centralisees) ; vague V7 terminee",
+  "next": "V8 : M2-02 seul puis M2-03, M4-03, M6-05",
+  "pr": "https://github.com/mrscams/psymate-api/pull/29",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

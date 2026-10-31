@@ -967,6 +967,44 @@ paths:
           description: OK
       tags:
       - my-emotion-controller
+  /api/me/preferences:
+    get:
+      operationId: getPreferences
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                additionalProperties: {}
+                type: object
+          description: OK
+      summary: Préférences du compte (valeurs stockées complétées par les défauts)
+      tags:
+      - preferences-controller
+    patch:
+      operationId: updatePreferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: {}
+              type: object
+          application/merge-patch+json:
+            schema:
+              additionalProperties: {}
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                additionalProperties: {}
+                type: object
+          description: OK
+      summary: 'Modifie les préférences (RFC 7396 : null = retour au défaut, clés inconnues ignorées)'
+      tags:
+      - preferences-controller
   /api/me/professional-info:
     patch:
       operationId: updateProfessionalInfo

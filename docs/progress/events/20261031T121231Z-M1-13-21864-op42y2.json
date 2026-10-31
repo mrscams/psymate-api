@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T12:12:31.524Z",
+  "task": "M1-13",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Dossier professionnel : upload chiffré AES-GCM (signature, 10 Mo, EXIF), URL signée 5 min, soumission under_review + e-mail admins, purge planifiée, PATCH professional-info",
+  "notes": "verify vert 163 tests. Pas de @EnableScheduling (casse l'injection TaskExecutor d'AuthService) : CronTrigger sur planificateur privé. Multipart relevé à 25 Mo ; handler global directory dit encore 'photo 5 Mo' au-delà. Contrat additif, version 0.1.0.",
+  "next": "M1-14 administration (pose purge_after, lit document_access_log) ; regénérer le contrat après M1-03",
+  "pr": "https://github.com/mrscams/psymate-api/pull/12",
+  "branch": "worktree-M1-13",
+  "checkout": "M1-13"
+}

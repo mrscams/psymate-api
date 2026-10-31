@@ -12,8 +12,8 @@ spring:
     locations: classpath:db/migration
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 6MB
+      max-file-size: 25MB
+      max-request-size: 26MB
   session:
     jdbc:
       initialize-schema: never
@@ -72,6 +72,11 @@ app:
     from: test@gmail.com
   directory:
     storage-dir: ${java.io.tmpdir}/psymate-assets
+  storage:
+    dir: ${java.io.tmpdir}/psymate-storage
+  crypto:
+    # DEV ONLY : cle AES-256 de developpement (32 octets en base64), sans valeur hors du poste local.
+    key: ${APP_CRYPTO_KEY:ZGV2LW9ubHkta2V5LW5vdC1hLXNlY3JldC0wMDAwMDA=}
 
 ---
 # Profil test : la base vient de Testcontainers (@ServiceConnection).
@@ -85,6 +90,11 @@ app:
     from: test@gmail.com
   directory:
     storage-dir: ${java.io.tmpdir}/psymate-assets
+  storage:
+    dir: ${java.io.tmpdir}/psymate-storage
+  crypto:
+    # Valeur de test evidente, jamais utilisee hors des tests.
+    key: dGVzdC1vbmx5LWtleS0zMi1ieXRlcy0wMTIzNDU2Nzg=
 
 management:
   health:

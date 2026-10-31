@@ -131,7 +131,7 @@ class ArchitectureTests {
   @Test
   void identitySubPackagesAreEmpty() {
     // "auth" est implémenté depuis M0-04 : il n'est plus un package réservé vide.
-    for (String sub : List.of("preferences", "verification", "admin")) {
+    for (String sub : List.of("preferences", "admin")) {
       JavaClasses classes = new ClassFileImporter().importPackages(ROOT + ".identity." + sub);
       assertThat(classes).as(sub).isNotEmpty();
       assertThat(classes).allMatch(c -> c.getSimpleName().equals("package-info"));

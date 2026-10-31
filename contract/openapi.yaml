@@ -251,6 +251,14 @@ components:
         verified:
           type: boolean
       type: object
+    ChangeLinkTypeRequest:
+      properties:
+        linkType:
+          minLength: 1
+          type: string
+      required:
+      - linkType
+      type: object
     CloseSessionRequest:
       properties:
         durationMin:
@@ -316,6 +324,25 @@ components:
           type: string
         visibility:
           type: string
+      type: object
+    CreateLinkRequest:
+      properties:
+        direction:
+          pattern: incoming|outgoing
+          type: string
+        linkType:
+          minLength: 1
+          type: string
+        rationale:
+          maxLength: 500
+          minLength: 0
+          type: string
+        targetId:
+          format: uuid
+          type: string
+      required:
+      - linkType
+      - targetId
       type: object
     CreatePatientRequest:
       properties:
@@ -1012,6 +1039,36 @@ components:
         source:
           type: string
         summary:
+          type: string
+      type: object
+    LinkDto:
+      properties:
+        authorId:
+          format: uuid
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          format: uuid
+          type: string
+        label:
+          type: string
+        linkType:
+          type: string
+        provenance:
+          type: string
+        rationale:
+          type: string
+        sentence:
+          type: string
+        sourceId:
+          format: uuid
+          type: string
+        status:
+          type: string
+        targetId:
+          format: uuid
           type: string
       type: object
     LinkTypeView:
@@ -1779,6 +1836,112 @@ components:
             type: string
           type: array
       type: object
+    TimelineEmotionDto:
+      properties:
+        code:
+          type: string
+        family:
+          type: string
+      type: object
+    TimelineFacetsDto:
+      properties:
+        emotions:
+          additionalProperties:
+            format: int32
+            type: integer
+          type: object
+        tags:
+          additionalProperties:
+            format: int32
+            type: integer
+          type: object
+        types:
+          additionalProperties:
+            format: int32
+            type: integer
+          type: object
+      type: object
+    TimelineItemDto:
+      properties:
+        authorType:
+          type: string
+        emotion:
+          $ref: '#/components/schemas/TimelineEmotionDto'
+        id:
+          format: uuid
+          type: string
+        intensity:
+          format: int32
+          type: integer
+        linkCount:
+          format: int32
+          type: integer
+        occurred:
+          $ref: '#/components/schemas/EntryOccurredDto'
+        ongoing:
+          type: boolean
+        recordedAt:
+          format: date-time
+          type: string
+        sessionId:
+          format: uuid
+          type: string
+        status:
+          type: string
+        tags:
+          items:
+            type: string
+          type: array
+        title:
+          type: string
+        type:
+          type: string
+        visibility:
+          type: string
+      type: object
+    TimelinePageDto:
+      properties:
+        facets:
+          $ref: '#/components/schemas/TimelineFacetsDto'
+        items:
+          items:
+            $ref: '#/components/schemas/TimelineItemDto'
+          type: array
+        nextCursor:
+          type: string
+        ongoingSituations:
+          items:
+            $ref: '#/components/schemas/TimelineItemDto'
+          type: array
+      type: object
+    TimelinePeriodDto:
+      properties:
+        averageIntensity:
+          format: double
+          type: number
+        counts:
+          additionalProperties:
+            format: int32
+            type: integer
+          type: object
+        feelingCount:
+          format: int32
+          type: integer
+        from:
+          format: date-time
+          type: string
+        period:
+          type: string
+      type: object
+    TimelineSummaryDto:
+      properties:
+        granularity:
+          type: string
+        periods:
+          items:
+            $ref: '#/components/schemas/TimelinePeriodDto'
+          type: array
+      type: object
     TwoFactorDisableRequest:
       properties:
         code:
@@ -1906,7 +2069,7 @@ components:
 info:
   description: API de PsyMate, suivi clinique pour psychologues, psychiatres et coachs.
   title: PsyMate API
-  version: 0.8.1
+  version: 0.5.0
 openapi: 3.1.0
 paths:
   /api/admin/appeals:
@@ -2707,6 +2870,51 @@ paths:
           description: OK
       tags:
       - entry-controller
+  /api/entries/{id}/links:
+    get:
+      operationId: listEntryLinks
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                items:
+                  $ref: '#/components/schemas/LinkDto'
+                type: array
+          description: OK
+      tags:
+      - link-controller
+    post:
+      operationId: createLink
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLinkRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/LinkDto'
+          description: Created
+      tags:
+      - link-controller
   /api/entries/{id}/restore:
     post:
       operationId: restoreEntry
@@ -2747,6 +2955,45 @@ paths:
           description: OK
       tags:
       - entry-controller
+  /api/links/{id}:
+    delete:
+      operationId: removeLink
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: No Content
+      tags:
+      - link-controller
+    patch:
+      operationId: changeLinkType
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeLinkTypeRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/LinkDto'
+          description: OK
+      tags:
+      - link-controller
   /api/me/2fa/disable:
     post:
       operationId: disableTwoFactor
@@ -3703,6 +3950,124 @@ paths:
           description: OK
       tags:
       - patient-controller
+  /api/patients/{id}/timeline:
+    get:
+      operationId: getTimeline
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: query
+        name: from
+        required: false
+        schema:
+          format: date-time
+          type: string
+      - in: query
+        name: to
+        required: false
+        schema:
+          format: date-time
+          type: string
+      - in: query
+        name: types
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+      - in: query
+        name: emotions
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+      - in: query
+        name: tags
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+      - in: query
+        name: draftsOnly
+        required: false
+        schema:
+          default: false
+          type: boolean
+      - in: query
+        name: includePrivate
+        required: false
+        schema:
+          default: false
+          type: boolean
+      - in: query
+        name: cursor
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TimelinePageDto'
+          description: OK
+      tags:
+      - timeline-controller
+  /api/patients/{id}/timeline/summary:
+    get:
+      operationId: getTimelineSummary
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: query
+        name: granularity
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: from
+        required: false
+        schema:
+          format: date-time
+          type: string
+      - in: query
+        name: to
+        required: false
+        schema:
+          format: date-time
+          type: string
+      - in: query
+        name: includePrivate
+        required: false
+        schema:
+          default: false
+          type: boolean
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TimelineSummaryDto'
+          description: OK
+      tags:
+      - timeline-controller
   /api/patients/{id}/versions:
     get:
       operationId: listPatientVersions

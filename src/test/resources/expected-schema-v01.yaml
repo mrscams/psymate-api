@@ -400,3 +400,32 @@ admin_journal_v:
   - summary
   - details
   - source
+# V07 liens (M2-01) : link et ai_feedback (réservé V2, vide en V1)
+link:
+  - id
+  - tenant_id
+  - patient_id
+  - source_id
+  - target_id
+  - link_type
+  - directed
+  - provenance
+  - status
+  - confidence
+  - rationale
+  - evidence
+  - author_id
+  - decided_by
+  - decided_at
+  - superseded_by
+  - version
+  - created_at
+  - updated_at
+ai_feedback:
+  - id
+  - link_id
+  - decision
+  - reason
+  - pipeline_version
+  - latency_to_decision
+  - decided_at

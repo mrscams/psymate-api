@@ -188,4 +188,13 @@ class PractitionerRepository {
         .param("p", id.toString())
         .update();
   }
+
+  /** Fin de verrou enregistrée en base (second garde, survit à un redémarrage). */
+  Optional<Instant> lockedUntil(UUID id) {
+    return jdbc.sql("select locked_until from practitioner where id = :id")
+        .param("id", id)
+        .query((rs, n) -> rs.getTimestamp("locked_until"))
+        .optional()
+        .map(Timestamp::toInstant);
+  }
 }

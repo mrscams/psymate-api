@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MvcResult;
 
 /** Fiche 11 : verrouillage, uniformité des erreurs, statuts de compte, sessions (M1-11). */
@@ -48,9 +49,9 @@ class LoginHardeningIT extends AbstractLoginIT {
                 email))
         .isTrue();
 
-    // Le verrou porte sur la clé e-mail + IP : une autre adresse IP n'est pas concernée.
+    // Second garde : locked_until en base verrouille aussi le compte depuis une autre IP.
     assertThat(login(email, PASSWORD, null, "198.51.100.7").getResponse().getStatus())
-        .isEqualTo(200);
+        .isEqualTo(423);
 
     // Après 15 minutes le verrou tombe.
     clock.advance(Duration.ofMinutes(15).plusSeconds(1));
@@ -61,7 +62,7 @@ class LoginHardeningIT extends AbstractLoginIT {
                 Integer.class,
                 email))
         .isZero();
-    assertThat(events(email, "login_ok")).isEqualTo(2);
+    assertThat(events(email, "login_ok")).isEqualTo(1);
   }
 
   @Test
@@ -232,5 +233,23 @@ class LoginHardeningIT extends AbstractLoginIT {
     MvcResult allowed =
         mvc.perform(get("/api/admin/verifications").cookie(adminSession)).andReturn();
     assertThat(allowed.getResponse().getContentAsString()).doesNotContain("TWO_FACTOR_REQUIRED");
+  }
+
+  @Autowired LoginAttemptLimiter limiter;
+
+  @Test
+  void lockSurvivesAResetOfTheInMemoryLimiter() throws Exception {
+    String email = account();
+    for (int i = 0; i < 5; i++) {
+      login(email, "Mauvais-Mot-De-Passe-" + i, null, IP);
+    }
+    // Simule un redémarrage : l'état mémoire est perdu, locked_until en base reste.
+    limiter.reset(email + "|" + IP);
+    MvcResult r = login(email, PASSWORD, null, IP);
+    assertThat(r.getResponse().getStatus()).isEqualTo(423);
+    assertThat(Long.parseLong(r.getResponse().getHeader("Retry-After"))).isBetween(1L, 900L);
+
+    clock.advance(Duration.ofMinutes(15).plusSeconds(1));
+    assertThat(login(email, PASSWORD, null, IP).getResponse().getStatus()).isEqualTo(200);
   }
 }

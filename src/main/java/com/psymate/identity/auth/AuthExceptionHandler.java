@@ -2,14 +2,12 @@ package com.psymate.identity.auth;
 
 import com.psymate.identity.auth.AuthExceptions.AccountLockedException;
 import com.psymate.identity.auth.AuthExceptions.AccountSuspendedException;
-import com.psymate.identity.auth.AuthExceptions.EmailAlreadyConfirmedException;
 import com.psymate.identity.auth.AuthExceptions.EmailNotConfirmedException;
 import com.psymate.identity.auth.AuthExceptions.FieldValidationException;
 import com.psymate.identity.auth.AuthExceptions.InvalidCredentialsException;
 import com.psymate.identity.auth.AuthExceptions.InvalidSecondFactorException;
 import com.psymate.identity.auth.AuthExceptions.InvalidTokenException;
 import com.psymate.identity.auth.AuthExceptions.PasswordPolicyException;
-import com.psymate.identity.auth.AuthExceptions.TooManyRequestsException;
 import com.psymate.identity.auth.AuthExceptions.TwoFactorStateException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -120,28 +118,6 @@ class AuthExceptionHandler {
             messages.get("error.validation.detail", locale));
     pd.setProperty("errors", errors);
     return ResponseEntity.unprocessableContent().body(pd);
-  }
-
-  @ExceptionHandler(EmailAlreadyConfirmedException.class)
-  ResponseEntity<ProblemDetail> alreadyConfirmed(Locale locale) {
-    ProblemDetail pd =
-        problem(
-            HttpStatus.CONFLICT,
-            "EMAIL_ALREADY_CONFIRMED",
-            messages.get("error.confirmed.title", locale),
-            messages.get("error.confirmed.detail", locale));
-    return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
-  }
-
-  @ExceptionHandler(TooManyRequestsException.class)
-  ResponseEntity<ProblemDetail> tooMany(Locale locale) {
-    ProblemDetail pd =
-        problem(
-            HttpStatus.TOO_MANY_REQUESTS,
-            "TOO_MANY_REQUESTS",
-            messages.get("error.rate.title", locale),
-            messages.get("error.rate.detail", locale));
-    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(pd);
   }
 
   @ExceptionHandler(AccountLockedException.class)

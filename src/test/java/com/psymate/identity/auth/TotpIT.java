@@ -33,6 +33,8 @@ class TotpIT extends AbstractLoginIT {
     for (JsonNode n : body(verify).path("recoveryCodes")) {
       codes.add(n.asString());
     }
+    // Le code de /verify est consommé : on passe au pas suivant pour obtenir un code neuf.
+    clock.advance(Duration.ofSeconds(30));
     return new Enrolled(email, session, secret, codes);
   }
 
@@ -276,5 +278,20 @@ class TotpIT extends AbstractLoginIT {
     assertThat(
             post("/api/me/2fa/recovery-codes/regenerate", null, null, IP).getResponse().getStatus())
         .isEqualTo(401);
+  }
+
+  @Test
+  void codeUsedToActivateCannotBeReplayedAtLoginInTheSameWindow() throws Exception {
+    String email = account();
+    Cookie session = session(email);
+    String secret = body(post("/api/me/2fa/enable", null, session, IP)).path("secret").asString();
+    String code = codeNow(secret);
+    assertThat(
+            post("/api/me/2fa/verify", Map.of("code", code), session, IP).getResponse().getStatus())
+        .isEqualTo(200);
+    assertThat(login(email, PASSWORD, code, IP).getResponse().getStatus()).isEqualTo(401);
+    clock.advance(Duration.ofSeconds(30));
+    assertThat(login(email, PASSWORD, codeNow(secret), IP).getResponse().getStatus())
+        .isEqualTo(200);
   }
 }

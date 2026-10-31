@@ -76,7 +76,7 @@ class TwoFactorService {
     }
     String key = "2fa:" + id;
     guardLock(key);
-    if (!otp.matchesTotp(id, state, code)) {
+    if (!otp.consumeTotp(id, state, code)) {
       failure(key);
       throw new InvalidSecondFactorException("code");
     }

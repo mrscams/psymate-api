@@ -42,7 +42,10 @@ final class AuthDtos {
 
   record EmailResendRequest(@NotBlank @Email @Size(max = 254) String email) {}
 
-  record EmailChangeRequest(@NotBlank @Email @Size(max = 254) String newEmail) {}
+  record EmailChangeRequest(
+      @NotBlank @Size(max = 254) String email,
+      @NotBlank @Size(max = 200) String password,
+      @NotBlank @Email @Size(max = 254) String newEmail) {}
 
   record SessionResponse(
       UUID id,

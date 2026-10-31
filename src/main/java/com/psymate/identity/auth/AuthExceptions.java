@@ -47,18 +47,6 @@ final class AuthExceptions {
     }
   }
 
-  static class EmailAlreadyConfirmedException extends RuntimeException {
-    EmailAlreadyConfirmedException() {
-      super("email already confirmed");
-    }
-  }
-
-  static class TooManyRequestsException extends RuntimeException {
-    TooManyRequestsException() {
-      super("too many requests");
-    }
-  }
-
   /** Clé e-mail + IP verrouillée (5 échecs, 15 min) : 423 avec Retry-After. */
   static class AccountLockedException extends RuntimeException {
     private final long retryAfterSeconds;

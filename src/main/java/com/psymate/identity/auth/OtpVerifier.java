@@ -41,41 +41,47 @@ class OtpVerifier {
     this.clock = clock;
   }
 
-  /** Contrôle sans rien consommer (activation : le code vient d'être scanné). */
-  boolean matchesTotp(UUID id, TotpState state, String code) {
-    if (state.secret() == null || code == null) {
-      return false;
-    }
-    byte[] secret = cipher.decrypt(state.secret(), id);
-    return Totp.match(secret, code.trim(), clock.instant().getEpochSecond()) >= 0;
-  }
-
-  /** Contrôle et consomme : un pas TOTP déjà accepté ou un code de secours déjà utilisé échoue. */
+  /**
+   * Contrôle et consomme : un pas TOTP déjà accepté ou un code de secours déjà utilisé échoue. Le
+   * dernier pas accepté est gardé en mémoire (anti-rejeu mono-instance : perdu au redémarrage, non
+   * partagé entre instances).
+   */
   Kind consume(UUID id, TotpState state, String input) {
     if (!state.enabled() || input == null || input.isBlank()) {
       return Kind.NONE;
     }
     String code = input.trim();
     if (code.matches("[0-9]{6}")) {
-      byte[] secret = cipher.decrypt(state.secret(), id);
-      long step = Totp.match(secret, code, clock.instant().getEpochSecond());
-      if (step < 0) {
-        return Kind.NONE;
-      }
-      boolean[] fresh = {false};
-      lastStep.compute(
-          id,
-          (k, old) -> {
-            if (old == null || step > old) {
-              fresh[0] = true;
-              return step;
-            }
-            return old;
-          });
-      return fresh[0] ? Kind.TOTP : Kind.NONE;
+      return consumeTotp(id, state, code) ? Kind.TOTP : Kind.NONE;
     }
     String hash = AuthService.sha256(normalizeRecovery(input));
     return totp.consumeRecoveryCode(id, hash, clock.instant()) ? Kind.RECOVERY : Kind.NONE;
+  }
+
+  /**
+   * Code TOTP valide et jamais accepté pour ce pas (ou un pas ultérieur) ; l'enregistre. Sert aussi
+   * à l'activation : le code de /verify ne peut pas être rejoué au login dans la même fenêtre.
+   */
+  boolean consumeTotp(UUID id, TotpState state, String code) {
+    if (state.secret() == null || code == null || !code.trim().matches("[0-9]{6}")) {
+      return false;
+    }
+    byte[] secret = cipher.decrypt(state.secret(), id);
+    long step = Totp.match(secret, code.trim(), clock.instant().getEpochSecond());
+    if (step < 0) {
+      return false;
+    }
+    boolean[] fresh = {false};
+    lastStep.compute(
+        id,
+        (k, old) -> {
+          if (old == null || step > old) {
+            fresh[0] = true;
+            return step;
+          }
+          return old;
+        });
+    return fresh[0];
   }
 
   /** 10 nouveaux codes de secours en clair (renvoyés une seule fois) ; seuls les hachés restent. */

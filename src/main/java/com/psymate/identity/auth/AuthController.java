@@ -15,6 +15,7 @@ import com.psymate.identity.auth.AuthDtos.RevokedSessionsResponse;
 import com.psymate.identity.auth.AuthDtos.SessionResponse;
 import com.psymate.identity.auth.AuthExceptions.InvalidCredentialsException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,6 +31,7 @@ import java.util.Locale;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -116,15 +118,21 @@ class AuthController {
   }
 
   @PostMapping("/email/change")
-  @Operation(summary = "Corrige l'adresse e-mail d'un compte non confirmé")
+  @Operation(
+      summary =
+          "Corrige l'adresse d'un compte non confirmé (public : e-mail + mot de passe, 202 dans"
+              + " tous les cas)")
+  @ApiResponse(
+      responseCode = "423",
+      description = "Verrouillage e-mail + IP après 5 mots de passe faux",
+      headers = @Header(name = "Retry-After", description = "Secondes avant nouvel essai"),
+      content =
+          @Content(
+              mediaType = "application/problem+json",
+              schema = @Schema(implementation = ProblemDetail.class)))
   ResponseEntity<Void> changeEmail(
-      @Valid @RequestBody EmailChangeRequest r,
-      @org.springframework.security.core.annotation.AuthenticationPrincipal
-          CurrentPractitioner current,
-      HttpServletRequest request,
-      HttpServletResponse response) {
-    PractitionerRow row = service.changeEmail(current.id(), r.newEmail());
-    EmailConfirmationFilter.refresh(row, securityContextRepository, request, response);
+      @Valid @RequestBody EmailChangeRequest r, HttpServletRequest request) {
+    service.changeEmail(r.email(), r.password(), r.newEmail(), request.getRemoteAddr());
     return ResponseEntity.accepted().build();
   }
 
@@ -159,7 +167,29 @@ class AuthController {
         content = @Content(schema = @Schema(implementation = MeResponse.class))),
     @ApiResponse(
         responseCode = "202",
-        content = @Content(schema = @Schema(implementation = OtpRequiredResponse.class)))
+        content = @Content(schema = @Schema(implementation = OtpRequiredResponse.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "Identifiants incorrects (message unique) ou code 2FA faux",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "EMAIL_NOT_CONFIRMED ou ACCOUNT_SUSPENDED",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "423",
+        description = "Verrouillage après 5 échecs (15 min)",
+        headers = @Header(name = "Retry-After", description = "Secondes avant nouvel essai"),
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class)))
   })
   ResponseEntity<Object> login(
       @Valid @RequestBody LoginRequest r,

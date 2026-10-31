@@ -4,11 +4,10 @@ import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.PractitionerRegistered;
 import com.psymate.identity.auth.AuthDtos.RegisterRequest;
-import com.psymate.identity.auth.AuthExceptions.EmailAlreadyConfirmedException;
+import com.psymate.identity.auth.AuthExceptions.AccountLockedException;
 import com.psymate.identity.auth.AuthExceptions.FieldValidationException;
 import com.psymate.identity.auth.AuthExceptions.InvalidTokenException;
 import com.psymate.identity.auth.AuthExceptions.PasswordPolicyException;
-import com.psymate.identity.auth.AuthExceptions.TooManyRequestsException;
 import com.psymate.identity.auth.PractitionerRepository.Contact;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -58,6 +57,8 @@ class AuthService {
   private final TaskExecutor mailExecutor;
   private final Clock clock;
   private final DomainEventPublisher events;
+  private final LoginAttemptLimiter limiter;
+  private final String dummyHash;
   private final TransactionTemplate tx;
   private final SecureRandom random = new SecureRandom();
 
@@ -69,6 +70,7 @@ class AuthService {
       TaskExecutor mailExecutor,
       Clock clock,
       DomainEventPublisher events,
+      LoginAttemptLimiter limiter,
       PlatformTransactionManager txManager) {
     this.practitioners = practitioners;
     this.tokens = tokens;
@@ -77,6 +79,8 @@ class AuthService {
     this.mailExecutor = mailExecutor;
     this.clock = clock;
     this.events = events;
+    this.limiter = limiter;
+    this.dummyHash = encoder.encode("psymate-timing-equalizer");
     this.tx = new TransactionTemplate(txManager);
   }
 
@@ -276,39 +280,60 @@ class AuthService {
   }
 
   /**
-   * Corrige l'adresse d'un compte email_pending : nouveau jeton, ancien invalidé. Si l'adresse
-   * appartient à un autre compte, rien ne change et elle reçoit l'e-mail « compte existant ».
-   * Retourne le praticien à jour.
+   * Corrige l'adresse d'un compte email_pending (public, fiche 25) : sans session, donc le mot de
+   * passe est exigé. Toujours silencieux (202) : le mot de passe est vérifié même si le compte est
+   * inconnu (Argon2 exécuté), les mots de passe faux comptent dans le verrou e-mail + IP du login
+   * (423 une fois le seuil atteint), et les limites de renvoi (1 par minute, 5 par jour)
+   * s'appliquent sans le révéler. Si la nouvelle adresse appartient à un autre compte, rien ne
+   * change et elle reçoit l'e-mail « compte existant ».
    */
-  public PractitionerRow changeEmail(UUID id, String newEmail) {
+  public void changeEmail(String email, String password, String newEmail, String ip) {
+    String normalized = normalizeEmail(email);
+    String key = normalized + "|" + (ip == null ? "" : ip);
+    limiter
+        .remainingLock(key)
+        .ifPresent(
+            d -> {
+              throw new AccountLockedException(Math.max(1, d.toSeconds()));
+            });
+    Optional<PractitionerRow> found = practitioners.findByEmailNormalized(normalized);
+    boolean ok =
+        encoder.matches(password, found.map(PractitionerRow::passwordHash).orElse(dummyHash));
+    if (found.isEmpty() || !ok) {
+      var state = limiter.recordFailure(key);
+      if (state.locked(clock.instant())) {
+        throw new AccountLockedException(
+            Math.max(1, Duration.between(clock.instant(), state.lockedUntil()).toSeconds()));
+      }
+      return;
+    }
+    PractitionerRow p = found.get();
+    if (!"email_pending".equals(p.verificationStatus())) {
+      return;
+    }
     try {
-      return tx.execute(status -> doChangeEmail(id, newEmail));
+      tx.executeWithoutResult(status -> doChangeEmail(p, newEmail));
     } catch (DuplicateKeyException e) {
-      // Course : l'adresse a été prise entre la lecture et l'écriture. Même issue silencieuse
-      // que « compte existant » ; la transaction est annulée, le compte garde son adresse.
-      PractitionerRow p = practitioners.findById(id).orElseThrow(InvalidTokenException::new);
+      // Course : l'adresse a été prise entre la lecture et l'écriture (transaction annulée).
       Locale locale = Locale.forLanguageTag(p.locale());
       sendAsync("account-exists e-mail", () -> mailer.sendAccountExists(newEmail.trim(), locale));
-      return p;
     }
   }
 
-  private PractitionerRow doChangeEmail(UUID id, String newEmail) {
-    PractitionerRow p = practitioners.findById(id).orElseThrow(InvalidTokenException::new);
-    if (!"email_pending".equals(p.verificationStatus())) {
-      throw new EmailAlreadyConfirmedException();
-    }
+  private void doChangeEmail(PractitionerRow p, String newEmail) {
+    UUID id = p.id();
     Instant now = clock.instant();
-    if (tokens.countCreatedSince(id, KIND_EMAIL_CONFIRM, now.minus(Duration.ofDays(1)))
-        >= RESEND_MAX_PER_DAY) {
-      throw new TooManyRequestsException();
+    if (tokens.countCreatedSince(id, KIND_EMAIL_CONFIRM, now.minus(RESEND_MIN_INTERVAL)) > 0
+        || tokens.countCreatedSince(id, KIND_EMAIL_CONFIRM, now.minus(Duration.ofDays(1)))
+            >= RESEND_MAX_PER_DAY) {
+      return;
     }
     String normalized = normalizeEmail(newEmail);
     Locale locale = Locale.forLanguageTag(p.locale());
     Optional<PractitionerRow> other = practitioners.findByEmailNormalized(normalized);
     if (other.isPresent() && !other.get().id().equals(id)) {
       afterCommit("account-exists e-mail", () -> mailer.sendAccountExists(newEmail.trim(), locale));
-      return p;
+      return;
     }
     practitioners.updateEmail(id, newEmail.trim(), normalized, now);
     String token = newToken();
@@ -316,7 +341,6 @@ class AuthService {
     issueConfirmationToken(id, token, now);
     afterCommit(
         "confirmation e-mail", () -> mailer.sendEmailConfirmation(newEmail.trim(), token, locale));
-    return practitioners.findById(id).orElse(p);
   }
 
   private void issueConfirmationToken(UUID practitionerId, String token, Instant now) {

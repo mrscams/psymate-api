@@ -73,6 +73,12 @@ class LoginService {
       throw failure(key, null, ip, "unknown_account");
     }
     PractitionerRow row = found.get();
+    // Second garde : le verrou écrit en base (par e-mail) survit à un redémarrage ou à un reset du
+    // limiteur mémoire.
+    Optional<Instant> storedLock = practitioners.lockedUntil(row.id());
+    if (storedLock.isPresent() && clock.instant().isBefore(storedLock.get())) {
+      throw lockedException(Duration.between(clock.instant(), storedLock.get()));
+    }
     if (!encoder.matches(password, row.passwordHash())) {
       throw failure(key, row, ip, "bad_password");
     }

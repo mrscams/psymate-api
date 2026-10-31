@@ -391,27 +391,41 @@ class EmailConfirmationIT {
     return sorted.get(sorted.size() / 2);
   }
 
+  private int change(String email, String password, String newAddress, String ip) throws Exception {
+    var req =
+        MockMvcRequestBuilders.post("/api/auth/email/change")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(
+                json.writeValueAsString(
+                    Map.of("email", email, "password", password, "newEmail", newAddress)))
+            .with(
+                r -> {
+                  r.setRemoteAddr(ip);
+                  return r;
+                });
+    return mvc.perform(req).andReturn().getResponse().getStatus();
+  }
+
+  private String currentEmailOf(String idEmail) {
+    return jdbc.queryForObject(
+        "select email from practitioner where email_normalized = ?", String.class, idEmail);
+  }
+
   @Test
-  void changeEmailInvalidatesOldTokenAndIssuesNewOne() throws Exception {
+  void changeEmailIsPublic_invalidatesOldTokenAndIssuesNewOne() throws Exception {
     String email = newEmail();
     String newAddress = newEmail();
     String oldToken = registerAndGetToken(email);
-    Cookie pending = login(email);
+    // Limite de renvoi : 1 par minute depuis le jeton d'inscription.
+    clock.advance(Duration.ofMinutes(2));
 
-    MvcResult r = postJson("/api/auth/email/change", Map.of("newEmail", newAddress), pending);
-    assertThat(r.getResponse().getStatus()).isEqualTo(202);
+    assertThat(change(email, PASSWORD, newAddress, "198.51.100.1")).isEqualTo(202);
 
     assertThat(confirm(oldToken)).isEqualTo(410);
     String newToken = mails.confirmationToken(newAddress);
     assertThat(newToken).isNotNull();
     assertThat(confirm(newToken)).isEqualTo(204);
-
-    assertThat(
-            jdbc.queryForObject(
-                "select email from practitioner where email_normalized = ?",
-                String.class,
-                newAddress))
-        .isEqualTo(newAddress);
+    assertThat(currentEmailOf(newAddress)).isEqualTo(newAddress);
     assertThat(
             jdbc.queryForObject(
                 "select count(*) from practitioner where email_normalized = ?",
@@ -429,22 +443,55 @@ class EmailConfirmationIT {
   }
 
   @Test
-  void changeEmailRequiresASession() throws Exception {
-    assertThat(
-            postJson("/api/auth/email/change", Map.of("newEmail", newEmail()), null)
-                .getResponse()
-                .getStatus())
-        .isEqualTo(401);
+  void changeEmailWithWrongPasswordOrUnknownAccountIs202AndChangesNothing() throws Exception {
+    String email = newEmail();
+    registerAndGetToken(email);
+    clock.advance(Duration.ofMinutes(2));
+    String other = newEmail();
+    assertThat(change(email, "Mauvais-Mot-De-Passe-1", other, "198.51.100.2")).isEqualTo(202);
+    assertThat(change(newEmail(), PASSWORD, other, "198.51.100.3")).isEqualTo(202);
+    assertThat(currentEmailOf(email)).isEqualTo(email);
+    assertThat(mails.confirmationToken(other)).isNull();
   }
 
   @Test
-  void changeEmailIsRefusedOnceConfirmed() throws Exception {
+  void fiveWrongPasswordsOnChangeEmailLockWith423_andTheLockIsSharedWithLogin() throws Exception {
+    String email = newEmail();
+    registerAndGetToken(email);
+    String ip = "198.51.100.4";
+    for (int i = 0; i < 4; i++) {
+      assertThat(change(email, "Mauvais-Mot-De-Passe-1", newEmail(), ip)).isEqualTo(202);
+    }
+    assertThat(change(email, "Mauvais-Mot-De-Passe-1", newEmail(), ip)).isEqualTo(423);
+    assertThat(change(email, PASSWORD, newEmail(), ip)).isEqualTo(423);
+  }
+
+  @Test
+  void changeEmailIsIgnoredOnceConfirmed() throws Exception {
     String email = newEmail();
     String token = registerAndGetToken(email);
-    MvcResult confirmed = postJson("/api/auth/email/confirm", Map.of("token", token), null);
-    Cookie session = confirmed.getResponse().getCookie("SESSION");
-    MvcResult r = postJson("/api/auth/email/change", Map.of("newEmail", newEmail()), session);
-    assertThat(r.getResponse().getStatus()).isEqualTo(409);
+    confirm(token);
+    clock.advance(Duration.ofMinutes(2));
+    String other = newEmail();
+    assertThat(change(email, PASSWORD, other, "198.51.100.5")).isEqualTo(202);
+    assertThat(currentEmailOf(email)).isEqualTo(email);
+    assertThat(mails.confirmationToken(other)).isNull();
+  }
+
+  @Test
+  void changeEmailIsLimitedToOnePerMinute() throws Exception {
+    String email = newEmail();
+    registerAndGetToken(email);
+    String first = newEmail();
+    String second = newEmail();
+    // Le jeton d'inscription date de moins d'une minute : rien ne change.
+    assertThat(change(email, PASSWORD, first, "198.51.100.6")).isEqualTo(202);
+    assertThat(currentEmailOf(email)).isEqualTo(email);
+    clock.advance(Duration.ofMinutes(2));
+    assertThat(change(email, PASSWORD, first, "198.51.100.6")).isEqualTo(202);
+    assertThat(currentEmailOf(first)).isEqualTo(first);
+    assertThat(change(first, PASSWORD, second, "198.51.100.6")).isEqualTo(202);
+    assertThat(currentEmailOf(first)).isEqualTo(first);
   }
 
   @Test
@@ -453,9 +500,8 @@ class EmailConfirmationIT {
     String other = newEmail();
     registerAndGetToken(email);
     registerAndGetToken(other);
-    Cookie pending = login(email);
-    MvcResult r = postJson("/api/auth/email/change", Map.of("newEmail", other), pending);
-    assertThat(r.getResponse().getStatus()).isEqualTo(202);
+    clock.advance(Duration.ofMinutes(2));
+    assertThat(change(email, PASSWORD, other, "198.51.100.7")).isEqualTo(202);
     assertThat(
             jdbc.queryForObject(
                 "select count(*) from practitioner where email_normalized = ?",

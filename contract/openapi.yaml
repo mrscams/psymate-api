@@ -7,6 +7,25 @@ components:
         labelFr:
           type: string
       type: object
+    DirectoryVocabularyDto:
+      properties:
+        audiences:
+          items:
+            $ref: '#/components/schemas/Item'
+          type: array
+        languages:
+          items:
+            $ref: '#/components/schemas/Item'
+          type: array
+        modalities:
+          items:
+            $ref: '#/components/schemas/Item'
+          type: array
+        specialties:
+          items:
+            $ref: '#/components/schemas/Item'
+          type: array
+      type: object
     EmotionView:
       properties:
         active:
@@ -40,6 +59,15 @@ components:
         sortOrder:
           format: int32
           type: integer
+      type: object
+    Item:
+      properties:
+        code:
+          type: string
+        labelEn:
+          type: string
+        labelFr:
+          type: string
       type: object
     LinkTypeView:
       properties:
@@ -159,6 +187,76 @@ components:
       required:
       - email
       type: object
+    ProfileDto:
+      properties:
+        address:
+          type: string
+        audiences:
+          items:
+            type: string
+          type: array
+        availability:
+          type: string
+        bio:
+          type: string
+        city:
+          type: string
+        contactEmail:
+          type: string
+        contactPhone:
+          type: string
+        country:
+          type: string
+        displayName:
+          type: string
+        fees:
+          type: string
+        languages:
+          items:
+            type: string
+          type: array
+        modalities:
+          items:
+            type: string
+          type: array
+        nextSlotAt:
+          format: date
+          type: string
+        photoAssetKey:
+          type: string
+        postalCode:
+          type: string
+        profession:
+          type: string
+        published:
+          type: boolean
+        publishedAt:
+          format: date-time
+          type: string
+        responseDelay:
+          type: string
+        showAddress:
+          type: boolean
+        showEmail:
+          type: boolean
+        showPhone:
+          type: boolean
+        showProfessionalNumber:
+          type: boolean
+        slug:
+          type: string
+        specialties:
+          items:
+            type: string
+          type: array
+        titleLabel:
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+        websiteUrl:
+          type: string
+      type: object
     RenameEmotionRequest:
       properties:
         labelFr:
@@ -226,6 +324,62 @@ components:
         usageCount:
           format: int32
           type: integer
+      type: object
+    UpdateProfileRequest:
+      properties:
+        address:
+          type: string
+        audiences:
+          items:
+            type: string
+          type: array
+        availability:
+          type: string
+        bio:
+          type: string
+        city:
+          type: string
+        contactEmail:
+          type: string
+        contactPhone:
+          type: string
+        country:
+          type: string
+        displayName:
+          type: string
+        fees:
+          type: string
+        languages:
+          items:
+            type: string
+          type: array
+        modalities:
+          items:
+            type: string
+          type: array
+        nextSlotAt:
+          format: date
+          type: string
+        postalCode:
+          type: string
+        responseDelay:
+          type: string
+        showAddress:
+          type: boolean
+        showEmail:
+          type: boolean
+        showPhone:
+          type: boolean
+        showProfessionalNumber:
+          type: boolean
+        specialties:
+          items:
+            type: string
+          type: array
+        titleLabel:
+          type: string
+        websiteUrl:
+          type: string
       type: object
 info:
   description: API de PsyMate, suivi clinique pour psychologues, psychiatres et coachs.
@@ -402,6 +556,81 @@ paths:
           description: OK
       tags:
       - my-emotion-controller
+  /api/me/profile:
+    get:
+      operationId: get
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ProfileDto'
+          description: OK
+      tags:
+      - profile-controller
+    put:
+      operationId: update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ProfileDto'
+          description: OK
+      tags:
+      - profile-controller
+  /api/me/profile/photo:
+    delete:
+      operationId: deletePhoto
+      responses:
+        '200':
+          description: OK
+      tags:
+      - profile-controller
+    post:
+      operationId: uploadPhoto
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                file:
+                  format: binary
+                  type: string
+              required:
+              - file
+              type: object
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ProfileDto'
+          description: OK
+      tags:
+      - profile-controller
+  /api/me/profile/publish:
+    post:
+      operationId: publish
+      responses:
+        '200':
+          description: OK
+      tags:
+      - profile-controller
+  /api/me/profile/unpublish:
+    post:
+      operationId: unpublish
+      responses:
+        '200':
+          description: OK
+      tags:
+      - profile-controller
   /api/tags:
     get:
       operationId: list
@@ -483,6 +712,18 @@ paths:
           description: OK
       tags:
       - tag-controller
+  /api/vocabulary/directory:
+    get:
+      operationId: get_1
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DirectoryVocabularyDto'
+          description: OK
+      tags:
+      - directory-vocabulary-controller
   /api/vocabulary/emotions:
     get:
       operationId: emotions

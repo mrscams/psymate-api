@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-31T11:20:56.155Z",
+  "task": "M5-01",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Corrections de revue : dimensions photo, 413 problem+json, isolation tenant, suppression après commit, bornes de champs, storage-dir",
+  "pr": "https://github.com/mrscams/psymate-api/pull/10",
+  "branch": "worktree-M5-01",
+  "checkout": "M5-01"
+}

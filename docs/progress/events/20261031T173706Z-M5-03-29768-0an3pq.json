@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T17:37:06.234Z",
+  "task": "M5-03",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 19 fusionnee dans main (formulaire de contact, V06, anti-spam, relais e-mail, purge)",
+  "next": "Tag contract-v0.7.0 ; M5-04/M5-05 web debloquees ; M1-14 a rebaser",
+  "pr": "https://github.com/mrscams/psymate-api/pull/19",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

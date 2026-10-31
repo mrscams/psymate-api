@@ -32,12 +32,23 @@ app:
   # Base des liens envoyes par e-mail (frontend), a surcharger par environnement.
   web:
     base-url: ${APP_WEB_BASE_URL:http://localhost:5173}
+  contract:
+    # Version du contrat OpenAPI publie ; a bumper avant de poser un tag contract-vX.Y.Z.
+    version: 0.1.0
   auth:
     session-default: 12h
     session-remember-me: 30d
 
 versioning:
   grace-period: 5m
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  # Cles triees : diff stable du contrat commite.
+  writer-with-order-by-keys: true
+  swagger-ui:
+    enabled: false
 
 ---
 spring:

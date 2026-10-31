@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T10:44:53.863Z",
+  "task": "M1-02",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Port CurrentPractitionerPort branche sur identity.api ; VocabularyIT authentifie ses requetes (corrige les 401 apres M0-04)",
+  "notes": "vocabulary depend de identity :: api ; livre dans la PR 8 de M0-05",
+  "pr": "https://github.com/mrscams/psymate-api/pull/8",
+  "branch": "worktree-M0-05",
+  "checkout": "M0-05"
+}

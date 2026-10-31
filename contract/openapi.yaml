@@ -1,0 +1,530 @@
+components:
+  schemas:
+    CreateEmotionRequest:
+      properties:
+        family:
+          type: string
+        labelFr:
+          type: string
+      type: object
+    EmotionView:
+      properties:
+        active:
+          type: boolean
+        code:
+          type: string
+        family:
+          type: string
+        intensityLevel:
+          format: int32
+          type: integer
+        labelEn:
+          type: string
+        labelFr:
+          type: string
+        scope:
+          type: string
+      type: object
+    EntryTypeView:
+      properties:
+        code:
+          type: string
+        detailTable:
+          type: string
+        hasDuration:
+          type: boolean
+        labelEn:
+          type: string
+        labelFr:
+          type: string
+        sortOrder:
+          format: int32
+          type: integer
+      type: object
+    LinkTypeView:
+      properties:
+        allowedSourceTypes:
+          items:
+            type: string
+          type: array
+        allowedTargetTypes:
+          items:
+            type: string
+          type: array
+        code:
+          type: string
+        directed:
+          type: boolean
+        inverseLabelEn:
+          type: string
+        inverseLabelFr:
+          type: string
+        labelEn:
+          type: string
+        labelFr:
+          type: string
+        lineStyle:
+          type: string
+        sortOrder:
+          format: int32
+          type: integer
+      type: object
+    LoginRequest:
+      properties:
+        email:
+          maxLength: 254
+          minLength: 0
+          type: string
+        password:
+          maxLength: 200
+          minLength: 0
+          type: string
+        rememberMe:
+          type: boolean
+      required:
+      - email
+      - password
+      type: object
+    MeResponse:
+      properties:
+        displayName:
+          type: string
+        email:
+          type: string
+        id:
+          format: uuid
+          type: string
+        profession:
+          type: string
+        tenantId:
+          format: uuid
+          type: string
+        verificationStatus:
+          type: string
+      type: object
+    MergeEmotionRequest:
+      properties:
+        targetCode:
+          type: string
+      type: object
+    MergeTagRequest:
+      properties:
+        targetId:
+          format: uuid
+          type: string
+      type: object
+    MergeView:
+      properties:
+        affectedCount:
+          format: int32
+          type: integer
+        id:
+          format: uuid
+          type: string
+        mergedAt:
+          format: date-time
+          type: string
+        sourceCode:
+          type: string
+        targetCode:
+          type: string
+        undoUntil:
+          format: date-time
+          type: string
+        undoneAt:
+          format: date-time
+          type: string
+      type: object
+    PasswordResetConfirmRequest:
+      properties:
+        password:
+          maxLength: 200
+          minLength: 0
+          type: string
+        token:
+          maxLength: 200
+          minLength: 0
+          type: string
+      required:
+      - password
+      - token
+      type: object
+    PasswordResetRequest:
+      properties:
+        email:
+          format: email
+          maxLength: 254
+          minLength: 0
+          type: string
+      required:
+      - email
+      type: object
+    RenameEmotionRequest:
+      properties:
+        labelFr:
+          type: string
+      type: object
+    SignupRequest:
+      properties:
+        email:
+          format: email
+          maxLength: 254
+          minLength: 0
+          type: string
+        firstName:
+          maxLength: 100
+          minLength: 0
+          type: string
+        lastName:
+          maxLength: 100
+          minLength: 0
+          type: string
+        password:
+          maxLength: 200
+          minLength: 0
+          type: string
+        profession:
+          minLength: 1
+          pattern: psychologist|psychiatrist|coach
+          type: string
+      required:
+      - email
+      - firstName
+      - lastName
+      - password
+      - profession
+      type: object
+    SignupResponse:
+      properties:
+        displayName:
+          type: string
+        email:
+          type: string
+        id:
+          format: uuid
+          type: string
+        verificationStatus:
+          type: string
+      type: object
+    TagRequest:
+      properties:
+        label:
+          type: string
+      type: object
+    TagView:
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          format: uuid
+          type: string
+        label:
+          type: string
+        normalizedLabel:
+          type: string
+        usageCount:
+          format: int32
+          type: integer
+      type: object
+info:
+  description: API de PsyMate, suivi clinique pour psychologues, psychiatres et coachs.
+  title: PsyMate API
+  version: 0.1.0
+openapi: 3.1.0
+paths:
+  /api/auth/login:
+    post:
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+          description: OK
+      tags:
+      - auth-controller
+  /api/auth/logout:
+    post:
+      operationId: logout
+      responses:
+        '200':
+          description: OK
+      tags:
+      - auth-controller
+  /api/auth/me:
+    get:
+      operationId: me
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+          description: OK
+      tags:
+      - auth-controller
+  /api/auth/password-reset/confirm:
+    post:
+      operationId: confirmReset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+      tags:
+      - auth-controller
+  /api/auth/password-reset/request:
+    post:
+      operationId: requestReset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+      tags:
+      - auth-controller
+  /api/auth/signup:
+    post:
+      operationId: signup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SignupResponse'
+          description: OK
+      tags:
+      - auth-controller
+  /api/me/emotions:
+    post:
+      operationId: create_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEmotionRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EmotionView'
+          description: Created
+      tags:
+      - my-emotion-controller
+  /api/me/emotions/merges/{id}/undo:
+    post:
+      operationId: undo
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MergeView'
+          description: OK
+      tags:
+      - my-emotion-controller
+  /api/me/emotions/{code}:
+    patch:
+      operationId: rename_1
+      parameters:
+      - in: path
+        name: code
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenameEmotionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EmotionView'
+          description: OK
+      tags:
+      - my-emotion-controller
+  /api/me/emotions/{code}/merge:
+    post:
+      operationId: merge_1
+      parameters:
+      - in: path
+        name: code
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeEmotionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MergeView'
+          description: OK
+      tags:
+      - my-emotion-controller
+  /api/tags:
+    get:
+      operationId: list
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                items:
+                  $ref: '#/components/schemas/TagView'
+                type: array
+          description: OK
+      tags:
+      - tag-controller
+    post:
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TagView'
+          description: Created
+      tags:
+      - tag-controller
+  /api/tags/{id}:
+    patch:
+      operationId: rename
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TagView'
+          description: OK
+      tags:
+      - tag-controller
+  /api/tags/{id}/merge:
+    post:
+      operationId: merge
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeTagRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TagView'
+          description: OK
+      tags:
+      - tag-controller
+  /api/vocabulary/emotions:
+    get:
+      operationId: emotions
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                items:
+                  $ref: '#/components/schemas/EmotionView'
+                type: array
+          description: OK
+      tags:
+      - vocabulary-controller
+  /api/vocabulary/entry-types:
+    get:
+      operationId: entryTypes
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                items:
+                  $ref: '#/components/schemas/EntryTypeView'
+                type: array
+          description: OK
+      tags:
+      - vocabulary-controller
+  /api/vocabulary/link-types:
+    get:
+      operationId: linkTypes
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                items:
+                  $ref: '#/components/schemas/LinkTypeView'
+                type: array
+          description: OK
+      tags:
+      - vocabulary-controller
+servers:
+- description: Serveur courant
+  url: /

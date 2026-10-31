@@ -269,6 +269,54 @@ class AdminVerificationIT {
     assertThat(status(list(admin(), ""))).isEqualTo(200);
   }
 
+  /** Les endpoints sensibles (lecture de fichier, qualification, décision) sont gardés aussi. */
+  @Test
+  void sensitiveEndpointsAreRefusedToPractitionersAndAdminsWithoutTwoFactor() throws Exception {
+    Dossier d = dossierWithDocuments("under_review", Instant.now().minus(Duration.ofHours(1)));
+    UUID other = practitioner("Dr Intrus", "approved");
+    UUID noTotp = adminWithoutTwoFactor();
+    String docs = BASE + "/" + d.id() + "/documents/" + d.diploma();
+    Map<String, RequestPostProcessor> callers =
+        Map.of(
+            "ADMIN_ROLE_REQUIRED", as(other, "ROLE_PRACTITIONER", "approved"),
+            "TWO_FACTOR_REQUIRED", asAdmin(noTotp));
+    for (var caller : callers.entrySet()) {
+      List<MvcResult> results =
+          List.of(
+              mvc.perform(get(BASE + "/" + d.id()).with(caller.getValue())).andReturn(),
+              mvc.perform(get(docs + "/url").with(caller.getValue())).andReturn(),
+              mvc.perform(get(docs + "/file?exp=1&sig=x").with(caller.getValue())).andReturn(),
+              mvc.perform(
+                      patch(docs)
+                          .contentType(MediaType.APPLICATION_JSON)
+                          .content("{\"reviewedStatus\":\"conform\"}")
+                          .with(caller.getValue()))
+                  .andReturn(),
+              mvc.perform(
+                      post(BASE + "/" + d.id() + "/decision")
+                          .contentType(MediaType.APPLICATION_JSON)
+                          .content(json.writeValueAsString(decision("approved", null)))
+                          .with(caller.getValue()))
+                  .andReturn());
+      for (MvcResult r : results) {
+        assertThat(status(r)).as(caller.getKey()).isEqualTo(403);
+        assertThat(body(r).path("code").asString()).isEqualTo(caller.getKey());
+      }
+    }
+    assertThat(count("select count(*) from document_access_log where document_id = ?", d.diploma()))
+        .isZero();
+    assertThat(
+            count("select count(*) from verification_decision where practitioner_id = ?", d.id()))
+        .isZero();
+    assertThat(
+            jdbc.queryForObject(
+                "select reviewed_status from verification_document where id = ?",
+                String.class,
+                d.diploma()))
+        .isEqualTo("pending");
+    assertThat(statusOf(d.id())).isEqualTo("under_review");
+  }
+
   // ---- 2. file d'attente
 
   @Test

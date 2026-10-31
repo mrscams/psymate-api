@@ -50,7 +50,9 @@ class AdminTwoFactorFilter extends OncePerRequestFilter {
           "Cette ressource est réservée aux administrateurs.");
       return;
     }
-    if (current.isPresent() && !totp.find(current.get().id()).enabled()) {
+    // Fermé par défaut : sans principal CurrentPractitioner identifiable, la 2FA est réputée
+    // absente.
+    if (current.isEmpty() || !totp.find(current.get().id()).enabled()) {
       reject(
           response,
           "Double authentification requise",

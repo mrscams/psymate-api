@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T12:13:50.515Z",
+  "task": "M1-03",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Entrées hybrides (six types), versions, règle de grâce, séance obligatoire, séance d'accueil, migration V05",
+  "notes": "clinical_rev écrit par clinical (O10/Q30) ; ajout EmotionCatalog.affectOf ; PatientIT filtré par listener ; point ouvert : grace in-place vs REVOKE UPDATE entry_version pour psymate_app",
+  "next": "M1-04 séances, M1-05 endpoints entrées ; trancher le GRANT/trigger pour la grâce",
+  "pr": "https://github.com/mrscams/psymate-api/pull/13",
+  "branch": "worktree-M1-03",
+  "checkout": "M1-03"
+}

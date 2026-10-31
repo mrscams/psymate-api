@@ -44,7 +44,7 @@ app:
     base-url: ${APP_WEB_BASE_URL:http://localhost:5173}
   contract:
     # Version du contrat OpenAPI publie ; a bumper avant de poser un tag contract-vX.Y.Z.
-    version: 0.3.0
+    version: 0.8.1
   auth:
     session-default: 12h
     session-remember-me: 30d

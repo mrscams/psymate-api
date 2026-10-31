@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T11:45:15.615Z",
+  "task": "M1-10",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 11 fusionnee dans main (inscription enrichie, confirmation e-mail, V03)",
+  "next": "V3 terminee ; V4 : M1-03, M1-11/12/13, M5-02",
+  "pr": "https://github.com/mrscams/psymate-api/pull/11",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

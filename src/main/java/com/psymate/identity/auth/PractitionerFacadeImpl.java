@@ -4,6 +4,7 @@ import com.psymate.identity.api.PractitionerFacade;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
@@ -14,9 +15,20 @@ class PractitionerFacadeImpl implements PractitionerFacade {
   private final PractitionerRepository practitioners;
   private final JsonMapper json;
 
-  PractitionerFacadeImpl(PractitionerRepository practitioners, JsonMapper json) {
+  private final JdbcClient jdbc;
+
+  PractitionerFacadeImpl(PractitionerRepository practitioners, JsonMapper json, JdbcClient jdbc) {
     this.practitioners = practitioners;
     this.json = json;
+    this.jdbc = jdbc;
+  }
+
+  @Override
+  public Optional<String> professionalNumber(UUID id) {
+    return jdbc.sql("select professional_number from practitioner where id = ?")
+        .param(id)
+        .query(String.class)
+        .optional();
   }
 
   @Override

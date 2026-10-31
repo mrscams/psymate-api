@@ -6,7 +6,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** Erreurs RFC 9457 limitées aux contrôleurs du module directory. */
 @RestControllerAdvice(
-    assignableTypes = {ProfileController.class, DirectoryVocabularyController.class})
+    assignableTypes = {
+      ProfileController.class,
+      DirectoryVocabularyController.class,
+      PublicDirectoryController.class
+    })
 class DirectoryExceptionHandler {
 
   @ExceptionHandler(ProfileException.class)

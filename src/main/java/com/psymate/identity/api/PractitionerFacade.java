@@ -9,6 +9,9 @@ public interface PractitionerFacade {
 
   Optional<PractitionerView> find(UUID id);
 
+  /** Numéro professionnel (ADELI / RPPS) déclaré, s'il existe. */
+  Optional<String> professionalNumber(UUID id);
+
   /** Vue minimale d'un praticien. {@code preferences} : clés plates (ADR-11). */
   record PractitionerView(
       UUID id,

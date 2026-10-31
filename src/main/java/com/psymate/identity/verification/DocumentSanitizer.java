@@ -88,6 +88,9 @@ final class DocumentSanitizer {
         image = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_RGB);
         image.createGraphics().drawImage(src, 0, 0, java.awt.Color.WHITE, null);
       }
+      if (jpeg) {
+        image = applyOrientation(image, exifOrientation(input));
+      }
       ImageWriter writer = ImageIO.getImageWritersByFormatName(jpeg ? "jpeg" : "png").next();
       try {
         ImageWriteParam param = writer.getDefaultWriteParam();
@@ -112,6 +115,110 @@ final class DocumentSanitizer {
       throw VerificationException.of(
           HttpStatus.UNPROCESSABLE_CONTENT, "DOCUMENT_INVALID", "verification.error.unreadable");
     }
+  }
+
+  /** Tag EXIF Orientation (1 à 8) lu à la main dans le segment APP1 ; 1 si absent ou illisible. */
+  static int exifOrientation(byte[] b) {
+    try {
+      int pos = 2;
+      while (pos + 4 <= b.length && (b[pos] & 0xFF) == 0xFF) {
+        int marker = b[pos + 1] & 0xFF;
+        if (marker == 0xDA) {
+          break;
+        }
+        int len = ((b[pos + 2] & 0xFF) << 8) | (b[pos + 3] & 0xFF);
+        if (marker == 0xE1
+            && b[pos + 4] == 'E'
+            && b[pos + 5] == 'x'
+            && b[pos + 6] == 'i'
+            && b[pos + 7] == 'f'
+            && b[pos + 8] == 0
+            && b[pos + 9] == 0) {
+          int tiff = pos + 10;
+          boolean le = b[tiff] == 'I';
+          int ifd = tiff + (int) u32(b, tiff + 4, le);
+          int count = u16(b, ifd, le);
+          for (int i = 0; i < count; i++) {
+            int entry = ifd + 2 + i * 12;
+            if (u16(b, entry, le) == 0x0112) {
+              int o = u16(b, entry + 8, le);
+              return o >= 1 && o <= 8 ? o : 1;
+            }
+          }
+          return 1;
+        }
+        pos += 2 + len;
+      }
+    } catch (RuntimeException e) {
+      // segment tronqué ou incohérent : orientation par défaut
+    }
+    return 1;
+  }
+
+  private static int u16(byte[] b, int at, boolean le) {
+    int x = b[at] & 0xFF;
+    int y = b[at + 1] & 0xFF;
+    return le ? (y << 8) | x : (x << 8) | y;
+  }
+
+  private static long u32(byte[] b, int at, boolean le) {
+    long hi = u16(b, le ? at + 2 : at, le);
+    long lo = u16(b, le ? at : at + 2, le);
+    return (hi << 16) | lo;
+  }
+
+  /** Redresse l'image selon l'orientation EXIF (le tag est perdu à la réécriture). */
+  static BufferedImage applyOrientation(BufferedImage src, int orientation) {
+    if (orientation == 1) {
+      return src;
+    }
+    int w = src.getWidth();
+    int h = src.getHeight();
+    boolean swap = orientation >= 5;
+    int nw = swap ? h : w;
+    int nh = swap ? w : h;
+    int[] in = src.getRGB(0, 0, w, h, null, 0, w);
+    int[] out = new int[in.length];
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        int dx;
+        int dy;
+        switch (orientation) {
+          case 2 -> {
+            dx = w - 1 - x;
+            dy = y;
+          }
+          case 3 -> {
+            dx = w - 1 - x;
+            dy = h - 1 - y;
+          }
+          case 4 -> {
+            dx = x;
+            dy = h - 1 - y;
+          }
+          case 5 -> {
+            dx = y;
+            dy = x;
+          }
+          case 6 -> {
+            dx = h - 1 - y;
+            dy = x;
+          }
+          case 7 -> {
+            dx = h - 1 - y;
+            dy = w - 1 - x;
+          }
+          default -> {
+            dx = y;
+            dy = w - 1 - x;
+          }
+        }
+        out[dy * nw + dx] = in[y * w + x];
+      }
+    }
+    BufferedImage result = new BufferedImage(nw, nh, BufferedImage.TYPE_INT_RGB);
+    result.setRGB(0, 0, nw, nh, out, 0, nw);
+    return result;
   }
 
   private static BufferedImage read(byte[] input) throws IOException {

@@ -13,6 +13,7 @@ import com.psymate.identity.verification.VerificationException.FieldError;
 import com.psymate.identity.verification.VerificationRepository.AccountRow;
 import com.psymate.identity.verification.VerificationRepository.DocumentRow;
 import com.psymate.identity.verification.VerificationRepository.DuePurge;
+import jakarta.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -44,7 +45,7 @@ class VerificationService {
 
   static final Duration URL_VALIDITY = Duration.ofMinutes(5);
   static final int MAX_DOCUMENTS = 20;
-  static final int PURGE_BATCH = 200;
+  static final int PURGE_BATCH = 500;
 
   private static final Set<String> TYPES =
       Set.of("diploma", "registration", "certification", "professional_card", "identity", "other");
@@ -86,6 +87,11 @@ class VerificationService {
     this.mailer = mailer;
     this.events = events;
     this.clock = clock;
+  }
+
+  @PreDestroy
+  void shutdown() {
+    mailExecutor.shutdown();
   }
 
   // ---- lecture
@@ -280,15 +286,17 @@ class VerificationService {
   int purgeDue() {
     Instant now = clock.instant();
     int total = 0;
-    List<DuePurge> batch;
-    do {
-      batch = repo.duePurges(now, PURGE_BATCH);
-      for (DuePurge d : batch) {
+    // Un seul lot par exécution : une ligne en échec reste due et sera retentée le lendemain,
+    // sans boucle infinie ni blocage des lignes suivantes.
+    for (DuePurge d : repo.duePurges(now, PURGE_BATCH)) {
+      try {
         storage.delete(d.storageKey());
         repo.markPurged(d.id(), now);
         total++;
+      } catch (RuntimeException e) {
+        LOG.error("could not purge verification document {}", d.id(), e);
       }
-    } while (batch.size() == PURGE_BATCH);
+    }
     return total;
   }
 

@@ -104,6 +104,33 @@ class PurgeJobIT {
   }
 
   @Test
+  void aFailingRowDoesNotBlockTheNextOnes() {
+    UUID p = practitioner();
+    UUID bad = document(p, Instant.now().minus(Duration.ofDays(3)));
+    jdbc.update(
+        "update verification_document set storage_key = '../../escape.bin' where id = ?", bad);
+    UUID good = document(p, Instant.now().minus(Duration.ofDays(1)));
+    String goodKey = key(good);
+
+    job.run();
+
+    assertThat(storage.exists(goodKey)).isFalse();
+    assertThat(
+            jdbc.queryForObject(
+                "select purged_at is not null from verification_document where id = ?",
+                Boolean.class,
+                good))
+        .isTrue();
+    assertThat(
+            jdbc.queryForObject(
+                "select purged_at is null from verification_document where id = ?",
+                Boolean.class,
+                bad))
+        .isTrue();
+    jdbc.update("update verification_document set purge_after = null where id = ?", bad);
+  }
+
+  @Test
   void purgeToleratesAFileAlreadyMissing() {
     UUID p = practitioner();
     UUID due = document(p, Instant.now().minus(Duration.ofHours(1)));

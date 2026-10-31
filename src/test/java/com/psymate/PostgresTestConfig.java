@@ -9,7 +9,7 @@ import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
 @TestConfiguration(proxyBeanMethods = false)
-class PostgresTestConfig {
+public class PostgresTestConfig {
 
   /**
    * Même base, même propriétaire et même script d'init que docker-compose (G Q9) : le rôle

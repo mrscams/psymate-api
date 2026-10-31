@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T12:45:45.828Z",
+  "task": "M1-13",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 12 fusionnee dans main (dossier professionnel : documents chiffres, soumission, purge)",
+  "next": "M1-14 debloquee ; tag contract-v0.2.0 apres M1-12",
+  "pr": "https://github.com/mrscams/psymate-api/pull/12",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

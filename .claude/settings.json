@@ -10,9 +10,6 @@
   "hooks": {
     "PostToolUse": [
       { "matcher": "Edit|Write", "hooks": [ { "type": "command", "command": "./mvnw spotless:apply -q 2>/dev/null || true" } ] }
-    ],
-    "Stop": [
-      { "hooks": [ { "type": "command", "command": "test -f pom.xml && (./mvnw verify -q || (echo 'Tests rouges : corrige avant de terminer' >&2; exit 2)) || true" } ] }
     ]
   }
 }

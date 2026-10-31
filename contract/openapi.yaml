@@ -488,6 +488,29 @@ components:
         otpRequired:
           type: boolean
       type: object
+    PasswordChangeRequest:
+      properties:
+        currentPassword:
+          maxLength: 200
+          minLength: 0
+          type: string
+        email:
+          maxLength: 254
+          minLength: 0
+          type: string
+        newPassword:
+          maxLength: 200
+          minLength: 0
+          type: string
+        otp:
+          maxLength: 32
+          minLength: 0
+          type: string
+      required:
+      - currentPassword
+      - email
+      - newPassword
+      type: object
     PasswordResetConfirmRequest:
       properties:
         password:
@@ -1149,7 +1172,7 @@ components:
 info:
   description: API de PsyMate, suivi clinique pour psychologues, psychiatres et coachs.
   title: PsyMate API
-  version: 0.8.0
+  version: 0.8.1
 openapi: 3.1.0
 paths:
   /api/admin/verifications:
@@ -1415,7 +1438,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: EMAIL_NOT_CONFIRMED ou ACCOUNT_SUSPENDED
+          description: EMAIL_NOT_CONFIRMED, ACCOUNT_SUSPENDED ou PASSWORD_CHANGE_REQUIRED
         '423':
           content:
             application/problem+json:
@@ -1475,6 +1498,55 @@ paths:
       responses:
         '200':
           description: OK
+      tags:
+      - auth-controller
+  /api/auth/password/change:
+    post:
+      operationId: changePassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+        required: true
+      responses:
+        '202':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OtpRequiredResponse'
+          description: Mot de passe actuel correct, 2FA active et code manquant
+        '204':
+          description: Mot de passe changé, sessions révoquées
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Identifiants incorrects (message unique) ou code 2FA faux
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: EMAIL_NOT_CONFIRMED ou ACCOUNT_SUSPENDED
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: PASSWORD_POLICY, ou PASSWORD_UNCHANGED (champ newPassword)
+        '423':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Verrouillage après 5 échecs (15 min)
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai
+              style: simple
+      summary: 'Change le mot de passe (public : e-mail + mot de passe actuel) : 204, 202 code 2FA requis, 401, 403, 422, 423. Révoque toutes les sessions.'
       tags:
       - auth-controller
   /api/auth/register:

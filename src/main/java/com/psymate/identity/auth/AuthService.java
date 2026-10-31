@@ -8,6 +8,7 @@ import com.psymate.identity.auth.AuthExceptions.AccountLockedException;
 import com.psymate.identity.auth.AuthExceptions.FieldValidationException;
 import com.psymate.identity.auth.AuthExceptions.InvalidTokenException;
 import com.psymate.identity.auth.AuthExceptions.PasswordPolicyException;
+import com.psymate.identity.auth.AuthExceptions.PasswordUnchangedException;
 import com.psymate.identity.auth.PractitionerRepository.Contact;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -386,7 +387,49 @@ class AuthService {
       throw new PasswordPolicyException(violations);
     }
     practitioners.updatePassword(id, encoder.encode(password), now);
+    // Un mot de passe choisi par l'utilisateur lève aussi l'obligation de changement (M7-08).
+    practitioners.clearMustChangePassword(id);
     practitioners.deleteSessions(id);
+  }
+
+  /**
+   * Contrôles du nouveau mot de passe qui ne dépendent que de la requête (identité, longueur,
+   * casse, liste des mots de passe courants, e-mail) : exécutés AVANT la vérification des
+   * identifiants pour ne pas consommer un code TOTP ou un code de secours sur un 422. Les contrôles
+   * sur le nom (prénom, nom) sont refaits dans changePassword, une fois le compte connu.
+   */
+  static void precheckNewPassword(String email, String currentPassword, String newPassword) {
+    if (newPassword.equals(currentPassword)) {
+      throw new PasswordUnchangedException();
+    }
+    List<String> violations = PasswordPolicy.violations(newPassword, email, null, null);
+    if (!violations.isEmpty()) {
+      throw new PasswordPolicyException(violations);
+    }
+  }
+
+  /**
+   * Remplace le mot de passe d'un compte dont les identifiants viennent d'être vérifiés
+   * (LoginService.verifyForPasswordChange) : politique de mot de passe, nouveau mot de passe
+   * différent de l'actuel, retrait de l'obligation de changement, révocation de toutes les
+   * sessions, événement password_changed. Aucun e-mail.
+   */
+  @Transactional
+  public void changePassword(
+      PractitionerRow p, String currentPassword, String newPassword, String ip) {
+    List<String> violations =
+        PasswordPolicy.violations(newPassword, p.email(), p.firstName(), p.lastName());
+    if (!violations.isEmpty()) {
+      throw new PasswordPolicyException(violations);
+    }
+    if (newPassword.equals(currentPassword)) {
+      throw new PasswordUnchangedException();
+    }
+    Instant now = clock.instant();
+    practitioners.updatePassword(p.id(), encoder.encode(newPassword), now);
+    practitioners.clearMustChangePassword(p.id());
+    practitioners.deleteSessions(p.id());
+    practitioners.insertSecurityEvent(p.id(), "password_changed", ip, null, now);
   }
 
   // --- Envoi d'e-mails ---

@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -65,7 +66,9 @@ class SecurityConfig {
     };
   }
 
+  /** Absente en profil cli (sans serveur web, M7-08) : HttpSecurity n'existe qu'en servlet. */
   @Bean
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
   SecurityFilterChain securityFilterChain(
       HttpSecurity http,
       SecurityContextRepository repo,
@@ -87,6 +90,7 @@ class SecurityConfig {
                         "/api/auth/email/resend",
                         "/api/auth/email/change",
                         "/api/auth/login",
+                        "/api/auth/password/change",
                         "/api/auth/logout",
                         "/api/auth/password-reset/**")
                     .permitAll()

@@ -44,7 +44,7 @@ app:
     base-url: ${APP_WEB_BASE_URL:http://localhost:5173}
   contract:
     # Version du contrat OpenAPI publie ; a bumper avant de poser un tag contract-vX.Y.Z.
-    version: 0.8.0
+    version: 0.8.1
   auth:
     session-default: 12h
     session-remember-me: 30d
@@ -111,3 +111,23 @@ management:
     mail:
       # Pas de SMTP dans les tests qui ne demarrent pas Mailpit.
       enabled: false
+
+---
+# Profil cli (M7-08) : commande ponctuelle `--create-admin=<e-mail>` (make admin). Pas de serveur web,
+# pas de banniere, journaux reduits a WARN pour que seul le bloc du runner soit lisible, et aucun
+# rejeu d evenements au demarrage (la commande n a pas d autre effet que la creation du compte).
+spring:
+  config:
+    activate:
+      on-profile: cli
+  main:
+    web-application-type: none
+    banner-mode: "off"
+
+logging:
+  level:
+    root: WARN
+
+app:
+  events:
+    republish-on-startup: false

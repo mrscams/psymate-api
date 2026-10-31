@@ -260,3 +260,44 @@ practitioner_appeal:
   - reviewed_at
   - outcome
   - response_message
+
+directory_vocabulary:
+  - kind
+  - code
+  - label_fr
+  - label_en
+  - sort_order
+  - active
+  - created_at
+  - updated_at
+practitioner_profile:
+  - practitioner_id
+  - slug
+  - published
+  - display_name
+  - title_label
+  - show_professional_number
+  - photo_asset_key
+  - bio
+  - specialties
+  - audiences
+  - modalities
+  - languages
+  - city
+  - postal_code
+  - country
+  - geo
+  - contact_phone
+  - contact_email
+  - website_url
+  - address
+  - show_phone
+  - show_email
+  - show_address
+  - response_delay
+  - fees
+  - availability
+  - next_slot_at
+  - search_vector
+  - published_at
+  - updated_at

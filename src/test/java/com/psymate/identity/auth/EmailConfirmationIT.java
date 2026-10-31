@@ -204,6 +204,32 @@ class EmailConfirmationIT {
   }
 
   @Test
+  void confirmWithIpv6ZoneAddressStillSucceedsAndStoresNormalizedIp() throws Exception {
+    String email = newEmail();
+    String token = registerAndGetToken(email);
+    MvcResult r =
+        mvc.perform(
+                MockMvcRequestBuilders.post("/api/auth/email/confirm")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json.writeValueAsString(Map.of("token", token)))
+                    .with(
+                        req -> {
+                          req.setRemoteAddr("fe80::1%eth0");
+                          return req;
+                        }))
+            .andReturn();
+    assertThat(r.getResponse().getStatus()).isEqualTo(204);
+    assertThat(
+            jdbc.queryForObject(
+                "select host(s.ip) from security_event s join practitioner p on p.id ="
+                    + " s.practitioner_id where p.email_normalized = ? and s.kind ="
+                    + " 'email_confirmed'",
+                String.class,
+                email))
+        .isEqualTo("fe80::1");
+  }
+
+  @Test
   void unknownTokenGives410() throws Exception {
     assertThat(confirm("jeton-inconnu")).isEqualTo(410);
   }

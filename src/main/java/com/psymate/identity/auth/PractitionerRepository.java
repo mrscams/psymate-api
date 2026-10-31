@@ -121,14 +121,16 @@ class PractitionerRepository {
         .update();
   }
 
-  void insertSecurityEvent(UUID practitionerId, String kind, String ip, Instant now) {
+  void insertSecurityEvent(
+      UUID practitionerId, String kind, String ip, String detailsJson, Instant now) {
     jdbc.sql(
-            "insert into security_event (id, practitioner_id, kind, ip, occurred_at) values"
-                + " (:id, :p, :k, cast(:ip as inet), :now)")
+            "insert into security_event (id, practitioner_id, kind, ip, details, occurred_at) values"
+                + " (:id, :p, :k, cast(:ip as inet), cast(:details as jsonb), :now)")
         .param("id", UUID.randomUUID())
         .param("p", practitionerId)
         .param("k", kind)
-        .param("ip", ip)
+        .param("ip", IpAddresses.normalize(ip))
+        .param("details", detailsJson)
         .param("now", Timestamp.from(now))
         .update();
   }

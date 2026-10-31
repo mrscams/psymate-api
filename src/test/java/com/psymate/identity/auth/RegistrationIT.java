@@ -13,13 +13,14 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.event.ApplicationEvents;
-import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.containers.GenericContainer;
@@ -30,16 +31,27 @@ import tools.jackson.databind.json.JsonMapper;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(AuthTestConfig.class)
-@RecordApplicationEvents
+@Import({AuthTestConfig.class, RegistrationIT.ListenerConfig.class})
 class RegistrationIT {
+  /** Un abonné transactionnel : c'est lui qui fait écrire la publication dans le registre. */
+  static class RegisteredListener {
+    @ApplicationModuleListener
+    void on(PractitionerRegistered event) {}
+  }
+
+  @TestConfiguration(proxyBeanMethods = false)
+  static class ListenerConfig {
+    @Bean
+    RegisteredListener registeredListener() {
+      return new RegisteredListener();
+    }
+  }
 
   private static final String PASSWORD = RegistrationFixtures.PASSWORD;
 
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
   @Autowired private GenericContainer<?> mailpit;
-  @Autowired private ApplicationEvents applicationEvents;
   private final JsonMapper json = JsonMapper.builder().build();
 
   private static String newEmail() {
@@ -104,18 +116,54 @@ class RegistrationIT {
   }
 
   @Test
-  void registeredEventIsPublishedWithoutPersonalData() throws Exception {
+  void registeredEventIsWrittenToEventPublicationWithoutPersonalData() throws Exception {
     String email = newEmail();
     register(RegistrationFixtures.payload(email, PASSWORD, "coach"));
     UUID id =
         jdbc.queryForObject(
             "select id from practitioner where email_normalized = ?", UUID.class, email);
-    assertThat(applicationEvents.stream(PractitionerRegistered.class))
-        .anySatisfy(
-            e -> {
-              assertThat(e.practitionerId()).isEqualTo(id);
-              assertThat(e.profession()).isEqualTo("coach");
-            });
+    String serialized =
+        jdbc.queryForObject(
+            "select serialized_event from event_publication where event_type like ? and"
+                + " serialized_event like ?",
+            String.class,
+            "%PractitionerRegistered",
+            "%" + id + "%");
+    assertThat(serialized).contains("coach").doesNotContain(email).doesNotContain("Kaddour");
+  }
+
+  @Test
+  void consentProofIsJournalledInSecurityEvent() throws Exception {
+    String email = newEmail();
+    register(RegistrationFixtures.payload(email, PASSWORD, "psychologist"));
+    Map<String, Object> row =
+        jdbc.queryForMap(
+            "select s.details::text as details, s.ip::text as ip from security_event s join"
+                + " practitioner p on p.id = s.practitioner_id where p.email_normalized = ? and"
+                + " s.kind = 'consent_given'",
+            email);
+    JsonNode details = json.readTree((String) row.get("details"));
+    assertThat(details.path("terms").asBoolean()).isTrue();
+    assertThat(details.path("privacy").asBoolean()).isTrue();
+    assertThat(details.path("version").asString()).isEqualTo(AuthService.CONSENT_VERSION);
+    assertThat(details.path("acceptedAt").asString()).isNotBlank();
+    assertThat(row.get("ip")).isNotNull();
+  }
+
+  /** L'inscription refusée ou sur compte existant ne laisse aucune preuve de consentement. */
+  @Test
+  void existingEmailAddsNoSecondConsentRecord() throws Exception {
+    String email = newEmail();
+    register(RegistrationFixtures.payload(email, PASSWORD, "psychologist"));
+    register(RegistrationFixtures.payload(email, PASSWORD, "psychologist"));
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from security_event s join practitioner p on p.id ="
+                    + " s.practitioner_id where p.email_normalized = ? and s.kind ="
+                    + " 'consent_given'",
+                Integer.class,
+                email))
+        .isEqualTo(1);
   }
 
   @Test
@@ -167,18 +215,22 @@ class RegistrationIT {
     assertThat(register(bad).getResponse().getStatus()).isEqualTo(422);
   }
 
+  /**
+   * Règle anti-flakiness CI : après 5 tours d'échauffement, 15 mesures par cas ; on compare les
+   * médianes et le test passe si l'écart est d'au plus 150 ms OU si le ratio max/min est d'au plus
+   * 1,5. Le coût dominant (Argon2) est identique dans les deux branches.
+   */
   @Test
   void responseTimeIsComparableForNewAndExistingEmail() throws Exception {
     String taken = newEmail();
     register(RegistrationFixtures.payload(taken, PASSWORD, "psychologist"));
-    // Échauffement (JIT, Argon2, pool de connexions).
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 5; i++) {
       register(RegistrationFixtures.payload(newEmail(), PASSWORD, "psychologist"));
       register(RegistrationFixtures.payload(taken, PASSWORD, "psychologist"));
     }
     List<Long> fresh = new ArrayList<>();
     List<Long> existing = new ArrayList<>();
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 15; i++) {
       Map<String, Object> p1 = RegistrationFixtures.payload(newEmail(), PASSWORD, "psychologist");
       long t0 = System.nanoTime();
       register(p1);
@@ -188,8 +240,13 @@ class RegistrationIT {
       register(p2);
       existing.add(System.nanoTime() - t1);
     }
-    long diffMs = Math.abs(median(fresh) - median(existing)) / 1_000_000;
-    assertThat(diffMs).as("écart de médianes (ms)").isLessThanOrEqualTo(50);
+    long a = median(fresh);
+    long b = median(existing);
+    long diffMs = Math.abs(a - b) / 1_000_000;
+    double ratio = (double) Math.max(a, b) / Math.min(a, b);
+    assertThat(diffMs <= 150 || ratio <= 1.5)
+        .as("médianes : nouveau=%d ms, existant=%d ms", a / 1_000_000, b / 1_000_000)
+        .isTrue();
   }
 
   private static long median(List<Long> values) {

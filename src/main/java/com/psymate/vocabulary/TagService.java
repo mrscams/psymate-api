@@ -33,6 +33,11 @@ class TagService implements TagFacade {
     return repo.activeTagByNormalized(current.id(), TextNormalizer.normalize(label));
   }
 
+  @Override
+  public java.util.Map<UUID, String> labelsByIds(java.util.Collection<UUID> ids) {
+    return repo.activeTagLabels(current.id(), ids);
+  }
+
   @Transactional
   TagView create(String label) {
     UUID practitioner = current.id();

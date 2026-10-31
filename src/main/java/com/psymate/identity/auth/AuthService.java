@@ -1,5 +1,6 @@
 package com.psymate.identity.auth;
 
+import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.PractitionerRegistered;
 import com.psymate.identity.auth.AuthDtos.RegisterRequest;
@@ -25,7 +26,6 @@ import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -57,7 +57,7 @@ class AuthService {
   private final AuthMailer mailer;
   private final TaskExecutor mailExecutor;
   private final Clock clock;
-  private final ApplicationEventPublisher events;
+  private final DomainEventPublisher events;
   private final TransactionTemplate tx;
   private final SecureRandom random = new SecureRandom();
 
@@ -68,7 +68,7 @@ class AuthService {
       AuthMailer mailer,
       TaskExecutor mailExecutor,
       Clock clock,
-      ApplicationEventPublisher events,
+      DomainEventPublisher events,
       PlatformTransactionManager txManager) {
     this.practitioners = practitioners;
     this.tokens = tokens;
@@ -102,7 +102,7 @@ class AuthService {
    * contrôles de validité passent avant, le mot de passe est haché dans les deux cas (temps
    * comparable) et les e-mails partent hors de la requête.
    */
-  public void register(RegisterRequest r, Locale locale) {
+  public void register(RegisterRequest r, Locale locale, String ip) {
     String normalized = normalizeEmail(r.email());
     List<String> violations =
         PasswordPolicy.violations(r.password(), normalized, r.firstName(), r.lastName());
@@ -143,9 +143,10 @@ class AuthService {
             practitioners.insertTenant(tenantId, display, now);
             practitioners.insertPractitioner(row, normalized, contact, now);
             issueConfirmationToken(row.id(), token, now);
-            events.publishEvent(
-                new PractitionerRegistered(
-                    UUID.randomUUID(), now, row.id(), tenantId, row.profession()));
+            // Preuve des consentements : aucun ALTER TABLE, journal append-only.
+            practitioners.insertSecurityEvent(
+                row.id(), "consent_given", ip, consentDetails(now), now);
+            events.publish(new PractitionerRegistered(tenantId, row.id(), row.profession()));
           });
     } catch (DuplicateKeyException e) {
       // Inscription concurrente avec la même adresse : même issue silencieuse.
@@ -154,6 +155,16 @@ class AuthService {
     }
     sendAsync(
         "confirmation e-mail", () -> mailer.sendEmailConfirmation(row.email(), token, mailLocale));
+  }
+
+  static final String CONSENT_VERSION = "cgu-privacy-2026-10";
+
+  static String consentDetails(Instant now) {
+    return "{\"terms\":true,\"privacy\":true,\"version\":\""
+        + CONSENT_VERSION
+        + "\",\"acceptedAt\":\""
+        + now
+        + "\"}";
   }
 
   /** Téléphone, adresse (sauf visio) et numéro professionnel contrôlés ; erreurs par champ. */
@@ -226,7 +237,7 @@ class AuthService {
             .consume(KIND_EMAIL_CONFIRM, sha256(token), now)
             .orElseThrow(InvalidTokenException::new);
     practitioners.confirmEmail(id, now);
-    practitioners.insertSecurityEvent(id, "email_confirmed", ip, now);
+    practitioners.insertSecurityEvent(id, "email_confirmed", ip, null, now);
     return practitioners.findById(id).orElseThrow(InvalidTokenException::new);
   }
 
@@ -261,8 +272,20 @@ class AuthService {
    * appartient à un autre compte, rien ne change et elle reçoit l'e-mail « compte existant ».
    * Retourne le praticien à jour.
    */
-  @Transactional
   public PractitionerRow changeEmail(UUID id, String newEmail) {
+    try {
+      return tx.execute(status -> doChangeEmail(id, newEmail));
+    } catch (DuplicateKeyException e) {
+      // Course : l'adresse a été prise entre la lecture et l'écriture. Même issue silencieuse
+      // que « compte existant » ; la transaction est annulée, le compte garde son adresse.
+      PractitionerRow p = practitioners.findById(id).orElseThrow(InvalidTokenException::new);
+      Locale locale = Locale.forLanguageTag(p.locale());
+      sendAsync("account-exists e-mail", () -> mailer.sendAccountExists(newEmail.trim(), locale));
+      return p;
+    }
+  }
+
+  private PractitionerRow doChangeEmail(UUID id, String newEmail) {
     PractitionerRow p = practitioners.findById(id).orElseThrow(InvalidTokenException::new);
     if (!"email_pending".equals(p.verificationStatus())) {
       throw new EmailAlreadyConfirmedException();

@@ -32,6 +32,57 @@ components:
         labelFr:
           type: string
       type: object
+    CreatePatientRequest:
+      properties:
+        birthDate:
+          format: date
+          type: string
+        context:
+          additionalProperties: {}
+          type: object
+        displayName:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        flags:
+          items:
+            $ref: '#/components/schemas/FlagRequest'
+          type: array
+        followUp:
+          additionalProperties: {}
+          type: object
+        lastName:
+          type: string
+        phone:
+          type: string
+        pronoun:
+          type: string
+        tags:
+          items:
+            type: string
+          type: array
+      type: object
+    DirectoryVocabularyDto:
+      properties:
+        audiences:
+          items:
+            $ref: '#/components/schemas/Item'
+          type: array
+        languages:
+          items:
+            $ref: '#/components/schemas/Item'
+          type: array
+        modalities:
+          items:
+            $ref: '#/components/schemas/Item'
+          type: array
+        specialties:
+          items:
+            $ref: '#/components/schemas/Item'
+          type: array
+      type: object
     EmailChangeRequest:
       properties:
         newEmail:
@@ -94,6 +145,32 @@ components:
         sortOrder:
           format: int32
           type: integer
+      type: object
+    FlagDto:
+      properties:
+        kind:
+          type: string
+        reason:
+          type: string
+        setAt:
+          format: date-time
+          type: string
+      type: object
+    FlagRequest:
+      properties:
+        kind:
+          type: string
+        reason:
+          type: string
+      type: object
+    Item:
+      properties:
+        code:
+          type: string
+        labelEn:
+          type: string
+        labelFr:
+          type: string
       type: object
     LinkTypeView:
       properties:
@@ -213,6 +290,132 @@ components:
       required:
       - email
       type: object
+    PatientDto:
+      properties:
+        archivedAt:
+          format: date-time
+          type: string
+        birthDate:
+          format: date
+          type: string
+        context:
+          additionalProperties: {}
+          type: object
+        createdAt:
+          format: date-time
+          type: string
+        currentVersion:
+          format: int32
+          type: integer
+        displayName:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        flags:
+          items:
+            $ref: '#/components/schemas/FlagDto'
+          type: array
+        followUp:
+          additionalProperties: {}
+          type: object
+        id:
+          format: uuid
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        pronoun:
+          type: string
+        tags:
+          items:
+            $ref: '#/components/schemas/TagDto'
+          type: array
+        updatedAt:
+          format: date-time
+          type: string
+      type: object
+    PatientPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/PatientDto'
+          type: array
+        nextCursor:
+          type: string
+      type: object
+    ProfileDto:
+      properties:
+        address:
+          type: string
+        audiences:
+          items:
+            type: string
+          type: array
+        availability:
+          type: string
+        bio:
+          type: string
+        city:
+          type: string
+        contactEmail:
+          type: string
+        contactPhone:
+          type: string
+        country:
+          type: string
+        displayName:
+          type: string
+        fees:
+          type: string
+        languages:
+          items:
+            type: string
+          type: array
+        modalities:
+          items:
+            type: string
+          type: array
+        nextSlotAt:
+          format: date
+          type: string
+        photoAssetKey:
+          type: string
+        postalCode:
+          type: string
+        profession:
+          type: string
+        published:
+          type: boolean
+        publishedAt:
+          format: date-time
+          type: string
+        responseDelay:
+          type: string
+        showAddress:
+          type: boolean
+        showEmail:
+          type: boolean
+        showPhone:
+          type: boolean
+        showProfessionalNumber:
+          type: boolean
+        slug:
+          type: string
+        specialties:
+          items:
+            type: string
+          type: array
+        titleLabel:
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+        websiteUrl:
+          type: string
+      type: object
     RegisterRequest:
       properties:
         address:
@@ -285,6 +488,14 @@ components:
         verificationStatus:
           type: string
       type: object
+    TagDto:
+      properties:
+        id:
+          format: uuid
+          type: string
+        label:
+          type: string
+      type: object
     TagRequest:
       properties:
         label:
@@ -303,6 +514,86 @@ components:
         normalizedLabel:
           type: string
         usageCount:
+          format: int32
+          type: integer
+      type: object
+    TagsRequest:
+      properties:
+        tags:
+          items:
+            type: string
+          type: array
+      type: object
+    UpdateProfileRequest:
+      properties:
+        address:
+          type: string
+        audiences:
+          items:
+            type: string
+          type: array
+        availability:
+          type: string
+        bio:
+          type: string
+        city:
+          type: string
+        contactEmail:
+          type: string
+        contactPhone:
+          type: string
+        country:
+          type: string
+        displayName:
+          type: string
+        fees:
+          type: string
+        languages:
+          items:
+            type: string
+          type: array
+        modalities:
+          items:
+            type: string
+          type: array
+        nextSlotAt:
+          format: date
+          type: string
+        postalCode:
+          type: string
+        responseDelay:
+          type: string
+        showAddress:
+          type: boolean
+        showEmail:
+          type: boolean
+        showPhone:
+          type: boolean
+        showProfessionalNumber:
+          type: boolean
+        specialties:
+          items:
+            type: string
+          type: array
+        titleLabel:
+          type: string
+        websiteUrl:
+          type: string
+      type: object
+    VersionDto:
+      properties:
+        authorId:
+          format: uuid
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        reason:
+          type: string
+        snapshot:
+          additionalProperties: {}
+          type: object
+        version:
           format: int32
           type: integer
       type: object
@@ -572,6 +863,315 @@ paths:
           description: OK
       tags:
       - my-emotion-controller
+  /api/me/profile:
+    get:
+      operationId: get
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ProfileDto'
+          description: OK
+      tags:
+      - profile-controller
+    put:
+      operationId: update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ProfileDto'
+          description: OK
+      tags:
+      - profile-controller
+  /api/me/profile/photo:
+    delete:
+      operationId: deletePhoto
+      responses:
+        '200':
+          description: OK
+      tags:
+      - profile-controller
+    post:
+      operationId: uploadPhoto
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                file:
+                  format: binary
+                  type: string
+              required:
+              - file
+              type: object
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ProfileDto'
+          description: OK
+      tags:
+      - profile-controller
+  /api/me/profile/publish:
+    post:
+      operationId: publish
+      responses:
+        '200':
+          description: OK
+      tags:
+      - profile-controller
+  /api/me/profile/unpublish:
+    post:
+      operationId: unpublish
+      responses:
+        '200':
+          description: OK
+      tags:
+      - profile-controller
+  /api/patients:
+    get:
+      operationId: listPatients
+      parameters:
+      - in: query
+        name: q
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: archived
+        required: false
+        schema:
+          default: false
+          type: boolean
+      - in: query
+        name: tag
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: sort
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: cursor
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: limit
+        required: false
+        schema:
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientPage'
+          description: OK
+      tags:
+      - patient-controller
+    post:
+      operationId: createPatient
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePatientRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: Created
+      tags:
+      - patient-controller
+  /api/patients/{id}:
+    delete:
+      operationId: archivePatient
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: No Content
+      tags:
+      - patient-controller
+    get:
+      operationId: getPatient
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: OK
+      tags:
+      - patient-controller
+    patch:
+      operationId: patchPatient
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: {}
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: OK
+      tags:
+      - patient-controller
+  /api/patients/{id}/flags:
+    post:
+      operationId: addPatientFlag
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlagRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: Created
+      tags:
+      - patient-controller
+  /api/patients/{id}/flags/{kind}:
+    delete:
+      operationId: clearPatientFlag
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: path
+        name: kind
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: OK
+      tags:
+      - patient-controller
+  /api/patients/{id}/restore:
+    post:
+      operationId: restorePatient
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: OK
+      tags:
+      - patient-controller
+  /api/patients/{id}/tags:
+    put:
+      operationId: replacePatientTags
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagsRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: OK
+      tags:
+      - patient-controller
+  /api/patients/{id}/versions:
+    get:
+      operationId: listPatientVersions
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                items:
+                  $ref: '#/components/schemas/VersionDto'
+                type: array
+          description: OK
+      tags:
+      - patient-controller
   /api/tags:
     get:
       operationId: list
@@ -653,6 +1253,18 @@ paths:
           description: OK
       tags:
       - tag-controller
+  /api/vocabulary/directory:
+    get:
+      operationId: get_1
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DirectoryVocabularyDto'
+          description: OK
+      tags:
+      - directory-vocabulary-controller
   /api/vocabulary/emotions:
     get:
       operationId: emotions

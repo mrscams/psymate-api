@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-31T11:13:13.640Z",
+  "task": "M1-01",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "3 bloquant(s), 6 à corriger, 4 remarque(s)",
+  "notes": "1) info.version openapi inchangée (0.1.0) malgré nouveaux endpoints et operationId renommé; 2) PatientRepository lit la table tag du module vocabulary (join); 3) 403 vs 404 distingue existence d'un patient d'autrui",
+  "branch": "worktree-M1-01",
+  "checkout": "M1-01"
+}

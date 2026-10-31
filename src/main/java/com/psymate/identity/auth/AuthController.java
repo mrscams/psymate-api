@@ -73,8 +73,9 @@ class AuthController {
   @Operation(summary = "Inscription d'un praticien (ouverte, sans code d'invitation)")
   ResponseEntity<RegisterResponse> register(
       @Valid @RequestBody RegisterRequest r,
-      @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage) {
-    service.register(r, preferredLocale(acceptLanguage));
+      @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage,
+      HttpServletRequest request) {
+    service.register(r, preferredLocale(acceptLanguage), request.getRemoteAddr());
     return ResponseEntity.status(HttpStatus.CREATED).body(new RegisterResponse(REGISTER_STATUS));
   }
 
@@ -84,8 +85,9 @@ class AuthController {
   @Operation(summary = "Alias déprécié de POST /api/auth/register", deprecated = true)
   ResponseEntity<RegisterResponse> signup(
       @Valid @RequestBody RegisterRequest r,
-      @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage) {
-    return register(r, acceptLanguage);
+      @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage,
+      HttpServletRequest request) {
+    return register(r, acceptLanguage, request);
   }
 
   @PostMapping("/email/confirm")

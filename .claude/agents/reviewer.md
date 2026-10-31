@@ -15,3 +15,5 @@ Vérifie, dans cet ordre, et réponds par une liste « bloquant / à corriger / 
 6. Secrets, URL de prod, couleurs ou textes en dur.
 7. Le contrat OpenAPI : si l'API a changé, `contract/openapi.yaml` a été regénéré et la version bumpée.
 8. Décisions : si la tâche cite une décision de docs/G-decisions.md, vérifie qu'elle est appliquée (package com.psymate, rôle psymate_app, liste fermée de l'annuaire, etc.).
+
+Dernière action (skill `progress-log`) : enregistre ta revue sans rien modifier d'autre, `make log TASK=<ID> AGENT=reviewer STATUS=review SUMMARY="<n> bloquant(s), <n> à corriger, <n> remarque(s)" NOTES="<les points bloquants, ou 'aucun'>"`. C'est le seul fichier que tu as le droit de créer ; n'édite jamais docs/progress/index.html ni un événement existant.

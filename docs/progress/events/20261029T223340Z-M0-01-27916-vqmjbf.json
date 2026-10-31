@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-29T22:33:40.000Z",
+  "task": "M0-01",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR #1 fusionnee dans main (e9752e7). CI verify verte en 1m00.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/1",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

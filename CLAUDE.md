@@ -13,6 +13,7 @@ Pour la base de données, docs/E-modele-donnees.md fait autorité sur A et C. Po
 - make seed : données fictives
 - make contract : regénère contract/openapi.yaml
 - make db-reset : recrée la base locale depuis zéro
+- make log TASK=… AGENT=… STATUS=… SUMMARY="…" : enregistre l'avancement d'une tâche (skill progress-log) ; make progress : regénère docs/progress/index.html
 
 ## Architecture (règles non négociables)
 - Un module Spring Modulith par contexte : identity, patients, vocabulary, clinical, linking, search, overview, events, directory. Packages réservés et vides : ai, companion.
@@ -43,4 +44,4 @@ Nommage : EntryService, EntryRepository, EntryController, EntryDto / CreateEntry
 - Travailler hors du module indiqué dans ta tâche.
 
 ## Fin de tâche
-./mvnw verify vert, contrat à jour, PR ouverte avec le template rempli (ID de la tâche, critères cochés un par un, tests ajoutés, dépendances Maven ajoutées listées).
+./mvnw verify vert, contrat à jour, PR ouverte avec le template rempli (ID de la tâche, critères cochés un par un, tests ajoutés, dépendances Maven ajoutées listées), puis `make log …` (skill progress-log) avec le fichier d'événement commité. Jamais d'édition de docs/progress/index.html ni d'un événement existant.

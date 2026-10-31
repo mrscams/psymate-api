@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-29T21:35:00.000Z",
+  "task": "M0-01",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Spring Boot 4.1.2, Java 21, Modulith 2.1.2 (BOM), Flyway, springdoc 3.2.0, Testcontainers, Spotless ; Makefile, docker-compose (pgvector/pg16 + role psymate_app, Mailpit v1.32.0), CI GitHub Actions. verify vert : 3 tests.",
+  "notes": "Limite connue : springdoc 3.2.0 apporte Jackson 2.21.7 en transitif (swagger-core) ; rien dans le pom ni dans src. Extensions PostgreSQL laissees a V1 (M0-03). mvnw remis en 100755 pour la CI Linux.",
+  "next": "M0-02 et M0-03 debloquees",
+  "pr": "https://github.com/mrscams/psymate-api/pull/1",
+  "branch": "m0-01-initialiser-psymate-api",
+  "checkout": "psymate-api"
+}

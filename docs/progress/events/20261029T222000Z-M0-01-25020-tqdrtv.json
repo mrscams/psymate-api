@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-29T22:20:00.000Z",
+  "task": "M0-01",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant, 2 a corriger (Mailpit :latest, db-reset sans Mailpit), corriges avant fusion",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

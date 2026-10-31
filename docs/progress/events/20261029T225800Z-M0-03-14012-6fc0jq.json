@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-29T22:58:00.000Z",
+  "task": "M0-03",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Migration V01__init (session fork 'Hello (fork 2)') : extensions, dictionnaire, tables V2 et reserves compagnon, REVOKE sur les tables append-only ; FlywayMigrationIT. verify vert : 9 tests.",
+  "notes": "Nommee V01__init et non V1__init.sql comme dans C-plan : a verifier dans E4 si le prefixe doit etre aligne.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/2",
+  "branch": "worktree-M0-03",
+  "checkout": "psymate-api"
+}

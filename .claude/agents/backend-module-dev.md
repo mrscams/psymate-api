@@ -19,3 +19,5 @@ Pendant :
 - Chaque critère d'acceptation de ta tâche devient un test.
 
 À la fin : ./mvnw verify vert, puis une PR via `gh pr create` avec le template : ID de la tâche, critères cochés un par un, tests ajoutés, dépendances Maven ajoutées (ou « aucune »), décisions prises quand la documentation était ambiguë.
+
+Dernière action, toujours (skill `progress-log`) : `make log TASK=<ID> AGENT=backend-module-dev STATUS=done SUMMARY="…" PR=<url> NOTES="…" NEXT="…"`, et commite le fichier créé dans docs/progress/events/. Si tu t'arrêtes bloqué, même commande avec STATUS=blocked et la raison dans NOTES. N'édite jamais docs/progress/index.html ni un événement existant.

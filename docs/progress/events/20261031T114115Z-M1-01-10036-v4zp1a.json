@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T11:41:15.527Z",
+  "task": "M1-01",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 9 fusionnee dans main (patients : CRUD, versions, drapeaux, tags, TagFacade.labelsByIds)",
+  "next": "M1-03 debloquee des que M1-10 est fusionnee (M1-02, M4-01a deja la)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/9",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

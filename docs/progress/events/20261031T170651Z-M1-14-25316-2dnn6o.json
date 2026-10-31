@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T17:06:51.861Z",
+  "task": "M1-14",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Administration : validation des praticiens. identity.admin : file (status, sort, curseur, overdue 2 jours ouvrés), dossier sans donnée patient, URL signée 5 min avec document_access_log + security_event admin.document_read, PATCH reviewedStatus, décision append-only (approved / needs_more / rejected) avec effets, e-mails FR/EN, événements PractitionerApproved / PractitionerRejected, rappel quotidien aux admins. Filtre /api/admin/** : ROLE_ADMIN puis 2FA. ./mvnw verify vert, contrat regénéré (0.2.0).",
+  "notes": "Accès transverses dans identity : AdminTwoFactorFilter (rôle, 2FA fermée par défaut), TwoFactorService.disable refuse un admin (409 TWO_FACTOR_REQUIRED_FOR_ADMIN), DocumentCipher et StorageService publics, événements dans identity.api. Décisions : champ kind (colonne E3.3), 422 pour message manquant, approved exige tout conforme ou force + note interne, status=decided hors périmètre, purge_after documents +90 j dans tous les cas, lecture admin distinguée par security_event actor_id. Revue : 0 bloquant, 6 à corriger (2 corrigés : filtre fail-closed, garde testée sur chaque endpoint ; 4 documentés). Aucune dépendance Maven, aucune migration. Contrat à regénérer après fusion des PR voisines.",
+  "next": "Fusion puis tag contract-v0.8.0 ; M7-08 (bootstrap admin) et M1-14b (comptes, journal, recours, vocabulaire, status=decided) ; M5-06 consomme PractitionerApproved / PractitionerRejected ; reporter le nom du champ kind dans la fiche 20.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/18",
+  "branch": "worktree-M1-14",
+  "checkout": "M1-14"
+}

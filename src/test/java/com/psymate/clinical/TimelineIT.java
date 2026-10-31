@@ -481,6 +481,20 @@ class TimelineIT extends TimelineWebSupport {
   }
 
   @Test
+  void malformedPathIdIs400ForEveryClinicalController() throws Exception {
+    for (String url :
+        List.of(
+            "/api/patients/pas-un-uuid/timeline",
+            "/api/patients/pas-un-uuid/timeline/summary?granularity=month",
+            "/api/entries/pas-un-uuid")) {
+      get(url)
+          .andExpect(status().isBadRequest())
+          .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+          .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"));
+    }
+  }
+
+  @Test
   void errorsAreAccumulatedByField() throws Exception {
     timeline("limit=0&cursor=!!!&types=foo&from=2024-05-01T00:00:00Z&to=2024-04-01T00:00:00Z")
         .andExpect(status().isUnprocessableEntity())

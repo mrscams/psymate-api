@@ -10,12 +10,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
@@ -84,11 +86,27 @@ class ClinicalExceptionHandler {
     return validation(problems, locale);
   }
 
-  /** Paramètre de requête illisible (date non ISO, entier, booléen) : 422 sur ce paramètre. */
+  /**
+   * Paramètre de requête illisible (date non ISO, entier, booléen) : 422 sur ce paramètre. Une
+   * variable de chemin illisible (un {id} qui n'est pas un UUID) reste un 400 : l'URL elle-même est
+   * mal formée, pour tous les contrôleurs clinical.
+   */
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
   ProblemDetail parameter(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
     Locale locale = messages.localeOf(request);
+    MethodParameter parameter = ex.getParameter();
+    if (parameter.hasParameterAnnotation(PathVariable.class)) {
+      return malformed(locale);
+    }
     return validation(List.of(new FieldProblem(ex.getName(), "INVALID_FORMAT")), locale);
+  }
+
+  private ProblemDetail malformed(Locale locale) {
+    ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+    pd.setTitle(messages.get("error.malformed.title", locale));
+    pd.setDetail(messages.get("error.malformed.detail", locale));
+    pd.setProperty("code", "MALFORMED_REQUEST");
+    return pd;
   }
 
   /** Corps illisible : 422 par champ si Jackson sait lequel (date, UUID, nombre), sinon 400. */
@@ -103,11 +121,7 @@ class ClinicalExceptionHandler {
         break;
       }
     }
-    ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
-    pd.setTitle(messages.get("error.malformed.title", locale));
-    pd.setDetail(messages.get("error.malformed.detail", locale));
-    pd.setProperty("code", "MALFORMED_REQUEST");
-    return pd;
+    return malformed(locale);
   }
 
   private static String path(JacksonException ex) {

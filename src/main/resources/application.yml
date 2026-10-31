@@ -47,7 +47,7 @@ app:
     session-remember-me: 30d
 
 versioning:
-  grace-period: 5m
+  grace-period: 75m
 
 springdoc:
   api-docs:

@@ -18,4 +18,11 @@ public interface PatientFacade {
 
   /** Sans contrôle d'accès : l'appelant passe d'abord par {@link PatientOwnershipGuard}. */
   Optional<LocalDate> birthDate(UUID patientId);
+
+  /**
+   * Incrémente patient.clinical_rev : à appeler par les services d'écriture clinical et linking à
+   * chaque écriture clinique (E7 O10, tranché par G Q30 : « application »). Sans contrôle d'accès
+   * (l'appelant a déjà passé par {@link PatientOwnershipGuard}, ou réagit à un événement).
+   */
+  void touchClinicalRev(UUID patientId);
 }

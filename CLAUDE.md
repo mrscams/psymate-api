@@ -20,7 +20,7 @@ Pour la base de données, docs/E-modele-donnees.md fait autorité sur A et C. Po
 - Un module ne lit jamais les tables ni les classes internes d'un autre ; il passe par la façade du package `api` ou par un événement.
 - Dépendances autorisées : voir package-info.java de chaque module (ApplicationModules.verify() les vérifie).
 - directory ne dépend que d'identity et events, et ne touche jamais aux données patient. identity.admin ne dépend d'aucun module clinique.
-- Toute entrée appartient à une séance ; toute correction crée une version (sauf règle de grâce 5 min) ; rien n'est supprimé physiquement.
+- Toute entrée appartient à une séance ; toute correction crée une version (sauf règle de grâce 1 h 15) ; rien n'est supprimé physiquement.
 - Les liens sont des lignes de `link` avec provenance et statut ; jamais de clé étrangère "lien" dans `entry`.
 - Une migration Flyway fusionnée ne se modifie jamais : on en ajoute une. Les numéros sont réservés dans docs/E-modele-donnees.md E4.
 - L'IA V2 n'existe pas en V1 : ne pas écrire de code IA, mais ne pas casser les hooks (outbox, tables vides).

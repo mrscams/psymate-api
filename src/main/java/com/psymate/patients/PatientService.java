@@ -103,6 +103,12 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   }
 
   @Override
+  @Transactional
+  public void touchClinicalRev(UUID patientId) {
+    repo.touchClinicalRev(patientId);
+  }
+
+  @Override
   @Transactional(readOnly = true)
   public void requireOwned(UUID patientId) {
     owned(patientId);

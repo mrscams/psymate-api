@@ -13,4 +13,10 @@ public interface EmotionCatalog {
 
   /** Cherche une émotion active (globale ou custom du praticien courant) par libellé normalisé. */
   Optional<EmotionView> findActiveByLabel(String label);
+
+  /**
+   * Valence et activation d'une émotion active (globale ou custom du praticien courant), vide si le
+   * code est inconnu, inactif ou appartient à un autre praticien.
+   */
+  Optional<EmotionAffect> affectOf(String code);
 }

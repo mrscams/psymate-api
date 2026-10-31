@@ -335,4 +335,10 @@ class PatientRepository {
     }
     return out;
   }
+
+  void touchClinicalRev(UUID patientId) {
+    jdbc.sql("update patient set clinical_rev = clinical_rev + 1 where id = :id")
+        .param("id", patientId)
+        .update();
+  }
 }

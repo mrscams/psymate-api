@@ -23,6 +23,6 @@ class AppContextTest {
     assertThat(context).isNotNull();
     assertThat(appName).isEqualTo("PsyMate");
     assertThat(mailFrom).isEqualTo("test@gmail.com");
-    assertThat(gracePeriod).isEqualTo("5m");
+    assertThat(gracePeriod).isEqualTo("75m");
   }
 }

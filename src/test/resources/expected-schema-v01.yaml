@@ -301,3 +301,78 @@ practitioner_profile:
   - search_vector
   - published_at
   - updated_at
+# V05 clinical (M1-03)
+entry:
+  - id
+  - tenant_id
+  - patient_id
+  - type
+  - status
+  - visibility
+  - author_type
+  - submission_id
+  - occurred_from
+  - occurred_to
+  - occurred_precision
+  - occurred_label
+  - occurred_range
+  - recorded_at
+  - session_id
+  - current_version_id
+  - current_version
+  - link_count
+  - search_vector
+  - archived_at
+  - created_by
+  - created_at
+  - updated_at
+entry_version:
+  - id
+  - entry_id
+  - version
+  - title
+  - body
+  - payload
+  - reason
+  - author_id
+  - created_at
+entry_feeling:
+  - entry_id
+  - emotion_code
+  - original_emotion_code
+  - intensity
+  - valence
+  - arousal
+  - context_note
+  - bodily_signs
+entry_medication:
+  - entry_id
+  - molecule
+  - dosage
+  - frequency
+  - prescriber
+  - period_from
+  - period_to
+entry_session:
+  - entry_id
+  - kind
+  - modality
+  - duration_min
+  - closed_at
+  - summary_version_id
+entry_tag:
+  - entry_id
+  - tag_id
+entry_embedding:
+  - entry_id
+  - version
+  - model
+  - embedding
+  - created_at
+entry_chunk:
+  - id
+  - entry_id
+  - version
+  - ordinal
+  - text
+  - token_count

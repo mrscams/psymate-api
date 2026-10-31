@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T13:32:46.450Z",
+  "task": "M1-12",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Préférences par compte : GET/PATCH /api/me/preferences, merge RFC 7396, 9 clés validées, PreferencesChanged, PractitionerFacade.preferencesOf",
+  "notes": "Aucune dépendance ni migration. Ajout d'une méthode dans auth.PractitionerFacadeImpl. Contrat regénéré (+38 lignes).",
+  "next": "Fusionner, regénérer le contrat après M1-11 / M5-02",
+  "pr": "https://github.com/mrscams/psymate-api/pull/14",
+  "branch": "worktree-M1-12",
+  "checkout": "M1-12"
+}

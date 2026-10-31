@@ -15,8 +15,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Un administrateur sans 2FA active reçoit 403 TWO_FACTOR_REQUIRED sur /api/admin/** (A10, F33).
- * Les routes elles-mêmes arrivent avec M1-14 ; le contrôle d'appartenance au rôle y sera ajouté.
+ * Garde de /api/admin/** (A10, F33). Le contrôle du rôle est ajouté par M1-14 et passe avant celui
+ * de la 2FA : sans l'autorité ROLE_ADMIN, 403 ADMIN_ROLE_REQUIRED ; un administrateur sans 2FA
+ * active reçoit 403 TWO_FACTOR_REQUIRED.
  */
 class AdminTwoFactorFilter extends OncePerRequestFilter {
 
@@ -41,19 +42,39 @@ class AdminTwoFactorFilter extends OncePerRequestFilter {
     boolean admin =
         auth != null
             && auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
-    if (admin && current.isPresent() && !totp.find(current.get().id()).enabled()) {
-      response.setStatus(HttpStatus.FORBIDDEN.value());
-      response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-      response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-      response
-          .getWriter()
-          .write(
-              "{\"type\":\"about:blank\",\"title\":\"Double authentification requise\","
-                  + "\"status\":403,\"code\":\"TWO_FACTOR_REQUIRED\","
-                  + "\"detail\":\"Activez la double authentification pour accéder à "
-                  + "l'administration.\"}");
+    if (!admin) {
+      reject(
+          response,
+          "Accès réservé à l'administration",
+          "ADMIN_ROLE_REQUIRED",
+          "Cette ressource est réservée aux administrateurs.");
+      return;
+    }
+    if (current.isPresent() && !totp.find(current.get().id()).enabled()) {
+      reject(
+          response,
+          "Double authentification requise",
+          "TWO_FACTOR_REQUIRED",
+          "Activez la double authentification pour accéder à l'administration.");
       return;
     }
     chain.doFilter(request, response);
+  }
+
+  private static void reject(HttpServletResponse response, String title, String code, String detail)
+      throws IOException {
+    response.setStatus(HttpStatus.FORBIDDEN.value());
+    response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+    response
+        .getWriter()
+        .write(
+            "{\"type\":\"about:blank\",\"title\":\""
+                + title
+                + "\",\"status\":403,\"code\":\""
+                + code
+                + "\",\"detail\":\""
+                + detail
+                + "\"}");
   }
 }

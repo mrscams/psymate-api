@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
  * (HMAC) la clé de signature des URL.
  */
 @Component
-class DocumentCipher {
+public class DocumentCipher {
 
   private static final int IV_BYTES = 12;
   private static final int TAG_BITS = 128;
@@ -56,7 +56,7 @@ class DocumentCipher {
     }
   }
 
-  byte[] decrypt(byte[] stored, String aad) {
+  public byte[] decrypt(byte[] stored, String aad) {
     try {
       Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
       c.init(Cipher.DECRYPT_MODE, aesKey, new GCMParameterSpec(TAG_BITS, stored, 0, IV_BYTES));
@@ -68,7 +68,7 @@ class DocumentCipher {
   }
 
   /** Signature HMAC-SHA256 en base64url, pour les URL signées. */
-  String sign(String data) {
+  public String sign(String data) {
     try {
       Mac mac = Mac.getInstance("HmacSHA256");
       mac.init(macKey);

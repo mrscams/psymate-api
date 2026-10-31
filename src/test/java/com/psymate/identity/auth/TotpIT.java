@@ -234,6 +234,29 @@ class TotpIT extends AbstractLoginIT {
   }
 
   @Test
+  void anAdministratorCannotDisableTheirOwnTwoFactor() throws Exception {
+    Enrolled e = enrolled();
+    jdbc.update("update practitioner set role = 'admin' where email_normalized = ?", e.email());
+
+    MvcResult r =
+        post(
+            "/api/me/2fa/disable",
+            Map.of("password", PASSWORD, "code", codeNow(e.secret())),
+            e.session(),
+            IP);
+    assertThat(r.getResponse().getStatus()).isEqualTo(409);
+    assertThat(body(r).path("code").asString()).isEqualTo("TWO_FACTOR_REQUIRED_FOR_ADMIN");
+    assertThat(events(e.email(), "2fa_disabled")).isZero();
+    assertThat(
+            jdbc.queryForObject(
+                "select totp_secret_enc is not null and totp_enabled_at is not null from"
+                    + " practitioner where email_normalized = ?",
+                Boolean.class,
+                e.email()))
+        .isTrue();
+  }
+
+  @Test
   void disableAcceptsARecoveryCode() throws Exception {
     Enrolled e = enrolled();
     MvcResult ok =

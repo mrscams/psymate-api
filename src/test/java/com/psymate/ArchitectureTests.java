@@ -127,15 +127,4 @@ class ArchitectureTests {
       assertThat(classes).allMatch(c -> c.getSimpleName().equals("package-info"));
     }
   }
-
-  @Test
-  void identitySubPackagesAreEmpty() {
-    // "auth" (M0-04) et "preferences" (M1-12) sont implémentés : il n'est plus un package réservé
-    // vide.
-    for (String sub : List.of("admin")) {
-      JavaClasses classes = new ClassFileImporter().importPackages(ROOT + ".identity." + sub);
-      assertThat(classes).as(sub).isNotEmpty();
-      assertThat(classes).allMatch(c -> c.getSimpleName().equals("package-info"));
-    }
-  }
 }

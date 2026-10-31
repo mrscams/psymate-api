@@ -4,7 +4,7 @@ package com.psymate.identity.verification;
  * Stockage d'objets opaques (déjà chiffrés par l'appelant). Dev : disque local ; bêta : décidé avec
  * l'étude hébergement (G Q17).
  */
-interface StorageService {
+public interface StorageService {
 
   void put(String key, byte[] data);
 

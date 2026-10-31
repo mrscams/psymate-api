@@ -1,5 +1,6 @@
 package com.psymate.vocabulary;
 
+import com.psymate.vocabulary.api.EmotionAffect;
 import com.psymate.vocabulary.api.EmotionView;
 import com.psymate.vocabulary.api.EntryTypeView;
 import com.psymate.vocabulary.api.LinkTypeView;
@@ -158,6 +159,23 @@ class VocabularyRepository {
         .param("c", code)
         .param("p", practitionerId)
         .query(VocabularyRepository::emotion)
+        .optional();
+  }
+
+  Optional<EmotionAffect> emotionAffect(UUID practitionerId, String code) {
+    return jdbc.sql(
+            "select code, valence, arousal from emotion where code = :c and active"
+                + " and (scope = 'global' or practitioner_id = :p)")
+        .param("c", code)
+        .param("p", practitionerId)
+        .query(
+            (rs, i) -> {
+              int v = rs.getInt(2);
+              Integer valence = rs.wasNull() ? null : v;
+              int a = rs.getInt(3);
+              Integer arousal = rs.wasNull() ? null : a;
+              return new EmotionAffect(rs.getString(1), valence, arousal);
+            })
         .optional();
   }
 

@@ -170,18 +170,16 @@ class PatientIT {
     String id = createPatientNamed("Evt");
     Integer n =
         jdbc.queryForObject(
-            "select count(*) from event_publication where serialized_event like ?",
-            Integer.class,
-            "%" + id + "%");
+            "select count(*) from event_publication where serialized_event like ? and listener_id like '%PatientIT%'",
+            Integer.class, "%" + id + "%");
     assertThat(n).isEqualTo(1);
   }
 
   private int publications(String eventType, String patientId) {
     return jdbc.queryForObject(
-        "select count(*) from event_publication where event_type like ? and serialized_event like ?",
-        Integer.class,
-        "%" + eventType,
-        "%" + patientId + "%");
+        "select count(*) from event_publication where event_type like ? and serialized_event like ?"
+            + " and listener_id like '%PatientIT%'",
+        Integer.class, "%" + eventType, "%" + patientId + "%");
   }
 
   @Test

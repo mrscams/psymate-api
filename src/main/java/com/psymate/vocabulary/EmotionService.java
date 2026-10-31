@@ -1,6 +1,7 @@
 package com.psymate.vocabulary;
 
 import com.psymate.vocabulary.VocabularyRepository.MergeRow;
+import com.psymate.vocabulary.api.EmotionAffect;
 import com.psymate.vocabulary.api.EmotionCatalog;
 import com.psymate.vocabulary.api.EmotionView;
 import java.time.OffsetDateTime;
@@ -46,6 +47,11 @@ class EmotionService implements EmotionCatalog {
   @Override
   public Optional<EmotionView> findActiveByLabel(String label) {
     return repo.activeEmotionByNormalized(current.id(), TextNormalizer.normalize(label));
+  }
+
+  @Override
+  public Optional<EmotionAffect> affectOf(String code) {
+    return repo.emotionAffect(current.id(), code);
   }
 
   @Transactional

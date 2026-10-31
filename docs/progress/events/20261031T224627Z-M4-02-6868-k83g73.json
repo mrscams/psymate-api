@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T22:46:27.989Z",
+  "task": "M4-02",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 28 fusionnee dans main (recherche plein texte : V08, abonne, endpoint, repli trigramme)",
+  "next": "M7-02 (shared) seul ; puis V8 : M2-02, M2-03, M4-03, M6-05",
+  "pr": "https://github.com/mrscams/psymate-api/pull/28",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

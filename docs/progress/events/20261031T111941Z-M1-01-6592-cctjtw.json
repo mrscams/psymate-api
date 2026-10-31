@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-31T11:19:41.517Z",
+  "task": "M1-01",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Corrections de revue : tags via TagFacade, operationId stables, doublons de flags, archivé 409, tests d'événements",
+  "pr": "https://github.com/mrscams/psymate-api/pull/9",
+  "branch": "worktree-M1-01",
+  "checkout": "M1-01"
+}

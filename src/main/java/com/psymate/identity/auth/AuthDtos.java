@@ -82,6 +82,15 @@ final class AuthDtos {
   record PasswordResetConfirmRequest(
       @NotBlank @Size(max = 200) String token, @NotBlank @Size(max = 200) String password) {}
 
+  /**
+   * Changement de mot de passe public (compte de bootstrap) ; otp seulement si la 2FA est active.
+   */
+  record PasswordChangeRequest(
+      @NotBlank @Size(max = 254) String email,
+      @NotBlank @Size(max = 200) String currentPassword,
+      @NotBlank @Size(max = 200) String newPassword,
+      @Size(max = 32) String otp) {}
+
   record MeResponse(
       UUID id,
       UUID tenantId,

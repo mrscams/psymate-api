@@ -7,6 +7,7 @@ import com.psymate.identity.auth.AuthDtos.EmailResendRequest;
 import com.psymate.identity.auth.AuthDtos.LoginRequest;
 import com.psymate.identity.auth.AuthDtos.MeResponse;
 import com.psymate.identity.auth.AuthDtos.OtpRequiredResponse;
+import com.psymate.identity.auth.AuthDtos.PasswordChangeRequest;
 import com.psymate.identity.auth.AuthDtos.PasswordResetConfirmRequest;
 import com.psymate.identity.auth.AuthDtos.PasswordResetRequest;
 import com.psymate.identity.auth.AuthDtos.RegisterRequest;
@@ -177,7 +178,7 @@ class AuthController {
                 schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
         responseCode = "403",
-        description = "EMAIL_NOT_CONFIRMED ou ACCOUNT_SUSPENDED",
+        description = "EMAIL_NOT_CONFIRMED, ACCOUNT_SUSPENDED ou PASSWORD_CHANGE_REQUIRED",
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -207,6 +208,71 @@ class AuthController {
     startSession(current, authorities, Boolean.TRUE.equals(r.rememberMe()), request, response);
     service.recordLogin(current.id());
     return ResponseEntity.ok(toMe(current));
+  }
+
+  /**
+   * Public car un compte de bootstrap (M7-08) reçoit 403 PASSWORD_CHANGE_REQUIRED au login, donc
+   * n'a aucune session : l'appelant prouve son identité par e-mail + mot de passe actuel (+ code
+   * 2FA si elle est active).
+   */
+  @PostMapping("/password/change")
+  @Operation(
+      operationId = "changePassword",
+      summary =
+          "Change le mot de passe (public : e-mail + mot de passe actuel) : 204, 202 code 2FA"
+              + " requis, 401, 403, 422, 423. Révoque toutes les sessions.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "204",
+        description = "Mot de passe changé, sessions révoquées",
+        content = @Content),
+    @ApiResponse(
+        responseCode = "202",
+        description = "Mot de passe actuel correct, 2FA active et code manquant",
+        content = @Content(schema = @Schema(implementation = OtpRequiredResponse.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "Identifiants incorrects (message unique) ou code 2FA faux",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "EMAIL_NOT_CONFIRMED ou ACCOUNT_SUSPENDED",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "422",
+        description = "PASSWORD_POLICY, ou PASSWORD_UNCHANGED (champ newPassword)",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "423",
+        description = "Verrouillage après 5 échecs (15 min)",
+        headers = @Header(name = "Retry-After", description = "Secondes avant nouvel essai"),
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class)))
+  })
+  ResponseEntity<Object> changePassword(
+      @Valid @RequestBody PasswordChangeRequest r, HttpServletRequest request) {
+    String ip = request.getRemoteAddr();
+    // 422 avant toute vérification d'identifiants : ne consomme ni verrou ni code 2FA.
+    AuthService.precheckNewPassword(r.email(), r.currentPassword(), r.newPassword());
+    LoginService.Outcome outcome =
+        loginService.verifyForPasswordChange(r.email(), r.currentPassword(), r.otp(), ip);
+    if (outcome instanceof LoginService.Outcome.OtpRequired) {
+      return ResponseEntity.accepted().body(new OtpRequiredResponse(true));
+    }
+    PractitionerRow row = ((LoginService.Outcome.Authenticated) outcome).practitioner();
+    service.changePassword(row, r.currentPassword(), r.newPassword(), ip);
+    return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/sessions/revoke-others")

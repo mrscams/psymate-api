@@ -73,6 +73,20 @@ final class AuthExceptions {
     }
   }
 
+  /** Compte de bootstrap (M7-08) : le mot de passe à usage unique doit d'abord être remplacé. */
+  static class PasswordChangeRequiredException extends RuntimeException {
+    PasswordChangeRequiredException() {
+      super("password change required");
+    }
+  }
+
+  /** Le nouveau mot de passe est identique à l'actuel. */
+  static class PasswordUnchangedException extends RuntimeException {
+    PasswordUnchangedException() {
+      super("new password equals current password");
+    }
+  }
+
   /** Code TOTP ou mot de passe faux lors de l'activation ou de la désactivation de la 2FA. */
   static class InvalidSecondFactorException extends RuntimeException {
     private final String field;

@@ -7,7 +7,9 @@ import com.psymate.identity.auth.AuthExceptions.FieldValidationException;
 import com.psymate.identity.auth.AuthExceptions.InvalidCredentialsException;
 import com.psymate.identity.auth.AuthExceptions.InvalidSecondFactorException;
 import com.psymate.identity.auth.AuthExceptions.InvalidTokenException;
+import com.psymate.identity.auth.AuthExceptions.PasswordChangeRequiredException;
 import com.psymate.identity.auth.AuthExceptions.PasswordPolicyException;
+import com.psymate.identity.auth.AuthExceptions.PasswordUnchangedException;
 import com.psymate.identity.auth.AuthExceptions.TwoFactorStateException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -154,6 +156,35 @@ class AuthExceptionHandler {
             messages.get("error.suspended.title", locale),
             messages.get("error.suspended.detail", locale));
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(pd);
+  }
+
+  @ExceptionHandler(PasswordChangeRequiredException.class)
+  ResponseEntity<ProblemDetail> passwordChangeRequired(Locale locale) {
+    ProblemDetail pd =
+        problem(
+            HttpStatus.FORBIDDEN,
+            "PASSWORD_CHANGE_REQUIRED",
+            messages.get("error.passwordChange.title", locale),
+            messages.get("error.passwordChange.detail", locale));
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(pd);
+  }
+
+  @ExceptionHandler(PasswordUnchangedException.class)
+  ResponseEntity<ProblemDetail> passwordUnchanged(Locale locale) {
+    ProblemDetail pd =
+        problem(
+            HttpStatus.UNPROCESSABLE_CONTENT,
+            "VALIDATION_FAILED",
+            messages.get("error.validation.title", locale),
+            messages.get("error.validation.detail", locale));
+    pd.setProperty(
+        "errors",
+        List.of(
+            error(
+                "newPassword",
+                "PASSWORD_UNCHANGED",
+                messages.get("error.PASSWORD_UNCHANGED", locale))));
+    return ResponseEntity.unprocessableContent().body(pd);
   }
 
   @ExceptionHandler(InvalidSecondFactorException.class)

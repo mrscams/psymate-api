@@ -143,6 +143,15 @@ class PractitionerRepository {
         .update();
   }
 
+  /** Retire l'obligation de changer de mot de passe (compte de bootstrap, M7-08). */
+  void clearMustChangePassword(UUID id) {
+    jdbc.sql(
+            "update practitioner set preferences = preferences - 'security.mustChangePassword'"
+                + " where id = :id")
+        .param("id", id)
+        .update();
+  }
+
   void touchLastLogin(UUID id, Instant now) {
     jdbc.sql("update practitioner set last_login_at = :now where id = :id")
         .param("now", Timestamp.from(now))

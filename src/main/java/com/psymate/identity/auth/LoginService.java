@@ -4,6 +4,7 @@ import com.psymate.identity.auth.AuthExceptions.AccountLockedException;
 import com.psymate.identity.auth.AuthExceptions.AccountSuspendedException;
 import com.psymate.identity.auth.AuthExceptions.EmailNotConfirmedException;
 import com.psymate.identity.auth.AuthExceptions.InvalidCredentialsException;
+import com.psymate.identity.auth.AuthExceptions.PasswordChangeRequiredException;
 import com.psymate.identity.auth.LoginAttemptLimiter.State;
 import com.psymate.identity.auth.OtpVerifier.Kind;
 import com.psymate.identity.auth.TotpRepository.TotpState;
@@ -14,6 +15,8 @@ import java.util.Optional;
 import java.util.Set;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Connexion durcie (F33, fiche 11). Le mot de passe est toujours vérifié (hachage factice si le
@@ -24,6 +27,11 @@ import org.springframework.stereotype.Service;
 class LoginService {
 
   static final Set<String> SUSPENDED_STATUSES = Set.of("rejected", "suspended", "closed");
+
+  /** Préférence posée par le compte admin de bootstrap (M7-08) : mot de passe à changer. */
+  static final String MUST_CHANGE_PASSWORD = "security.mustChangePassword";
+
+  private static final JsonMapper JSON = JsonMapper.builder().build();
 
   /** Résultat d'une tentative qui n'a pas échoué. */
   sealed interface Outcome {
@@ -59,6 +67,21 @@ class LoginService {
   }
 
   Outcome login(String email, String password, String otpInput, String ip) {
+    return authenticate(email, password, otpInput, ip, false);
+  }
+
+  /**
+   * Vérification d'identifiants pour POST /api/auth/password/change : mêmes verrous, même hachage
+   * factice, mêmes refus (EMAIL_NOT_CONFIRMED, ACCOUNT_SUSPENDED) et même 2FA que la connexion,
+   * mais le drapeau mustChangePassword est ignoré (c'est précisément ce que l'appel lève) et aucune
+   * connexion n'est journalisée.
+   */
+  Outcome verifyForPasswordChange(String email, String password, String otpInput, String ip) {
+    return authenticate(email, password, otpInput, ip, true);
+  }
+
+  private Outcome authenticate(
+      String email, String password, String otpInput, String ip, boolean passwordChange) {
     String normalized = AuthService.normalizeEmail(email);
     String key = normalized + "|" + (ip == null ? "" : ip);
 
@@ -91,6 +114,9 @@ class LoginService {
       revokeSessions(row, ip);
       throw new AccountSuspendedException();
     }
+    if (!passwordChange && mustChangePassword(row)) {
+      throw new PasswordChangeRequiredException();
+    }
 
     TotpState state = totp.find(row.id());
     boolean recoveryUsed = false;
@@ -111,8 +137,19 @@ class LoginService {
     if (recoveryUsed) {
       practitioners.insertSecurityEvent(row.id(), "recovery_code_used", ip, null, now);
     }
-    practitioners.insertSecurityEvent(row.id(), "login_ok", ip, null, now);
+    if (!passwordChange) {
+      practitioners.insertSecurityEvent(row.id(), "login_ok", ip, null, now);
+    }
     return new Outcome.Authenticated(row, recoveryUsed);
+  }
+
+  private static boolean mustChangePassword(PractitionerRow row) {
+    String raw = row.preferencesJson();
+    if (raw == null || raw.isBlank()) {
+      return false;
+    }
+    JsonNode node = JSON.readTree(raw).path(MUST_CHANGE_PASSWORD);
+    return node.isBoolean() && node.asBoolean();
   }
 
   /** Échec : compteur par clé, reflet en base, événements ; 423 si le seuil est atteint. */

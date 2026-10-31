@@ -1,6 +1,7 @@
 package com.psymate.directory;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -14,6 +15,8 @@ import org.springframework.security.web.access.intercept.AuthorizationFilter;
  * l'EmailConfirmationFilter d'identity (il vit dans l'autre chaîne). Limitation de débit par IP.
  */
 @Configuration(proxyBeanMethods = false)
+// Pas de chaîne web en profil cli (commande ponctuelle sans serveur, M7-08).
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 class PublicSecurityConfig {
 
   @Bean

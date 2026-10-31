@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T19:39:19.627Z",
+  "task": "M7-08",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Compte admin de bootstrap : --create-admin (profil cli), mot de passe 20 caracteres affiche une fois, 403 PASSWORD_CHANGE_REQUIRED puis POST /api/auth/password/change public, make admin, .env.example, docs/ops/admin.md ; contrat 0.8.1 ; verify vert (167 unit + 349 IT)",
+  "notes": "Hors bootstrap : identity.auth (PASSWORD_CHANGE_REQUIRED, endpoint public de changement de mot de passe a la place de /api/me/password car le 403 au login ne laisse aucune session, SecurityFilterChain conditionnee au servlet, reset leve le drapeau), directory.PublicSecurityConfig (@ConditionalOnWebApplication), .gitignore. Revue : 0 bloquant, 5 points corriges. make admin non lance pour de vrai (demontre par AdminBootstrapCliIT).",
+  "next": "M1-14b (meme couloir identity) prend le contrat 0.8.2 ; constater la propagation du code de sortie de spring-boot:run au premier make admin",
+  "pr": "https://github.com/mrscams/psymate-api/pull/24",
+  "branch": "worktree-M7-08",
+  "checkout": "M7-08"
+}

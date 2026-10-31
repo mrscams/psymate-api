@@ -343,6 +343,12 @@ class AuthIT {
     Cookie session = login(email, PASSWORD, true).getResponse().getCookie("SESSION");
     mvc.perform(get("/api/auth/me").cookie(session)).andExpect(status().isOk());
 
+    // Obligation de changement posée (compte admin de bootstrap, M7-08) : le reset la lève aussi.
+    jdbc.update(
+        "update practitioner set preferences = preferences ||"
+            + " '{\"security.mustChangePassword\": true}'::jsonb where email_normalized = ?",
+        email);
+
     jsonPost("/api/auth/password-reset/request", Map.of("email", email));
     String token = resetTokenFromMail(email);
     assertThat(
@@ -354,6 +360,7 @@ class AuthIT {
         .isEqualTo(204);
 
     mvc.perform(get("/api/auth/me").cookie(session)).andExpect(status().isUnauthorized());
+    assertThat(login(email, "Nouveau-Secret-2027", false).getResponse().getStatus()).isEqualTo(200);
   }
 
   private long maxInactive(String cookieValue) {

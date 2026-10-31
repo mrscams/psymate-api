@@ -1,6 +1,7 @@
 .claude/worktrees/
 .env
 .env.*
+!.env.example
 target/
 # Suivi d'avancement : la page est derivee des evenements (make progress), seuls les evenements sont commites.
 docs/progress/index.html

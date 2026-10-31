@@ -204,8 +204,8 @@ class VocabularyRepository {
       return 0;
     }
     return jdbc.sql(
-            "update entry_feeling set original_emotion_code = :s, emotion_code = :t"
-                + " where emotion_code = :s")
+            "update entry_feeling set original_emotion_code = coalesce(original_emotion_code, :s),"
+                + " emotion_code = :t where emotion_code = :s")
         .param("s", source)
         .param("t", target)
         .update();
@@ -260,16 +260,26 @@ class VocabularyRepository {
         .optional();
   }
 
-  boolean mergeStillOpen(UUID id) {
+  /**
+   * Marque la fusion annulée de façon atomique : une seule ligne modifiée si elle est encore
+   * ouverte (undo_until non dépassé, pas déjà annulée). Deux undo concurrents ne passent pas tous
+   * les deux.
+   */
+  boolean markMergeUndone(UUID id) {
     return jdbc.sql(
-            "select undo_until > now() and undone_at is null from emotion_merge where id = :id")
-        .param("id", id)
-        .query(Boolean.class)
-        .single();
+                "update emotion_merge set undone_at = now()"
+                    + " where id = :id and undone_at is null and undo_until > now()")
+            .param("id", id)
+            .update()
+        == 1;
   }
 
-  void markMergeUndone(UUID id) {
-    jdbc.sql("update emotion_merge set undone_at = now() where id = :id").param("id", id).update();
+  /** Verrouille la ligne emotion le temps de la transaction (fusions concurrentes). */
+  void lockEmotion(String code) {
+    jdbc.sql("select code from emotion where code = :c for update")
+        .param("c", code)
+        .query()
+        .listOfRows();
   }
 
   // ---- tags

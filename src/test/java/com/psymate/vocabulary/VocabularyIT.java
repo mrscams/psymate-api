@@ -62,6 +62,16 @@ class VocabularyIT {
     return id;
   }
 
+  private UUID insertPatient() {
+    UUID id = UUID.randomUUID();
+    jdbc.update(
+        "insert into patient (id, tenant_id, owner_id, display_name) values (?, ?, ?, 'Patient')",
+        id,
+        tenant,
+        alice);
+    return id;
+  }
+
   private ResultActions postJson(String url, String body) throws Exception {
     return mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(body));
   }
@@ -341,6 +351,20 @@ class VocabularyIT {
   }
 
   @Test
+  void renameAndMergeOfAnotherPractitionersEmotionAre404() throws Exception {
+    current.use(tenant, bob);
+    String bobs = createEmotion("Euphorie", "joy");
+    current.use(tenant, alice);
+    patchJson("/api/me/emotions/" + bobs, "{\"labelFr\":\"Volée\"}")
+        .andExpect(status().isNotFound());
+    postJson("/api/me/emotions/" + bobs + "/merge", "{\"targetCode\":\"joy\"}")
+        .andExpect(status().isNotFound());
+    assertThat(
+            jdbc.queryForObject("select label_fr from emotion where code = ?", String.class, bobs))
+        .isEqualTo("Euphorie");
+  }
+
+  @Test
   void undoOfAnotherPractitionersMergeIs404() throws Exception {
     String code = createEmotion("Lassitude", "sadness");
     String json =
@@ -462,6 +486,45 @@ class VocabularyIT {
         .andExpect(status().isUnprocessableEntity());
     // le libellé de la source archivée est de nouveau libre
     createTag("Boulot");
+  }
+
+  @Test
+  void mergeTagsRelabelsPatientTagsWithoutDuplicates() throws Exception {
+    String source = createTag("Boulot");
+    String target = createTag("Travail");
+    UUID p1 = insertPatient();
+    UUID p2 = insertPatient();
+    jdbc.update("insert into patient_tag (patient_id, tag_id) values (?, ?::uuid)", p1, source);
+    jdbc.update("insert into patient_tag (patient_id, tag_id) values (?, ?::uuid)", p2, source);
+    jdbc.update("insert into patient_tag (patient_id, tag_id) values (?, ?::uuid)", p2, target);
+
+    postJson("/api/tags/" + source + "/merge", "{\"targetId\":\"" + target + "\"}")
+        .andExpect(status().isOk());
+
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from patient_tag where tag_id = ?::uuid", Integer.class, source))
+        .isZero();
+    assertThat(
+            jdbc.queryForList(
+                "select patient_id from patient_tag where tag_id = ?::uuid order by added_at",
+                UUID.class,
+                target))
+        .containsExactlyInAnyOrder(p1, p2);
+  }
+
+  @Test
+  void mergeTagIntoAnotherPractitionersTagIs404() throws Exception {
+    String source = createTag("Boulot");
+    current.use(tenant, bob);
+    String bobs = createTag("Travail");
+    current.use(tenant, alice);
+    postJson("/api/tags/" + source + "/merge", "{\"targetId\":\"" + bobs + "\"}")
+        .andExpect(status().isNotFound());
+    assertThat(
+            jdbc.queryForObject(
+                "select archived_at is null from tag where id = ?::uuid", Boolean.class, source))
+        .isTrue();
   }
 
   /** Dépend de entry_tag (M1-03) : les entrées étiquetées par la source passent à la cible. */

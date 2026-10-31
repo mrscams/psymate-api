@@ -92,6 +92,7 @@ class EmotionService implements EmotionCatalog {
   @Transactional
   MergeView merge(String sourceCode, String targetCode) {
     UUID practitioner = current.id();
+    repo.lockEmotion(sourceCode);
     EmotionView source = activeOwn(practitioner, sourceCode);
     if (targetCode == null || targetCode.isBlank()) {
       throw VocabularyException.invalid("targetCode", "La cible est obligatoire.");
@@ -125,7 +126,8 @@ class EmotionService implements EmotionCatalog {
       throw VocabularyException.of(
           HttpStatus.CONFLICT, "MERGE_ALREADY_UNDONE", "Cette fusion a déjà été annulée.");
     }
-    if (!repo.mergeStillOpen(mergeId)) {
+    // Mise à jour conditionnelle : échoue si le délai est dépassé ou si un undo concurrent a gagné.
+    if (!repo.markMergeUndone(mergeId)) {
       throw VocabularyException.of(
           HttpStatus.CONFLICT,
           "MERGE_UNDO_EXPIRED",
@@ -133,7 +135,6 @@ class EmotionService implements EmotionCatalog {
     }
     repo.restoreFeelings(m.sourceCode(), m.targetCode());
     repo.setEmotionActive(m.sourceCode(), true);
-    repo.markMergeUndone(mergeId);
     return view(repo.merge(mergeId, practitioner).orElseThrow());
   }
 

@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T15:14:33.396Z",
+  "task": "M1-11",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 16 fusionnee dans main (connexion durcie, verrouillage, 2FA TOTP) ; vague V4 terminee",
+  "next": "V5 : M1-04, M4-01, M1-14, M5-03",
+  "pr": "https://github.com/mrscams/psymate-api/pull/16",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

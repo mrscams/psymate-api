@@ -10,6 +10,10 @@ spring:
           enabled: false
   flyway:
     locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   session:
     jdbc:
       initialize-schema: never
@@ -29,6 +33,9 @@ management:
 
 app:
   name: PsyMate
+  # app.directory.storage-dir : dossier des photos de profil (obligatoire, sans valeur par defaut).
+  # Defini ici uniquement pour les profils local et test (tmpdir) ; en production, a fournir par
+  # l environnement (APP_DIRECTORY_STORAGE_DIR) tant qu aucun stockage objet n existe.
   # Base des liens envoyes par e-mail (frontend), a surcharger par environnement.
   web:
     base-url: ${APP_WEB_BASE_URL:http://localhost:5173}
@@ -63,6 +70,8 @@ spring:
 app:
   mail:
     from: test@gmail.com
+  directory:
+    storage-dir: ${java.io.tmpdir}/psymate-assets
 
 ---
 # Profil test : la base vient de Testcontainers (@ServiceConnection).
@@ -74,6 +83,8 @@ spring:
 app:
   mail:
     from: test@gmail.com
+  directory:
+    storage-dir: ${java.io.tmpdir}/psymate-assets
 
 management:
   health:

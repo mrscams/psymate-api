@@ -7,6 +7,38 @@ components:
         labelFr:
           type: string
       type: object
+    CreatePatientRequest:
+      properties:
+        birthDate:
+          format: date
+          type: string
+        context:
+          additionalProperties: {}
+          type: object
+        displayName:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        flags:
+          items:
+            $ref: '#/components/schemas/FlagRequest'
+          type: array
+        followUp:
+          additionalProperties: {}
+          type: object
+        lastName:
+          type: string
+        phone:
+          type: string
+        pronoun:
+          type: string
+        tags:
+          items:
+            type: string
+          type: array
+      type: object
     DirectoryVocabularyDto:
       properties:
         audiences:
@@ -59,6 +91,23 @@ components:
         sortOrder:
           format: int32
           type: integer
+      type: object
+    FlagDto:
+      properties:
+        kind:
+          type: string
+        reason:
+          type: string
+        setAt:
+          format: date-time
+          type: string
+      type: object
+    FlagRequest:
+      properties:
+        kind:
+          type: string
+        reason:
+          type: string
       type: object
     Item:
       properties:
@@ -187,6 +236,62 @@ components:
       required:
       - email
       type: object
+    PatientDto:
+      properties:
+        archivedAt:
+          format: date-time
+          type: string
+        birthDate:
+          format: date
+          type: string
+        context:
+          additionalProperties: {}
+          type: object
+        createdAt:
+          format: date-time
+          type: string
+        currentVersion:
+          format: int32
+          type: integer
+        displayName:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        flags:
+          items:
+            $ref: '#/components/schemas/FlagDto'
+          type: array
+        followUp:
+          additionalProperties: {}
+          type: object
+        id:
+          format: uuid
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        pronoun:
+          type: string
+        tags:
+          items:
+            $ref: '#/components/schemas/TagDto'
+          type: array
+        updatedAt:
+          format: date-time
+          type: string
+      type: object
+    PatientPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/PatientDto'
+          type: array
+        nextCursor:
+          type: string
+      type: object
     ProfileDto:
       properties:
         address:
@@ -304,6 +409,14 @@ components:
         verificationStatus:
           type: string
       type: object
+    TagDto:
+      properties:
+        id:
+          format: uuid
+          type: string
+        label:
+          type: string
+      type: object
     TagRequest:
       properties:
         label:
@@ -324,6 +437,13 @@ components:
         usageCount:
           format: int32
           type: integer
+      type: object
+    TagsRequest:
+      properties:
+        tags:
+          items:
+            type: string
+          type: array
       type: object
     UpdateProfileRequest:
       properties:
@@ -380,6 +500,23 @@ components:
           type: string
         websiteUrl:
           type: string
+      type: object
+    VersionDto:
+      properties:
+        authorId:
+          format: uuid
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        reason:
+          type: string
+        snapshot:
+          additionalProperties: {}
+          type: object
+        version:
+          format: int32
+          type: integer
       type: object
 info:
   description: API de PsyMate, suivi clinique pour psychologues, psychiatres et coachs.
@@ -631,6 +768,240 @@ paths:
           description: OK
       tags:
       - profile-controller
+  /api/patients:
+    get:
+      operationId: listPatients
+      parameters:
+      - in: query
+        name: q
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: archived
+        required: false
+        schema:
+          default: false
+          type: boolean
+      - in: query
+        name: tag
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: sort
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: cursor
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: limit
+        required: false
+        schema:
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientPage'
+          description: OK
+      tags:
+      - patient-controller
+    post:
+      operationId: createPatient
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePatientRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: Created
+      tags:
+      - patient-controller
+  /api/patients/{id}:
+    delete:
+      operationId: archivePatient
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: No Content
+      tags:
+      - patient-controller
+    get:
+      operationId: getPatient
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: OK
+      tags:
+      - patient-controller
+    patch:
+      operationId: patchPatient
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: {}
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: OK
+      tags:
+      - patient-controller
+  /api/patients/{id}/flags:
+    post:
+      operationId: addPatientFlag
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlagRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: Created
+      tags:
+      - patient-controller
+  /api/patients/{id}/flags/{kind}:
+    delete:
+      operationId: clearPatientFlag
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: path
+        name: kind
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: OK
+      tags:
+      - patient-controller
+  /api/patients/{id}/restore:
+    post:
+      operationId: restorePatient
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: OK
+      tags:
+      - patient-controller
+  /api/patients/{id}/tags:
+    put:
+      operationId: replacePatientTags
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagsRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+          description: OK
+      tags:
+      - patient-controller
+  /api/patients/{id}/versions:
+    get:
+      operationId: listPatientVersions
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                items:
+                  $ref: '#/components/schemas/VersionDto'
+                type: array
+          description: OK
+      tags:
+      - patient-controller
   /api/tags:
     get:
       operationId: list

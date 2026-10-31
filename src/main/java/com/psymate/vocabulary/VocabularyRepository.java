@@ -316,6 +316,23 @@ class VocabularyRepository {
         .optional();
   }
 
+  java.util.Map<UUID, String> activeTagLabels(UUID practitionerId, java.util.Collection<UUID> ids) {
+    java.util.Map<UUID, String> out = new java.util.HashMap<>();
+    if (ids.isEmpty()) {
+      return out;
+    }
+    jdbc.sql(
+            "select id, label from tag where practitioner_id = :p and id = any(:ids)"
+                + " and archived_at is null")
+        .param("p", practitionerId)
+        .param("ids", ids.toArray(new UUID[0]))
+        .query(
+            rs -> {
+              out.put(rs.getObject(1, UUID.class), rs.getString(2));
+            });
+    return out;
+  }
+
   Optional<TagView> activeTag(UUID practitionerId, UUID id) {
     return jdbc.sql(
             "select "

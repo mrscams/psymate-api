@@ -3,6 +3,7 @@ package com.psymate.clinical.application;
 import com.psymate.clinical.api.EntryArchived;
 import com.psymate.clinical.api.EntryCorrected;
 import com.psymate.clinical.api.EntryCreated;
+import com.psymate.clinical.api.SessionView;
 import com.psymate.clinical.domain.ClinicalError;
 import com.psymate.clinical.domain.ClinicalException;
 import com.psymate.clinical.domain.Entry;
@@ -130,7 +131,11 @@ public class EntryService {
     write(tenantId, ownerId, patientId, EntryType.SESSION, null, content, clock.instant());
   }
 
-  private UUID write(
+  /**
+   * Écriture commune (entrée, version 1, détail, clinical_rev, EntryCreated), partagée avec
+   * SessionService.
+   */
+  UUID write(
       UUID tenantId,
       UUID authorId,
       UUID patientId,
@@ -170,6 +175,15 @@ public class EntryService {
    */
   @Transactional
   public CorrectionResult correct(UUID entryId, CorrectEntryCommand command) {
+    return correct(entryId, command, false);
+  }
+
+  /**
+   * Correction avec choix de la grâce : {@code alwaysVersion} vrai saute la règle de grâce et crée
+   * toujours une version (clôture de séance, M1-04).
+   */
+  @Transactional
+  CorrectionResult correct(UUID entryId, CorrectEntryCommand command, boolean alwaysVersion) {
     CurrentPractitioner me = currentPractitioner();
     Entry entry = lockOwned(entryId);
     if (entry.archived()) {
@@ -188,7 +202,7 @@ public class EntryService {
 
     Instant now = clock.instant();
     int versionCount = repo.versionCount(entryId);
-    if (graceRule.allows(entry, me.id(), versionCount, now)) {
+    if (!alwaysVersion && graceRule.allows(entry, me.id(), versionCount, now)) {
       repo.updateEntryInPlace(entryId, merged.status(), merged.visibility(), merged.time(), now);
       repo.updateVersionInPlace(
           currentVersion.id(), merged.title(), merged.body(), payload(merged));
@@ -261,7 +275,10 @@ public class EntryService {
     return entry;
   }
 
-  /** ADR-10 : session_id obligatoire sauf pour une séance ; la séance est du même patient. */
+  /**
+   * ADR-10 : session_id obligatoire sauf pour une séance ; la séance est du même patient. Sans
+   * sessionId, la séance courante du patient est utilisée.
+   */
   private UUID checkSession(EntryType type, UUID patientId, UUID sessionId) {
     if (type == null) {
       throw new ClinicalException(ClinicalError.SESSION_INVALID, "Type d'entrée obligatoire");
@@ -274,8 +291,13 @@ public class EntryService {
       return null;
     }
     if (sessionId == null) {
-      throw new ClinicalException(
-          ClinicalError.SESSION_REQUIRED, "Toute entrée appartient à une séance");
+      // Séance courante du patient (ouverte, sinon dernière clôturée, sinon accueil) : M1-04.
+      return repo.currentSession(patientId)
+          .map(SessionView::id)
+          .orElseThrow(
+              () ->
+                  new ClinicalException(
+                      ClinicalError.SESSION_REQUIRED, "Toute entrée appartient à une séance"));
     }
     if (!repo.isSessionOfPatient(sessionId, patientId)) {
       throw new ClinicalException(

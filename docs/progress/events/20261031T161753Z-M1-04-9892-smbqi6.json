@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T16:17:53.614Z",
+  "task": "M1-04",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Séances : SessionService start/close/contact/current, séance courante par défaut dans EntryService.create, EntryFacade.currentSession/openSessionOf ; SessionServiceIT (29) ; verify vert (438 tests), contrat inchangé",
+  "notes": "Décisions : accueil jamais « ouverte » (ne bloque pas start, repli de current) ; close = vraie version (alwaysVersion, motif « Clôture de la séance »), occurred_to = occurred_from + durée ; séances archivées ignorées par current/start, entrées existantes conservées ; « dernière clôturée » inclut les contacts. Revue : 0 bloquant, 2 à corriger traités (test adapté mentionné dans la PR, test de concurrence ajouté). Point ouvert : EntryService.create type session avec closedAt nul contourne le 409 de start.",
+  "next": "M1-05 : endpoints entrées et séances ; router la création de séance vers SessionService.start.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/17",
+  "branch": "worktree-M1-04",
+  "checkout": "M1-04"
+}

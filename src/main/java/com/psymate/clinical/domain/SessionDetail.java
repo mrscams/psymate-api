@@ -19,6 +19,7 @@ public record SessionDetail(
 
   public static final String KIND_INTAKE = "intake";
   public static final String KIND_SESSION = "session";
+  public static final String KIND_CONTACT = "contact";
 
   /** kind absent : « session ». */
   public String kindOrDefault() {

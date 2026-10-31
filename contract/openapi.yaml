@@ -714,6 +714,168 @@ components:
           format: date-time
           type: string
       type: object
+    EntrySearchEmotionFacetDto:
+      properties:
+        code:
+          type: string
+        count:
+          format: int32
+          type: integer
+        label:
+          type: string
+      type: object
+    EntrySearchFacetsDto:
+      description: Compteurs sur les résultats exacts ; chaque facette ignore son propre filtre pour que les puces gardent leur compteur.
+      properties:
+        emotions:
+          items:
+            $ref: '#/components/schemas/EntrySearchEmotionFacetDto'
+          type: array
+        tags:
+          items:
+            $ref: '#/components/schemas/EntrySearchTagFacetDto'
+          type: array
+        types:
+          items:
+            $ref: '#/components/schemas/EntrySearchTypeFacetDto'
+          type: array
+      type: object
+    EntrySearchItemDto:
+      description: Une entrée trouvée. title et snippet sont des fragments HTML échappés.
+      properties:
+        approximate:
+          description: true pour un résultat approché (tolérance aux fautes)
+          type: boolean
+        archivedAt:
+          format: date-time
+          type: string
+        emotionCode:
+          description: Code de l'émotion pour un ressenti, sinon null
+          type: string
+        entryId:
+          format: uuid
+          type: string
+        occurredFrom:
+          format: date-time
+          type: string
+        occurredPrecision:
+          type: string
+        occurredTo:
+          format: date-time
+          type: string
+        rank:
+          description: Pertinence (ts_rank_cd, multipliée par 1,5 sous 90 jours) ; null pour un résultat approché ou sans texte
+          format: double
+          type: number
+        sessionId:
+          format: uuid
+          type: string
+        similarity:
+          description: Similarité trigramme (0 à 1) ; null pour un résultat exact
+          format: double
+          type: number
+        snippet:
+          description: Extrait du corps en HTML échappé avec mark ; null si l'entrée n'a pas de corps
+          type: string
+        tags:
+          description: Libellés des tags
+          items:
+            type: string
+          type: array
+        title:
+          description: Titre en HTML échappé, mots trouvés entre mark si la recherche a un texte
+          type: string
+        type:
+          description: Code du type d'entrée (note, event, situation, feeling, ...)
+          type: string
+        version:
+          description: Version courante de l'entrée
+          format: int32
+          type: integer
+        visibility:
+          description: private ou clinical
+          type: string
+      type: object
+    EntrySearchQueryDto:
+      description: Requête telle que le serveur l'a interprétée à partir du paramètre q.
+      properties:
+        after:
+          description: 'Borne inclusive déduite de après: / after: (UTC), ou null'
+          format: date-time
+          type: string
+        before:
+          description: 'Borne exclusive de avant: / before: (UTC), ou null'
+          format: date-time
+          type: string
+        emotions:
+          description: 'Valeurs des jetons émotion: / emotion:'
+          items:
+            type: string
+          type: array
+        tags:
+          description: 'Valeurs des jetons tag:'
+          items:
+            type: string
+          type: array
+        text:
+          description: Texte libre restant après retrait des jetons (tag:, émotion:, ...)
+          type: string
+      type: object
+    EntrySearchResultDto:
+      properties:
+        approximateCount:
+          description: Résultats approchés dans items (page 1 seulement)
+          format: int32
+          type: integer
+        exactCount:
+          description: Résultats exacts dans items
+          format: int32
+          type: integer
+        facets:
+          $ref: '#/components/schemas/EntrySearchFacetsDto'
+        items:
+          description: Exacts d'abord, puis approchés
+          items:
+            $ref: '#/components/schemas/EntrySearchItemDto'
+          type: array
+        page:
+          description: Numéro de page, à partir de 1
+          format: int32
+          type: integer
+        pageSize:
+          description: Taille de page (20)
+          format: int32
+          type: integer
+        query:
+          $ref: '#/components/schemas/EntrySearchQueryDto'
+        tookMs:
+          description: Durée de traitement côté serveur, en millisecondes
+          format: int64
+          type: integer
+        total:
+          description: Nombre total de résultats exacts, hors approchés
+          format: int64
+          type: integer
+      type: object
+    EntrySearchTagFacetDto:
+      properties:
+        count:
+          format: int32
+          type: integer
+        id:
+          format: uuid
+          type: string
+        label:
+          type: string
+      type: object
+    EntrySearchTypeFacetDto:
+      properties:
+        code:
+          type: string
+        count:
+          format: int32
+          type: integer
+      type: object
     EntrySessionDto:
       properties:
         closedAt:
@@ -3589,6 +3751,111 @@ paths:
           description: OK
       tags:
       - patient-controller
+  /api/patients/{id}/search:
+    get:
+      description: 'Recherche plein texte (français, sans accents, ts_rank_cd, boost x1,5 sous 90 jours), repli par trigrammes (résultats approchés, approximate=true) quand moins de 3 résultats exacts, extraits surlignés (balises mark), filtres et facettes. Le paramètre q accepte les jetons tag:xxx, émotion:xxx, avant:AAAA[-MM[-JJ]] et après:AAAA[-MM[-JJ]] (valeur entre guillemets possible) ; ils se cumulent avec les paramètres types, emotions, tags, from et to. Plusieurs valeurs d''un même filtre s''additionnent (ou), les filtres entre eux se combinent (et). Chaque facette ignore son propre filtre. Exception documentée à la pagination par curseur : pagination par numéro de page, 20 résultats par page (page 1 : exacts puis approchés ; pages suivantes : exacts seulement). Les entrées privées d''un autre praticien ne sont jamais renvoyées.'
+      operationId: searchPatientEntries
+      parameters:
+      - description: Identifiant du patient
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'Texte et jetons de recherche, 200 caractères au maximum. Exemple : licenciement tag:travail émotion:anxiété après:2026-06'
+        in: query
+        name: q
+        required: false
+        schema:
+          maxLength: 200
+          type: string
+      - description: Types d'entrée à retenir (note, event, situation, feeling, session, medication) ; paramètre répétable
+        in: query
+        name: types
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+      - description: Codes d'émotion à retenir (ressentis) ; paramètre répétable
+        in: query
+        name: emotions
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+      - description: Libellés de tags à retenir, sans accents ni casse ; paramètre répétable
+        in: query
+        name: tags
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+      - description: 'Début de période sur la date de l''entrée : instant ISO 8601 ou date AAAA-MM-JJ'
+        in: query
+        name: from
+        required: false
+        schema:
+          type: string
+      - description: 'Fin de période (incluse) : instant ISO 8601 ou date AAAA-MM-JJ (jour inclus)'
+        in: query
+        name: to
+        required: false
+        schema:
+          type: string
+      - description: Séance de rattachement des entrées
+        in: query
+        name: sessionId
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Inclure les entrées archivées (exclues par défaut)
+        in: query
+        name: includeArchived
+        required: false
+        schema:
+          default: false
+          type: boolean
+      - description: Numéro de page, à partir de 1 (20 résultats par page)
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EntrySearchResultDto'
+          description: Résultats, facettes et requête interprétée
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Paramètre invalide (errors[] par champ, code SEARCH_BAD_REQUEST)
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Le patient n'appartient pas au praticien courant
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Patient inconnu
+      summary: Recherche dans le dossier d'un patient
+      tags:
+      - search
   /api/patients/{id}/sessions/contact:
     post:
       operationId: recordContact

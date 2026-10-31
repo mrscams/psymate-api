@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T22:33:38.470Z",
+  "task": "M4-02",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Recherche plein texte du dossier : V08 (fonction, triggers, GIN), abonne EntryCreated/EntryCorrected, GET /api/patients/{id}/search avec classement, boost recence, repli trigramme, facettes, syntaxe tag: emotion: avant: apres: ; verify vert (191 unit, 518 IT)",
+  "notes": "Ecarts E3.9 documentes dans la PR : trigger de grace sur entry_version (creation et regle de grace), backfill dans V08, index trigramme sans accents. Pagination par page (20, max 500), exception a documenter dans G et fiche 07. Perf 5000 entrees : exacts 33-324 ms, repli faute 516-677 ms sous charge (cible 300 ms non bloquante). Contrat additif, version 0.8.1 inchangee. Base locale en V10 : make db-reset.",
+  "next": "Fusion puis contrat a regenerer apres M2-01 / M3-01 ; suivi clinical : publier EntryCorrected ou rafraichir le vecteur sur correction tags seuls ; suivi vocabulary : evenement renommage/fusion tag ou emotion ; M4-04 consomme ce contrat",
+  "pr": "https://github.com/mrscams/psymate-api/pull/28",
+  "branch": "worktree-M4-02",
+  "checkout": "M4-02"
+}

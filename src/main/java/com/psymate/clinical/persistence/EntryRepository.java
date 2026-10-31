@@ -1,5 +1,6 @@
 package com.psymate.clinical.persistence;
 
+import com.psymate.clinical.api.SessionView;
 import com.psymate.clinical.domain.Entry;
 import com.psymate.clinical.domain.EntryStatus;
 import com.psymate.clinical.domain.EntryType;
@@ -233,7 +234,68 @@ public class EntryRepository {
         .listOfRows();
   }
 
+  private static final String SESSION_VIEW_SELECT =
+      "select e.id, e.patient_id, s.kind, s.modality, e.occurred_from, s.closed_at, s.duration_min"
+          + " from entry e join entry_session s on s.entry_id = e.id"
+          + " where e.patient_id = :p and e.type = 'session' and e.archived_at is null";
+
+  private static SessionView sessionView(ResultSet rs, int i) throws SQLException {
+    return new SessionView(
+        uuid(rs, "id"),
+        uuid(rs, "patient_id"),
+        rs.getString("kind"),
+        rs.getString("modality"),
+        instant(rs, "occurred_from"),
+        instant(rs, "closed_at"),
+        nullableInt(rs, "duration_min"));
+  }
+
+  /**
+   * Séance ouverte du patient : non archivée, closed_at nul, hors accueil (l'accueil, ouvert par
+   * construction, n'est jamais « la séance ouverte »). La plus récente si plusieurs.
+   */
+  public Optional<SessionView> openSession(UUID patientId) {
+    return jdbc.sql(
+            SESSION_VIEW_SELECT
+                + " and s.closed_at is null and s.kind <> 'intake'"
+                + " order by e.occurred_from desc limit 1")
+        .param("p", patientId)
+        .query(EntryRepository::sessionView)
+        .optional();
+  }
+
+  /**
+   * Séance courante : l'ouverte, sinon la dernière clôturée (séance ou contact, par occurred_from
+   * puis closed_at), sinon l'accueil. Les séances archivées sont ignorées.
+   */
+  public Optional<SessionView> currentSession(UUID patientId) {
+    return jdbc.sql(
+            SESSION_VIEW_SELECT
+                + " order by case when s.closed_at is null and s.kind <> 'intake' then 0"
+                + " when s.kind <> 'intake' then 1 else 2 end,"
+                + " e.occurred_from desc, s.closed_at desc nulls last limit 1")
+        .param("p", patientId)
+        .query(EntryRepository::sessionView)
+        .optional();
+  }
+
+  /** Verrou de transaction : sérialise le démarrage des séances d'un patient. */
+  public void lockSessions(UUID patientId) {
+    jdbc.sql("select pg_advisory_xact_lock(hashtextextended(:k, 0))")
+        .param("k", "session:" + patientId)
+        .query()
+        .listOfRows();
+  }
+
   // ---- écriture
+
+  /** Désigne la version qui tient lieu de compte rendu de la séance (clôture, contact). */
+  public void setSummaryVersion(UUID entryId, UUID versionId) {
+    jdbc.sql("update entry_session set summary_version_id = :v where entry_id = :id")
+        .param("id", entryId)
+        .param("v", versionId)
+        .update();
+  }
 
   /**
    * Insère l'entrée. author_type et submission_id ne sont pas écrits : les défauts de la colonne

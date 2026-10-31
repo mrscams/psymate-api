@@ -376,3 +376,17 @@ entry_chunk:
   - ordinal
   - text
   - token_count
+# V06 directory contact (M5-03)
+contact_request:
+  - id
+  - practitioner_id
+  - sender_name
+  - sender_email
+  - subject
+  - message
+  - consent_at
+  - ip_hash
+  - relayed_at
+  - relay_error
+  - created_at
+  - purge_after

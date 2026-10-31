@@ -13,6 +13,9 @@ public interface PractitionerFacade {
   /** Numéro professionnel (ADELI / RPPS) déclaré, s'il existe. */
   Optional<String> professionalNumber(UUID id);
 
+  /** Adresse e-mail du compte du praticien, si le praticien existe. */
+  Optional<String> emailOf(UUID id);
+
   /**
    * Lecture par lot (un seul SELECT). Les identifiants inconnus sont absents de la map ; {@code
    * preferences} est vide dans cette vue allégée.

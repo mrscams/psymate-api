@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T22:38:13.210Z",
+  "task": "M2-01",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 27 fusionnee dans main (liens : V07, regles de la matrice, cycle de vie, endpoints)",
+  "next": "M2-02, M2-03 debloquees (V8) ; M4-02 a rebaser",
+  "pr": "https://github.com/mrscams/psymate-api/pull/27",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

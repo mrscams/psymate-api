@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T14:45:43.936Z",
+  "task": "M5-02",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 15 fusionnee dans main (annuaire public : recherche, fiche, Bucket4j)",
+  "next": "M5-03 debloquee ; M1-11 a rebaser",
+  "pr": "https://github.com/mrscams/psymate-api/pull/15",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

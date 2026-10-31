@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T13:51:53.132Z",
+  "task": "M5-02",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Corrections de revue : facade par lot, validation 400, debit borne, no-store sur erreurs, photoUrl null",
+  "notes": "PractitionerFacade.findAll ajoute; lot 500 max; forward-headers-strategy requis en deploiement",
+  "next": "Fusion PR #15 puis M5-03",
+  "pr": "https://github.com/mrscams/psymate-api/pull/15",
+  "branch": "worktree-M5-02",
+  "checkout": "M5-02"
+}

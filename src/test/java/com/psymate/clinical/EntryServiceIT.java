@@ -310,7 +310,10 @@ class EntryServiceIT {
 
   @Test
   void entryWithoutSessionIsRefused() {
-    assertThatThrownBy(() -> service.create(patient, of(EntryType.NOTE, null)))
+    // Le patient du setUp a une séance ouverte (M1-04 : une note y serait rattachée) : on en prend
+    // un autre, sans aucune séance.
+    UUID noSessionPatient = fx.newPatient(LocalDate.of(1985, 1, 1));
+    assertThatThrownBy(() -> service.create(noSessionPatient, of(EntryType.NOTE, null)))
         .isInstanceOfSatisfying(
             ClinicalException.class,
             e -> assertThat(e.error()).isEqualTo(ClinicalError.SESSION_REQUIRED));

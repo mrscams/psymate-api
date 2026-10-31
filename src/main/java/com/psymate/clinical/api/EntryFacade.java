@@ -24,4 +24,16 @@ public interface EntryFacade {
    * Version courante de l'entrée, sans contrôle d'accès (l'appelant passe d'abord par le garde).
    */
   Optional<EntryVersionView> currentVersionOf(UUID entryId);
+
+  /**
+   * Séance courante du patient (ouverte, sinon dernière clôturée, sinon accueil). Vide sans
+   * principal, si le patient n'appartient pas au praticien courant, ou s'il n'a aucune séance.
+   */
+  Optional<SessionView> currentSession(UUID patientId);
+
+  /**
+   * Séance ouverte du patient (l'accueil n'en est jamais une). Vide sans principal, si le patient
+   * n'appartient pas au praticien courant, ou si aucune séance n'est ouverte.
+   */
+  Optional<SessionView> openSessionOf(UUID patientId);
 }

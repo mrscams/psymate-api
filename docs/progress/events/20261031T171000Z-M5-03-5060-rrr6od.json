@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T17:10:00.000Z",
+  "task": "M5-03",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "PR 19 ouverte : formulaire de contact public (V06 contact_request, POST .../contact 202/422/429, honeypot + delai 3 s + 5/h/IP Bucket4j, relais e-mail apres commit avec reply-to, purge quotidienne)",
+  "notes": "verify vert (159 unit, 270 IT). Revue : filtre 5/h passe sur le chemin decode (PathPatternRequestMatcher), tests echec SMTP et independance des seaux ajoutes. PractitionerFacade.emailOf ajoute (additif). Aucune dependance Maven. Planificateur prive comme PurgeJob.",
+  "next": "Fusion puis tag contrat 0.7.0 ; contrat a regenerer apres les PR voisines ; timeouts SMTP a poser au deploiement",
+  "pr": "https://github.com/mrscams/psymate-api/pull/19",
+  "branch": "worktree-M5-03",
+  "checkout": "M5-03"
+}

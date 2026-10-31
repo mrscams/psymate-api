@@ -5,6 +5,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -17,7 +19,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
     assignableTypes = {
       ProfileController.class,
       DirectoryVocabularyController.class,
-      PublicDirectoryController.class
+      PublicDirectoryController.class,
+      PublicContactController.class
     })
 class DirectoryExceptionHandler {
 
@@ -41,6 +44,25 @@ class DirectoryExceptionHandler {
     pd.setProperty("code", "INVALID_PARAMETERS");
     pd.setProperty(
         "errors", List.of(new ProfileException.FieldError(ex.getName(), "Valeur invalide.")));
+    return error(pd);
+  }
+
+  /** Jakarta Validation : 422 avec errors[] par champ. */
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  ResponseEntity<ProblemDetail> handle(MethodArgumentNotValidException ex) {
+    List<ProfileException.FieldError> errors =
+        ex.getBindingResult().getFieldErrors().stream()
+            .map(fe -> new ProfileException.FieldError(fe.getField(), fe.getDefaultMessage()))
+            .toList();
+    return handle(ProfileException.invalid(errors));
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  ResponseEntity<ProblemDetail> handle(HttpMessageNotReadableException ex) {
+    ProblemDetail pd =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Corps de requête illisible.");
+    pd.setTitle(HttpStatus.BAD_REQUEST.getReasonPhrase());
+    pd.setProperty("code", "INVALID_BODY");
     return error(pd);
   }
 

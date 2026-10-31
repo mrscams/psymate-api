@@ -5,6 +5,9 @@ spring:
     default: local
   modulith:
     events:
+      # Laisse a false : le rejeu au demarrage est fait par EventRepublisher (app.events.*), avec un
+      # filtre d age ; la propriete officielle rejoue tout, sans filtre, pendant le refresh du contexte.
+      republish-outstanding-events-on-restart: false
       jdbc:
         schema-initialization:
           enabled: false
@@ -41,10 +44,14 @@ app:
     base-url: ${APP_WEB_BASE_URL:http://localhost:5173}
   contract:
     # Version du contrat OpenAPI publie ; a bumper avant de poser un tag contract-vX.Y.Z.
-    version: 0.2.0
+    version: 0.7.0
   auth:
     session-default: 12h
     session-remember-me: 30d
+  events:
+    republish-on-startup: true
+    republish-older-than: 30s
+    completed-retention: 30d
 
 versioning:
   grace-period: 75m
@@ -86,6 +93,9 @@ spring:
       on-profile: test
 
 app:
+  events:
+    # Le rejeu automatique au demarrage ne touche jamais aux lignes que les tests comptent.
+    republish-older-than: 1h
   mail:
     from: test@gmail.com
   directory:

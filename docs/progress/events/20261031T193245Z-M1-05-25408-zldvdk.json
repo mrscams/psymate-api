@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T19:32:45.100Z",
+  "task": "M1-05",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Endpoints entrées et séances (clinical.web), validation 422 errors[] par champ, authorType en lecture seule, tags via TagFacade, contrat regénéré (additif) ; verify vert 164 unit + 387 IT",
+  "notes": "Dépendance ajoutée : MapStruct 1.6.3 (+ processor dans annotationProcessorPaths). Ajouts internes : EntryService.restore (sans événement), tagIds dans les commandes, EntryQueryService, EntryRepository.versions/replaceTags/unarchive, ClinicalError.NO_CURRENT_SESSION. Type session dans POST /entries routé vers SessionService.start (point ouvert M1-04 fermé) ; title/body/tags/durationMin refusés en 422. Clés authorType/submissionId/links refusées avant la garde (422 avant 403). Revue : 0 bloquant, 3 à corriger traités. app.contract.version laissé à 0.8.0 (tag posé après fusion).",
+  "next": "Après fusion : regénérer le contrat (PR voisines M7-08, M5-06, M7-05) et poser le tag de contenu. M2-02 : retirer links de ForbiddenFieldsAdvice. M2-01 : décider du sort des liens superseded à la restauration (pas d'événement EntryRestored). M3-01 : authorType dans les DTO timeline.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/23",
+  "branch": "worktree-M1-05",
+  "checkout": "M1-05"
+}

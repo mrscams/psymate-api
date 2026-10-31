@@ -566,4 +566,15 @@ public class EntryRepository {
         .param("closed", odt(s.closedAt()))
         .update();
   }
+
+  /**
+   * Ajuste la projection entry.link_count (maintenue par linking, M2-01) ; jamais sous zéro. Sans
+   * effet si l'entrée n'existe pas.
+   */
+  public void adjustLinkCount(UUID entryId, int delta) {
+    jdbc.sql("update entry set link_count = greatest(link_count + :delta, 0) where id = :id")
+        .param("id", entryId)
+        .param("delta", delta)
+        .update();
+  }
 }

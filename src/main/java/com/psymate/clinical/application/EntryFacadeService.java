@@ -82,4 +82,15 @@ class EntryFacadeService implements EntryFacade {
                 new EntryVersionView(
                     v.id(), v.entryId(), v.version(), v.title(), v.body(), v.createdAt()));
   }
+
+  @Override
+  public Optional<UUID> patientOf(UUID entryId) {
+    return repo.patientOf(entryId);
+  }
+
+  @Override
+  @Transactional
+  public void adjustLinkCount(UUID entryId, int delta) {
+    repo.adjustLinkCount(entryId, delta);
+  }
 }

@@ -12,7 +12,12 @@ import com.psymate.clinical.application.EntryService;
 import com.psymate.clinical.domain.EntryType;
 import com.psymate.clinical.domain.SessionDetail;
 import com.psymate.clinical.domain.Visibility;
+import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.linking.api.LinkAccepted;
+import com.psymate.linking.api.LinkRejected;
+import com.psymate.linking.application.LinkService;
+import com.psymate.linking.domain.Link;
 import com.psymate.patients.PatientTestSupport;
 import com.psymate.patients.api.PatientCreated;
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -52,6 +57,7 @@ import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.yaml.snakeyaml.Yaml;
 
 /**
@@ -87,6 +93,12 @@ class ReservesConformanceIT {
 
     @ApplicationModuleListener
     void on(EntryArchived event) {}
+
+    @ApplicationModuleListener
+    void on(LinkAccepted event) {}
+
+    @ApplicationModuleListener
+    void on(LinkRejected event) {}
   }
 
   @TestConfiguration(proxyBeanMethods = false)
@@ -100,6 +112,9 @@ class ReservesConformanceIT {
   @Autowired private JdbcTemplate jdbc;
   @Autowired private ApplicationContext context;
   @Autowired private EntryService entries;
+  @Autowired private LinkService linkService;
+  @Autowired private DomainEventPublisher publisher;
+  @Autowired private TransactionTemplate tx;
 
   private UUID tenant;
   private UUID practitioner;
@@ -212,17 +227,47 @@ class ReservesConformanceIT {
     assertThat(publications(EntryCorrected.class, archivedNote)).isZero();
   }
 
-  // À réactiver au lot M2-01 (linking : LinkAccepted et LinkRejected n'existent pas encore).
-  @Disabled("M2-01 : LinkAccepted/LinkRejected n'existent pas encore")
+  /**
+   * A4.9 : LinkAccepted est publié par LinkService à la création d'un lien. LinkRejected n'est
+   * jamais émis en V1 (le statut rejected est réservé aux suggestions de l'IA, V2) : on vérifie que
+   * la suppression d'un lien n'en publie pas, puis que le crochet de l'outbox est prêt en publiant
+   * un LinkRejected à la main dans une transaction.
+   */
   @Test
   void outboxContainsLinkEvents() {
-    // Corps à écrire avec LinkService (M2-01) : ajouter dans OutboxListeners un abonné pour chacun
-    // de LinkAccepted et LinkRejected (com.psymate.linking.api), puis
-    //   UUID link = <lien proposé entre deux entrées du patient de test>;
-    //   linkService.accept(link);   -> publications(LinkAccepted.class, link) == 1
-    //   linkService.reject(link2);  -> publications(LinkRejected.class, link2) == 1
-    // (A4.9 : « après chaque commit de EntryService et LinkService »).
-    fail("À écrire au lot M2-01");
+    UUID event =
+        entries.create(
+            patient,
+            new CreateEntryCommand(
+                EntryType.EVENT,
+                session,
+                "Décès du père",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null));
+    UUID note = entries.create(patient, note("Une autre note"));
+    Link accepted = linkService.create(event, note, "follows", null);
+    Link removed = linkService.create(note, event, "follows", null);
+    linkService.remove(removed.id());
+
+    assertThat(publications(LinkAccepted.class, accepted.id())).as("LinkAccepted").isEqualTo(1);
+    assertThat(publications(LinkAccepted.class, removed.id()))
+        .as("LinkAccepted du lien supprimé")
+        .isEqualTo(1);
+    assertThat(publications(LinkRejected.class, removed.id()))
+        .as("la suppression d'un lien n'émet pas LinkRejected")
+        .isZero();
+
+    UUID suggestion = UUID.randomUUID();
+    tx.executeWithoutResult(
+        status ->
+            publisher.publish(
+                new LinkRejected(tenant, suggestion, patient, event, note, "follows")));
+    assertThat(publications(LinkRejected.class, suggestion)).as("LinkRejected").isEqualTo(1);
   }
 
   // ---- 2. tables V2 et compagnon vides (A4.9, A8, A11)
@@ -243,8 +288,6 @@ class ReservesConformanceIT {
     }
   }
 
-  // À réactiver au lot M2-01 (la migration V07 crée ai_feedback avec link).
-  @Disabled("M2-01 : ai_feedback créée par V07")
   @Test
   void aiFeedbackTableExistsAndIsEmpty() {
     assertThat(tableExists("ai_feedback")).as("ai_feedback existe").isTrue();

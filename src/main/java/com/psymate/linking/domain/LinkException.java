@@ -1,0 +1,63 @@
+package com.psymate.linking.domain;
+
+import com.psymate.vocabulary.api.LinkTypeView;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Erreur métier du module linking. Selon le code, elle porte le lien existant (LINK_EXISTS) ou les
+ * types de liens autorisés pour la paire d'entrées (LINK_TYPE_NOT_ALLOWED).
+ */
+public class LinkException extends RuntimeException {
+
+  private final LinkError error;
+  private final UUID existingLinkId;
+  private final transient List<LinkTypeView> allowedTypes;
+
+  public LinkException(LinkError error, String message) {
+    this(error, message, null, List.of());
+  }
+
+  private LinkException(
+      LinkError error, String message, UUID existingLinkId, List<LinkTypeView> allowedTypes) {
+    super(message);
+    this.error = error;
+    this.existingLinkId = existingLinkId;
+    this.allowedTypes = List.copyOf(allowedTypes);
+  }
+
+  /** Doublon actif : l'identifiant du lien déjà posé est rendu au client. */
+  public static LinkException exists(UUID existingLinkId) {
+    return new LinkException(
+        LinkError.LINK_EXISTS, "Ce lien existe déjà", existingLinkId, List.of());
+  }
+
+  /** Type interdit pour ce couple de types d'entrées ; allowed liste ceux qui conviennent. */
+  public static LinkException notAllowed(
+      String linkType, String sourceType, String targetType, List<LinkTypeView> allowed) {
+    return new LinkException(
+        LinkError.LINK_TYPE_NOT_ALLOWED,
+        "Le type de lien "
+            + linkType
+            + " n'est pas autorisé entre une entrée "
+            + sourceType
+            + " et une entrée "
+            + targetType,
+        null,
+        allowed);
+  }
+
+  public LinkError error() {
+    return error;
+  }
+
+  /** Lien déjà existant (LINK_EXISTS), nul sinon. */
+  public UUID existingLinkId() {
+    return existingLinkId;
+  }
+
+  /** Types autorisés pour la paire (LINK_TYPE_NOT_ALLOWED), vide sinon. */
+  public List<LinkTypeView> allowedTypes() {
+    return allowedTypes;
+  }
+}

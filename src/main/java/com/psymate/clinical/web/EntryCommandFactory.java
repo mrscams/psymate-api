@@ -83,7 +83,7 @@ class EntryCommandFactory {
       sessionCreateRules(r, problems);
     }
     TimeSpec spec = timeSpec(type, r.occurred(), problems);
-    List<UUID> tagIds = resolveTags(r.tags(), problems);
+    List<UUID> tagIds = type == EntryType.SESSION ? null : resolveTags(r.tags(), problems);
 
     FeelingDetail feeling =
         r.feeling() == null
@@ -144,7 +144,7 @@ class EntryCommandFactory {
     EntryStatus status = status(r.status(), problems);
     detailMatchesType(type, r.feeling(), r.medication(), r.session(), problems);
     TimeSpec spec = timeSpec(type, r.occurred(), problems);
-    List<UUID> tagIds = resolveTags(r.tags(), problems);
+    List<UUID> tagIds = type == EntryType.SESSION ? null : resolveTags(r.tags(), problems);
 
     FeelingDetail feeling = mergedFeeling(r.feeling(), current.feeling());
     MedicationDetail medication = mergedMedication(r.medication(), current.medication());
@@ -237,7 +237,10 @@ class EntryCommandFactory {
 
   /**
    * Un corps de type session passe par SessionService.start (verrou, 409 si une séance est déjà
-   * ouverte) : la durée se donne à la clôture, et une séance n'est rattachée à aucune séance.
+   * ouverte), qui ne prend que la modalité et le début : la durée se donne à la clôture, une séance
+   * n'est rattachée à aucune séance, et le contenu (title, body, tags) est refusé plutôt que perdu
+   * en silence (le compte rendu se donne à la clôture, les tags par PATCH). status et visibility
+   * sont ignorés : une séance est toujours finale et clinique.
    */
   private static void sessionCreateRules(CreateEntryRequest r, List<FieldProblem> problems) {
     if (r.sessionId() != null) {
@@ -245,6 +248,15 @@ class EntryCommandFactory {
     }
     if (r.session() != null && r.session().durationMin() != null) {
       problems.add(new FieldProblem("session.durationMin", "NOT_ALLOWED_ON_CREATE"));
+    }
+    if (!blank(r.title())) {
+      problems.add(new FieldProblem("title", "NOT_ALLOWED_ON_CREATE"));
+    }
+    if (!blank(r.body())) {
+      problems.add(new FieldProblem("body", "NOT_ALLOWED_ON_CREATE"));
+    }
+    if (r.tags() != null && !r.tags().isEmpty()) {
+      problems.add(new FieldProblem("tags", "NOT_ALLOWED_ON_CREATE"));
     }
   }
 

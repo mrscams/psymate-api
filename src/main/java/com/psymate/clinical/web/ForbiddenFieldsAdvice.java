@@ -25,6 +25,10 @@ import tools.jackson.databind.json.JsonMapper;
  *
  * <p>Jackson 3 uniquement (tools.jackson.*) : le corps est lu en octets, inspecté en arbre, puis
  * rejoué tel quel au convertisseur.
+ *
+ * <p>Ce contrôle a lieu avant la garde de propriété (il précède la désérialisation, donc le
+ * contrôleur) : un praticien non propriétaire qui envoie une clé interdite reçoit 422 plutôt que
+ * 403. Rien n'est lu en base ni écrit à ce stade, et la réponse ne révèle rien sur le patient.
  */
 @RestControllerAdvice(assignableTypes = {EntryController.class, SessionController.class})
 class ForbiddenFieldsAdvice extends RequestBodyAdviceAdapter {

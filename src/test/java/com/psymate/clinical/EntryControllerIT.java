@@ -1,6 +1,7 @@
 package com.psymate.clinical;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -205,6 +206,22 @@ class EntryControllerIT extends ClinicalWebSupport {
         .andExpect(jsonPath("$.errors[0].field").value("session.durationMin"))
         .andExpect(jsonPath("$.errors[0].code").value("NOT_ALLOWED_ON_CREATE"))
         .andExpect(jsonPath("$.errors[0].message").value(containsString("/close")));
+  }
+
+  @Test
+  void aSessionBodyWithContentIsRefusedRatherThanSilentlyDropped() throws Exception {
+    int before = count("select count(*) from entry where patient_id = ?", patient);
+    post(
+            entriesUrl(patient),
+            "{\"type\":\"session\",\"session\":{\"modality\":\"video\"},"
+                + "\"title\":\"t\",\"body\":\"b\",\"tags\":[\"travail\"]}")
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.errors.length()").value(3))
+        .andExpect(jsonPath("$.errors[*].field").value(containsInAnyOrder("title", "body", "tags")))
+        .andExpect(jsonPath("$.errors[0].code").value("NOT_ALLOWED_ON_CREATE"));
+    assertThat(count("select count(*) from entry where patient_id = ?", patient))
+        .as("aucune séance démarrée")
+        .isEqualTo(before);
   }
 
   // ---- lecture

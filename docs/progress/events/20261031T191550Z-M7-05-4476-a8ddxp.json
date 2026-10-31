@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T19:15:50.233Z",
+  "task": "M7-05",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "ReservesConformanceIT : hooks V2 et reserves compagnon verifies (outbox, tables vides, author_type/submission_id, ck_entry_session_required, packages ai/companion), rapport de conformite ; verify vert",
+  "notes": "4 tests @Disabled a reactiver : outboxContainsLinkEvents et aiFeedbackTableExistsAndIsEmpty (M2-01), contractExposesAuthorTypeOnlyInResponses (M1-05), privateEntriesAreExcludedFromExport (M6-05). Regle de grace neutralisee par versioning.grace-period=0s ; passerelle de test PatientTestSupport vers PatientService (package-private). Aucun code main, aucune migration, aucune dependance, contrat inchange.",
+  "next": "Revue et fusion de la PR 22 ; reactiver les 4 @Disabled dans les lots M1-05, M2-01, M6-05",
+  "pr": "https://github.com/mrscams/psymate-api/pull/22",
+  "branch": "worktree-M7-05",
+  "checkout": "M7-05"
+}

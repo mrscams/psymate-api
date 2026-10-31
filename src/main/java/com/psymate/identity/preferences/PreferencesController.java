@@ -2,8 +2,12 @@ package com.psymate.identity.preferences;
 
 import com.psymate.identity.api.CurrentPractitioner;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.Map;
 import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -24,6 +28,9 @@ class PreferencesController {
 
   @GetMapping
   @Operation(summary = "Préférences du compte (valeurs stockées complétées par les défauts)")
+  @ApiResponse(
+      responseCode = "200",
+      content = @Content(schema = @Schema(implementation = PreferencesSchema.class)))
   Map<String, Object> getPreferences(@AuthenticationPrincipal CurrentPractitioner me) {
     return service.get(me.id());
   }
@@ -32,6 +39,16 @@ class PreferencesController {
   @Operation(
       summary =
           "Modifie les préférences (RFC 7396 : null = retour au défaut, clés inconnues ignorées)")
+  @ApiResponse(
+      responseCode = "200",
+      content = @Content(schema = @Schema(implementation = PreferencesSchema.class)))
+  @ApiResponse(
+      responseCode = "422",
+      description = "Valeur hors domaine : errors[].field = clé fautive, rien n'est appliqué",
+      content =
+          @Content(
+              mediaType = "application/problem+json",
+              schema = @Schema(implementation = ProblemDetail.class)))
   Map<String, Object> updatePreferences(
       @AuthenticationPrincipal CurrentPractitioner me, @RequestBody Map<String, Object> patch) {
     return service.patch(me.id(), patch);

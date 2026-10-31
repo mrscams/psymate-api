@@ -43,8 +43,10 @@ class PractitionerFacadeImpl implements PractitionerFacade {
             r ->
                 Preferences.effective(
                     r.profession(),
-                    json.readValue(
-                        r.preferencesJson(), new TypeReference<Map<String, Object>>() {})))
+                    r.preferencesJson() == null
+                        ? Map.<String, Object>of()
+                        : json.readValue(
+                            r.preferencesJson(), new TypeReference<Map<String, Object>>() {})))
         .orElse(Map.of());
   }
 }

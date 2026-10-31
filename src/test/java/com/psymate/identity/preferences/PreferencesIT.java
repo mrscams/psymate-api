@@ -242,4 +242,67 @@ class PreferencesIT {
         .hasSize(9);
     assertThat(facade.preferencesOf(UUID.randomUUID())).isEmpty();
   }
+
+  @Test
+  void concurrentPatchesOnDifferentKeysAreBothKept() throws Exception {
+    UUID id = insertPractitioner("psychologist", "{}");
+    java.util.concurrent.CountDownLatch start = new java.util.concurrent.CountDownLatch(1);
+    java.util.concurrent.ExecutorService pool =
+        java.util.concurrent.Executors.newFixedThreadPool(2);
+    try {
+      var a =
+          pool.submit(
+              () -> {
+                start.await();
+                return patchJson(id, "psychologist", "{\"theme\":\"dark\"}").andReturn();
+              });
+      var b =
+          pool.submit(
+              () -> {
+                start.await();
+                return patchJson(id, "psychologist", "{\"locale\":\"en\"}").andReturn();
+              });
+      start.countDown();
+      assertThat(a.get().getResponse().getStatus()).isEqualTo(200);
+      assertThat(b.get().getResponse().getStatus()).isEqualTo(200);
+    } finally {
+      pool.shutdownNow();
+    }
+    getPrefs(id, "psychologist")
+        .andExpect(jsonPath("$.theme").value("dark"))
+        .andExpect(jsonPath("$.locale").value("en"));
+  }
+
+  @Test
+  void otherPractitionerNeverReadsNorChangesMyPreferences() throws Exception {
+    UUID alice = insertPractitioner("psychologist", "{\"theme\":\"dark\"}");
+    // Praticien B dans un autre cabinet.
+    UUID otherTenant = UUID.randomUUID();
+    jdbc.update("insert into tenant (id, name) values (?, 'Autre cabinet')", otherTenant);
+    UUID bob = UUID.randomUUID();
+    String email = bob + "@example.test";
+    jdbc.update(
+        "insert into practitioner (id, tenant_id, email, email_normalized, password_hash,"
+            + " first_name, last_name, display_name, profession)"
+            + " values (?, ?, ?, ?, 'x', 'B', 'B', 'B', 'psychologist')",
+        bob,
+        otherTenant,
+        email,
+        email);
+    CurrentPractitioner principal =
+        new CurrentPractitioner(bob, otherTenant, email, "B", "psychologist", "none");
+    RequestPostProcessor asBob =
+        authentication(
+            UsernamePasswordAuthenticationToken.authenticated(principal, null, List.of()));
+    mvc.perform(get("/api/me/preferences").with(asBob))
+        .andExpect(jsonPath("$.theme").value("light"));
+    mvc.perform(
+            patch("/api/me/preferences")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"theme\":\"soft\",\"practitionerId\":\"" + alice + "\"}")
+                .with(asBob))
+        .andExpect(status().isOk());
+    assertThat(stored(alice)).isEqualTo("{\"theme\": \"dark\"}");
+    assertThat(stored(bob)).contains("soft");
+  }
 }

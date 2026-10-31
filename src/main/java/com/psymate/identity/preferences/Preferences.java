@@ -77,10 +77,9 @@ public final class Preferences {
     return switch (key) {
       case MEDICATION_VISIBLE -> value instanceof Boolean;
       case DEFAULT_DURATION ->
-          value instanceof Number n
-              && !(value instanceof Double || value instanceof Float)
-              && n.longValue() >= 15
-              && n.longValue() <= 180;
+          (value instanceof Integer || value instanceof Long)
+              && ((Number) value).longValue() >= 15
+              && ((Number) value).longValue() <= 180;
       default -> false;
     };
   }

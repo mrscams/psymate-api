@@ -58,6 +58,15 @@ class PreferencesTest {
         Arguments.of(map(), map(DUR, 15), map(DUR, 15), List.of(DUR), List.of()),
         Arguments.of(map(), map(DUR, 180), map(DUR, 180), List.of(DUR), List.of()),
         Arguments.of(map(), map(DUR, 90.5), map(), List.of(), List.of(DUR)),
+        Arguments.of(
+            map(),
+            map(DUR, new java.math.BigInteger("18446744073709551676")),
+            map(),
+            List.of(),
+            List.of(DUR)),
+        Arguments.of(
+            map(), map(DUR, new java.math.BigDecimal("60")), map(), List.of(), List.of(DUR)),
+        Arguments.of(map(), map(DUR, 60L), map(DUR, 60), List.of(DUR), List.of()),
         Arguments.of(map(), map(DUR, "60"), map(), List.of(), List.of(DUR)),
         Arguments.of(map(), map(MED, "true"), map(), List.of(), List.of(MED)),
         Arguments.of(map(), map(MED, true), map(MED, true), List.of(MED), List.of()),

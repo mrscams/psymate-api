@@ -214,6 +214,53 @@ emotion_merge:
   - merged_at
   - undo_until
   - undone_at
+# V03 (M1-10) : tables de verification
+verification_document:
+  - id
+  - practitioner_id
+  - purpose
+  - type
+  - title
+  - issuer
+  - year
+  - storage_key
+  - mime
+  - size_bytes
+  - sha256
+  - uploaded_at
+  - reviewed_status
+  - reviewed_at
+  - reviewed_by
+  - purge_after
+  - purged_at
+  - deleted_at
+verification_decision:
+  - id
+  - practitioner_id
+  - admin_id
+  - kind
+  - internal_note
+  - message_to_practitioner
+  - checklist
+  - related_id
+  - decided_at
+document_access_log:
+  - id
+  - document_id
+  - admin_id
+  - ip
+  - accessed_at
+practitioner_appeal:
+  - id
+  - practitioner_id
+  - decision_id
+  - message
+  - submitted_at
+  - reviewed_by
+  - reviewed_at
+  - outcome
+  - response_message
+
 directory_vocabulary:
   - kind
   - code

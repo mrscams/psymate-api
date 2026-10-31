@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T11:32:49.845Z",
+  "task": "M1-10",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Inscription enrichie (register, alias signup), confirmation d'e-mail, filtre EMAIL_NOT_CONFIRMED, migration V03 (4 tables de verification)",
+  "notes": "Aucune dependance Maven. Liste de 10k mots de passe SecLists (MIT). PractitionerRegistered publie via ApplicationEventPublisher faute de NamedInterface sur events.api. Contrat regenere sans bump.",
+  "next": "M1-11 (connexion durcie, 2FA) ; basculer PractitionerRegistered sur DomainEventPublisher apres M1-01 ; regenerer le contrat apres fusion de M1-01 et M5-01",
+  "pr": "https://github.com/mrscams/psymate-api/pull/11",
+  "branch": "worktree-M1-10",
+  "checkout": "M1-10"
+}

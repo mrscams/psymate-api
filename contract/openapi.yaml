@@ -1,5 +1,30 @@
 components:
   schemas:
+    Address:
+      properties:
+        city:
+          maxLength: 100
+          minLength: 0
+          type: string
+        postalCode:
+          maxLength: 20
+          minLength: 0
+          type: string
+        street:
+          maxLength: 200
+          minLength: 0
+          type: string
+      type: object
+    Consents:
+      properties:
+        privacy:
+          type: boolean
+        terms:
+          type: boolean
+      required:
+      - privacy
+      - terms
+      type: object
     CreateEmotionRequest:
       properties:
         family:
@@ -57,6 +82,35 @@ components:
           items:
             $ref: '#/components/schemas/Item'
           type: array
+      type: object
+    EmailChangeRequest:
+      properties:
+        newEmail:
+          format: email
+          maxLength: 254
+          minLength: 0
+          type: string
+      required:
+      - newEmail
+      type: object
+    EmailConfirmRequest:
+      properties:
+        token:
+          maxLength: 200
+          minLength: 0
+          type: string
+      required:
+      - token
+      type: object
+    EmailResendRequest:
+      properties:
+        email:
+          format: email
+          maxLength: 254
+          minLength: 0
+          type: string
+      required:
+      - email
       type: object
     EmotionView:
       properties:
@@ -362,13 +416,12 @@ components:
         websiteUrl:
           type: string
       type: object
-    RenameEmotionRequest:
+    RegisterRequest:
       properties:
-        labelFr:
-          type: string
-      type: object
-    SignupRequest:
-      properties:
+        address:
+          $ref: '#/components/schemas/Address'
+        consents:
+          $ref: '#/components/schemas/Consents'
         email:
           format: email
           maxLength: 254
@@ -386,25 +439,51 @@ components:
           maxLength: 200
           minLength: 0
           type: string
+        phone:
+          maxLength: 30
+          minLength: 0
+          type: string
         profession:
           minLength: 1
           pattern: psychologist|psychiatrist|coach
           type: string
+        professionalNumber:
+          maxLength: 30
+          minLength: 0
+          type: string
+        remoteOnly:
+          type: boolean
       required:
+      - consents
       - email
       - firstName
       - lastName
       - password
+      - phone
       - profession
       type: object
-    SignupResponse:
+    RegisterResponse:
+      properties:
+        status:
+          type: string
+      type: object
+    RenameEmotionRequest:
+      properties:
+        labelFr:
+          type: string
+      type: object
+    SessionResponse:
       properties:
         displayName:
           type: string
         email:
           type: string
+        emailConfirmed:
+          type: boolean
         id:
           format: uuid
+          type: string
+        profession:
           type: string
         verificationStatus:
           type: string
@@ -524,6 +603,51 @@ info:
   version: 0.1.0
 openapi: 3.1.0
 paths:
+  /api/auth/email/change:
+    post:
+      operationId: changeEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+      summary: Corrige l'adresse e-mail d'un compte non confirmé
+      tags:
+      - auth-controller
+  /api/auth/email/confirm:
+    post:
+      operationId: confirmEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailConfirmRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+      summary: Confirme l'adresse e-mail et ouvre une session
+      tags:
+      - auth-controller
+  /api/auth/email/resend:
+    post:
+      operationId: resendEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailResendRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+      summary: Renvoie l'e-mail de confirmation (202 dans tous les cas)
+      tags:
+      - auth-controller
   /api/auth/login:
     post:
       operationId: login
@@ -590,22 +714,68 @@ paths:
           description: OK
       tags:
       - auth-controller
-  /api/auth/signup:
+  /api/auth/register:
     post:
-      operationId: signup
+      operationId: register
+      parameters:
+      - in: header
+        name: Accept-Language
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SignupRequest'
+              $ref: '#/components/schemas/RegisterRequest'
         required: true
       responses:
         '200':
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/SignupResponse'
+                $ref: '#/components/schemas/RegisterResponse'
           description: OK
+      summary: Inscription d'un praticien (ouverte, sans code d'invitation)
+      tags:
+      - auth-controller
+  /api/auth/session:
+    get:
+      operationId: session
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+          description: OK
+      summary: État courant de la session (statut de vérification à jour)
+      tags:
+      - auth-controller
+  /api/auth/signup:
+    post:
+      deprecated: true
+      operationId: signup
+      parameters:
+      - in: header
+        name: Accept-Language
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+          description: OK
+      summary: Alias déprécié de POST /api/auth/register
       tags:
       - auth-controller
   /api/me/emotions:

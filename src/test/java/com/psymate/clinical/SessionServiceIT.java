@@ -23,8 +23,15 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -150,6 +157,50 @@ class SessionServiceIT {
     assertThat(
             jdbc.queryForObject(
                 "select count(*) from entry where patient_id = ? and type = 'session'",
+                Integer.class,
+                patient))
+        .isEqualTo(1);
+  }
+
+  @Test
+  void concurrentStartsLeaveExactlyOneOpenSession() throws Exception {
+    int threads = 4;
+    CyclicBarrier go = new CyclicBarrier(threads);
+    ExecutorService pool = Executors.newFixedThreadPool(threads);
+    List<Future<Object>> outcomes = new ArrayList<>();
+    try {
+      for (int i = 0; i < threads; i++) {
+        outcomes.add(
+            pool.submit(
+                () -> {
+                  fx.authenticate(fx.practitioner);
+                  try {
+                    go.await(10, TimeUnit.SECONDS);
+                    return start();
+                  } catch (ClinicalException e) {
+                    return e.error();
+                  } finally {
+                    SecurityContextHolder.clearContext();
+                  }
+                }));
+      }
+      List<Object> results = new ArrayList<>();
+      for (Future<Object> f : outcomes) {
+        results.add(f.get(30, TimeUnit.SECONDS));
+      }
+      assertThat(results.stream().filter(UUID.class::isInstance).count())
+          .as("un seul start réussit")
+          .isEqualTo(1);
+      assertThat(results.stream().filter(ClinicalError.SESSION_ALREADY_OPEN::equals).count())
+          .as("les autres reçoivent 409")
+          .isEqualTo(threads - 1);
+    } finally {
+      pool.shutdownNow();
+    }
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from entry e join entry_session s on s.entry_id = e.id"
+                    + " where e.patient_id = ? and s.closed_at is null",
                 Integer.class,
                 patient))
         .isEqualTo(1);

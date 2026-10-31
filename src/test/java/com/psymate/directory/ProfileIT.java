@@ -98,8 +98,8 @@ class ProfileIT {
     String email = id + "@example.test";
     jdbc.update(
         "insert into practitioner (id, tenant_id, email, email_normalized, password_hash,"
-            + " first_name, last_name, display_name, profession)"
-            + " values (?, ?, ?, ?, 'x', 'Test', 'Praticien', ?, 'psychologist')",
+            + " first_name, last_name, display_name, profession, verification_status)"
+            + " values (?, ?, ?, ?, 'x', 'Test', 'Praticien', ?, 'psychologist', 'approved')",
         id,
         tenant,
         email,

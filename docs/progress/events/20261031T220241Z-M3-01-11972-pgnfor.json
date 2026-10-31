@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T22:02:41.344Z",
+  "task": "M3-01",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Timeline fenêtrée GET /api/patients/{id}/timeline (curseur keyset base64 sur occurred_from+id, facettes de la fenêtre, situations chevauchantes via occurred_range) et résumé GET /timeline/summary?granularity=month|year ; contrat regénéré (additif) ; test contrat authorType de ReservesConformanceIT réactivé ; verify vert (180 unit + 514 IT)",
+  "notes": "Perf sur 2 000 entrées : 200 items 77-100 ms (cible 150), résumé décennie 22-29 ms (cible 100), loggué non asserté. Revue : 0 bloquant, 2 à corriger traités (seuil perf documenté ; {id} non UUID reste 400 pour tous les contrôleurs clinical). Aucune migration, aucune dépendance, aucun index ajouté (piste : ix_entry_timeline étendu à id DESC pour M7-01). Facettes avec tous les filtres de la requête ; ongoingSituations = toutes les situations chevauchantes, à dédupliquer côté client (M3-02).",
+  "next": "Fusion puis contrat à regénérer après M2-01 et M4-02 ; M3-02 (composant timeline), M6-05 (export) et M7-01 (seed, perf) débloqués",
+  "pr": "https://github.com/mrscams/psymate-api/pull/26",
+  "branch": "worktree-M3-01",
+  "checkout": "M3-01"
+}

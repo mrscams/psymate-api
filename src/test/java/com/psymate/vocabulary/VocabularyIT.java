@@ -1,6 +1,7 @@
 package com.psymate.vocabulary;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -8,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.psymate.vocabulary.VocabularyTestConfig.SwitchablePractitioner;
+import com.psymate.identity.api.CurrentPractitioner;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,9 +22,11 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -33,7 +36,11 @@ class VocabularyIT {
 
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
-  @Autowired private SwitchablePractitioner current;
+
+  /**
+   * Authentification de la requête courante (principal identity.api), changée d'un test à l'autre.
+   */
+  private RequestPostProcessor auth;
 
   private UUID tenant;
   private UUID alice;
@@ -45,7 +52,22 @@ class VocabularyIT {
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
     alice = insertPractitioner();
     bob = insertPractitioner();
-    current.use(tenant, alice);
+    as(alice);
+  }
+
+  /** Les endpoints exigent une session : on pose le principal comme le ferait le login. */
+  private void as(UUID practitioner) {
+    CurrentPractitioner principal =
+        new CurrentPractitioner(
+            practitioner,
+            tenant,
+            practitioner + "@example.test",
+            "Dr Test",
+            "psychologist",
+            "none");
+    auth =
+        authentication(
+            UsernamePasswordAuthenticationToken.authenticated(principal, null, List.of()));
   }
 
   private UUID insertPractitioner() {
@@ -73,11 +95,11 @@ class VocabularyIT {
   }
 
   private ResultActions postJson(String url, String body) throws Exception {
-    return mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(body));
+    return mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(body).with(auth));
   }
 
   private ResultActions patchJson(String url, String body) throws Exception {
-    return mvc.perform(patch(url).contentType(MediaType.APPLICATION_JSON).content(body));
+    return mvc.perform(patch(url).contentType(MediaType.APPLICATION_JSON).content(body).with(auth));
   }
 
   private String createEmotion(String label, String family) throws Exception {
@@ -158,21 +180,21 @@ class VocabularyIT {
 
   @Test
   void emotionsReturn29GlobalsPlusOwnCustomOnly() throws Exception {
-    mvc.perform(get("/api/vocabulary/emotions"))
+    mvc.perform(get("/api/vocabulary/emotions").with(auth))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(29));
 
     String lassitude = createEmotion("Lassitude", "sadness");
-    current.use(tenant, bob);
+    as(bob);
     createEmotion("Euphorie", "joy");
 
-    mvc.perform(get("/api/vocabulary/emotions"))
+    mvc.perform(get("/api/vocabulary/emotions").with(auth))
         .andExpect(jsonPath("$.length()").value(30))
         .andExpect(jsonPath("$[?(@.labelFr=='Euphorie')]").exists())
         .andExpect(jsonPath("$[?(@.code=='" + lassitude + "')]").doesNotExist());
 
-    current.use(tenant, alice);
-    mvc.perform(get("/api/vocabulary/emotions"))
+    as(alice);
+    mvc.perform(get("/api/vocabulary/emotions").with(auth))
         .andExpect(jsonPath("$.length()").value(30))
         .andExpect(jsonPath("$[?(@.code=='" + lassitude + "')]").exists())
         .andExpect(jsonPath("$[?(@.labelFr=='Euphorie')]").doesNotExist());
@@ -180,7 +202,7 @@ class VocabularyIT {
 
   @Test
   void linkTypesExposeMatrix() throws Exception {
-    mvc.perform(get("/api/vocabulary/link-types"))
+    mvc.perform(get("/api/vocabulary/link-types").with(auth))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(8))
         .andExpect(jsonPath("$[0].code").value("triggers"))
@@ -190,7 +212,7 @@ class VocabularyIT {
 
   @Test
   void entryTypesAreListed() throws Exception {
-    mvc.perform(get("/api/vocabulary/entry-types"))
+    mvc.perform(get("/api/vocabulary/entry-types").with(auth))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(6))
         .andExpect(jsonPath("$[0].code").value("note"));
@@ -234,7 +256,7 @@ class VocabularyIT {
         .andExpect(status().isConflict());
     postJson("/api/me/emotions", "{\"labelFr\":\"LASSITUDE\",\"family\":\"fear\"}")
         .andExpect(status().isConflict());
-    current.use(tenant, bob);
+    as(bob);
     createEmotion("Lassitude", "sadness");
   }
 
@@ -259,7 +281,7 @@ class VocabularyIT {
         .andExpect(status().isConflict());
     patchJson("/api/me/emotions/anxiety", "{\"labelFr\":\"Autre\"}")
         .andExpect(status().isNotFound());
-    current.use(tenant, bob);
+    as(bob);
     patchJson("/api/me/emotions/" + code, "{\"labelFr\":\"Volé\"}")
         .andExpect(status().isNotFound());
   }
@@ -290,7 +312,7 @@ class VocabularyIT {
     assertThat(
             jdbc.queryForObject("select active from emotion where code = ?", Boolean.class, code))
         .isFalse();
-    mvc.perform(get("/api/vocabulary/emotions"))
+    mvc.perform(get("/api/vocabulary/emotions").with(auth))
         .andExpect(jsonPath("$[?(@.code=='" + code + "')]").doesNotExist());
   }
 
@@ -301,9 +323,9 @@ class VocabularyIT {
         .andExpect(status().isUnprocessableEntity());
     postJson("/api/me/emotions/" + code + "/merge", "{\"targetCode\":\"inexistante\"}")
         .andExpect(status().isNotFound());
-    current.use(tenant, bob);
+    as(bob);
     String bobs = createEmotion("Euphorie", "joy");
-    current.use(tenant, alice);
+    as(alice);
     postJson("/api/me/emotions/" + code + "/merge", "{\"targetCode\":\"" + bobs + "\"}")
         .andExpect(status().isNotFound());
   }
@@ -352,9 +374,9 @@ class VocabularyIT {
 
   @Test
   void renameAndMergeOfAnotherPractitionersEmotionAre404() throws Exception {
-    current.use(tenant, bob);
+    as(bob);
     String bobs = createEmotion("Euphorie", "joy");
-    current.use(tenant, alice);
+    as(alice);
     patchJson("/api/me/emotions/" + bobs, "{\"labelFr\":\"Volée\"}")
         .andExpect(status().isNotFound());
     postJson("/api/me/emotions/" + bobs + "/merge", "{\"targetCode\":\"joy\"}")
@@ -373,7 +395,7 @@ class VocabularyIT {
             .getResponse()
             .getContentAsString();
     String mergeId = json.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
-    current.use(tenant, bob);
+    as(bob);
     postJson("/api/me/emotions/merges/" + mergeId + "/undo", "{}").andExpect(status().isNotFound());
   }
 
@@ -427,7 +449,7 @@ class VocabularyIT {
     postJson("/api/tags", "{\"label\":\"lassitude\"}")
         .andExpect(status().isUnprocessableEntity())
         .andExpect(jsonPath("$.code").value("TAG_IS_EMOTION"));
-    current.use(tenant, bob);
+    as(bob);
     postJson("/api/tags", "{\"label\":\"lassitude\"}").andExpect(status().isCreated());
   }
 
@@ -443,7 +465,7 @@ class VocabularyIT {
         .andExpect(status().isUnprocessableEntity())
         .andExpect(jsonPath("$.errors[0].field").value("label"));
 
-    mvc.perform(get("/api/tags"))
+    mvc.perform(get("/api/tags").with(auth))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(1))
         .andExpect(jsonPath("$[0].label").value("Travail"));
@@ -455,8 +477,8 @@ class VocabularyIT {
     patchJson("/api/tags/" + id, "{\"label\":\"Joie\"}")
         .andExpect(status().isUnprocessableEntity());
 
-    current.use(tenant, bob);
-    mvc.perform(get("/api/tags")).andExpect(jsonPath("$.length()").value(0));
+    as(bob);
+    mvc.perform(get("/api/tags").with(auth)).andExpect(jsonPath("$.length()").value(0));
     patchJson("/api/tags/" + id, "{\"label\":\"Volé\"}").andExpect(status().isNotFound());
   }
 
@@ -479,7 +501,7 @@ class VocabularyIT {
             source);
     assertThat(row.get("archived")).isEqualTo(true);
     assertThat(row.get("merged_into")).isEqualTo(target);
-    mvc.perform(get("/api/tags")).andExpect(jsonPath("$.length()").value(1));
+    mvc.perform(get("/api/tags").with(auth)).andExpect(jsonPath("$.length()").value(1));
     postJson("/api/tags/" + source + "/merge", "{\"targetId\":\"" + target + "\"}")
         .andExpect(status().isNotFound());
     postJson("/api/tags/" + target + "/merge", "{\"targetId\":\"" + target + "\"}")
@@ -516,9 +538,9 @@ class VocabularyIT {
   @Test
   void mergeTagIntoAnotherPractitionersTagIs404() throws Exception {
     String source = createTag("Boulot");
-    current.use(tenant, bob);
+    as(bob);
     String bobs = createTag("Travail");
-    current.use(tenant, alice);
+    as(alice);
     postJson("/api/tags/" + source + "/merge", "{\"targetId\":\"" + bobs + "\"}")
         .andExpect(status().isNotFound());
     assertThat(

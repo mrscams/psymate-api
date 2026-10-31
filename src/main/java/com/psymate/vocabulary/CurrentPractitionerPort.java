@@ -3,9 +3,8 @@ package com.psymate.vocabulary;
 import java.util.UUID;
 
 /**
- * Port interne : praticien et tenant courants. Aucune implémentation de production pour l'instant ;
- * elle sera branchée sur com.psymate.identity.api après M0-04, qui apporte aussi la sécurité
- * protégeant tous les endpoints de ce module. Les tests fournissent leur propre implémentation.
+ * Port interne : praticien et tenant courants. Implémenté sur com.psymate.identity.api (principal
+ * de la session) ; les tests authentifient leurs requêtes plutôt que de remplacer le port.
  */
 public interface CurrentPractitionerPort {
 

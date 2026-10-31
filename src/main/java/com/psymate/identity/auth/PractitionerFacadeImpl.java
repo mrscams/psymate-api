@@ -1,6 +1,7 @@
 package com.psymate.identity.auth;
 
 import com.psymate.identity.api.PractitionerFacade;
+import com.psymate.identity.preferences.Preferences;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,5 +70,20 @@ class PractitionerFacadeImpl implements PractitionerFacade {
                     r.verificationStatus(),
                     json.readValue(
                         r.preferencesJson(), new TypeReference<Map<String, Object>>() {})));
+  }
+
+  @Override
+  public Map<String, Object> preferencesOf(UUID id) {
+    return practitioners
+        .findById(id)
+        .map(
+            r ->
+                Preferences.effective(
+                    r.profession(),
+                    r.preferencesJson() == null
+                        ? Map.<String, Object>of()
+                        : json.readValue(
+                            r.preferencesJson(), new TypeReference<Map<String, Object>>() {})))
+        .orElse(Map.of());
   }
 }

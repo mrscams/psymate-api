@@ -19,6 +19,9 @@ public interface PractitionerFacade {
    */
   Map<UUID, PractitionerView> findAll(Collection<UUID> ids);
 
+  /** Préférences effectives (valeurs stockées complétées par les défauts), vide si inconnu. */
+  Map<String, Object> preferencesOf(UUID id);
+
   /** Vue minimale d'un praticien. {@code preferences} : clés plates (ADR-11). */
   record PractitionerView(
       UUID id,

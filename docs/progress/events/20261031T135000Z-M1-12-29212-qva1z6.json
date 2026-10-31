@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T13:50:00.245Z",
+  "task": "M1-12",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Corrections de revue : durée stricte, façade null-safe, tests concurrence/isolation/défauts, contrat documenté (9 clés, 422)",
+  "notes": "Aucune dépendance. Contrat additif, version 0.1.0.",
+  "next": "Fusion puis tag v0.2.0 avec M1-13",
+  "pr": "https://github.com/mrscams/psymate-api/pull/14",
+  "branch": "worktree-M1-12",
+  "checkout": "M1-12"
+}

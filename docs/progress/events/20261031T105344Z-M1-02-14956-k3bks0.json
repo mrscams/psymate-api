@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-31T10:53:44.338Z",
+  "task": "M1-02",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "Port branche sur identity.api fusionne avec la PR 8",
+  "pr": "https://github.com/mrscams/psymate-api/pull/8",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

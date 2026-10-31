@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T10:53:44.175Z",
+  "task": "M0-05",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 8 fusionnee dans main ; tag contract-v0.1.0 pose et pousse",
+  "next": "V3 : M1-01, M1-10, M5-01 en parallele",
+  "pr": "https://github.com/mrscams/psymate-api/pull/8",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

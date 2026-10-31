@@ -1,12 +1,14 @@
 package com.psymate.directory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -99,8 +101,13 @@ class ContactRequestIT {
   }
 
   private ResultActions send(String slug, String ip, Map<String, Object> body) throws Exception {
+    return sendTo(URI.create("/api/public/directory/practitioners/" + slug + "/contact"), ip, body);
+  }
+
+  /** URI brute (non ré-encodée) : permet de tester un chemin encodé comme {@code /%63ontact}. */
+  private ResultActions sendTo(URI uri, String ip, Map<String, Object> body) throws Exception {
     return mvc.perform(
-        post("/api/public/directory/practitioners/" + slug + "/contact")
+        post(uri)
             .with(
                 r -> {
                   r.setRemoteAddr(ip);
@@ -269,6 +276,47 @@ class ContactRequestIT {
     // Une autre IP n'est pas concernée.
     send(p.slug(), freshIp(), body("autre@example.test")).andExpect(status().isAccepted());
     assertThat(rows(p.id())).isEqualTo(6);
+  }
+
+  /** Le seau 5 / h se fonde sur le chemin décodé : l'encodage d'URL ne le contourne pas. */
+  @Test
+  void urlEncodedPathStillCountsTowardsTheContactLimit() throws Exception {
+    Practitioner p = practitioner(true, "cabinet-" + UUID.randomUUID() + "@example.test");
+    String ip = freshIp();
+    URI encoded = URI.create("/api/public/directory/practitioners/" + p.slug() + "/%63ontact");
+    for (int i = 0; i < 5; i++) {
+      sendTo(encoded, ip, body("v" + i + "@example.test")).andExpect(status().isAccepted());
+    }
+    sendTo(encoded, ip, body("v6@example.test")).andExpect(status().isTooManyRequests());
+    send(p.slug(), ip, body("v7@example.test")).andExpect(status().isTooManyRequests());
+    assertThat(rows(p.id())).isEqualTo(5);
+  }
+
+  /** Les deux seaux (lectures 60 / min, contact 5 / h) sont indépendants. */
+  @Test
+  void contactBucketIsIndependentFromTheReadBucket() throws Exception {
+    Practitioner p = practitioner(true, "cabinet-" + UUID.randomUUID() + "@example.test");
+    String ip = freshIp();
+    // Des lectures en nombre ne consomment rien du seau contact...
+    for (int i = 0; i < 20; i++) {
+      read(p.slug(), ip).andExpect(status().isOk());
+    }
+    for (int i = 0; i < 5; i++) {
+      send(p.slug(), ip, body("v" + i + "@example.test")).andExpect(status().isAccepted());
+    }
+    // ... et un seau contact épuisé laisse les lectures passer.
+    send(p.slug(), ip, body("v6@example.test")).andExpect(status().isTooManyRequests());
+    read(p.slug(), ip).andExpect(status().isOk());
+  }
+
+  private ResultActions read(String slug, String ip) throws Exception {
+    return mvc.perform(
+        get("/api/public/directory/practitioners/" + slug)
+            .with(
+                r -> {
+                  r.setRemoteAddr(ip);
+                  return r;
+                }));
   }
 
   @Test

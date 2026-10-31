@@ -130,7 +130,12 @@ class ContactRequestService {
     try {
       relay.execute(() -> relay(id, practitionerId, message));
     } catch (RejectedExecutionException e) {
-      repository.markRelayFailed(id, "relay queue full");
+      // La ligne existe et le visiteur a sa réponse : rien ne doit plus remonter vers lui.
+      try {
+        repository.markRelayFailed(id, "relay queue full");
+      } catch (RuntimeException inner) {
+        LOG.error("contact relay error could not be recorded for request {}", id, inner);
+      }
     }
   }
 

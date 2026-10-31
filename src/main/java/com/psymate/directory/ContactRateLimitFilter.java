@@ -7,18 +7,25 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.regex.Pattern;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * Limite dédiée au formulaire de contact (G Q24, fiche 09) : {@code limitPerHour} envois par heure
  * et par IP (IPv6 en /64), seau distinct de celui des lectures publiques (60 / min). Toute
  * tentative compte, acceptée ou refusée en silence : c'est une protection anti-spam.
+ *
+ * <p>La route est reconnue sur le chemin décodé (même matcher que Spring MVC), jamais sur l'URI
+ * brute : {@code /%63ontact} compte comme {@code /contact}.
  */
 class ContactRateLimitFilter extends OncePerRequestFilter {
 
-  private static final Pattern CONTACT_PATH =
-      Pattern.compile("^/api/public/directory/practitioners/[^/]+/contact/?$");
+  static final String CONTACT_PATTERN = "/api/public/directory/practitioners/*/contact";
+
+  private static final RequestMatcher CONTACT =
+      PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, CONTACT_PATTERN);
 
   private final IpBuckets buckets;
 
@@ -28,8 +35,7 @@ class ContactRateLimitFilter extends OncePerRequestFilter {
 
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
-    return !"POST".equals(request.getMethod())
-        || !CONTACT_PATH.matcher(request.getRequestURI()).matches();
+    return !CONTACT.matches(request);
   }
 
   @Override

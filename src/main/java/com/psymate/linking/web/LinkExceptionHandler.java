@@ -52,6 +52,9 @@ class LinkExceptionHandler {
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, detail);
     pd.setTitle(status.getReasonPhrase());
     pd.setProperty("code", error.name());
+    if (error == LinkError.ENTRY_ARCHIVED) {
+      pd.setProperty("errors", List.of(new ApiFieldError(ex.field(), error.name(), detail)));
+    }
     if (status == HttpStatus.UNPROCESSABLE_CONTENT) {
       pd.setProperty("errors", List.of(new ApiFieldError(fieldOf(error), error.name(), detail)));
     }

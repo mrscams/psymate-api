@@ -425,6 +425,49 @@ class LinkServiceIT {
         .isEqualTo(LinkError.LINK_NOT_FOUND);
   }
 
+  // ---- entrées archivées (A7 : une entrée archivée n'a que des liens superseded)
+
+  @Test
+  void anArchivedSourceOrTargetCannotBeLinked() {
+    UUID archived = fx.entry(patient, session, EntryType.EVENT);
+    entries.archive(archived);
+
+    LinkException asSource = refused(() -> links.create(archived, feeling, "triggers", null));
+    LinkException asTarget = refused(() -> links.create(event, archived, "follows", null));
+
+    assertThat(asSource.error()).isEqualTo(LinkError.ENTRY_ARCHIVED);
+    assertThat(asSource.field()).isEqualTo("sourceId");
+    assertThat(asTarget.error()).isEqualTo(LinkError.ENTRY_ARCHIVED);
+    assertThat(asTarget.field()).isEqualTo("targetId");
+    assertThat(linkRows()).isZero();
+    assertThat(fx.linkCount(archived)).isZero();
+    assertThat(fx.linkCount(feeling)).isZero();
+  }
+
+  @Test
+  void changingTheTypeOfALinkWithAnArchivedEndIsRefusedAsArchivedUntilTheSubscriberRuns() {
+    Link link = links.create(event, feeling, "triggers", null);
+    // Archivage sans événement : l'abonné n'est pas passé, le lien est encore actif.
+    jdbc.update("update entry set archived_at = now() where id = ?", feeling);
+
+    LinkException error = refused(() -> links.changeType(link.id(), "worsens"));
+
+    assertThat(error.error()).isEqualTo(LinkError.ENTRY_ARCHIVED);
+    assertThat(error.field()).isEqualTo("targetId");
+    assertThat(row(link.id())).containsEntry("status", "accepted");
+    assertThat(linkRows()).isEqualTo(1);
+  }
+
+  @Test
+  void changingTheTypeAfterTheSubscriberRanIsRefusedAsNotActive() {
+    Link link = links.create(event, feeling, "triggers", null);
+    entries.archive(feeling);
+    await().atMost(Duration.ofSeconds(15)).until(() -> activeLinksOf(feeling) == 0);
+
+    assertThat(refused(() -> links.changeType(link.id(), "worsens")).error())
+        .isEqualTo(LinkError.LINK_NOT_ACTIVE);
+  }
+
   // ---- suppression
 
   @Test

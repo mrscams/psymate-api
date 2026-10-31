@@ -45,6 +45,7 @@ class LinkController {
 
   /** Pose un lien manuel accepté ; 201 avec le lien vu depuis l'entrée de l'URL. */
   @PostMapping("/api/entries/{id}/links")
+  @ResponseStatus(HttpStatus.CREATED)
   ResponseEntity<LinkDto> createLink(
       @PathVariable UUID id,
       @Valid @RequestBody CreateLinkRequest request,

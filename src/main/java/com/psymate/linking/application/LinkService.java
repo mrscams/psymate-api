@@ -16,6 +16,8 @@ import com.psymate.vocabulary.api.LinkTypeView;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -85,6 +87,7 @@ public class LinkService {
   private Link doCreate(UUID sourceId, UUID targetId, String linkType, String rationale) {
     CurrentPractitioner me = currentPractitioner();
     UUID patientId = requireSamePatient(sourceId, targetId);
+    requireNotArchived(sourceId, targetId);
     String sourceType = typeOf(sourceId);
     String targetType = typeOf(targetId);
     LinkTypeView type =
@@ -139,6 +142,9 @@ public class LinkService {
     Link old = lockOwnedLink(linkId);
     requireActive(old);
     // Les extrémités sont du patient du lien, déjà vérifié comme appartenant au praticien.
+    // LINK_NOT_ACTIVE passe avant ENTRY_ARCHIVED : l'abonné d'EntryArchived a déjà remplacé le
+    // lien.
+    requireNotArchived(old.sourceId(), old.targetId());
     String sourceType = typeOf(old.sourceId());
     String targetType = typeOf(old.targetId());
     LinkTypeView type =
@@ -210,12 +216,17 @@ public class LinkService {
       return;
     }
     Instant now = clock.instant();
+    // Deltas agrégés par entrée, appliqués dans l'ordre croissant des UUID (comme create) : pas
+    // d'interblocage avec une création concurrente.
+    Map<UUID, Integer> deltas = new TreeMap<>();
     for (Link link : links) {
       repo.supersede(link.id(), null, null, now);
       if (link.status().countsInLinkCount()) {
-        adjustLinkCounts(link, -1);
+        deltas.merge(link.sourceId(), -1, Integer::sum);
+        deltas.merge(link.targetId(), -1, Integer::sum);
       }
     }
+    deltas.forEach(entries::adjustLinkCount);
     links.stream().map(Link::patientId).distinct().forEach(patients::touchClinicalRev);
   }
 
@@ -268,6 +279,19 @@ public class LinkService {
           LinkError.DIFFERENT_PATIENT, "Les deux entrées doivent appartenir au même patient");
     }
     return sourcePatient;
+  }
+
+  /**
+   * Refuse un lien dont une extrémité est archivée (A7) : 409 ENTRY_ARCHIVED, comme clinical pour
+   * une correction d'entrée archivée. Après les gardes de propriété, avant toute écriture.
+   */
+  private void requireNotArchived(UUID sourceId, UUID targetId) {
+    if (entries.isArchived(sourceId)) {
+      throw LinkException.archived("sourceId");
+    }
+    if (entries.isArchived(targetId)) {
+      throw LinkException.archived("targetId");
+    }
   }
 
   private String typeOf(UUID entryId) {

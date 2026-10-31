@@ -342,6 +342,27 @@ class LinkControllerIT {
         .andExpect(jsonPath("$[0].sentence").value("Peur au réveil triggered by Décès du père"));
   }
 
+  @Test
+  void linkingAnArchivedEntryIsAConflict() throws Exception {
+    fx.authenticate(fx.practitioner);
+    UUID archived = fx.entry(patient, session, EntryType.EVENT);
+    entries.archive(archived);
+    SecurityContextHolder.clearContext();
+
+    post(links(event), request(archived, "follows", "outgoing"))
+        .andExpect(status().isConflict())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.code").value("ENTRY_ARCHIVED"))
+        .andExpect(jsonPath("$.errors[0].field").value("targetId"))
+        .andExpect(jsonPath("$.errors[0].code").value("ENTRY_ARCHIVED"))
+        .andExpect(
+            jsonPath("$.detail").value("Cette entrée est archivée : on ne peut pas la lier."));
+    post(links(archived), request(feeling, "triggers", "outgoing"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.errors[0].field").value("sourceId"));
+    assertThat(fx.count("select count(*) from link where patient_id = ?", patient)).isZero();
+  }
+
   // ---- POST : 409, 404, 403
 
   @Test

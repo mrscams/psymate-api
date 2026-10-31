@@ -2639,12 +2639,12 @@ paths:
               $ref: '#/components/schemas/CreateLinkRequest'
         required: true
       responses:
-        '200':
+        '201':
           content:
             '*/*':
               schema:
                 $ref: '#/components/schemas/LinkDto'
-          description: OK
+          description: Created
       tags:
       - link-controller
   /api/entries/{id}/restore:

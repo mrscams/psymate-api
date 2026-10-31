@@ -52,4 +52,10 @@ public interface EntryFacade {
    * transaction de l'appelant.
    */
   void adjustLinkCount(UUID entryId, int delta);
+
+  /**
+   * L'entrée est archivée (archived_at renseigné). Sans garde de propriété : l'appelant (linking) a
+   * déjà passé PatientOwnershipGuard.requireOwned ; faux si l'entrée n'existe pas.
+   */
+  boolean isArchived(UUID entryId);
 }

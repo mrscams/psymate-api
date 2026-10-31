@@ -22,9 +22,10 @@ import tools.jackson.databind.json.JsonMapper;
  *
  * <p>Écriture asynchrone : un pool privé d'un thread daemon à file bornée (10 000), comme le relais
  * de contact du module directory (pas de {@code @EnableAsync}, voir ContactRequestService). Si la
- * file est pleine, l'appelant écrit lui-même ({@code CallerRunsPolicy}) : une ligne n'est jamais
- * perdue en silence. Une erreur d'insertion est journalisée en WARN et jamais propagée : l'audit ne
- * fait jamais échouer une requête.
+ * file est pleine, l'appelant écrit lui-même ({@code CallerRunsPolicy}) : la file pleine ne fait
+ * perdre aucune ligne. Une ligne n'est perdue que si l'INSERT échoue (journalisé en WARN) ou si
+ * elle arrive après l'arrêt du pool ; rien n'est jamais propagé : l'audit ne fait jamais échouer
+ * une requête.
  */
 public class AuditWriter {
 

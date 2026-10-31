@@ -2,11 +2,13 @@ package com.psymate.linking.web;
 
 import com.psymate.linking.domain.LinkError;
 import com.psymate.linking.domain.LinkException;
+import com.psymate.shared.problem.AdviceOrder;
 import com.psymate.vocabulary.api.LinkTypeView;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -24,6 +26,7 @@ import tools.jackson.databind.exc.MismatchedInputException;
  * propriété des patients. Un 409 LINK_EXISTS porte {@code existingLinkId}, un 422
  * LINK_TYPE_NOT_ALLOWED porte {@code allowedLinkTypes} (types possibles pour cette paire).
  */
+@Order(AdviceOrder.MODULE)
 @RestControllerAdvice(assignableTypes = LinkController.class)
 class LinkExceptionHandler {
 

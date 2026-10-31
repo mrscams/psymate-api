@@ -2,6 +2,7 @@ package com.psymate.clinical.web;
 
 import com.psymate.clinical.web.EntryDtos.ClinicalRequest;
 import com.psymate.clinical.web.EntryDtos.EntryWriteRequest;
+import com.psymate.shared.problem.AdviceOrder;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +10,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -30,6 +32,7 @@ import tools.jackson.databind.json.JsonMapper;
  * contrôleur) : un praticien non propriétaire qui envoie une clé interdite reçoit 422 plutôt que
  * 403. Rien n'est lu en base ni écrit à ce stade, et la réponse ne révèle rien sur le patient.
  */
+@Order(AdviceOrder.MODULE)
 @RestControllerAdvice(assignableTypes = {EntryController.class, SessionController.class})
 class ForbiddenFieldsAdvice extends RequestBodyAdviceAdapter {
 

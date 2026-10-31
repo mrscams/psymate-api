@@ -1,11 +1,13 @@
 package com.psymate.directory;
 
+import com.psymate.shared.problem.AdviceOrder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * avec errors[] par champ (champ, code, message). Messages en français par défaut, en anglais si la
  * langue demandée l'est (messages_fr/en.properties, clés vocabulary.error.*).
  */
+@Order(AdviceOrder.MODULE)
 @RestControllerAdvice(assignableTypes = DirectoryVocabularyAdminController.class)
 class DirectoryVocabularyAdminExceptionHandler {
 

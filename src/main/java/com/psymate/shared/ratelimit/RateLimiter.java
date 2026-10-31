@@ -94,6 +94,9 @@ public final class RateLimiter {
       String key = rule.key() == Key.IP ? ipKey(rawKey) : String.valueOf(rawKey);
       Bucket bucket = buckets.get(key);
       if (bucket == null) {
+        // Au-delà de la borne, les nouvelles clés partagent un seau commun (repris d'IpBuckets) :
+        // pour la règle session, 50 000 sessions actives en même temps ramèneraient toutes les
+        // nouvelles sessions à un seul quota de 600 / min jusqu'au nettoyage suivant.
         bucket =
             buckets.size() >= MAX_TRACKED
                 ? buckets.computeIfAbsent(OVERFLOW, k -> newBucket())

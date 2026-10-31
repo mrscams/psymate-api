@@ -1,10 +1,13 @@
 package com.psymate;
 
+import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.psymate.shared.problem.AdviceOrder;
+import com.psymate.shared.problem.GlobalExceptionHandler;
 import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
@@ -15,6 +18,9 @@ import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 class ArchitectureTests {
 
@@ -125,6 +131,34 @@ class ArchitectureTests {
       JavaClasses classes = new ClassFileImporter().importPackages(ROOT + "." + reserved);
       assertThat(classes).as(reserved).isNotEmpty();
       assertThat(classes).allMatch(c -> c.getSimpleName().equals("package-info"));
+    }
+  }
+
+  /**
+   * Tout advice de module doit passer strictement avant le filet global de shared (M7-02) : à
+   * précédence égale, l'ordre du scan déciderait et le global attraperait tout.
+   */
+  @Test
+  void moduleAdvicesAreOrderedBeforeTheGlobalHandler() {
+    JavaClasses advices =
+        new ClassFileImporter()
+            .importPackages(ROOT)
+            .that(annotatedWith(RestControllerAdvice.class));
+    assertThat(advices).as("advices").hasSizeGreaterThan(5);
+    for (JavaClass advice : advices) {
+      if (advice.getName().equals(GlobalExceptionHandler.class.getName())) {
+        assertThat(advice.getAnnotationOfType(Order.class).value())
+            .as(advice.getName())
+            .isEqualTo(Ordered.LOWEST_PRECEDENCE);
+        continue;
+      }
+      assertThat(advice.isAnnotatedWith(Order.class))
+          .as(advice.getName() + " porte @Order")
+          .isTrue();
+      assertThat(advice.getAnnotationOfType(Order.class).value())
+          .as(advice.getName())
+          .isEqualTo(AdviceOrder.MODULE)
+          .isLessThan(Ordered.LOWEST_PRECEDENCE);
     }
   }
 }

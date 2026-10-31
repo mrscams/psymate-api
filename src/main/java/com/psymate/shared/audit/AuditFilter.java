@@ -33,11 +33,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * décodée. Le praticien est lu dans le SecurityContext (son nom est son UUID) : shared ne peut pas
  * importer identity.
  *
- * <p>Les {@code details} portent l'identifiant tel qu'il figure dans l'URL ({@code patientId},
- * {@code entryId}, {@code linkId} ou {@code sessionId}), pas un patient résolu : retrouver le
- * patient d'une entrée, d'un lien ou d'une séance exigerait de dépendre de clinical ou de linking,
- * ce que shared n'a pas le droit de faire. Le journal reste exploitable : l'identifiant d'entrée se
- * rattache au patient par une requête d'administration.
+ * <p>Les {@code details} portent l'identifiant lu dans l'URL ({@code patientId}, {@code entryId},
+ * {@code linkId} ou {@code sessionId} ; null s'il est absent ou n'est pas un UUID, le chemin décodé
+ * complet étant dans {@code path}), pas un patient résolu : retrouver le patient d'une entrée, d'un
+ * lien ou d'une séance exigerait de dépendre de clinical ou de linking, ce que shared n'a pas le
+ * droit de faire. Le journal reste exploitable : l'identifiant d'entrée se rattache au patient par
+ * une requête d'administration.
  *
  * <p>Ce filtre n'est volontairement pas un bean (Spring Boot l'enregistrerait aussi dans le
  * conteneur servlet, avant la sécurité) : la chaîne d'identity le construit.
@@ -79,11 +80,17 @@ public final class AuditFilter extends OncePerRequestFilter {
       chain.doFilter(request, response);
       return;
     }
+    int status;
     try {
       chain.doFilter(request, response);
-    } finally {
-      record(request, response, practitioner, match);
+      status = response.getStatus();
+    } catch (Throwable t) {
+      // L'exception poursuit sa route ; la ligne d'audit porte le statut que verra le client (au
+      // moins 500 : ce qui traverse le DispatcherServlet n'a pas été résolu en 4xx).
+      record(request, Math.max(response.getStatus(), 500), practitioner, match);
+      throw t;
     }
+    record(request, status, practitioner, match);
   }
 
   private record Match(String detailKey, UUID resourceId) {}
@@ -98,15 +105,14 @@ public final class AuditFilter extends OncePerRequestFilter {
     return null;
   }
 
-  private void record(
-      HttpServletRequest request, HttpServletResponse response, UUID practitioner, Match match) {
+  private void record(HttpServletRequest request, int status, UUID practitioner, Match match) {
     try {
       Map<String, Object> details = new LinkedHashMap<>();
       details.put(
           match.detailKey(), match.resourceId() == null ? null : match.resourceId().toString());
       details.put("method", request.getMethod());
       details.put("path", decodedPath(request));
-      details.put("status", response.getStatus());
+      details.put("status", status);
       String kind =
           READ_METHODS.contains(request.getMethod())
               ? AuditEvent.PATIENT_READ

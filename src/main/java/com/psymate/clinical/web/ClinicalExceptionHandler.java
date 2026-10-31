@@ -2,6 +2,7 @@ package com.psymate.clinical.web;
 
 import com.psymate.clinical.domain.ClinicalError;
 import com.psymate.clinical.domain.ClinicalException;
+import com.psymate.shared.problem.AdviceOrder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -28,6 +30,7 @@ import tools.jackson.databind.exc.MismatchedInputException;
  * Erreurs RFC 9457 (application/problem+json) des contrôleurs clinical : errors[] = [{field, code,
  * message}] pour les 422, statut HTTP du domaine pour les erreurs métier, 403 pour la propriété.
  */
+@Order(AdviceOrder.MODULE)
 @RestControllerAdvice(
     assignableTypes = {EntryController.class, SessionController.class, TimelineController.class})
 class ClinicalExceptionHandler {

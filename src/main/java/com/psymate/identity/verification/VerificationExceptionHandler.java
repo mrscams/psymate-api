@@ -1,16 +1,19 @@
 package com.psymate.identity.verification;
 
+import com.psymate.shared.problem.AdviceOrder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** Erreurs RFC 9457 (application/problem+json) du dossier professionnel. */
+@Order(AdviceOrder.MODULE)
 @RestControllerAdvice(assignableTypes = VerificationController.class)
 class VerificationExceptionHandler {
 

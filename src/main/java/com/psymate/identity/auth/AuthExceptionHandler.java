@@ -12,11 +12,13 @@ import com.psymate.identity.auth.AuthExceptions.PasswordChangeRequiredException;
 import com.psymate.identity.auth.AuthExceptions.PasswordPolicyException;
 import com.psymate.identity.auth.AuthExceptions.PasswordUnchangedException;
 import com.psymate.identity.auth.AuthExceptions.TwoFactorStateException;
+import com.psymate.shared.problem.AdviceOrder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * Erreurs RFC 9457 (application/problem+json) avec errors[] par champ, limitées aux contrôleurs
  * d'authentification et à ceux qui portent AuthErrorScope (recours, M1-14b).
  */
+@Order(AdviceOrder.MODULE)
 @RestControllerAdvice(
     assignableTypes = {AuthController.class, TwoFactorController.class, AuthErrorScope.class})
 class AuthExceptionHandler {

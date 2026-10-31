@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-29T22:55:00.000Z",
+  "task": "M0-02",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "12 modules (9 + shared OPEN + ai et companion reserves), sous-packages identity vides, package-info seulement ; ModularityTests (4) et ArchitectureTests (8, ArchUnit 1.5.1) avec fixtures qui violent chaque regle. verify vert : 15 tests.",
+  "notes": "fr.app remplace par com.psymate (G Q1). 'shared' ajoute a chaque allowedDependencies (exige par Modulith, ecart a A5 a consigner). Dependance interdite directory -> patients testee pour de vrai : echec Modulith + ArchUnit.",
+  "next": "identity n'autorise pas events : a revoir en M1-14 si identity.admin publie des evenements (A10.1)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/3",
+  "branch": "worktree-M0-02",
+  "checkout": "psymate-api"
+}

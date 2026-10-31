@@ -2,3 +2,7 @@
 .env
 .env.*
 target/
+# Suivi d'avancement : la page est derivee des evenements (make progress), seuls les evenements sont commites.
+docs/progress/index.html
+docs/progress/.lock/
+docs/progress/events/*.tmp

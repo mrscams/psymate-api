@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-31T07:33:17.391Z",
+  "task": "PROJET",
+  "agent": "claude",
+  "status": "in-progress",
+  "summary": "Suivi d'avancement mis en place : evenements JSON dans docs/progress/events, page docs/progress/index.html via make progress, skill progress-log, agents mis a jour.",
+  "notes": "Nom du produit : 'PsyMate' est deja une marque active (PsyMate BV / Maastricht University, psymate.eu) dans le meme domaine ; recherche d'anteriorite recommandee avant d'investir dans la marque.",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

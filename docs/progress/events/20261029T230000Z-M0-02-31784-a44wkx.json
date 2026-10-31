@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-29T23:00:00.000Z",
+  "task": "M0-02",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant, 0 a corriger ; CI verify verte (1m10) ; aucun fichier commun avec la PR #2",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

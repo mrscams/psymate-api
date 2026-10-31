@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-29T21:45:00.000Z",
+  "task": "M0-08",
+  "agent": "claude",
+  "status": "in-progress",
+  "summary": "CLAUDE.md, .claude/settings.json (hooks spotless et verify) et agents backend-module-dev, reviewer, seed-perf en place sur main ; frontend-feature-dev et la partie web (M0-06) restent a faire.",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

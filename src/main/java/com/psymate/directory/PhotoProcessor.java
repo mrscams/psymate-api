@@ -25,7 +25,7 @@ final class PhotoProcessor {
 
   static final int MAX_BYTES = 5 * 1024 * 1024;
   static final int SIZE = 512;
-  private static final int MAX_PIXELS_SIDE = 12_000;
+  static final long MAX_PIXELS = 25_000_000L;
 
   private PhotoProcessor() {}
 
@@ -80,9 +80,11 @@ final class PhotoProcessor {
       ImageReader reader = readers.next();
       try {
         reader.setInput(in, true, true);
-        if (reader.getWidth(0) > MAX_PIXELS_SIDE || reader.getHeight(0) > MAX_PIXELS_SIDE) {
+        if ((long) reader.getWidth(0) * reader.getHeight(0) > MAX_PIXELS) {
           throw ProfileException.of(
-              HttpStatus.UNPROCESSABLE_ENTITY, "PHOTO_INVALID", "Dimensions trop grandes.");
+              HttpStatus.UNPROCESSABLE_ENTITY,
+              "PHOTO_TOO_LARGE_DIMENSIONS",
+              "Image trop grande (25 millions de pixels au maximum).");
         }
         return reader.read(0);
       } finally {

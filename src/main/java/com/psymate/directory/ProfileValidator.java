@@ -26,6 +26,15 @@ final class ProfileValidator {
     } else if (r.displayName().length() > 120) {
       errors.add(new FieldError("displayName", "Le nom affiché est limité à 120 caractères."));
     }
+    maxLength("titleLabel", r.titleLabel(), 120, errors);
+    maxLength("contactPhone", r.contactPhone(), 30, errors);
+    maxLength("contactEmail", r.contactEmail(), 254, errors);
+    maxLength("websiteUrl", r.websiteUrl(), 300, errors);
+    maxLength("address", r.address(), 300, errors);
+    maxLength("city", r.city(), 100, errors);
+    maxLength("postalCode", r.postalCode(), 20, errors);
+    maxLength("responseDelay", r.responseDelay(), 60, errors);
+    maxLength("fees", r.fees(), 500, errors);
     if (r.bio() != null && r.bio().length() > MAX_BIO) {
       errors.add(new FieldError("bio", "La présentation est limitée à 1 200 caractères."));
     }
@@ -54,6 +63,12 @@ final class ProfileValidator {
       errors.add(new FieldError("country", "Code pays ISO à deux lettres attendu."));
     }
     return errors;
+  }
+
+  private static void maxLength(String field, String v, int max, List<FieldError> errors) {
+    if (v != null && v.length() > max) {
+      errors.add(new FieldError(field, "Limité à " + max + " caractères."));
+    }
   }
 
   private static void closedList(

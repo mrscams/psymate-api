@@ -11,6 +11,8 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /** Cas d'usage du profil public du praticien connecté (UC-13). */
 @Service
@@ -72,10 +74,9 @@ class ProfileService {
     ProfileDto before = get();
     byte[] processed = PhotoProcessor.process(bytes);
     String key = storage.store(p.id(), processed);
+    afterRollbackDelete(key);
     repo.setPhoto(p.id(), key);
-    if (before.photoAssetKey() != null) {
-      storage.delete(before.photoAssetKey());
-    }
+    afterCommitDelete(before.photoAssetKey());
     return get();
   }
 
@@ -85,8 +86,35 @@ class ProfileService {
     ProfileDto before = get();
     if (before.photoAssetKey() != null) {
       repo.setPhoto(p.id(), null);
-      storage.delete(before.photoAssetKey());
+      afterCommitDelete(before.photoAssetKey());
     }
+  }
+
+  /** Supprime l'ancien fichier seulement une fois la base validée. */
+  private void afterCommitDelete(String key) {
+    if (key == null) {
+      return;
+    }
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void afterCommit() {
+            storage.delete(key);
+          }
+        });
+  }
+
+  /** Supprime le nouveau fichier si la transaction est annulée. */
+  private void afterRollbackDelete(String key) {
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void afterCompletion(int status) {
+            if (status != STATUS_COMMITTED) {
+              storage.delete(key);
+            }
+          }
+        });
   }
 
   @Transactional

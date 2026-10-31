@@ -385,6 +385,94 @@ class ProfileIT {
     big[0] = (byte) 0xFF;
     big[1] = (byte) 0xD8;
     big[2] = (byte) 0xFF;
-    uploadPhoto(big, "image/jpeg").andExpect(status().is(413));
+    uploadPhoto(big, "image/jpeg")
+        .andExpect(status().is(413))
+        .andExpect(jsonPath("$.code").value("PHOTO_TOO_LARGE"));
+  }
+
+  @Test
+  void imageWithTooManyPixelsIsRejected() throws Exception {
+    // 6000 x 6000 = 36 M pixels, 1 bit par pixel : quelques Ko une fois compressé en PNG
+    BufferedImage img = new BufferedImage(6000, 6000, BufferedImage.TYPE_BYTE_BINARY);
+    ByteArrayOutputStream png = new ByteArrayOutputStream();
+    ImageIO.write(img, "png", png);
+    assertThat(png.size()).isLessThan(5 * 1024 * 1024);
+    uploadPhoto(png.toByteArray(), "image/png")
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.code").value("PHOTO_TOO_LARGE_DIMENSIONS"));
+  }
+
+  @Test
+  void freeTextFieldsAreBounded() throws Exception {
+    String longText = "x".repeat(600);
+    putProfile(
+            "{\"displayName\":\"Alice\",\"fees\":\""
+                + longText
+                + "\",\"address\":\""
+                + longText
+                + "\",\"contactPhone\":\""
+                + longText
+                + "\",\"titleLabel\":\""
+                + longText
+                + "\",\"responseDelay\":\""
+                + longText
+                + "\"}")
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.errors.length()").value(5));
+  }
+
+  @Test
+  void anotherTenantCannotSeeOrModifyMyProfile() throws Exception {
+    putProfile(completeProfile(",\"bio\":\"Profil de A\"")).andExpect(status().isOk());
+
+    UUID otherTenant = UUID.randomUUID();
+    jdbc.update("insert into tenant (id, name) values (?, 'Autre cabinet')", otherTenant);
+    UUID bob = UUID.randomUUID();
+    jdbc.update(
+        "insert into practitioner (id, tenant_id, email, email_normalized, password_hash,"
+            + " first_name, last_name, display_name, profession)"
+            + " values (?, ?, ?, ?, 'x', 'Bob', 'B', 'Bob Durand', 'coach')",
+        bob,
+        otherTenant,
+        bob + "@example.test",
+        bob + "@example.test");
+    CurrentPractitioner principal =
+        new CurrentPractitioner(
+            bob, otherTenant, bob + "@example.test", "Bob Durand", "coach", "none");
+    RequestPostProcessor bobAuth =
+        authentication(
+            UsernamePasswordAuthenticationToken.authenticated(principal, null, List.of()));
+
+    mvc.perform(get("/api/me/profile").with(bobAuth))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.displayName").value("Bob Durand"))
+        .andExpect(jsonPath("$.bio").doesNotExist());
+    mvc.perform(
+            put("/api/me/profile")
+                .with(bobAuth)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"displayName\":\"Bob modifie\",\"bio\":\"Profil de B\"}"))
+        .andExpect(status().isOk());
+    mvc.perform(post("/api/me/profile/publish").with(bobAuth)).andExpect(status().isConflict());
+
+    assertThat(
+            jdbc.queryForObject(
+                "select bio from practitioner_profile where practitioner_id = ?",
+                String.class,
+                alice))
+        .isEqualTo("Profil de A");
+    assertThat(
+            jdbc.queryForObject(
+                "select display_name from practitioner_profile where practitioner_id = ?",
+                String.class,
+                alice))
+        .isEqualTo("Dr Alice Martin");
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from practitioner_profile where practitioner_id in (?, ?)",
+                Integer.class,
+                alice,
+                bob))
+        .isEqualTo(2);
   }
 }

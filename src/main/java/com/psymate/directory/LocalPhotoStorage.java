@@ -14,8 +14,7 @@ class LocalPhotoStorage implements PhotoStorage {
 
   private final Path root;
 
-  LocalPhotoStorage(
-      @Value("${app.directory.storage-dir:${java.io.tmpdir}/psymate-assets}") String dir) {
+  LocalPhotoStorage(@Value("${app.directory.storage-dir}") String dir) {
     this.root = Path.of(dir).toAbsolutePath().normalize();
   }
 

@@ -42,7 +42,10 @@ final class AuthDtos {
 
   record EmailResendRequest(@NotBlank @Email @Size(max = 254) String email) {}
 
-  record EmailChangeRequest(@NotBlank @Email @Size(max = 254) String newEmail) {}
+  record EmailChangeRequest(
+      @NotBlank @Size(max = 254) String email,
+      @NotBlank @Size(max = 200) String password,
+      @NotBlank @Email @Size(max = 254) String newEmail) {}
 
   record SessionResponse(
       UUID id,
@@ -52,10 +55,27 @@ final class AuthDtos {
       String verificationStatus,
       boolean emailConfirmed) {}
 
+  /** otp : code TOTP à 6 chiffres ou code de secours ; rememberMe absent = false. */
   record LoginRequest(
       @NotBlank @Size(max = 254) String email,
       @NotBlank @Size(max = 200) String password,
-      boolean rememberMe) {}
+      @Size(max = 32) String otp,
+      Boolean rememberMe) {}
+
+  /** 202 : mot de passe correct, la 2FA est active et le code manque. */
+  record OtpRequiredResponse(boolean otpRequired) {}
+
+  record TwoFactorEnableResponse(String secret, String otpauthUri) {}
+
+  record TwoFactorVerifyRequest(@NotBlank @Size(max = 32) String code) {}
+
+  record TwoFactorDisableRequest(
+      @NotBlank @Size(max = 200) String password, @NotBlank @Size(max = 32) String code) {}
+
+  /** Codes de secours en clair : montrés une seule fois. */
+  record RecoveryCodesResponse(java.util.List<String> recoveryCodes) {}
+
+  record RevokedSessionsResponse(int revoked) {}
 
   record PasswordResetRequest(@NotBlank @Email @Size(max = 254) String email) {}
 

@@ -10,8 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.authentication.ProviderNotFoundException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -54,17 +53,24 @@ class SecurityConfig {
     return new HttpSessionSecurityContextRepository();
   }
 
+  /**
+   * Gestionnaire d'authentification qui refuse tout : la connexion est faite par LoginService
+   * (verrou, 2FA, statuts). Sa présence empêche Spring Boot de créer l'utilisateur en mémoire par
+   * défaut (mot de passe généré).
+   */
   @Bean
-  AuthenticationManager authenticationManager(
-      PractitionerUserDetailsService users, PasswordEncoder encoder) {
-    DaoAuthenticationProvider provider = new DaoAuthenticationProvider(users);
-    provider.setPasswordEncoder(encoder);
-    return new ProviderManager(provider);
+  AuthenticationManager authenticationManager() {
+    return authentication -> {
+      throw new ProviderNotFoundException("login handled by LoginService");
+    };
   }
 
   @Bean
   SecurityFilterChain securityFilterChain(
-      HttpSecurity http, SecurityContextRepository repo, PractitionerRepository practitioners)
+      HttpSecurity http,
+      SecurityContextRepository repo,
+      PractitionerRepository practitioners,
+      TotpRepository totp)
       throws Exception {
     http
         // CSRF désactivé : l'API n'accepte que du JSON (application/json, jamais un formulaire
@@ -79,6 +85,7 @@ class SecurityConfig {
                         "/api/auth/signup",
                         "/api/auth/email/confirm",
                         "/api/auth/email/resend",
+                        "/api/auth/email/change",
                         "/api/auth/login",
                         "/api/auth/logout",
                         "/api/auth/password-reset/**")
@@ -88,6 +95,7 @@ class SecurityConfig {
                     .anyRequest()
                     .permitAll())
         .addFilterAfter(new EmailConfirmationFilter(practitioners, repo), AuthorizationFilter.class)
+        .addFilterAfter(new AdminTwoFactorFilter(totp), EmailConfirmationFilter.class)
         .exceptionHandling(
             ex ->
                 ex.authenticationEntryPoint(

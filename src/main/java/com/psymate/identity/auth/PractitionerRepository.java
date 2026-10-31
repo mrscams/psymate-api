@@ -156,4 +156,45 @@ class PractitionerRepository {
         .param("p", id.toString())
         .update();
   }
+
+  /** Reflète le compteur d'échecs et le verrou (audit) ; l'application du verrou est en mémoire. */
+  void recordFailedLogin(UUID id, int failures, Instant lockedUntil) {
+    jdbc.sql("update practitioner set failed_logins = :f, locked_until = :l where id = :id")
+        .param("f", (short) Math.min(failures, Short.MAX_VALUE))
+        .param("l", lockedUntil == null ? null : Timestamp.from(lockedUntil))
+        .param("id", id)
+        .update();
+  }
+
+  void resetFailedLogins(UUID id) {
+    jdbc.sql(
+            "update practitioner set failed_logins = 0, locked_until = null where id = :id"
+                + " and (failed_logins <> 0 or locked_until is not null)")
+        .param("id", id)
+        .update();
+  }
+
+  /** Révoque les autres sessions du praticien, retourne leur nombre. */
+  int deleteOtherSessions(UUID id, String currentSessionId) {
+    return jdbc.sql("delete from spring_session where principal_name = :p and session_id <> :s")
+        .param("p", id.toString())
+        .param("s", currentSessionId)
+        .update();
+  }
+
+  /** Comme deleteSessions, avec le nombre de sessions révoquées (journal de sécurité). */
+  int deleteSessionsCount(UUID id) {
+    return jdbc.sql("delete from spring_session where principal_name = :p")
+        .param("p", id.toString())
+        .update();
+  }
+
+  /** Fin de verrou enregistrée en base (second garde, survit à un redémarrage). */
+  Optional<Instant> lockedUntil(UUID id) {
+    return jdbc.sql("select locked_until from practitioner where id = :id")
+        .param("id", id)
+        .query((rs, n) -> rs.getTimestamp("locked_until"))
+        .optional()
+        .map(Timestamp::toInstant);
+  }
 }

@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T13:36:51.148Z",
+  "task": "M1-11",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Connexion durcie (verrou 5 échecs/15 min, 401 uniforme, 403 statuts), 2FA TOTP RFC 6238, codes de secours, revoke-others, filtre admin sans 2FA",
+  "notes": "Verrou et rejeu TOTP en mémoire (mono-instance), recovery-codes/regenerate en POST, AuthIT/EmailConfirmationIT adaptés (login email_pending refusé), aucune dépendance ni migration",
+  "next": "Fusionner puis regénérer le contrat après M1-12 / M5-02 ; M1-14 pour les routes admin ; revoir le flux email/change sans session pending",
+  "pr": "https://github.com/mrscams/psymate-api/pull/16",
+  "branch": "worktree-M1-11",
+  "checkout": "M1-11"
+}

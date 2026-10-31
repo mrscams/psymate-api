@@ -61,12 +61,23 @@ class AuthIT {
     return "u" + UUID.randomUUID().toString().substring(0, 8) + "@example.org";
   }
 
-  private MvcResult signup(String email, String password, String profession) throws Exception {
+  /** Inscription laissée en email_pending (la connexion est alors refusée, M1-11). */
+  private MvcResult signupPending(String email, String password, String profession)
+      throws Exception {
     String body =
         json.writeValueAsString(RegistrationFixtures.payload(email, password, profession));
     return mvc.perform(
             post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
         .andReturn();
+  }
+
+  /** Inscription puis e-mail considéré comme confirmé (docs_pending) : la connexion est permise. */
+  private MvcResult signup(String email, String password, String profession) throws Exception {
+    MvcResult r = signupPending(email, password, profession);
+    jdbc.update(
+        "update practitioner set verification_status = 'docs_pending' where email_normalized = ?",
+        email);
+    return r;
   }
 
   private MvcResult login(String email, String password, boolean rememberMe) throws Exception {
@@ -142,7 +153,7 @@ class AuthIT {
     mvc.perform(get("/api/auth/me").cookie(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.email").value(email))
-        .andExpect(jsonPath("$.verificationStatus").value("email_pending"))
+        .andExpect(jsonPath("$.verificationStatus").value("docs_pending"))
         .andExpect(jsonPath("$.profession").value("psychologist"));
 
     var id =
@@ -177,9 +188,9 @@ class AuthIT {
     String coach = newEmail();
     String psychiatrist = newEmail();
     String psychologist = newEmail();
-    signup(coach, PASSWORD, "coach");
-    signup(psychiatrist, PASSWORD, "psychiatrist");
-    signup(psychologist, PASSWORD, "psychologist");
+    signupPending(coach, PASSWORD, "coach");
+    signupPending(psychiatrist, PASSWORD, "psychiatrist");
+    signupPending(psychologist, PASSWORD, "psychologist");
 
     assertThat(json.readTree(prefs(coach)))
         .isEqualTo(

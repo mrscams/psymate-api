@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T14:02:44.565Z",
+  "task": "M1-11",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Corrections de revue : email/change public, rejeu TOTP à l'activation, verrou en base, contrat 401/403/423, code mort supprimé",
+  "notes": "Anti-rejeu et limiteur mémoire mono-instance ; fiche 25 et A10 à aligner ; forward-headers-strategy avant prod",
+  "next": "Fusion ; M1-14 (admin, désactivation 2FA admin)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/16",
+  "branch": "worktree-M1-11",
+  "checkout": "M1-11"
+}

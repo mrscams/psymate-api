@@ -171,13 +171,23 @@ components:
       type: object
     EmailChangeRequest:
       properties:
+        email:
+          maxLength: 254
+          minLength: 0
+          type: string
         newEmail:
           format: email
           maxLength: 254
           minLength: 0
           type: string
+        password:
+          maxLength: 200
+          minLength: 0
+          type: string
       required:
+      - email
       - newEmail
+      - password
       type: object
     EmailConfirmRequest:
       properties:
@@ -319,6 +329,10 @@ components:
           maxLength: 254
           minLength: 0
           type: string
+        otp:
+          maxLength: 32
+          minLength: 0
+          type: string
         password:
           maxLength: 200
           minLength: 0
@@ -378,6 +392,11 @@ components:
         undoneAt:
           format: date-time
           type: string
+      type: object
+    OtpRequiredResponse:
+      properties:
+        otpRequired:
+          type: boolean
       type: object
     PasswordResetConfirmRequest:
       properties:
@@ -747,6 +766,12 @@ components:
         labelFr:
           type: string
       type: object
+    RevokedSessionsResponse:
+      properties:
+        revoked:
+          format: int32
+          type: integer
+      type: object
     SearchResult:
       properties:
         facets:
@@ -827,6 +852,29 @@ components:
           items:
             type: string
           type: array
+      type: object
+    TwoFactorDisableRequest:
+      properties:
+        code:
+          maxLength: 32
+          minLength: 0
+          type: string
+        password:
+          maxLength: 200
+          minLength: 0
+          type: string
+      required:
+      - code
+      - password
+      type: object
+    TwoFactorVerifyRequest:
+      properties:
+        code:
+          maxLength: 32
+          minLength: 0
+          type: string
+      required:
+      - code
       type: object
     UpdateProfileRequest:
       properties:
@@ -945,9 +993,17 @@ paths:
               $ref: '#/components/schemas/EmailChangeRequest'
         required: true
       responses:
-        '200':
-          description: OK
-      summary: Corrige l'adresse e-mail d'un compte non confirmé
+        '423':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Verrouillage e-mail + IP après 5 mots de passe faux
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai
+              style: simple
+      summary: 'Corrige l''adresse d''un compte non confirmé (public : e-mail + mot de passe, 202 dans tous les cas)'
       tags:
       - auth-controller
   /api/auth/email/confirm:
@@ -996,6 +1052,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/MeResponse'
           description: OK
+        '202':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OtpRequiredResponse'
+          description: Accepted
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Identifiants incorrects (message unique) ou code 2FA faux
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: EMAIL_NOT_CONFIRMED ou ACCOUNT_SUSPENDED
+        '423':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Verrouillage après 5 échecs (15 min)
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai
+              style: simple
+      summary: 'Connexion : 200 session, 202 code 2FA requis, 401, 403, 423 (Retry-After)'
       tags:
       - auth-controller
   /api/auth/logout:
@@ -1084,6 +1169,19 @@ paths:
       summary: État courant de la session (statut de vérification à jour)
       tags:
       - auth-controller
+  /api/auth/sessions/revoke-others:
+    post:
+      operationId: revokeOtherSessions
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RevokedSessionsResponse'
+          description: OK
+      summary: Déconnecte tous les autres appareils (la session courante est conservée)
+      tags:
+      - auth-controller
   /api/auth/signup:
     post:
       deprecated: true
@@ -1110,6 +1208,126 @@ paths:
       summary: Alias déprécié de POST /api/auth/register
       tags:
       - auth-controller
+  /api/me/2fa/disable:
+    post:
+      operationId: disableTwoFactor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorDisableRequest'
+        required: true
+      responses:
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Session absente
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: TWO_FACTOR_NOT_ENABLED
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Mot de passe ou code incorrect (errors[] par champ)
+        '423':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: '5 échecs : essais verrouillés 15 min'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai
+              style: simple
+      summary: Désactive la 2FA (mot de passe et code TOTP ou de secours)
+      tags:
+      - two-factor-controller
+  /api/me/2fa/enable:
+    post:
+      operationId: enableTwoFactor
+      responses:
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Session absente
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: TWO_FACTOR_ALREADY_ENABLED
+      summary: Génère le secret TOTP (en attente) et l'URI otpauth:// du QR code
+      tags:
+      - two-factor-controller
+  /api/me/2fa/recovery-codes/regenerate:
+    post:
+      operationId: regenerateRecoveryCodes
+      responses:
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Session absente
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: TWO_FACTOR_NOT_ENABLED
+      summary: Remplace les codes de secours par 10 nouveaux (anciens invalidés)
+      tags:
+      - two-factor-controller
+  /api/me/2fa/verify:
+    post:
+      operationId: verifyTwoFactor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorVerifyRequest'
+        required: true
+      responses:
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Session absente
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: TWO_FACTOR_ALREADY_ENABLED ou TWO_FACTOR_NOT_STARTED
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Code incorrect (errors[] par champ)
+        '423':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: '5 codes faux : essais verrouillés 15 min'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai
+              style: simple
+      summary: Vérifie le premier code, active la 2FA et renvoie 10 codes de secours (une fois)
+      tags:
+      - two-factor-controller
   /api/me/emotions:
     post:
       operationId: create_1

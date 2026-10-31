@@ -1,6 +1,8 @@
 package com.psymate.linking.application;
 
+import com.psymate.clinical.api.CreatedLink;
 import com.psymate.clinical.api.EntryFacade;
+import com.psymate.clinical.api.LinkRequest;
 import com.psymate.linking.api.LinkFacade;
 import com.psymate.linking.api.LinkView;
 import com.psymate.linking.domain.Link;
@@ -11,8 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Façade de lecture des liens. Une entrée absente ou d'un autre praticien donne une liste vide et
- * un compte nul : rien ne révèle son existence (ADR-09).
+ * Façade des liens. Lecture : une entrée absente ou d'un autre praticien donne une liste vide et un
+ * compte nul, rien ne révèle son existence (ADR-09). Écriture : liens d'une entrée neuve (M2-02).
  */
 @Service
 @Transactional(readOnly = true)
@@ -20,10 +22,19 @@ class LinkFacadeService implements LinkFacade {
 
   private final LinkRepository repo;
   private final EntryFacade entries;
+  private final EntryLinksAdapter creator;
 
-  LinkFacadeService(LinkRepository repo, EntryFacade entries) {
+  LinkFacadeService(LinkRepository repo, EntryFacade entries, EntryLinksAdapter creator) {
     this.repo = repo;
     this.entries = entries;
+    this.creator = creator;
+  }
+
+  /** Écriture : rejoint la transaction de l'appelant, ou en ouvre une (non lecture seule). */
+  @Override
+  @Transactional
+  public List<CreatedLink> createForNewEntry(UUID entryId, List<LinkRequest> links) {
+    return creator.createForNewEntry(entryId, links);
   }
 
   @Override

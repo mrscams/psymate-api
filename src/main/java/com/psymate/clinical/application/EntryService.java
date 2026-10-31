@@ -1,8 +1,11 @@
 package com.psymate.clinical.application;
 
+import com.psymate.clinical.api.CreatedLink;
 import com.psymate.clinical.api.EntryArchived;
 import com.psymate.clinical.api.EntryCorrected;
 import com.psymate.clinical.api.EntryCreated;
+import com.psymate.clinical.api.EntryLinksPort;
+import com.psymate.clinical.api.LinkRequest;
 import com.psymate.clinical.api.SessionView;
 import com.psymate.clinical.domain.ClinicalError;
 import com.psymate.clinical.domain.ClinicalException;
@@ -36,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +59,7 @@ public class EntryService {
   private final PatientFacade patients;
   private final EmotionCatalog emotions;
   private final DomainEventPublisher events;
+  private final ObjectProvider<EntryLinksPort> linksPort;
   private final JsonMapper json;
   private final Clock clock;
   private final GraceRule graceRule;
@@ -66,6 +71,7 @@ public class EntryService {
       PatientFacade patients,
       EmotionCatalog emotions,
       DomainEventPublisher events,
+      ObjectProvider<EntryLinksPort> linksPort,
       JsonMapper json,
       Clock clock,
       @Value("${versioning.grace-period:75m}") Duration gracePeriod) {
@@ -75,6 +81,7 @@ public class EntryService {
     this.patients = patients;
     this.emotions = emotions;
     this.events = events;
+    this.linksPort = linksPort;
     this.json = json;
     this.clock = clock;
     this.graceRule = new GraceRule(gracePeriod);
@@ -85,6 +92,20 @@ public class EntryService {
   /** Crée une entrée du praticien courant pour un patient qui lui appartient ; renvoie son id. */
   @Transactional
   public UUID create(UUID patientId, CreateEntryCommand command) {
+    return createWithLinks(patientId, command, List.of()).id();
+  }
+
+  /**
+   * Crée une entrée et ses liens en une seule transaction (M2-02, A7 séquence 2) : écriture de
+   * l'entrée (version, détail, tags, clinical_rev), puis un lien manuel accepté par élément de
+   * {@code links} par le port de linking, puis EntryCreated. Un lien refusé (exception du port)
+   * annule tout : ni entrée, ni lien, ni événement.
+   *
+   * @throws IllegalStateException des liens sont demandés mais aucun module de liens n'est présent
+   */
+  @Transactional
+  public EntryCreation createWithLinks(
+      UUID patientId, CreateEntryCommand command, List<LinkRequest> links) {
     CurrentPractitioner me = currentPractitioner();
     guard.requireOwned(patientId);
     UUID sessionId = checkSession(command.type(), patientId, command.sessionId());
@@ -113,9 +134,11 @@ public class EntryService {
     if (time == null) {
       content = withTime(content, new TimeSpan(now, now, TimeSpan.Precision.EXACT, null));
     }
-    UUID id = write(me.tenantId(), me.id(), patientId, command.type(), sessionId, content, now);
+    UUID id = insert(me.tenantId(), me.id(), patientId, command.type(), sessionId, content, now);
     writeTags(id, command.tagIds());
-    return id;
+    List<CreatedLink> created = createLinks(id, links);
+    publishCreated(me.tenantId(), id, patientId, command.type());
+    return new EntryCreation(id, created);
   }
 
   /**
@@ -149,6 +172,20 @@ public class EntryService {
       UUID sessionId,
       EntryContent content,
       Instant now) {
+    UUID id = insert(tenantId, authorId, patientId, type, sessionId, content, now);
+    publishCreated(tenantId, id, patientId, type);
+    return id;
+  }
+
+  /** Insertion sans événement : entrée, version 1, détail et clinical_rev. */
+  private UUID insert(
+      UUID tenantId,
+      UUID authorId,
+      UUID patientId,
+      EntryType type,
+      UUID sessionId,
+      EntryContent content,
+      Instant now) {
     UUID id = UUID.randomUUID();
     UUID versionId = UUID.randomUUID();
     // La FK entry.current_version_id est différée : l'entrée peut précéder sa version.
@@ -168,8 +205,24 @@ public class EntryService {
         versionId, id, 1, content.title(), content.body(), payload(content), null, authorId, now);
     insertDetail(id, type, content);
     patients.touchClinicalRev(patientId);
-    events.publish(new EntryCreated(tenantId, id, patientId, type.code(), 1));
     return id;
+  }
+
+  private void publishCreated(UUID tenantId, UUID id, UUID patientId, EntryType type) {
+    events.publish(new EntryCreated(tenantId, id, patientId, type.code(), 1));
+  }
+
+  /** Liens de l'entrée neuve par le port de linking ; sans effet si la liste est vide. */
+  private List<CreatedLink> createLinks(UUID entryId, List<LinkRequest> links) {
+    if (links == null || links.isEmpty()) {
+      return List.of();
+    }
+    EntryLinksPort port = linksPort.getIfAvailable();
+    if (port == null) {
+      throw new IllegalStateException(
+          "Des liens sont demandés à la création mais aucune implémentation de EntryLinksPort n'est disponible");
+    }
+    return port.createForNewEntry(entryId, links);
   }
 
   // ---- correction

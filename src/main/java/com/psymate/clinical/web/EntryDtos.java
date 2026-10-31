@@ -23,9 +23,6 @@ final class EntryDtos {
   /** Corps de requête du module clinical : authorType et submissionId y sont refusés. */
   interface ClinicalRequest {}
 
-  /** Corps de création ou de modification d'entrée : links y est refusé aussi (M2-02). */
-  interface EntryWriteRequest extends ClinicalRequest {}
-
   // ---- réponses
 
   record EntryOccurredDto(Instant from, Instant to, String precision, String label) {}
@@ -45,7 +42,9 @@ final class EntryDtos {
 
   /**
    * Entrée complète. {@code authorType} est en lecture seule et vaut toujours « practitioner » en
-   * V1 (A11). {@code linkCount} vaut 0 tant que les liens ne sont pas livrés (M2-02).
+   * V1 (A11). {@code links} n'est renseigné que dans la réponse de création (POST, liste vide si
+   * aucun lien demandé) ; il vaut null sur GET, PATCH et restauration, où les liens se lisent par
+   * GET /api/entries/{id}/links (M2-01). {@code linkCount} est le nombre de liens acceptés.
    */
   record EntryDto(
       UUID id,
@@ -65,7 +64,15 @@ final class EntryDtos {
       EntryMedicationDto medication,
       EntrySessionDto session,
       int linkCount,
+      List<EntryLinkDto> links,
       Instant archivedAt) {}
+
+  /**
+   * Lien posé à la création, dans son sens réel (source vers cible). {@code label} est le verbe vu
+   * depuis la nouvelle entrée : libellé inverse si elle est la cible d'un type dirigé ; anglais si
+   * Accept-Language: en, français sinon.
+   */
+  record EntryLinkDto(UUID id, UUID sourceId, UUID targetId, String linkType, String label) {}
 
   record EntryVersionDto(
       int version,
@@ -92,7 +99,16 @@ final class EntryDtos {
 
   record EntrySessionRequest(String modality, Integer durationMin) {}
 
-  /** Création : le détail fourni doit correspondre au type. */
+  /**
+   * Lien demandé avec une nouvelle entrée. {@code direction} : outgoing (défaut, la nouvelle entrée
+   * est la source) ou incoming (elle est la cible).
+   */
+  record EntryLinkRequest(UUID targetId, String linkType, String direction) {}
+
+  /**
+   * Création : le détail fourni doit correspondre au type. {@code links} pose des liens manuels
+   * acceptés avec l'entrée, tout ou rien (M2-02) ; refusé pour une séance.
+   */
   record CreateEntryRequest(
       String type,
       String status,
@@ -104,8 +120,9 @@ final class EntryDtos {
       List<String> tags,
       EntryFeelingRequest feeling,
       EntryMedicationRequest medication,
-      EntrySessionRequest session)
-      implements EntryWriteRequest {}
+      EntrySessionRequest session,
+      List<EntryLinkRequest> links)
+      implements ClinicalRequest {}
 
   /**
    * Modification partielle : un champ absent est inchangé ; {@code occurred} et {@code tags} sont
@@ -122,7 +139,7 @@ final class EntryDtos {
       EntryMedicationRequest medication,
       EntrySessionRequest session,
       String reason)
-      implements EntryWriteRequest {}
+      implements ClinicalRequest {}
 
   // ---- requêtes de séance
 

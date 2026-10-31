@@ -1,5 +1,6 @@
 package com.psymate.clinical.web;
 
+import com.psymate.clinical.api.EntryLinkException;
 import com.psymate.clinical.domain.ClinicalError;
 import com.psymate.clinical.domain.ClinicalException;
 import com.psymate.shared.problem.AdviceOrder;
@@ -64,6 +65,24 @@ class ClinicalExceptionHandler {
   ProblemDetail request(EntryRequestException ex, HttpServletRequest request) {
     Locale locale = messages.localeOf(request);
     return validation(ex.problems(), locale);
+  }
+
+  /**
+   * Un lien demandé à la création est refusé (M2-02) : 422 comme une erreur de validation, sur le
+   * champ links[i].linkType ou links[i].targetId ; l'entrée n'est pas créée. Pour
+   * LINK_TYPE_NOT_ALLOWED, allowedLinkTypes liste les types possibles pour ce couple.
+   */
+  @ExceptionHandler(EntryLinkException.class)
+  ProblemDetail link(EntryLinkException ex, HttpServletRequest request) {
+    Locale locale = messages.localeOf(request);
+    ProblemDetail pd =
+        validation(
+            List.of(new FieldProblem("links[" + ex.index() + "]." + ex.field(), ex.code())),
+            locale);
+    if (!ex.allowedLinkTypes().isEmpty()) {
+      pd.setProperty("allowedLinkTypes", ex.allowedLinkTypes());
+    }
+    return pd;
   }
 
   /** Filet de sécurité : une violation Jakarta qui aurait échappé à la pré-validation. */

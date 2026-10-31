@@ -3,6 +3,7 @@ package com.psymate.clinical.application;
 import com.psymate.clinical.api.EntryFacade;
 import com.psymate.clinical.api.EntryVersionView;
 import com.psymate.clinical.api.SessionView;
+import com.psymate.clinical.domain.Entry;
 import com.psymate.clinical.domain.EntryType;
 import com.psymate.clinical.persistence.EntryRepository;
 import com.psymate.identity.api.CurrentPractitioner;
@@ -81,5 +82,21 @@ class EntryFacadeService implements EntryFacade {
             v ->
                 new EntryVersionView(
                     v.id(), v.entryId(), v.version(), v.title(), v.body(), v.createdAt()));
+  }
+
+  @Override
+  public Optional<UUID> patientOf(UUID entryId) {
+    return repo.patientOf(entryId);
+  }
+
+  @Override
+  @Transactional
+  public void adjustLinkCount(UUID entryId, int delta) {
+    repo.adjustLinkCount(entryId, delta);
+  }
+
+  @Override
+  public boolean isArchived(UUID entryId) {
+    return repo.find(entryId).map(Entry::archived).orElse(false);
   }
 }

@@ -251,6 +251,14 @@ components:
         verified:
           type: boolean
       type: object
+    ChangeLinkTypeRequest:
+      properties:
+        linkType:
+          minLength: 1
+          type: string
+      required:
+      - linkType
+      type: object
     CloseSessionRequest:
       properties:
         durationMin:
@@ -316,6 +324,25 @@ components:
           type: string
         visibility:
           type: string
+      type: object
+    CreateLinkRequest:
+      properties:
+        direction:
+          pattern: incoming|outgoing
+          type: string
+        linkType:
+          minLength: 1
+          type: string
+        rationale:
+          maxLength: 500
+          minLength: 0
+          type: string
+        targetId:
+          format: uuid
+          type: string
+      required:
+      - linkType
+      - targetId
       type: object
     CreatePatientRequest:
       properties:
@@ -850,6 +877,36 @@ components:
         source:
           type: string
         summary:
+          type: string
+      type: object
+    LinkDto:
+      properties:
+        authorId:
+          format: uuid
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          format: uuid
+          type: string
+        label:
+          type: string
+        linkType:
+          type: string
+        provenance:
+          type: string
+        rationale:
+          type: string
+        sentence:
+          type: string
+        sourceId:
+          format: uuid
+          type: string
+        status:
+          type: string
+        targetId:
+          format: uuid
           type: string
       type: object
     LinkTypeView:
@@ -2651,6 +2708,51 @@ paths:
           description: OK
       tags:
       - entry-controller
+  /api/entries/{id}/links:
+    get:
+      operationId: listEntryLinks
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                items:
+                  $ref: '#/components/schemas/LinkDto'
+                type: array
+          description: OK
+      tags:
+      - link-controller
+    post:
+      operationId: createLink
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLinkRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/LinkDto'
+          description: Created
+      tags:
+      - link-controller
   /api/entries/{id}/restore:
     post:
       operationId: restoreEntry
@@ -2691,6 +2793,45 @@ paths:
           description: OK
       tags:
       - entry-controller
+  /api/links/{id}:
+    delete:
+      operationId: removeLink
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: No Content
+      tags:
+      - link-controller
+    patch:
+      operationId: changeLinkType
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeLinkTypeRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/LinkDto'
+          description: OK
+      tags:
+      - link-controller
   /api/me/2fa/disable:
     post:
       operationId: disableTwoFactor

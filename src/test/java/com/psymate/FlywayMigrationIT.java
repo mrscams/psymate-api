@@ -273,4 +273,40 @@ class FlywayMigrationIT {
                     String.class))
         .doesNotContain("ip", "user_agent");
   }
+
+  /** V07 (M2-01) : link et ai_feedback, index d'unicité partiel et garde contre l'auto-lien. */
+  @Test
+  void v07CreatesLinkAndEmptyAiFeedbackWithTheActiveLinkUniqueIndex() {
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select version from flyway_schema_history where success order by"
+                        + " installed_rank",
+                    String.class))
+        .contains("07");
+    assertThat(jdbc().queryForObject("select count(*) from ai_feedback", Integer.class)).isZero();
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select indexname from pg_indexes where schemaname = 'public'"
+                        + " and tablename = 'link'",
+                    String.class))
+        .contains("ux_link_active", "ix_link_source", "ix_link_target", "ix_link_patient");
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select indexdef from pg_indexes where indexname = 'ux_link_active'",
+                    String.class))
+        .startsWith("CREATE UNIQUE INDEX")
+        .contains("source_id, target_id, link_type")
+        .contains("proposed")
+        .contains("accepted");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select conname from pg_constraint c join pg_class t on t.oid = c.conrelid"
+                        + " where t.relname = 'link' and c.contype = 'c'",
+                    String.class))
+        .contains("ck_link_not_self");
+  }
 }

@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T22:27:20.427Z",
+  "task": "M2-01",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Liens : V07 (link + ai_feedback), LinkService (create/changeType/remove, abonné EntryArchived idempotent), LinkFacade, LinkAccepted, endpoints POST/GET /api/entries/{id}/links, PATCH/DELETE /api/links/{id} ; verify vert (196 unit + 529 IT), contrat additif (0.8.1)",
+  "notes": "Hors linking : EntryFacade.patientOf/adjustLinkCount/isArchived (clinical, ajouts en fin de fichier), ClinicalSchemaIT adapté à V07, ReservesConformanceIT M2-01 réactivés. Base locale avec V10 : make db-reset. LinkRejected jamais publié en V1. Revue : 0 bloquant, 1 majeur corrigé (entrée archivée → 409 ENTRY_ARCHIVED).",
+  "next": "Fusion, tag contrat, regénérer le contrat après M3-01/M4-02 ; M2-02 links[] dans POST /entries ; M2-03 graphe (filtrer les extrémités archivées, restauration) ; course inversée co_occurs à verrouiller si besoin",
+  "pr": "https://github.com/mrscams/psymate-api/pull/27",
+  "branch": "worktree-M2-01",
+  "checkout": "M2-01"
+}

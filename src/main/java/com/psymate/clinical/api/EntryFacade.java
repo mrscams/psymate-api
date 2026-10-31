@@ -36,4 +36,26 @@ public interface EntryFacade {
    * n'appartient pas au praticien courant, ou si aucune séance n'est ouverte.
    */
   Optional<SessionView> openSessionOf(UUID patientId);
+
+  /**
+   * Patient de l'entrée si elle existe (archivée ou non), quel que soit son propriétaire. Sans
+   * garde de propriété : l'appelant passe par PatientOwnershipGuard.requireOwned, comme clinical
+   * (403 si le patient est d'un autre praticien). Utilisé par linking pour rattacher un lien à son
+   * patient.
+   */
+  Optional<UUID> patientOf(UUID entryId);
+
+  /**
+   * Ajuste la projection {@code entry.link_count} de {@code delta} (positif ou négatif), sans
+   * descendre sous zéro. Aucune garde de propriété : l'appelant (linking) a déjà passé ses propres
+   * gardes, ou réagit à un événement (EntryArchived, sans praticien courant). Rejoint la
+   * transaction de l'appelant.
+   */
+  void adjustLinkCount(UUID entryId, int delta);
+
+  /**
+   * L'entrée est archivée (archived_at renseigné). Sans garde de propriété : l'appelant (linking) a
+   * déjà passé PatientOwnershipGuard.requireOwned ; faux si l'entrée n'existe pas.
+   */
+  boolean isArchived(UUID entryId);
 }

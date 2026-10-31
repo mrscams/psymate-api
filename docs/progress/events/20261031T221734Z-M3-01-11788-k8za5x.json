@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T22:17:34.324Z",
+  "task": "M3-01",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 26 fusionnee dans main (timeline fenetree, curseur keyset, facettes, resume mensuel)",
+  "next": "Tag contract-v0.5.0 ; M3-02 web debloquee",
+  "pr": "https://github.com/mrscams/psymate-api/pull/26",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

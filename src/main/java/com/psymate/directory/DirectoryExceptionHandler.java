@@ -1,16 +1,28 @@
 package com.psymate.directory;
 
+import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-/** Erreurs RFC 9457 limitées aux contrôleurs du module directory. */
+/**
+ * Erreurs RFC 9457 limitées aux contrôleurs du module directory. Les erreurs ne sont jamais mises
+ * en cache (la chaîne publique désactive le Cache-Control automatique).
+ */
 @RestControllerAdvice(
-    assignableTypes = {ProfileController.class, DirectoryVocabularyController.class})
+    assignableTypes = {
+      ProfileController.class,
+      DirectoryVocabularyController.class,
+      PublicDirectoryController.class
+    })
 class DirectoryExceptionHandler {
 
   @ExceptionHandler(ProfileException.class)
-  ProblemDetail handle(ProfileException ex) {
+  ResponseEntity<ProblemDetail> handle(ProfileException ex) {
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.status(), ex.getMessage());
     pd.setTitle(ex.status().getReasonPhrase());
     pd.setProperty("code", ex.code());
@@ -18,6 +30,24 @@ class DirectoryExceptionHandler {
       pd.setProperty("errors", ex.errors());
     }
     ex.extra().forEach(pd::setProperty);
-    return pd;
+    return error(pd);
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  ResponseEntity<ProblemDetail> handle(MethodArgumentTypeMismatchException ex) {
+    ProblemDetail pd =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Paramètre invalide.");
+    pd.setTitle(HttpStatus.BAD_REQUEST.getReasonPhrase());
+    pd.setProperty("code", "INVALID_PARAMETERS");
+    pd.setProperty(
+        "errors", List.of(new ProfileException.FieldError(ex.getName(), "Valeur invalide.")));
+    return error(pd);
+  }
+
+  private static ResponseEntity<ProblemDetail> error(ProblemDetail pd) {
+    return ResponseEntity.status(pd.getStatus())
+        .header("Cache-Control", "no-store")
+        .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+        .body(pd);
   }
 }

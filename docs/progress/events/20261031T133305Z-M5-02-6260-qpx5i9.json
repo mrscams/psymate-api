@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T13:33:05.090Z",
+  "task": "M5-02",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Annuaire public : recherche (q, ville, rayon, facettes, tri), fiche filtrée, chaîne de sécurité /api/public/**, limite 60/min par IP (Bucket4j)",
+  "notes": "Ajout PractitionerFacade.professionalNumber (hors module, signalé). Filtre profession calculé en Java via la façade. Bucket4j 8.21.0.",
+  "next": "M5-03 formulaire de contact ; regénérer le contrat après fusion des PR voisines",
+  "pr": "https://github.com/mrscams/psymate-api/pull/15",
+  "branch": "worktree-M5-02",
+  "checkout": "M5-02"
+}

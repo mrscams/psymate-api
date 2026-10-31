@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-31T17:55:29.863Z",
+  "task": "M1-14",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 18 fusionnee dans main (admin : validation des praticiens) ; vague V5 terminee",
+  "next": "Tag contract-v0.8.0 ; V6 : M1-05, M7-08, M1-14b, M5-06, M7-05",
+  "pr": "https://github.com/mrscams/psymate-api/pull/18",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-31T12:45:04.902Z",
+  "task": "M1-03",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Corrections de revue : grâce 75 min encadrée par GRANT colonne + trigger (G Q31), touchClinicalRev, façade sans fuite, séance archivée refusée",
+  "pr": "https://github.com/mrscams/psymate-api/pull/13",
+  "branch": "worktree-M1-03",
+  "checkout": "M1-03"
+}

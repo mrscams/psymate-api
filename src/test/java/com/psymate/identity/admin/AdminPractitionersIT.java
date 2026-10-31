@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import jakarta.servlet.http.Cookie;
+import java.net.URI;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -114,6 +115,63 @@ class AdminPractitionersIT extends AbstractAccountsIT {
             count("select count(*) from verification_decision where practitioner_id = ?", target))
         .isZero();
     assertThat(status(mvc.perform(get(BASE)).andReturn())).isEqualTo(401);
+  }
+
+  /**
+   * Spring MVC route sur le chemin décodé : un encodage pour cent (/api/%61dmin) ne doit contourner
+   * ni le rôle ni la 2FA, sur les routes d'identity.admin comme sur celles du module directory.
+   */
+  @Test
+  void percentEncodedAdminPathsAreGuardedLikeThePlainOnes() throws Exception {
+    UUID target = practitioner("Dr Cible Encodée", "approved");
+    RequestPostProcessor intruder =
+        as(practitioner("Dr Intrus Encodé", "approved"), "ROLE_PRACTITIONER", "approved");
+    RequestPostProcessor noTotp = asAdmin(adminWithoutTwoFactor());
+    List<String> paths =
+        List.of(
+            "/api/%61dmin/practitioners",
+            "/api/%61dmin/practitioners/" + target,
+            "/api/admin/pr%61ctitioners",
+            "/api/%61dmin/journal",
+            "/api/%61dmin/appeals",
+            "/api/%61dmin/vocabulary/directory",
+            "/api/%61dmin/verifications");
+    for (String path : paths) {
+      MvcResult intrusion = mvc.perform(get(URI.create(path)).with(intruder)).andReturn();
+      assertThat(status(intrusion)).as(path).isEqualTo(403);
+      assertThat(code(intrusion)).as(path).isEqualTo("ADMIN_ROLE_REQUIRED");
+      MvcResult withoutTotp = mvc.perform(get(URI.create(path)).with(noTotp)).andReturn();
+      assertThat(status(withoutTotp)).as(path).isEqualTo(403);
+      assertThat(code(withoutTotp)).as(path).isEqualTo("TWO_FACTOR_REQUIRED");
+    }
+    MvcResult suspend =
+        mvc.perform(
+                post(URI.create("/api/%61dmin/practitioners/" + target + "/suspend"))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"reason\":\"" + REASON + "\"}")
+                    .with(intruder))
+            .andReturn();
+    assertThat(status(suspend)).isEqualTo(403);
+    assertThat(code(suspend)).isEqualTo("ADMIN_ROLE_REQUIRED");
+    assertThat(statusOf(target)).isEqualTo("approved");
+    assertThat(status(mvc.perform(get(URI.create("/api/%61dmin/practitioners"))).andReturn()))
+        .isEqualTo(401);
+  }
+
+  @Test
+  void aMissingOrUnreadableBodyIsA400Problem() throws Exception {
+    UUID target = practitioner("Dr Sans Corps", "approved");
+    MvcResult r =
+        mvc.perform(
+                post(BASE + "/" + target + "/suspend")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{not json")
+                    .with(asAdmin(admin())))
+            .andReturn();
+    assertThat(status(r)).isEqualTo(400);
+    assertThat(code(r)).isEqualTo("MALFORMED_REQUEST");
+    assertThat(r.getResponse().getContentType()).contains("application/problem+json");
+    assertThat(statusOf(target)).isEqualTo("approved");
   }
 
   // ---- 2. liste

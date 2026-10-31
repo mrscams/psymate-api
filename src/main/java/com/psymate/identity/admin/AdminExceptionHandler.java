@@ -5,8 +5,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -27,6 +29,17 @@ class AdminExceptionHandler {
 
   AdminExceptionHandler(AdminMessages messages) {
     this.messages = messages;
+  }
+
+  /** Corps absent ou JSON illisible : 400 en problem+json, comme le module clinical. */
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  ResponseEntity<ProblemDetail> malformed(Locale locale) {
+    ProblemDetail pd =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST, messages.get("error.malformed.detail", locale));
+    pd.setTitle(messages.get("error.malformed.title", locale));
+    pd.setProperty("code", "MALFORMED_REQUEST");
+    return ResponseEntity.badRequest().body(pd);
   }
 
   @ExceptionHandler(AdminException.class)

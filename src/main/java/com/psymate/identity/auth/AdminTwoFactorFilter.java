@@ -29,7 +29,7 @@ class AdminTwoFactorFilter extends OncePerRequestFilter {
 
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
-    String path = request.getRequestURI().substring(request.getContextPath().length());
+    String path = RequestPaths.decoded(request);
     return !(path.equals("/api/admin") || path.startsWith("/api/admin/"));
   }
 

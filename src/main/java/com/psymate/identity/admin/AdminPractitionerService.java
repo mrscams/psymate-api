@@ -177,6 +177,15 @@ class AdminPractitionerService {
 
   SuspendDto suspend(CurrentPractitioner admin, UUID id, String rawReason, String ip) {
     String reason = reason(rawReason);
+    // Cible administrateur : tous les administrateurs actifs sont verrouillés d'abord, dans un
+    // ordre unique (par id), avant la cible. Deux suspensions croisées d'administrateurs se
+    // sérialisent donc au lieu de s'interbloquer (deadlock Postgres → 500).
+    boolean adminTarget =
+        shared
+            .findAccount(id)
+            .map(a -> "admin".equals(a.role()))
+            .orElseThrow(AdminPractitionerService::notFound);
+    List<UUID> activeAdmins = adminTarget ? repo.lockActiveAdmins() : List.of();
     AdminVerificationRepository.AccountRow target =
         shared.lockAccount(id).orElseThrow(AdminPractitionerService::notFound);
     if (target.id().equals(admin.id())) {
@@ -186,7 +195,7 @@ class AdminPractitionerService {
       throw AdminException.of(
           HttpStatus.CONFLICT, "ADMIN_ACCOUNT_NOT_SUSPENDABLE", "admin.error.notsuspendable");
     }
-    if ("admin".equals(target.role()) && repo.lockOtherActiveAdmins(id) == 0) {
+    if ("admin".equals(target.role()) && activeAdmins.stream().noneMatch(a -> !a.equals(id))) {
       throw AdminException.of(HttpStatus.CONFLICT, "ADMIN_LAST_ADMIN", "admin.error.lastadmin");
     }
 

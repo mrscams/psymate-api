@@ -138,7 +138,15 @@ class ProfileService {
             .map(PractitionerView::verificationStatus)
             .map(APPROVED::equals)
             .orElse(false);
-    List<String> missing = missingForPublication(p, profile, verified);
+    List<String> missing = new ArrayList<>(missingForPublication(p, profile, verified));
+    // Un code désactivé par l'administration depuis l'enregistrement du brouillon (M1-14b) ne
+    // doit pas être publié : un profil publié n'utilise que des codes actifs.
+    if (!repo.activeCodes("specialty").containsAll(profile.specialties())) {
+      missing.add("specialties");
+    }
+    if (!repo.activeCodes("audience").containsAll(profile.audiences())) {
+      missing.add("audiences");
+    }
     if (!missing.isEmpty()) {
       throw new ProfileException(
           HttpStatus.CONFLICT,

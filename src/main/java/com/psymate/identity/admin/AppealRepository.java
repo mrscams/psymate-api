@@ -92,6 +92,17 @@ class AppealRepository {
         .optional();
   }
 
+  /** Vrai si le praticien a un recours non encore examiné, toutes décisions confondues. */
+  boolean hasOpenAppeal(UUID practitionerId) {
+    return Boolean.TRUE.equals(
+        jdbc.sql(
+                "select exists(select 1 from practitioner_appeal where practitioner_id = :p"
+                    + " and reviewed_at is null)")
+            .param("p", practitionerId)
+            .query(Boolean.class)
+            .single());
+  }
+
   Optional<ExistingAppeal> findByDecision(UUID decisionId) {
     return jdbc.sql(
             "select id, reviewed_at is not null as reviewed from practitioner_appeal"

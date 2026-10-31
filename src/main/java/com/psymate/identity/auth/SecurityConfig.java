@@ -95,6 +95,10 @@ class SecurityConfig {
                         "/api/auth/logout",
                         "/api/auth/password-reset/**")
                     .permitAll()
+                    // Rôle admin exigé sur le chemin décodé (les matchers de Spring Security
+                    // décodent) : première garde, doublée par AdminTwoFactorFilter pour la 2FA.
+                    .requestMatchers("/api/admin/**")
+                    .hasRole("ADMIN")
                     .requestMatchers("/api/**")
                     .authenticated()
                     .anyRequest()
@@ -104,17 +108,31 @@ class SecurityConfig {
         .exceptionHandling(
             ex ->
                 ex.authenticationEntryPoint(
-                    (request, response, e) -> {
-                      response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                      response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-                      response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                      response
-                          .getWriter()
-                          .write(
-                              "{\"type\":\"about:blank\",\"title\":\"Non authentifié\","
-                                  + "\"status\":401,\"code\":\"UNAUTHENTICATED\","
-                                  + "\"detail\":\"Authentification requise.\"}");
-                    }));
+                        (request, response, e) -> {
+                          response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                          response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+                          response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                          response
+                              .getWriter()
+                              .write(
+                                  "{\"type\":\"about:blank\",\"title\":\"Non authentifié\","
+                                      + "\"status\":401,\"code\":\"UNAUTHENTICATED\","
+                                      + "\"detail\":\"Authentification requise.\"}");
+                        })
+                    // Seule règle d'autorisation au-delà d'authenticated() : /api/admin/**.
+                    .accessDeniedHandler(
+                        (request, response, e) -> {
+                          response.setStatus(HttpStatus.FORBIDDEN.value());
+                          response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+                          response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                          response
+                              .getWriter()
+                              .write(
+                                  "{\"type\":\"about:blank\",\"title\":\"Accès réservé à"
+                                      + " l'administration\",\"status\":403,"
+                                      + "\"code\":\"ADMIN_ROLE_REQUIRED\",\"detail\":\"Cette"
+                                      + " ressource est réservée aux administrateurs.\"}");
+                        }));
     return http.build();
   }
 }

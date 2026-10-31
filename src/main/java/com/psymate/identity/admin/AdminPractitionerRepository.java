@@ -104,11 +104,12 @@ class AdminPractitionerRepository {
         instant(rs, "sort_key"));
   }
 
-  /** Échappe le point d'exclamation, % et _ pour un ILIKE (caractère d'échappement). */
+  /** Caractère d'échappement des ILIKE de la recherche. */
+  private static final String ESC = "!";
+
+  /** Échappe le caractère d'échappement, % et _ pour un ILIKE. */
   private static String like(String q) {
-    char esc = (char) 33;
-    String e = String.valueOf(esc);
-    return "%" + q.replace(e, e + e).replace("%", e + "%").replace("_", e + "_") + "%";
+    return "%" + q.replace(ESC, ESC + ESC).replace("%", ESC + "%").replace("_", ESC + "_") + "%";
   }
 
   private static String where(Filter f, boolean withStatus, Map<String, Object> params) {
@@ -116,9 +117,9 @@ class AdminPractitionerRepository {
     if (f.q() != null) {
       sql.append(
           " and (p.display_name ilike :q escape '"
-              + (char) 33
+              + ESC
               + "' or p.email ilike :q escape '"
-              + (char) 33
+              + ESC
               + "')");
       params.put("q", like(f.q()));
     }
@@ -206,19 +207,18 @@ class AdminPractitionerRepository {
   // ---- suspension et réactivation
 
   /**
-   * Verrouille les autres administrateurs actifs et renvoie leur nombre : zéro signifie que la
-   * cible est le dernier. Le verrou sérialise deux suspensions croisées d'administrateurs.
+   * Verrouille tous les administrateurs actifs, par id croissant, et renvoie leurs identifiants.
+   * L'ordre unique de verrouillage sérialise deux suspensions croisées d'administrateurs ; la cible
+   * exclue, une liste vide signifie qu'elle est le dernier administrateur.
    */
-  int lockOtherActiveAdmins(UUID targetId) {
+  List<UUID> lockActiveAdmins() {
     return jdbc.sql(
-            "select id from practitioner where role = 'admin' and id <> :id"
+            "select id from practitioner where role = 'admin'"
                 + " and verification_status not in "
                 + INACTIVE
                 + " order by id for update")
-        .param("id", targetId)
         .query((rs, i) -> rs.getObject("id", UUID.class))
-        .list()
-        .size();
+        .list();
   }
 
   void markSuspended(UUID practitionerId, Instant now) {

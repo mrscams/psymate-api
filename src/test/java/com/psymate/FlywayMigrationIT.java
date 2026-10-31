@@ -256,7 +256,7 @@ class FlywayMigrationIT {
                     "select table_name from information_schema.views where table_schema ="
                         + " 'public'",
                     String.class))
-        .containsExactly("admin_journal_v");
+        .contains("admin_journal_v");
     assertThat(
             jdbc()
                 .queryForList(

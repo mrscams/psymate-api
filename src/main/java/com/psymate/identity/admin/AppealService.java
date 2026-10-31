@@ -111,6 +111,13 @@ class AppealService {
                         HttpStatus.CONFLICT,
                         "APPEAL_NOT_ALLOWED",
                         "admin.error.appeal.notallowed"));
+    // Un seul recours ouvert par praticien, quelle que soit la décision : un recours resté en
+    // attente après une réactivation manuelle puis une nouvelle suspension doit d'abord être
+    // examiné (rejeté) par l'administration.
+    if (repo.hasOpenAppeal(who.id())) {
+      throw AdminException.of(
+          HttpStatus.CONFLICT, "APPEAL_ALREADY_OPEN", "admin.error.appeal.open");
+    }
     ExistingAppeal existing = repo.findByDecision(decision.id()).orElse(null);
     if (existing != null) {
       throw existing.reviewed()

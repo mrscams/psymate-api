@@ -401,6 +401,52 @@ class DirectoryVocabularyAdminIT {
     assertThat(en).contains("start with");
   }
 
+  /**
+   * Un brouillon enregistré avec un code actif, désactivé ensuite par l'administration, ne peut pas
+   * être publié : la règle « un profil publié n'utilise que des codes actifs » tient aussi à la
+   * publication, pas seulement au PATCH du profil.
+   */
+  @Test
+  void aDraftUsingACodeDeactivatedSinceCannotBePublished() throws Exception {
+    RequestPostProcessor admin = admin();
+    String specialty = code();
+    create(admin, entry("specialty", specialty, "Spécialité éphémère"));
+    UUID owner = account("practitioner", false);
+    jdbc.update(
+        "insert into practitioner_profile (practitioner_id, slug, published, display_name,"
+            + " specialties, city, contact_phone, show_phone) values (?, ?, false, 'Dr Brouillon',"
+            + " ARRAY[?], 'Lyon', '06 12 34 56 78', true)",
+        owner,
+        "draft-" + specialty,
+        specialty);
+    assertThat(status(patchEntry(admin, "specialty", specialty, Map.of("active", false))))
+        .isEqualTo(200);
+
+    MvcResult refused =
+        mvc.perform(post("/api/me/profile/publish").with(as(owner, "ROLE_PRACTITIONER")))
+            .andReturn();
+    assertThat(status(refused)).isEqualTo(409);
+    assertThat(body(refused).path("code").asString()).isEqualTo("PROFILE_INCOMPLETE");
+    List<String> missing = new java.util.ArrayList<>();
+    body(refused).path("missing").forEach(n -> missing.add(n.asString()));
+    assertThat(missing).containsExactly("specialties");
+    assertThat(
+            jdbc.queryForObject(
+                "select published from practitioner_profile where practitioner_id = ?",
+                Boolean.class,
+                owner))
+        .isFalse();
+
+    // Réactivé, le code redevient publiable.
+    assertThat(status(patchEntry(admin, "specialty", specialty, Map.of("active", true))))
+        .isEqualTo(200);
+    assertThat(
+            status(
+                mvc.perform(post("/api/me/profile/publish").with(as(owner, "ROLE_PRACTITIONER")))
+                    .andReturn()))
+        .isEqualTo(204);
+  }
+
   private String messageIn(String language, RequestPostProcessor admin) throws Exception {
     MvcResult r =
         mvc.perform(

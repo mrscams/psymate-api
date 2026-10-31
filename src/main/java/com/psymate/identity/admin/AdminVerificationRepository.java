@@ -317,10 +317,25 @@ class AdminVerificationRepository {
       String message,
       String checklistJson,
       Instant now) {
+    insertDecision(
+        id, practitionerId, adminId, kind, internalNote, message, checklistJson, null, now);
+  }
+
+  /** related_id : recours concerné pour appeal_accepted et appeal_rejected (M1-14b). */
+  void insertDecision(
+      UUID id,
+      UUID practitionerId,
+      UUID adminId,
+      String kind,
+      String internalNote,
+      String message,
+      String checklistJson,
+      UUID relatedId,
+      Instant now) {
     jdbc.sql(
             "insert into verification_decision (id, practitioner_id, admin_id, kind, internal_note,"
-                + " message_to_practitioner, checklist, decided_at) values (:id, :p, :a, :k, :note,"
-                + " :msg, cast(:checklist as jsonb), :now)")
+                + " message_to_practitioner, checklist, related_id, decided_at) values (:id, :p, :a,"
+                + " :k, :note, :msg, cast(:checklist as jsonb), :related, :now)")
         .param("id", id)
         .param("p", practitionerId)
         .param("a", adminId)
@@ -328,6 +343,7 @@ class AdminVerificationRepository {
         .param("note", internalNote)
         .param("msg", message)
         .param("checklist", checklistJson)
+        .param("related", relatedId)
         .param("now", Timestamp.from(now))
         .update();
   }

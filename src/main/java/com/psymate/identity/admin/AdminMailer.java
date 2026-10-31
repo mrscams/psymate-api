@@ -60,6 +60,42 @@ class AdminMailer {
         messages.get("admin.mail.rejected.body", locale, appName, name, reason));
   }
 
+  /** Suspension manuelle (M1-14b) : motif et rappel du recours. */
+  void sendSuspended(String to, Locale locale, String name, String reason) {
+    send(
+        to,
+        messages.get("admin.mail.suspended.subject", locale, appName),
+        messages.get(
+            "admin.mail.suspended.body",
+            locale,
+            appName,
+            name,
+            reason,
+            webBaseUrl + "/compte-suspendu"));
+  }
+
+  void sendReactivated(String to, Locale locale, String name) {
+    send(
+        to,
+        messages.get("admin.mail.reactivated.subject", locale, appName),
+        messages.get("admin.mail.reactivated.body", locale, appName, name, webBaseUrl));
+  }
+
+  void sendAppealAccepted(String to, Locale locale, String name, String message) {
+    send(
+        to,
+        messages.get("admin.mail.appeal_accepted.subject", locale, appName),
+        messages.get(
+            "admin.mail.appeal_accepted.body", locale, appName, name, message, webBaseUrl));
+  }
+
+  void sendAppealDismissed(String to, Locale locale, String name, String message) {
+    send(
+        to,
+        messages.get("admin.mail.appeal_dismissed.subject", locale, appName),
+        messages.get("admin.mail.appeal_dismissed.body", locale, appName, name, message));
+  }
+
   void sendOverdue(String to, Locale locale, int count, String list) {
     send(
         to,

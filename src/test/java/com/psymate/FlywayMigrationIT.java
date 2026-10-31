@@ -239,4 +239,38 @@ class FlywayMigrationIT {
       }
     }
   }
+
+  /** V10 (M1-14b) : une vue en lecture seule, ni table ni autre vue ; pas d'ip dans la vue. */
+  @Test
+  void v10CreatesOnlyTheAdminJournalView() {
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select version from flyway_schema_history where success order by"
+                        + " installed_rank",
+                    String.class))
+        .contains("10");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select table_name from information_schema.views where table_schema ="
+                        + " 'public'",
+                    String.class))
+        .contains("admin_journal_v");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select table_name from information_schema.tables where table_schema ="
+                        + " 'public' and table_type = 'BASE TABLE' and table_name like"
+                        + " 'admin_journal%'",
+                    String.class))
+        .isEmpty();
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select column_name from information_schema.columns where table_schema ="
+                        + " 'public' and table_name = 'admin_journal_v'",
+                    String.class))
+        .doesNotContain("ip", "user_agent");
+  }
 }

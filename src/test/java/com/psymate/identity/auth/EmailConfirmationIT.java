@@ -119,6 +119,21 @@ class EmailConfirmationIT {
         email);
   }
 
+  /** Le filtre travaille sur le chemin décodé : /%61pi/… est bien /api/… (M1-14b). */
+  @Test
+  void percentEncodedPathCannotBypassTheFilter() throws Exception {
+    String email = newEmail();
+    registerAndGetToken(email);
+    Cookie pending = login(email);
+
+    MvcResult denied =
+        mvc.perform(get(java.net.URI.create("/%61pi/vocabulary/emotions")).cookie(pending))
+            .andReturn();
+    assertThat(denied.getResponse().getStatus()).isEqualTo(403);
+    assertThat(json.readTree(denied.getResponse().getContentAsString()).path("code").asString())
+        .isEqualTo("EMAIL_NOT_CONFIRMED");
+  }
+
   @Test
   void protectedRouteIs403BeforeConfirmationAnd200After() throws Exception {
     String email = newEmail();

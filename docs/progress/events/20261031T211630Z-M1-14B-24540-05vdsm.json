@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T21:16:30.833Z",
+  "task": "M1-14B",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Admin : liste des comptes, suspension/réactivation manuelle (PractitionerSuspended, sessions révoquées, e-mails), journal paginé sur la vue admin_journal_v (V10), recours public POST /api/me/appeal + décision admin, vocabulaire de l'annuaire administrable (GET/POST/PATCH, 409 si code utilisé). verify vert : 167 unit, 472 IT.",
+  "notes": "Hors identity.admin : correctif de sécurité identity.auth (filtres sur chemin décodé + hasRole ADMIN, /api/%61dmin contournait rôle et 2FA) ; LoginService mode APPEAL, AppealAuthenticator, /api/me/appeal en permitAll ; PractitionerSuspended dans identity.api ; vocabulaire admin dans le module directory (pas de façade : cycle Modulith identity↔directory) ; ProfileService.publish revérifie les codes actifs. Contrat additif, version 0.3.0 inchangée. Flyway out-of-order non activé. Colonne directory.published de la fiche 21 omise.",
+  "next": "Revue et fusion de la PR #25 ; poser le tag contract après fusion ; front M7-07 : agréger les lignes multiples du journal (admin.suspend + admin.suspended) ; événement ProfilePublished/Unpublished consommé par identity pour la colonne directory.published.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/25",
+  "branch": "worktree-M1-14b",
+  "checkout": "M1-14b"
+}

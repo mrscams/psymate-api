@@ -2,6 +2,7 @@ package com.psymate.identity.admin;
 
 import com.psymate.identity.api.PractitionerApproved;
 import com.psymate.identity.api.PractitionerRejected;
+import com.psymate.identity.api.PractitionerSuspended;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
@@ -21,10 +22,16 @@ import org.testcontainers.utility.MountableFile;
 @TestConfiguration(proxyBeanMethods = false)
 class AdminTestConfig {
 
-  /** Événements PractitionerApproved et PractitionerRejected reçus. */
+  /** Événements PractitionerApproved, PractitionerRejected et PractitionerSuspended reçus. */
   static class Recorder {
     final List<UUID> approved = new CopyOnWriteArrayList<>();
     final List<UUID> rejected = new CopyOnWriteArrayList<>();
+    final List<UUID> suspended = new CopyOnWriteArrayList<>();
+
+    @EventListener
+    void on(PractitionerSuspended e) {
+      suspended.add(e.getPractitionerId());
+    }
 
     @EventListener
     void on(PractitionerApproved e) {

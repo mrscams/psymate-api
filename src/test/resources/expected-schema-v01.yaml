@@ -390,3 +390,13 @@ contact_request:
   - relay_error
   - created_at
   - purge_after
+# V10 vue du journal d'administration (M1-14b) : information_schema.columns inclut les vues
+admin_journal_v:
+  - id
+  - occurred_at
+  - kind
+  - actor_id
+  - practitioner_id
+  - summary
+  - details
+  - source

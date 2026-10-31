@@ -1,6 +1,7 @@
 package com.psymate.identity.auth;
 
 import com.psymate.identity.auth.AuthExceptions.AccountLockedException;
+import com.psymate.identity.auth.AuthExceptions.AccountNotSuspendedException;
 import com.psymate.identity.auth.AuthExceptions.AccountSuspendedException;
 import com.psymate.identity.auth.AuthExceptions.EmailNotConfirmedException;
 import com.psymate.identity.auth.AuthExceptions.InvalidCredentialsException;
@@ -27,6 +28,9 @@ import tools.jackson.databind.json.JsonMapper;
 class LoginService {
 
   static final Set<String> SUSPENDED_STATUSES = Set.of("rejected", "suspended", "closed");
+
+  /** Statuts qui donnent droit à un recours (fiche 27) : refus du dossier ou suspension. */
+  static final Set<String> APPEALABLE_STATUSES = Set.of("rejected", "suspended");
 
   /** Préférence posée par le compte admin de bootstrap (M7-08) : mot de passe à changer. */
   static final String MUST_CHANGE_PASSWORD = "security.mustChangePassword";
@@ -67,7 +71,7 @@ class LoginService {
   }
 
   Outcome login(String email, String password, String otpInput, String ip) {
-    return authenticate(email, password, otpInput, ip, false);
+    return authenticate(email, password, otpInput, ip, Mode.LOGIN);
   }
 
   /**
@@ -77,11 +81,27 @@ class LoginService {
    * connexion n'est journalisée.
    */
   Outcome verifyForPasswordChange(String email, String password, String otpInput, String ip) {
-    return authenticate(email, password, otpInput, ip, true);
+    return authenticate(email, password, otpInput, ip, Mode.PASSWORD_CHANGE);
+  }
+
+  /**
+   * Vérification d'identifiants pour POST /api/me/appeal (M1-14b) : mêmes verrous, même hachage
+   * factice et même 2FA que la connexion, mais réservée aux comptes refusés ou suspendus (409
+   * ACCOUNT_NOT_SUSPENDED sinon). Aucune connexion n'est journalisée, aucune session n'est ouverte.
+   */
+  Outcome verifyForAppeal(String email, String password, String otpInput, String ip) {
+    return authenticate(email, password, otpInput, ip, Mode.APPEAL);
+  }
+
+  /** Usage des identifiants : connexion, changement de mot de passe ou recours. */
+  private enum Mode {
+    LOGIN,
+    PASSWORD_CHANGE,
+    APPEAL
   }
 
   private Outcome authenticate(
-      String email, String password, String otpInput, String ip, boolean passwordChange) {
+      String email, String password, String otpInput, String ip, Mode mode) {
     String normalized = AuthService.normalizeEmail(email);
     String key = normalized + "|" + (ip == null ? "" : ip);
 
@@ -110,11 +130,17 @@ class LoginService {
     if (EmailConfirmationFilter.PENDING.equals(row.verificationStatus())) {
       throw new EmailNotConfirmedException();
     }
-    if (SUSPENDED_STATUSES.contains(row.verificationStatus())) {
+    if (mode == Mode.APPEAL) {
+      // Recours (M1-14b) : seuls les comptes refusés ou suspendus peuvent contester ; leurs
+      // sessions sont déjà révoquées, la 2FA s'applique comme d'habitude.
+      if (!APPEALABLE_STATUSES.contains(row.verificationStatus())) {
+        throw new AccountNotSuspendedException();
+      }
+    } else if (SUSPENDED_STATUSES.contains(row.verificationStatus())) {
       revokeSessions(row, ip);
       throw new AccountSuspendedException();
     }
-    if (!passwordChange && mustChangePassword(row)) {
+    if (mode == Mode.LOGIN && mustChangePassword(row)) {
       throw new PasswordChangeRequiredException();
     }
 
@@ -137,7 +163,7 @@ class LoginService {
     if (recoveryUsed) {
       practitioners.insertSecurityEvent(row.id(), "recovery_code_used", ip, null, now);
     }
-    if (!passwordChange) {
+    if (mode == Mode.LOGIN) {
       practitioners.insertSecurityEvent(row.id(), "login_ok", ip, null, now);
     }
     return new Outcome.Authenticated(row, recoveryUsed);

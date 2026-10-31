@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T10:29:34.993Z",
+  "task": "M0-05",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Contrat OpenAPI genere (contract/openapi.yaml, 16 routes), ContractIT, make contract, job CI contract, tools/tag-contract.sh ; 2 tests verts",
+  "notes": "Aucune dependance ajoutee. Generation via ContractIT (Testcontainers) en mode -Dcontract.write=true, cles triees SnakeYAML, servers relatif. verify rouge a cause de VocabularyIT (M1-02, 20 echecs 401, non authentifie) : defaut preexistant sur main, hors perimetre",
+  "next": "Apres fusion : bash tools/tag-contract.sh 0.1.0 puis git push origin contract-v0.1.0. Correction VocabularyIT dans le couloir vocabulary (authentifier les requetes) pour que verify repasse. M0-07 (web) peut tirer le tag",
+  "pr": "https://github.com/mrscams/psymate-api/pull/8",
+  "branch": "worktree-M0-05",
+  "checkout": "M0-05"
+}

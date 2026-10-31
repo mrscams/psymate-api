@@ -10,6 +10,10 @@ spring:
           enabled: false
   flyway:
     locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   session:
     jdbc:
       initialize-schema: never

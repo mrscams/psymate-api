@@ -7,6 +7,7 @@ import com.psymate.clinical.domain.MedicationDetail;
 import com.psymate.clinical.domain.SessionDetail;
 import com.psymate.clinical.domain.TimeSpec;
 import com.psymate.clinical.domain.Visibility;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -17,6 +18,7 @@ import java.util.UUID;
  * @param time nul : instant exact de la saisie (obligatoire pour une situation)
  * @param visibility nul : clinical
  * @param status nul : final
+ * @param tagIds tags du praticien (déjà résolus) à poser sur l'entrée ; nul ou vide : aucun
  */
 public record CreateEntryCommand(
     EntryType type,
@@ -28,4 +30,32 @@ public record CreateEntryCommand(
     TimeSpec time,
     FeelingDetail feeling,
     MedicationDetail medication,
-    SessionDetail session) {}
+    SessionDetail session,
+    List<UUID> tagIds) {
+
+  /** Sans tags. */
+  public CreateEntryCommand(
+      EntryType type,
+      UUID sessionId,
+      String title,
+      String body,
+      Visibility visibility,
+      EntryStatus status,
+      TimeSpec time,
+      FeelingDetail feeling,
+      MedicationDetail medication,
+      SessionDetail session) {
+    this(
+        type,
+        sessionId,
+        title,
+        body,
+        visibility,
+        status,
+        time,
+        feeling,
+        medication,
+        session,
+        List.of());
+  }
+}

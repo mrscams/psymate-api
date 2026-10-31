@@ -127,6 +127,33 @@ public class EntryRepository {
         .optional();
   }
 
+  /** Toutes les versions de l'entrée, de la plus récente à la plus ancienne. */
+  public List<EntryVersion> versions(UUID entryId) {
+    return jdbc.sql(
+            "select "
+                + VERSION_COLS
+                + " from entry_version where entry_id = :id order by version desc")
+        .param("id", entryId)
+        .query(EntryRepository::version)
+        .list();
+  }
+
+  /** Instant de saisie de l'entrée (recorded_at). */
+  public Optional<Instant> recordedAt(UUID entryId) {
+    return jdbc.sql("select recorded_at from entry where id = :id")
+        .param("id", entryId)
+        .query((rs, i) -> instant(rs, "recorded_at"))
+        .optional();
+  }
+
+  /** Identifiants des tags posés sur l'entrée. */
+  public List<UUID> tagIds(UUID entryId) {
+    return jdbc.sql("select tag_id from entry_tag where entry_id = :id")
+        .param("id", entryId)
+        .query(UUID.class)
+        .list();
+  }
+
   public int versionCount(UUID entryId) {
     return jdbc.sql("select count(*) from entry_version where entry_id = :id")
         .param("id", entryId)
@@ -416,6 +443,30 @@ public class EntryRepository {
         .param("title", title)
         .param("body", body)
         .param("payload", payloadJson)
+        .update();
+  }
+
+  /** Remplace les tags de l'entrée par exactement ceux-ci (les autres lignes sont retirées). */
+  public void replaceTags(UUID entryId, List<UUID> tagIds) {
+    jdbc.sql("delete from entry_tag where entry_id = :id and not (tag_id = any(:ids))")
+        .param("id", entryId)
+        .param("ids", tagIds.toArray(new UUID[0]))
+        .update();
+    for (UUID tagId : tagIds) {
+      jdbc.sql(
+              "insert into entry_tag (entry_id, tag_id) values (:id, :tag)"
+                  + " on conflict do nothing")
+          .param("id", entryId)
+          .param("tag", tagId)
+          .update();
+    }
+  }
+
+  /** Désarchive l'entrée. */
+  public void unarchive(UUID id, Instant now) {
+    jdbc.sql("update entry set archived_at = null, updated_at = :now where id = :id")
+        .param("id", id)
+        .param("now", odt(now))
         .update();
   }
 

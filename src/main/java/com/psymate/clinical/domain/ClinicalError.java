@@ -11,7 +11,8 @@ public enum ClinicalError {
   SESSION_ALREADY_OPEN(409),
   SESSION_ALREADY_CLOSED(409),
   UNKNOWN_EMOTION(422),
-  INVALID_TIME(422);
+  INVALID_TIME(422),
+  NO_CURRENT_SESSION(404);
 
   private final int status;
 

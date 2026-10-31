@@ -6,6 +6,7 @@ import com.psymate.PostgresTestConfig;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,6 +21,12 @@ class EventPurgeIT {
 
   @Autowired private JdbcTemplate jdbc;
   @Autowired private EventPublicationPurgeJob purgeJob;
+
+  /** Le contexte est partagé avec d'autres IT : ne pas leur laisser de ligne incomplète. */
+  @AfterEach
+  void cleanUp() {
+    jdbc.update("delete from event_publication where listener_id = 'test.purge'");
+  }
 
   private UUID insert(OffsetDateTime published, OffsetDateTime completed, String status) {
     var id = UUID.randomUUID();

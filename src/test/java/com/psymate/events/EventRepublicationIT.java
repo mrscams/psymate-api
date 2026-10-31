@@ -3,6 +3,7 @@ package com.psymate.events;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import com.psymate.App;
 import com.psymate.PostgresTestConfig;
 import com.psymate.events.api.DomainEvent;
 import com.psymate.events.api.DomainEventPublisher;
@@ -13,8 +14,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,8 +27,12 @@ import org.springframework.modulith.events.IncompleteEventPublications;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/** M4-01 : une publication dont l'abonné a échoué est rejouée, avec ou sans filtre d'âge. */
-@SpringBootTest
+/**
+ * M4-01 : une publication dont l'abonné a échoué est rejouée, avec ou sans filtre d'âge. Le seuil
+ * de démarrage est mis à zéro ici pour éprouver le chemin ApplicationReadyEvent ; la base de ce
+ * contexte est neuve, donc le rejeu au vrai démarrage ne trouve rien.
+ */
+@SpringBootTest(properties = "app.events.republish-older-than=0s")
 @ActiveProfiles("test")
 @Import({PostgresTestConfig.class, EventRepublicationIT.ReplayConfig.class})
 class EventRepublicationIT {
@@ -80,6 +88,7 @@ class EventRepublicationIT {
   @Autowired private EventRepublisher republisher;
   @Autowired private IncompleteEventPublications incomplete;
   @Autowired private MeterRegistry meters;
+  @Autowired private ConfigurableApplicationContext context;
 
   private ReplayEvent publishFailing() {
     listener.failNextInvocation();
@@ -134,6 +143,19 @@ class EventRepublicationIT {
     var event = publishFailing();
 
     incomplete.resubmitIncompletePublicationsOlderThan(Duration.ZERO);
+
+    awaitCompleted(event);
+    assertThat(listener.countReceived(event.getId())).isEqualTo(2);
+  }
+
+  /** Critère C2 : « un événement non traité survit à un redémarrage et est rejoué ». */
+  @Test
+  void applicationReadyEventReplaysFailedPublication() {
+    var event = publishFailing();
+
+    context.publishEvent(
+        new ApplicationReadyEvent(
+            new SpringApplication(App.class), new String[0], context, Duration.ZERO));
 
     awaitCompleted(event);
     assertThat(listener.countReceived(event.getId())).isEqualTo(2);

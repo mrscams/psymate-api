@@ -138,6 +138,40 @@ class EventDeduplicationIT {
     assertThat(runs.get()).isEqualTo(1);
   }
 
+  /**
+   * Rejeu de la même publication : l'effet et l'achèvement sont écrits dans la même transaction,
+   * donc une seconde invocation (redémarrage, resoumission) ne refait rien.
+   */
+  @Test
+  void onceCompletesThePublicationAtomicallyAndSkipsTheReplay() {
+    var event = new DedupEvent(UUID.randomUUID(), "atomic");
+    var publicationId = UUID.randomUUID();
+    jdbc.update(
+        "insert into event_publication (id, listener_id, event_type, serialized_event,"
+            + " publication_date, status) values (?, 'test.atomic', ?, ?, now(), 'PUBLISHED')",
+        publicationId,
+        DedupEvent.class.getName(),
+        "{\"id\":\"" + event.getId() + "\",\"label\":\"atomic\"}");
+    var runs = new AtomicInteger();
+
+    boolean first =
+        Boolean.TRUE.equals(
+            tx.execute(s -> deduplicator.once(event, "test.atomic", runs::incrementAndGet)));
+    boolean second =
+        Boolean.TRUE.equals(
+            tx.execute(s -> deduplicator.once(event, "test.atomic", runs::incrementAndGet)));
+
+    assertThat(first).isTrue();
+    assertThat(second).isFalse();
+    assertThat(runs.get()).isEqualTo(1);
+    assertThat(
+            jdbc.queryForMap(
+                "select status, completion_date from event_publication where id = ?",
+                publicationId))
+        .containsEntry("status", "COMPLETED")
+        .hasEntrySatisfying("completion_date", d -> assertThat(d).isNotNull());
+  }
+
   @Test
   void listenerIdHelperMatchesTheIdSpringStores() {
     var label = "noid-" + UUID.randomUUID();

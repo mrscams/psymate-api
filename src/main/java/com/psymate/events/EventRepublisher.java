@@ -62,6 +62,8 @@ class EventRepublisher {
       Instant threshold = Instant.now().minus(olderThan);
       // Le prédicat est évalué pour chaque publication incomplète : il sert de filtre d'âge et
       // de compteur (le registre de Spring Modulith n'est pas accessible à la compilation).
+      // Le registre attrape l'exception de chaque resoumission (publication illisible, abonné
+      // disparu) et passe à la suivante : une publication « poison » ne bloque pas les autres.
       var count = new AtomicInteger();
       incomplete.resubmitIncompletePublications(
           publication -> {

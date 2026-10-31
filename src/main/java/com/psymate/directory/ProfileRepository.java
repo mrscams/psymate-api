@@ -40,6 +40,13 @@ class ProfileRepository {
         .optional();
   }
 
+  Optional<String> findSlug(UUID practitionerId) {
+    return jdbc.sql("select slug from practitioner_profile where practitioner_id = ?")
+        .param(practitionerId)
+        .query(String.class)
+        .optional();
+  }
+
   boolean slugExists(String slug) {
     return jdbc.sql("select exists(select 1 from practitioner_profile where slug = ?)")
         .param(slug)

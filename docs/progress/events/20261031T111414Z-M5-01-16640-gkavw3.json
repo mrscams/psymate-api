@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T11:14:14.137Z",
+  "task": "M5-01",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Profil public : V04, GET/PUT profil, photo sans EXIF, publish/unpublish, vocabulaire annuaire, ProfileFacade et événements",
+  "notes": "Ajout de events/api/package-info.java (NamedInterface) hors module ; verification approved reportée à M5-06 ; contrat à regénérer après fusion de M1-01/M1-10",
+  "next": "M5-02 (API publique), M5-03 (contact_request V06), M5-06 (condition approved)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/10",
+  "branch": "worktree-M5-01",
+  "checkout": "M5-01"
+}

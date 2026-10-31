@@ -15,8 +15,9 @@ test:
 run:
 	./mvnw spring-boot:run
 
+# Regenere contract/openapi.yaml (seul ContractIT tourne, en mode ecriture) ; a commiter ensuite.
 contract:
-	@echo "contract : la generation de contract/openapi.yaml arrive avec M0-05, rien a faire pour l'instant."
+	./mvnw -B -q -Dcontract.write=true -Dit.test=ContractIT -Dtest=NONE -Dsurefire.failIfNoSpecifiedTests=false -Dspotless.check.skip=true verify
 
 db-reset:
 	docker compose down -v

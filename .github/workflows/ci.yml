@@ -17,3 +17,25 @@ jobs:
           cache: maven
       - name: Build, tests, verifications
         run: ./mvnw -B verify
+
+  # Le contrat commite doit etre exactement celui que l'application genere (M0-05).
+  # Job separe de `verify` : echec lisible (diff affiche) et sans relancer toute la suite.
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Contract check - regeneration
+        run: ./mvnw -B -q -Dcontract.write=true -Dit.test=ContractIT -Dtest=NONE -Dsurefire.failIfNoSpecifiedTests=false -Dspotless.check.skip=true verify
+      - name: Contract check - diff
+        run: |
+          # add -N : un fichier absent du commit (non suivi) est vu par le diff lui aussi.
+          git add -N contract/openapi.yaml
+          if ! git diff --exit-code -- contract/openapi.yaml; then
+            echo "::error::contract/openapi.yaml n'est pas à jour : lance 'make contract' et commite le résultat."
+            exit 1
+          fi

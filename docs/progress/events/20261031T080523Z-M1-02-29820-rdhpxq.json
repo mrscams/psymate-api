@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-31T08:05:23.261Z",
+  "task": "M1-02",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant(s), 4 à corriger, 5 remarque(s)",
+  "notes": "aucun bloquant. A corriger : mergeTags ecrit patient_tag/entry_tag (tables d'autres modules) non annonce ; tests d'isolation manquants (merge tag vers cible d'un autre, rename/merge emotion d'un autre) ; verrou absent sur merge/undo emotion (undo concurrent, chaine A>B>C perd original_emotion_code) ; messages d'erreur FR en dur sans messages_fr.properties",
+  "branch": "worktree-M1-02",
+  "checkout": "M1-02"
+}

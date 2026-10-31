@@ -190,3 +190,27 @@ totp_recovery_code:
   - code_hash
   - used_at
   - created_at
+# Ajoutees par V02 (M1-02)
+tag:
+  - id
+  - tenant_id
+  - practitioner_id
+  - label
+  - normalized_label
+  - usage_count
+  - merged_into
+  - created_at
+  - archived_at
+patient_tag:
+  - patient_id
+  - tag_id
+  - added_at
+emotion_merge:
+  - id
+  - practitioner_id
+  - source_code
+  - target_code
+  - affected_count
+  - merged_at
+  - undo_until
+  - undone_at

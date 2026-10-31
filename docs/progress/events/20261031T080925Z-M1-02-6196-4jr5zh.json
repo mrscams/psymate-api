@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T08:09:25.767Z",
+  "task": "M1-02",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Vocabulaires : V02 (tag, patient_tag, emotion_merge + seed E5 tel quel), facades EmotionCatalog/LinkTypeCatalog/TagFacade, endpoints vocabulary, tags, emotions custom (fusion reversible 30 j, undo). verify vert : 33 unitaires, 34 IT dont 2 @Disabled M1-03.",
+  "notes": "Option (a) : port interne CurrentPractitionerPort sans implementation de prod, identity.api absent (M0-04 en parallele). Aucune dependance Maven. Aucun ecart au seed. Revue : 0 bloquant, 4 a corriger (3 corriges, i18n messages_fr.properties reporte pour eviter un conflit avec M0-04). Fusion de tags ecrit patient_tag/entry_tag depuis vocabulary (declare dans la PR).",
+  "next": "brancher CurrentPractitionerPort sur identity.api apres M0-04 ; messages_fr.properties ; activer les 2 tests @Disabled apres M1-03",
+  "pr": "https://github.com/mrscams/psymate-api/pull/6",
+  "branch": "worktree-M1-02",
+  "checkout": "M1-02"
+}

@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T17:11:26.465Z",
+  "task": "M4-01",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Outbox complete : republication au demarrage (EventRepublisher), EventDeduplicator (verrou advisory + achevement atomique), purge nocturne ; 12 tests events ajoutes",
+  "notes": "Propriete Modulith republish-outstanding-events-on-restart laissee a false (un seul mecanisme, filtre d age app.events.republish-older-than 30s, 1h en test) : ecart avec E3.8 a consigner. Planificateur prive sans EnableScheduling (comme M1-13). Dedup par serialized_event jsonb id (events-core en scope runtime). verify : 155 unitaires verts, 267 IT dont 1 echec de mesure de temps RegistrationIT sous charge (5 sessions Testcontainers), vert relance seul",
+  "next": "M4-02, M4-03, M7-05 debloquees ; consigner dans E3.8/G la propriete Modulith a false ; abonnes futurs : id stable et EventDeduplicator.once",
+  "pr": "https://github.com/mrscams/psymate-api/pull/20",
+  "branch": "worktree-M4-01",
+  "checkout": "M4-01"
+}

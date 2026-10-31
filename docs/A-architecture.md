@@ -475,6 +475,8 @@ Schéma : `entry` garde les colonnes stables (type, patient, temps, visibilité,
 | `ai_feedback (link_id, decision, reason, decided_at)` | Migration V1, table vide | 1 migration | Évaluation des suggestions |
 | `entry.author_type`, `entry.submission_id` + tables vides `patient_submission`, `patient_device` (A11) | Migration V1 ; colonnes à leur défaut, tables vides | 2 colonnes, 2 tables, 1 contrainte | Un compagnon patient dépose des lots d'entrées sans migration de `entry` ni des vues |
 
+Règle M4-01 : tout abonné `@ApplicationModuleListener` est idempotent (support `EventDeduplicator` du module `events`) ; les publications incomplètes plus vieilles que `app.events.republish-older-than` sont rejouées au démarrage (`EventRepublisher`), les complétées de plus de `app.events.completed-retention` purgées chaque nuit (`EventPublicationPurgeJob`) ; les incomplètes ne sont jamais purgées.
+
 ### A4.10 Profil public du praticien (ajouté le 24 octobre 2026)
 
 ```sql

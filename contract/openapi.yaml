@@ -1038,6 +1038,16 @@ components:
           format: int32
           type: integer
       type: object
+    ExpandGraphRequest:
+      properties:
+        memberIds:
+          items:
+            format: uuid
+            type: string
+          type: array
+        superNodeId:
+          type: string
+      type: object
     FacetCount:
       properties:
         code:
@@ -1080,6 +1090,89 @@ components:
         kind:
           type: string
         reason:
+          type: string
+      type: object
+    GraphDto:
+      properties:
+        edges:
+          items:
+            $ref: '#/components/schemas/GraphEdgeDto'
+          type: array
+        nodes:
+          items:
+            $ref: '#/components/schemas/GraphNodeDto'
+          type: array
+        superNodes:
+          items:
+            $ref: '#/components/schemas/GraphSuperNodeDto'
+          type: array
+        truncated:
+          type: boolean
+      type: object
+    GraphEdgeDto:
+      properties:
+        directed:
+          type: boolean
+        id:
+          format: uuid
+          type: string
+        linkType:
+          type: string
+        provenance:
+          type: string
+        source:
+          format: uuid
+          type: string
+        status:
+          type: string
+        target:
+          format: uuid
+          type: string
+      type: object
+    GraphNodeDto:
+      properties:
+        authorType:
+          type: string
+        degree:
+          format: int32
+          type: integer
+        distance:
+          format: int32
+          type: integer
+        emotion:
+          type: string
+        id:
+          format: uuid
+          type: string
+        intensity:
+          format: int32
+          type: integer
+        occurred:
+          format: date-time
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+      type: object
+    GraphSuperNodeDto:
+      properties:
+        count:
+          format: int32
+          type: integer
+        dominantEmotion:
+          type: string
+        id:
+          type: string
+        memberIds:
+          items:
+            format: uuid
+            type: string
+          type: array
+        neighborId:
+          format: uuid
+          type: string
+        type:
           type: string
       type: object
     Item:
@@ -2356,7 +2449,7 @@ components:
 info:
   description: API de PsyMate, suivi clinique pour psychologues, psychiatres et coachs.
   title: PsyMate API
-  version: 0.5.0
+  version: 0.4.0
 openapi: 3.1.0
 paths:
   /api/admin/appeals:
@@ -4019,6 +4112,82 @@ paths:
           description: OK
       tags:
       - patient-controller
+  /api/patients/{id}/graph:
+    get:
+      operationId: getPatientGraph
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: query
+        name: root
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - in: query
+        name: depth
+        required: false
+        schema:
+          default: 2
+          format: int32
+          type: integer
+      - in: query
+        name: linkTypes
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+      - in: query
+        name: from
+        required: false
+        schema:
+          format: date-time
+          type: string
+      - in: query
+        name: to
+        required: false
+        schema:
+          format: date-time
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GraphDto'
+          description: OK
+      tags:
+      - graph-controller
+  /api/patients/{id}/graph/expand:
+    post:
+      operationId: expandGraphGroup
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpandGraphRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GraphDto'
+          description: OK
+      tags:
+      - graph-controller
   /api/patients/{id}/overview:
     get:
       description: 'Lit la projection patient_overview : faits clés, situations actives, tendance d''intensité (moyenne glissante sur 7 jours, 90 points au plus, repères de séances et de médicaments), émotions dominantes avec variation sur la fenêtre précédente, brouillons et séance ouverte. La fenêtre (window) borne la tendance et les émotions. Si la projection est en retard sur patient.clinical_rev, elle est recalculée et réécrite avant de répondre : la réponse n''est jamais obsolète. recentActivity (10 dernières entrées non archivées) est toujours lu en direct. Les entrées archivées sont exclues, les entrées privées du praticien incluses.'

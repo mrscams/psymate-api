@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T01:21:44.339Z",
+  "task": "M2-03",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Graphe : CTE recursive profondeur <= 3, GET /api/patients/{id}/graph, 150 noeuds, super-noeuds, POST expand ; GraphQueryFacade dans linking.api ; summariesOf dans clinical.api",
+  "notes": "verify vert (247 unit, 715 IT, 0 echec) ; perf depth 2 sur 2000 entrees / 1500 liens : 143-148 ms medians ; revue 0 bloquant, 5 a corriger traites ; contrat +169 lignes additif, version 0.5.0 conservee ; tag contract-v0.4.0 a poser apres fusion",
+  "next": "Fusion PR 31 puis regeneration du contrat apres M4-03 / M6-05 ; M2-06 web graphe ; M7-01 seed et charge",
+  "pr": "https://github.com/mrscams/psymate-api/pull/31",
+  "branch": "worktree-M2-03",
+  "checkout": "M2-03"
+}

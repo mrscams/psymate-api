@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,9 +38,38 @@ class JpaFoundationIT {
     assertThat(entityManagerFactory).isNotNull();
     assertThat(entityManagerFactory.isOpen()).isTrue();
     assertThat(transactionManager).isInstanceOf(JpaTransactionManager.class);
-    assertThat(environment.getProperty("spring.jpa.hibernate.ddl-auto")).isEqualTo("validate");
+    // open-in-view est un reglage Spring MVC, pas Hibernate : il n'apparait que dans l'Environment.
     assertThat(environment.getProperty("spring.jpa.open-in-view", Boolean.class)).isFalse();
+
+    // Reglages effectivement appliques a l'EntityManagerFactory, pas seulement declares.
+    Map<String, Object> hibernate = entityManagerFactory.getProperties();
+    assertThat(hibernate)
+        .as("ddl-auto")
+        .hasEntrySatisfying("hibernate.hbm2ddl.auto", v -> assertThat(v).hasToString("validate"));
+    assertThat(hibernate)
+        .as("time zone")
+        .hasEntrySatisfying("hibernate.jdbc.time_zone", v -> assertThat(v).hasToString("UTC"));
+    assertThat(hibernate)
+        .as("second level cache")
+        .hasEntrySatisfying(
+            "hibernate.cache.use_second_level_cache", v -> assertThat(v).hasToString("false"));
+    assertThat(hibernate)
+        .as("query cache")
+        .hasEntrySatisfying(
+            "hibernate.cache.use_query_cache", v -> assertThat(v).hasToString("false"));
+    // show-sql : Boot ne pousse hibernate.show_sql vers Hibernate que s'il vaut true.
+    assertThat(hibernate).doesNotContainKey("hibernate.show_sql");
     assertThat(environment.getProperty("spring.jpa.show-sql", Boolean.class)).isFalse();
+    assertThat(hibernate)
+        .as("physical naming")
+        .hasEntrySatisfying(
+            "hibernate.physical_naming_strategy",
+            v -> assertThat(v.toString()).contains("PhysicalNamingStrategySnakeCaseImpl"));
+    assertThat(hibernate)
+        .as("implicit naming")
+        .hasEntrySatisfying(
+            "hibernate.implicit_naming_strategy",
+            v -> assertThat(v.toString()).contains("SpringImplicitNamingStrategy"));
   }
 
   @Test

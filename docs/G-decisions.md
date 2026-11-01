@@ -1,6 +1,6 @@
 # Document G – Décisions prises sur les questions ouvertes
 
-29 octobre 2026 · Version 1.0 · Ce document tranche les 30 questions de la Partie 1 du runbook F (Q1–Q28) et de E7 (Q29, Q30), complétées ensuite par Q31 (G3) et Q32 (G6). Chaque agent applique ces décisions ; quand un autre document dit autre chose, **G l'emporte**. Les documents A, B, C, D, E et F ont été écrits avant ces décisions : les écarts connus sont listés en G5.
+29 octobre 2026 · Version 1.0 (complétée le 1er novembre 2026) · Ce document tranche les 30 questions de la Partie 1 du runbook F (Q1–Q28) et de E7 (Q29, Q30), complétées ensuite par Q31 (G3) et Q32 (G6). Chaque agent applique ces décisions ; quand un autre document dit autre chose, **G l'emporte**. Les documents A, B, C, D, E et F ont été écrits avant ces décisions : les écarts connus sont listés en G5.
 
 ## G1. Identité du produit et des dépôts
 

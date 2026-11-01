@@ -154,11 +154,17 @@ class ArchitectureTests {
     return explicit.isEmpty() ? toSnakeCase(entity.getSimpleName()) : explicit;
   }
 
+  /**
+   * L'annotation est cherchee sur l'entite et sur ses superclasses elles-memes {@code @Entity}
+   * (heritage JPA) ; une {@code @MappedSuperclass} ne compte pas : {@code @Immutable} et
+   * {@code @DynamicUpdate} ne sont pas {@code @Inherited}, l'exiger sur l'entite est plus sur.
+   */
   private static boolean hasAnnotationInHierarchy(JavaClass entity, String annotation) {
     if (entity.isAnnotatedWith(annotation)) {
       return true;
     }
-    return entity.getAllRawSuperclasses().stream().anyMatch(c -> c.isAnnotatedWith(annotation));
+    return entity.getAllRawSuperclasses().stream()
+        .anyMatch(c -> isEntity(c) && c.isAnnotatedWith(annotation));
   }
 
   private static void collectTypes(JavaType type, List<JavaClass> out) {
@@ -248,9 +254,10 @@ class ArchitectureTests {
   }
 
   /**
-   * Aucune entite dans un DTO ni dans une classe {@code web} (champs, signatures, appels), et
-   * aucune entite dans un package {@code api} (qui ne porte que DTO, facades et evenements).
-   * Jackson ne doit jamais voir une entite ni un proxy Hibernate.
+   * Aucune entite dans un DTO, dans une classe {@code web} ni dans une classe {@code api} (champs,
+   * signatures, appels : facades et evenements compris), et aucune entite ne reside dans un package
+   * {@code api}. Jackson ne doit jamais voir une entite ni un proxy Hibernate, et un autre module
+   * ne doit jamais en recevoir une.
    */
   static ArchRule noEntityExposedToWebOrDto(String root) {
     DescribedPredicate<JavaClass> web = JavaClass.Predicates.resideInAPackage(root + "..web..");
@@ -259,16 +266,14 @@ class ArchitectureTests {
     return classes()
         .that(web.or(api).or(dto))
         .should(
-            new ArchCondition<JavaClass>("expose a JPA entity (web, Dto) or be an entity (api)") {
+            new ArchCondition<JavaClass>(
+                "expose a JPA entity (web, api, Dto) or be an entity (api)") {
               @Override
               public void check(JavaClass origin, ConditionEvents events) {
                 if (api.test(origin) && isEntity(origin)) {
                   events.add(
                       SimpleConditionEvent.violated(
                           origin, origin.getName() + " is an @Entity in an api package"));
-                }
-                if (!web.test(origin) && !dto.test(origin)) {
-                  return;
                 }
                 for (Dependency d : origin.getDirectDependenciesFromSelf()) {
                   JavaClass target = d.getTargetClass();
@@ -507,6 +512,8 @@ class ArchitectureTests {
         .isInstanceOf(AssertionError.class)
         .hasMessageContaining("CrossModuleOrder")
         .hasMessageContaining("CrossModuleCollection")
+        .hasMessageContaining("CrossModuleTargetEntity")
+        .hasMessageContaining("CrossModuleManyToMany")
         .hasMessageContaining("BEntity")
         .hasMessageNotContaining("SameModuleLine");
   }
@@ -520,7 +527,9 @@ class ArchitectureTests {
         .hasMessageContaining("LeakyDto")
         .hasMessageContaining("LeakyController")
         .hasMessageContaining("LeakyApiEntity")
+        .hasMessageContaining("LeakyFacade")
         .hasMessageNotContaining("GoodDto")
+        .hasMessageNotContaining("GoodFacade")
         .hasMessageNotContaining("GoodController");
   }
 
@@ -544,6 +553,7 @@ class ArchitectureTests {
     assertThatThrownBy(() -> rule.check(fixtures))
         .isInstanceOf(AssertionError.class)
         .hasMessageContaining("BadSearchVector")
+        .hasMessageContaining("BadSearchVectorPartial")
         .hasMessageContaining("BadOccurredRange")
         .hasMessageNotContaining("GoodGeneratedColumns");
   }

@@ -1,6 +1,6 @@
 # Liste de contrôle : convertir UN module en JPA (M8-02..M8-06)
 
-Cadre : G Q32 et `docs/etudes/etude-jpa.md` (§3 verdicts, §5 ordre, §6 risques). Les gardes ArchUnit, `open-in-view=false` et `ddl-auto=validate` en test sont posés par M8-01. Ordre : patients, vocabulary, directory, identity, clinical.export, puis clinical (M8-06). Une PR = un module.
+Cadre : G Q32 et `docs/etudes/etude-jpa.md` (§3 verdicts, §5 ordre, §6 risques). Les gardes ArchUnit, `open-in-view=false` et `ddl-auto=validate` en test sont posés par M8-01. Ordre : patients (M8-02), vocabulary (M8-03), directory (M8-04), identity (M8-05), clinical.export (M8-06). Une PR = un module. Le reste de clinical (entry, versions, séances) et linking sont **hors Q32** : les convertir demanderait une nouvelle décision G.
 
 ## 1. Périmètre
 
@@ -43,15 +43,15 @@ Cadre : G Q32 et `docs/etudes/etude-jpa.md` (§3 verdicts, §5 ordre, §6 risque
 - [ ] Les codes d'erreur (`LINK_EXISTS`, `TAG_EXISTS`, ...) et leurs statuts sont inchangés, un test par code.
 - [ ] Pour `ON CONFLICT DO NOTHING` / `RETURNING`, garder la requête native plutôt que de réécrire la sémantique.
 
-## 7. Cas réservé à M8-06 (clinical)
+## 7. Réservé à une éventuelle conversion de clinical (hors Q32, décision G requise)
 
-- [ ] FK `DEFERRABLE INITIALLY DEFERRED` entre `entry.current_version_id` et `entry_version.entry_id` : insertion entry, puis version, puis rattachement, puis `flush` dans l'ordre exact du DDL, ou insertion native. Test sous `psymate_app`.
+- [ ] FK `DEFERRABLE INITIALLY DEFERRED` de `entry.current_version_id` (nullable) vers `entry_version.id` (`fk_entry_current_version`, V05 l. 59-61) : insertion entry, puis version, puis rattachement, puis `flush` dans l'ordre exact du DDL, ou insertion native. Test sous `psymate_app`.
 - [ ] La timeline, `pg_advisory_xact_lock` et les recherches par `tstzrange` restent natifs.
 
 ## 8. Vérifications avant la PR
 
 - [ ] IT existants inchangés et verts (jamais réécrits pour la conversion) ; `./mvnw verify` vert.
 - [ ] `ArchitectureTests` vert (aucune règle JPA désactivée) et `ddl-auto=validate` vert sur tous les IT.
-- [ ] `make perf` relancé et inchangé pour clinical et linking (cibles A6).
+- [ ] `make perf` relancé après chaque module, résultats A6 inchangés (étude §6.5).
 - [ ] Contrat OpenAPI inchangé.
 - [ ] Description de la PR : ce qui est converti, ce qui reste natif, pourquoi, et les dépendances Maven ajoutées (normalement aucune).

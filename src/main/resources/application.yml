@@ -22,7 +22,7 @@ spring:
       ddl-auto: none
       naming:
         # Valeurs par defaut de Boot 4.1, ecrites pour etre explicites : camelCase -> snake_case.
-        # (PhysicalNamingStrategySnakeCaseImpl remplace CamelCaseToUnderscoresNamingStrategy, depreciee.)
+        # (PhysicalNamingStrategySnakeCaseImpl : CamelCaseToUnderscoresNamingStrategy n'existe plus en Boot 4.1.)
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
         implicit-strategy: org.springframework.boot.hibernate.SpringImplicitNamingStrategy
     properties:

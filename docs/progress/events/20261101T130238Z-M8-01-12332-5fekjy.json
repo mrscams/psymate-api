@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-01T13:02:38.506Z",
+  "task": "M8-01",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 40 fusionnee dans main (fondation JPA : starter data-jpa, Hibernate 7.4.13, open-in-view false, ddl-auto validate en test, regles ArchUnit, G Q32)",
+  "next": "M8-02 patients, M8-03 vocabulary, M8-04 directory",
+  "pr": "https://github.com/mrscams/psymate-api/pull/40",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

@@ -65,6 +65,7 @@ final class GraphDtos {
                   "Auteur de l'entrée : toujours practitioner en V1. Lecture seule, jamais accepté"
                       + " en écriture.",
               accessMode = Schema.AccessMode.READ_ONLY,
+              allowableValues = {"practitioner"},
               example = "practitioner")
           String authorType) {}
 
@@ -141,8 +142,8 @@ final class GraphDtos {
   /** Voisinage : {@code truncated} dit que des nœuds ont été regroupés ou retirés. */
   @Schema(
       description =
-          "Graphe d'un patient : au plus 150 nœuds, leurs arêtes et les groupes de nœuds"
-              + " regroupés.")
+          "Graphe d'un patient : au plus 150 nœuds (500 pour un développement par expand), leurs"
+              + " arêtes et les groupes de nœuds regroupés.")
   record GraphDto(
       @Schema(
               description =

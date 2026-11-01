@@ -125,8 +125,8 @@ class AccountExportController implements AuthErrorScope {
         responseCode = "409",
         description =
             "EXPORT_IN_PROGRESS : un export de ce compte est déjà en file ou en cours ;"
-                + " ACCOUNT_NOT_SUSPENDED : compte approuvé sans session (se connecter) ou compte"
-                + " clos.",
+                + " ACCOUNT_NOT_SUSPENDED : le compte n'est ni refusé ni suspendu (approuvé, en"
+                + " cours de vérification ou clos) : se connecter normalement.",
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(

@@ -137,14 +137,15 @@ class EntryController {
         description =
             """
             VALIDATION_FAILED avec errors[] {field, code, message}, un par champ. Codes : REQUIRED, \
-            OUT_OF_RANGE (intensité hors 0 à 10, plus de 20 liens), INVALID_VALUE (type, status, \
+            OUT_OF_RANGE (intensité hors 0 à 10, plus de 20 liens), INVALID_VALUE (session.modality, type, status, \
             visibility, occurred.precision, links[i].direction), INVALID_FORMAT (date ou UUID \
             illisible), INVALID_TIME (occurred.to avant occurred.from), UNKNOWN_EMOTION \
             (feeling.emotionCode), UNKNOWN_TAG (tags[i]), UNKNOWN_FIELD (authorType ou \
             submissionId envoyé), DETAIL_NOT_ALLOWED (feeling, medication ou session d'un autre \
             type), NOT_ALLOWED_ON_CREATE (title, body, tags, links, session.durationMin sur une \
             séance), SESSION_NOT_ALLOWED (sessionId sur une séance). Liens refusés (champ \
-            links[i].linkType ou links[i].targetId, allowedLinkTypes pour LINK_TYPE_NOT_ALLOWED) : \
+            links[i].linkType ou links[i].targetId, allowedLinkTypes = liste de codes de type, ex. \
+            ["caused_by","co_occurs"], pour LINK_TYPE_NOT_ALLOWED) : \
             ENTRY_NOT_FOUND, SELF_LINK, DIFFERENT_PATIENT, UNKNOWN_LINK_TYPE, \
             LINK_TYPE_NOT_ALLOWED, LINK_EXISTS, ENTRY_ARCHIVED. Codes portés par le code racine, \
             errors[0].field renseigné : SESSION_REQUIRED et SESSION_INVALID (sessionId), \

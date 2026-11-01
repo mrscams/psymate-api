@@ -69,11 +69,9 @@ class AppealController implements AuthErrorScope {
           corps, car son compte refusé ou suspendu ne peut plus se connecter. Le corps est \
           validé en premier (422), sans consommer de tentative. Le compte doit être rejected ou \
           suspended (409 sinon) ; si la 2FA est active et que otp manque, réponse 202 avec \
-          otpRequired et rien n'est enregistré. Un seul recours ouvert à la fois, et un seul par \
-          décision contestée (la dernière décision de refus ou de suspension). Débit propre : \
-          5 échecs en 15 minutes verrouillent le couple e-mail et adresse IP pendant 15 minutes \
-          (423). Le dépôt est inscrit au journal d'administration ; réponse 201 sans en-tête \
-          Location.""")
+          otpRequired et rien n'est enregistré. Un seul recours ouvert à la fois et un seul par \
+          décision contestée ; 5 échecs en 15 minutes verrouillent le couple e-mail et IP 15 \
+          minutes (423). Dépôt inscrit au journal d'administration ; 201 sans en-tête Location.""")
   @ApiResponses({
     @ApiResponse(
         responseCode = "201",
@@ -203,6 +201,10 @@ class AppealController implements AuthErrorScope {
               description =
                   "Recours à lister : open (défaut), decided ou all. Autre valeur : 422"
                       + " INVALID_STATUS.",
+              schema =
+                  @Schema(
+                      allowableValues = {"open", "decided", "all"},
+                      defaultValue = "open"),
               example = "open")
           @RequestParam(required = false)
           String status,
@@ -216,6 +218,7 @@ class AppealController implements AuthErrorScope {
               description =
                   "Nombre maximal de recours par page : 50 par défaut, ramené dans l'intervalle"
                       + " 1 à 200 sans erreur.",
+              schema = @Schema(type = "integer", format = "int32", defaultValue = "50"),
               example = "50")
           @RequestParam(required = false)
           Integer limit) {

@@ -300,7 +300,9 @@ final class OverviewDtos {
               example = "clinical")
           String visibility,
       @Schema(
-              description = "Identifiant de la séance de rattachement.",
+              description =
+                  "Identifiant de la séance de rattachement ; null pour une entrée de type session"
+                      + " (une séance n'est rattachée à aucune séance).",
               example = "9b4c0c7e-3c1a-4f2e-9d6a-2a4d6f8b1c3e")
           UUID sessionId,
       @Schema(description = "Numéro de la version courante de l'entrée.", example = "1")
@@ -333,8 +335,8 @@ final class OverviewDtos {
   record FeelingsDto(
       @Schema(
               description =
-                  "Exactement un point par ressenti non archivé de la fenêtre, du plus ancien au"
-                      + " plus récent.")
+                  "Exactement un point par ressenti non archivé de la fenêtre, hors phases de vie"
+                      + " (précision life_phase), du plus ancien au plus récent.")
           List<FeelingPointDto> points,
       @Schema(
               description =

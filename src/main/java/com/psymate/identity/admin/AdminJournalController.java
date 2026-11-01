@@ -106,6 +106,7 @@ class AdminJournalController {
               description =
                   "Nombre maximal de lignes par page : 50 par défaut, ramené dans l'intervalle"
                       + " 1 à 200 sans erreur.",
+              schema = @Schema(type = "integer", format = "int32", defaultValue = "50"),
               example = "50")
           @RequestParam(required = false)
           Integer limit) {

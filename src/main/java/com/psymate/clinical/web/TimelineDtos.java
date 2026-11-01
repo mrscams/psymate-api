@@ -15,10 +15,12 @@ final class TimelineDtos {
   /** Émotion d'un ressenti : code et famille d'après le catalogue (nulle si inconnue). */
   @Schema(description = "Émotion d'un ressenti d'après le catalogue de vocabulaire du praticien.")
   record TimelineEmotionDto(
-      @Schema(description = "Code de l'émotion.", example = "anxiete") String code,
+      @Schema(description = "Code de l'émotion.", example = "anxiety") String code,
       @Schema(
-              description = "Famille de l'émotion d'après le catalogue. Null si elle est inconnue.",
-              example = "peur")
+              description =
+                  "Famille de l'émotion d'après le catalogue : joy, trust, fear, surprise, sadness,"
+                      + " disgust, anger ou anticipation. Null si elle est inconnue.",
+              example = "fear")
           String family) {}
 
   /**

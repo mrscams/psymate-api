@@ -10,7 +10,9 @@ import java.util.UUID;
 public record TagView(
     @Schema(description = "Identifiant du tag.", example = "9b4c0c7e-3c1a-4f2e-9d6a-2a4d6f8b1c3e")
         UUID id,
-    @Schema(description = "Libellé tel que saisi, sans le « # » initial.", example = "Travail")
+    @Schema(
+            description = "Libellé tel que saisi, sans aucun « # », espaces de bord retirés.",
+            example = "Travail")
         String label,
     @Schema(
             description =

@@ -51,7 +51,7 @@ class PublicDirectoryController {
           et languages une fiche est retenue si elle a au moins une des valeurs demandées. \
           Réponse paginée par page de 20 (page, totalPages) ; au plus 500 fiches sont examinées \
           avant pagination, total et facettes portent sur ce lot. 200 avec Cache-Control: \
-          public, max-age=60.""")
+          max-age=60, public.""")
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
@@ -59,7 +59,7 @@ class PublicDirectoryController {
         headers =
             @Header(
                 name = "Cache-Control",
-                description = "public, max-age=60.",
+                description = "max-age=60, public.",
                 schema = @Schema(type = "string"))),
     @ApiResponse(
         responseCode = "400",
@@ -78,10 +78,11 @@ class PublicDirectoryController {
   ResponseEntity<SearchResult> searchPublicDirectory(
       @Parameter(
               description =
-                  "Texte libre, 100 caractères au plus : cherche dans le nom, les spécialités, la"
-                      + " ville et la présentation, sans tenir compte des accents ; un nom proche"
-                      + " est aussi retenu. Absent : pas de filtre texte.",
-              example = "anxiété")
+                  "Texte libre, 100 caractères au plus : tous les mots doivent correspondre, dans"
+                      + " le nom, les codes de spécialités (ex. anxiety), la ville ou la"
+                      + " présentation, sans tenir compte des accents ; un nom proche est aussi"
+                      + " retenu. Absent : pas de filtre texte.",
+              example = "Lyon")
           @RequestParam(required = false)
           String q,
       @Parameter(
@@ -95,7 +96,8 @@ class PublicDirectoryController {
               description =
                   "Latitude du point de recherche en degrés, de -90 à 90 ; va avec lng. Ne rend"
                       + " que les fiches dont la position est renseignée, dans radiusKm, avec"
-                      + " distanceKm.",
+                      + " distanceKm. En V1 aucune fiche n'a encore de position : un filtre"
+                      + " lat/lng ne renvoie aucun résultat.",
               example = "45.76")
           @RequestParam(required = false)
           Double lat,
@@ -188,8 +190,8 @@ class PublicDirectoryController {
           Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). \
           Ne rend que les profils publiés. Téléphone, e-mail et adresse n'apparaissent que si le \
           praticien a coché l'interrupteur correspondant, le numéro professionnel que s'il \
-          l'autorise ; les champs masqués sont null. 200 avec Cache-Control: public, \
-          max-age=60.""")
+          l'autorise ; les champs masqués sont null. 200 avec Cache-Control: \
+          max-age=60, public.""")
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
@@ -197,7 +199,7 @@ class PublicDirectoryController {
         headers =
             @Header(
                 name = "Cache-Control",
-                description = "public, max-age=60.",
+                description = "max-age=60, public.",
                 schema = @Schema(type = "string"))),
     @ApiResponse(
         responseCode = "404",

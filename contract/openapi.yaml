@@ -318,6 +318,9 @@ components:
           - accepted
           - dismissed
           type: string
+      required:
+      - messageToPractitioner
+      - outcome
       type: object
     AppealItemDto:
       description: Recours vu par l'administration, avec la décision contestée et l'issue éventuelle.
@@ -412,6 +415,10 @@ components:
           description: Mot de passe du compte.
           type: string
           writeOnly: true
+      required:
+      - email
+      - message
+      - password
       type: object
     AppealSummaryDto:
       description: Résumé d'un recours déposé par le praticien, dans le détail de son compte.
@@ -520,7 +527,7 @@ components:
       description: Nouveau type d'un lien existant ; les extrémités ne changent pas.
       properties:
         linkType:
-          description: Code du nouveau type de lien, parmi ceux de GET /api/vocabulary/link-types ; il doit être autorisé pour le couple de types des deux entrées et différent du type actuel.
+          description: Code du nouveau type de lien, parmi ceux de GET /api/vocabulary/link-types ; il doit être autorisé pour le couple de types des deux entrées et différent du type actuel (sinon 409 LINK_EXISTS).
           example: worsens
           minLength: 1
           type: string
@@ -834,7 +841,7 @@ components:
           description: Note interne de l'administration, jamais transmise au praticien ; null si absente.
           type: string
         kind:
-          description: 'Nature de l''acte : approved, needs_more, rejected (vérification du dossier), suspended, reactivated (gestion du compte), appeal_accepted, appeal_rejected (recours).'
+          description: 'Nature de l''acte : approved, needs_more, rejected (vérification du dossier), suspended, reactivated (gestion du compte), appeal_accepted, appeal_rejected (recours), report_resolved (réservé, jamais produit en V1).'
           enum:
           - approved
           - needs_more
@@ -843,6 +850,7 @@ components:
           - reactivated
           - appeal_accepted
           - appeal_rejected
+          - report_resolved
           type: string
         messageToPractitioner:
           description: Message transmis au praticien (complément demandé, motif du refus ou de la suspension, réponse au recours) ; null s'il n'y en a pas (par exemple une approbation sans message).
@@ -871,6 +879,8 @@ components:
         messageToPractitioner:
           description: Message envoyé au praticien par e-mail ; obligatoire pour needs_more et rejected (422 MESSAGE_REQUIRED), 4000 caractères au plus ; facultatif pour approved.
           type: string
+      required:
+      - kind
       type: object
     DirectoryVocabularyDto:
       description: Listes fermées de l'annuaire. Seules les entrées actives sont rendues, dans l'ordre d'affichage.
@@ -1265,11 +1275,11 @@ components:
           type: integer
         emotionCode:
           description: Code de l'émotion, issu du catalogue de vocabulaire du praticien.
-          example: anxiete
+          example: anxiety
           type: string
         family:
-          description: Famille de l'émotion d'après le catalogue. Null si elle est inconnue.
-          example: peur
+          description: 'Famille de l''émotion d''après le catalogue : joy, trust, fear, surprise, sadness, disgust, anger ou anticipation. Null si elle est inconnue.'
+          example: fear
           type: string
         intensity:
           description: Intensité du ressenti, de 0 à 10.
@@ -1287,7 +1297,7 @@ components:
       properties:
         emotionCode:
           description: 'Code d''une émotion active du catalogue du praticien. Inconnu : UNKNOWN_EMOTION sur feeling.emotionCode.'
-          example: anxiete
+          example: anxiety
           type: string
         intensity:
           description: Intensité du ressenti, de 0 à 10 (OUT_OF_RANGE sinon).
@@ -1544,7 +1554,7 @@ components:
           format: double
           type: number
         sessionId:
-          description: Identifiant de la séance de rattachement.
+          description: Identifiant de la séance de rattachement ; null pour une entrée de type session (une séance n'est rattachée à aucune séance).
           example: 9b4c0c7e-3c1a-4f2e-9d6a-2a4d6f8b1c3e
           format: uuid
           type: string
@@ -2007,7 +2017,7 @@ components:
             $ref: '#/components/schemas/TrendMarkerDto'
           type: array
         points:
-          description: Exactement un point par ressenti non archivé de la fenêtre, du plus ancien au plus récent.
+          description: Exactement un point par ressenti non archivé de la fenêtre, hors phases de vie (précision life_phase), du plus ancien au plus récent.
           items:
             $ref: '#/components/schemas/FeelingPointDto'
           type: array
@@ -2024,7 +2034,7 @@ components:
           type: array
       type: object
     FieldProblem:
-      description: Une erreur de champ dans errors[] d'une réponse 422 VALIDATION_FAILED (ou 400 BAD_REQUEST / INVALID_PARAMETERS pour un paramètre de requête).
+      description: Une erreur de champ dans errors[] (422, 400 de paramètre, 409 ENTRY_ARCHIVED des liens).
       properties:
         code:
           description: 'Code stable de l''erreur de champ, à tester par le client : INVALID_FIELD, REQUIRED, OUT_OF_RANGE, TOO_LONG, UNKNOWN_EMOTION… (liste sur chaque opération). Absent dans les modules patients, vocabulary (tags, émotions) et directory (profil, annuaire public, contact), dont les erreurs de champ ne portent que field et message.'
@@ -2078,9 +2088,11 @@ components:
           description: Raison libre ; obligatoire (non vide) pour watch, facultative pour risk et shared_care.
           example: Idées noires évoquées en séance
           type: string
+      required:
+      - kind
       type: object
     GraphDto:
-      description: 'Graphe d''un patient : au plus 150 nœuds, leurs arêtes et les groupes de nœuds regroupés.'
+      description: 'Graphe d''un patient : au plus 150 nœuds (500 pour un développement par expand), leurs arêtes et les groupes de nœuds regroupés.'
       properties:
         edges:
           description: 'Liens acceptés dont les deux extrémités sont des nœuds rendus (pour un expand : les liens incidents à au moins un membre).'
@@ -2142,6 +2154,8 @@ components:
       properties:
         authorType:
           description: 'Auteur de l''entrée : toujours practitioner en V1. Lecture seule, jamais accepté en écriture.'
+          enum:
+          - practitioner
           example: practitioner
           readOnly: true
           type: string
@@ -3019,19 +3033,24 @@ components:
       description: Corps de toute réponse d'erreur (application/problem+json, RFC 9457). Les champs type, title, status, detail et code sont toujours présents ; errors[] et les champs complémentaires (retryAfterSeconds, existingLinkId, allowedLinkTypes, missing, pendingDocuments, usedByPublishedProfiles, suggestedEmotion) seulement pour les codes indiqués.
       properties:
         allowedLinkTypes:
-          description: Types de lien autorisés entre les deux entrées, objets {code, label} ; présent sur 422 LINK_TYPE_NOT_ALLOWED.
+          description: Types de lien autorisés pour ce couple d'entrées ; présent quand le code de champ est LINK_TYPE_NOT_ALLOWED. Objets {code, label} sur les routes de liens (POST /api/entries/{id}/links, PATCH /api/links/{id}) ; simples codes (chaînes) dans le 422 de POST /api/patients/{id}/entries.
           items:
-            description: Un type de lien autorisé.
-            properties:
-              code:
-                description: Code du type de lien.
-                example: medication_of
-                type: string
-              label:
-                description: Libellé du type de lien.
-                example: Médicament de
-                type: string
-            type: object
+            description: 'Un type de lien autorisé : objet {code, label} sur les routes de liens, simple code (chaîne) sur la création d''entrée.'
+            oneOf:
+            - description: Code du type de lien.
+              example: treats
+              type: string
+            - description: Type de lien avec son libellé.
+              properties:
+                code:
+                  description: Code du type de lien.
+                  example: treats
+                  type: string
+                label:
+                  description: Libellé du type de lien.
+                  example: traite
+                  type: string
+              type: object
           type: array
         code:
           description: 'Code d''erreur stable, en MAJUSCULES_SOULIGNÉES, indépendant de la langue : c''est lui que le client teste. Codes transverses dans la description générale, codes métier sur chaque opération.'
@@ -3042,7 +3061,7 @@ components:
           example: Certains champs sont invalides.
           type: string
         errors:
-          description: Erreurs par champ ; présent sur les 422 VALIDATION_FAILED et les 400 BAD_REQUEST de paramètre, absent sinon.
+          description: Erreurs par champ ; présentes sur les 422 (VALIDATION_FAILED ou code métier de champ comme SESSION_REQUIRED), sur les 400 de paramètre (BAD_REQUEST, INVALID_PARAMETERS, SEARCH_BAD_REQUEST, OVERVIEW_BAD_REQUEST) et sur le 409 ENTRY_ARCHIVED des liens ; absentes sinon.
           items:
             $ref: '#/components/schemas/FieldProblem'
           type: array
@@ -3081,7 +3100,7 @@ components:
           description: Émotion du vocabulaire dont le libellé est identique au tag demandé (forme EmotionView) ; présent sur 422 TAG_IS_EMOTION de POST et PATCH /api/tags.
           type: object
         title:
-          description: Titre court du problème, libellé HTTP ou titre métier, dans la langue d'Accept-Language.
+          description: 'Titre court : libellé HTTP en anglais (Not Found) ou titre métier ; ne pas l''afficher, utiliser code.'
           example: Unprocessable Content
           type: string
         type:
@@ -3095,6 +3114,7 @@ components:
           type: integer
       required:
       - code
+      - detail
       - status
       - title
       - type
@@ -3443,6 +3463,8 @@ components:
           maxLength: 4000
           minLength: 20
           type: string
+      required:
+      - reason
       type: object
     RecentActivityItemDto:
       description: Entrée récente du dossier.
@@ -3468,7 +3490,7 @@ components:
           format: date-time
           type: string
         sessionId:
-          description: Identifiant de la séance de rattachement.
+          description: Identifiant de la séance de rattachement ; null pour une entrée de type session (une séance n'est rattachée à aucune séance).
           example: 9b4c0c7e-3c1a-4f2e-9d6a-2a4d6f8b1c3e
           format: uuid
           type: string
@@ -3697,6 +3719,8 @@ components:
           - conform
           - non_conform
           type: string
+      required:
+      - reviewedStatus
       type: object
     RevokedSessionsResponse:
       description: Résultat de la révocation des autres sessions.
@@ -3789,7 +3813,7 @@ components:
           type: string
         url:
           description: 'Chemin relatif à appeler en GET (avec le cookie de session) : il porte les paramètres exp et sig. Valable 5 minutes.'
-          example: /api/me/verification/documents/9b4c0c7e/file?exp=1773480600&sig=ab12cd34
+          example: /api/me/verification/documents/9b4c0c7e-3c1a-4f2e-9d6a-2a4d6f8b1c3e/file?exp=1773480600&sig=x7F2k9Qw0m5T3bYh8LrN1cVdE6aGsUoJpZiXtKyA4Hc
           type: string
       type: object
     SinceLastSessionDto:
@@ -3982,7 +4006,7 @@ components:
           format: uuid
           type: string
         label:
-          description: 'Libellé tel que saisi, sans le « # » initial.'
+          description: 'Libellé tel que saisi, sans aucun « # », espaces de bord retirés.'
           example: Travail
           type: string
         normalizedLabel:
@@ -4009,11 +4033,11 @@ components:
       properties:
         code:
           description: Code de l'émotion.
-          example: anxiete
+          example: anxiety
           type: string
         family:
-          description: Famille de l'émotion d'après le catalogue. Null si elle est inconnue.
-          example: peur
+          description: 'Famille de l''émotion d''après le catalogue : joy, trust, fear, surprise, sadness, disgust, anger ou anticipation. Null si elle est inconnue.'
+          example: fear
           type: string
       type: object
     TimelineFacetsDto:
@@ -4515,15 +4539,15 @@ info:
   description: |-
     API de PsyMate, suivi clinique pour psychologues, psychiatres et coachs. Ce document est la seule référence nécessaire pour écrire un client : chaque opération décrit qui peut l'appeler, ce qu'elle attend, ce qu'elle renvoie et chaque erreur à gérer.
 
-    **Authentification.** Session serveur portée par un cookie HttpOnly, SameSite=Lax, posé par `POST /api/auth/login` (12 h, 30 j avec rememberMe) ; aucun jeton à envoyer. Sans session valide, toute route hors `/api/auth/*` et `/api/public/**` répond 401 UNAUTHENTICATED. Un compte dont l'e-mail n'est pas confirmé reçoit 403 EMAIL_NOT_CONFIRMED hors `/api/auth/*`. Les routes `/api/admin/**` exigent le rôle admin (403 ADMIN_ROLE_REQUIRED) et la double authentification active (403 TWO_FACTOR_REQUIRED). Un compte suspendu n'a pas de session : `POST /api/me/appeal` et `/api/me/export` l'identifient par `{email, password, otp?}` dans le corps (202 `{otpRequired: true}` quand le code 2FA manque).
+    **Authentification.** Session serveur portée par un cookie HttpOnly, Secure, SameSite=Lax, posé par `POST /api/auth/login` (expire après 12 h d'inactivité, 30 j avec rememberMe) ; aucun jeton à envoyer. Sans session valide, toute route répond 401 UNAUTHENTICATED, sauf les routes publiques : inscription, confirmation, renvoi et changement d'e-mail, connexion, changement et réinitialisation du mot de passe, déconnexion, `POST /api/me/appeal`, `/api/me/export*` et `/api/public/**`. Un compte dont l'e-mail n'est pas confirmé reçoit 403 EMAIL_NOT_CONFIRMED hors `/api/auth/*`. Les routes `/api/admin/**` exigent le rôle admin (403 ADMIN_ROLE_REQUIRED) et la double authentification active (403 TWO_FACTOR_REQUIRED). Un compte suspendu n'a pas de session : `POST /api/me/appeal` et `/api/me/export` l'identifient par `{email, password, otp?}` dans le corps (202 `{otpRequired: true}` quand le code 2FA manque).
 
-    **Erreurs.** Toujours `application/problem+json` (RFC 9457), schéma `ProblemDetail` : `type`, `title`, `status`, `detail`, `instance`, plus `code` (identifiant stable, à tester en priorité) et, pour les 422, `errors[]` `{field, code, message}` par champ. Codes transverses : 400 MALFORMED_JSON (JSON illisible ; les modules clinical, linking et admin répondent MALFORMED_REQUEST pour un corps absent ou illisible) ou BAD_REQUEST (paramètre manquant ou mal typé, `errors[]` avec INVALID_FIELD), 401 UNAUTHENTICATED, 403 FORBIDDEN / EMAIL_NOT_CONFIRMED / ADMIN_ROLE_REQUIRED / TWO_FACTOR_REQUIRED, 404 NOT_FOUND (route inconnue), 405 METHOD_NOT_ALLOWED, 406 NOT_ACCEPTABLE, 413 UPLOAD_TOO_LARGE (plafond multipart global), 415 UNSUPPORTED_MEDIA_TYPE, 422 VALIDATION_FAILED, 429 RATE_LIMITED, 500 INTERNAL_ERROR (détail générique, jamais le message interne). Les codes métier (PATIENT_ARCHIVED, LINK_EXISTS, SESSION_REQUIRED…) sont listés sur chaque opération. Les textes `title`, `detail` et `message` suivent `Accept-Language` (français par défaut, anglais).
+    **Erreurs.** Toujours `application/problem+json` (RFC 9457), schéma `ProblemDetail` : `type`, `title`, `status`, `detail`, `instance`, plus `code` (identifiant stable, à tester en priorité) et, pour les 422 et les 400 de paramètre, `errors[]` `{field, code?, message}` par champ. Codes transverses : 400 MALFORMED_JSON (JSON illisible) ou BAD_REQUEST (paramètre manquant ou mal typé, `errors[]` avec INVALID_FIELD) ; certains modules ont leur propre code 400, indiqué sur chaque opération (MALFORMED_REQUEST pour clinical, linking et admin ; INVALID_BODY et INVALID_PARAMETERS pour directory ; SEARCH_BAD_REQUEST ; OVERVIEW_BAD_REQUEST) ; 401 UNAUTHENTICATED ; 403 FORBIDDEN / EMAIL_NOT_CONFIRMED / ADMIN_ROLE_REQUIRED / TWO_FACTOR_REQUIRED ; 404 NOT_FOUND (route inconnue) ; 405 METHOD_NOT_ALLOWED ; 406 NOT_ACCEPTABLE ; 413 UPLOAD_TOO_LARGE (plafond multipart global) ; 415 UNSUPPORTED_MEDIA_TYPE ; 422 VALIDATION_FAILED ; 429 RATE_LIMITED ; 500 INTERNAL_ERROR (détail générique, jamais le message interne). Les codes métier (PATIENT_ARCHIVED, LINK_EXISTS, SESSION_REQUIRED…) sont listés sur chaque opération. Les textes `detail` et `message` sont en français par défaut et en anglais avec `Accept-Language: en` pour la plupart des erreurs (quelques messages métier restent en français) ; `title` n'est pas fiable pour l'affichage : tester `code`.
 
-    **Limites de débit** (G Q24) : 600 requêtes/min par session sur `/api/**`, 60/min par IP sur `/api/public/**`, 5/h par IP sur l'envoi de contact. Au-delà : 429 RATE_LIMITED avec l'en-tête `Retry-After` (secondes) et le champ `retryAfterSeconds` ; les 423 d'authentification (verrou après échecs) portent les mêmes.
+    **Limites de débit** : 600 requêtes/min par session sur `/api/**` (les requêtes sans session ne sont pas comptées), 60/min par IP sur `/api/public/**`, 5/h par IP sur l'envoi de contact. Au-delà : 429 RATE_LIMITED avec l'en-tête `Retry-After` (secondes) et le champ `retryAfterSeconds` ; les 423 d'authentification (verrou après échecs) portent les mêmes.
 
-    **Formats.** JSON camelCase ; dates-heures en UTC ISO 8601 (`2026-03-14T09:30:00Z`), dates civiles `AAAA-MM-JJ` ; identifiants UUID. Les listes sont paginées par curseur opaque (`cursor`, `limit`, réponse `{items[], nextCursor}`, `nextCursor` null en fin), sauf l'annuaire public et la recherche (`page`, 20 résultats par page). Les champs en lecture seule (`authorType`, `submissionId`) sont refusés en écriture (422 UNKNOWN_FIELD). Rien n'est supprimé physiquement : archivage et versions. Les fichiers sortent avec un `Content-Disposition` (`attachment` pour les exports, `inline` pour les justificatifs) ; les réponses publiques portent un `Cache-Control` explicite.
+    **Formats.** JSON camelCase ; dates-heures en UTC ISO 8601 (`2026-03-14T09:30:00Z`), dates civiles `AAAA-MM-JJ` ; identifiants UUID. Les grandes listes (patients, chronologie, files d'administration) sont paginées par curseur opaque (`cursor`, `limit`, réponse `{items[], nextCursor}`, `nextCursor` null en fin) ; les listes courtes (versions, vocabulaires…) sont renvoyées en entier ; l'annuaire public et la recherche utilisent `page` (20 résultats par page). Voir chaque opération. Les champs en lecture seule (`authorType`, `submissionId`) sont refusés en écriture (422 UNKNOWN_FIELD). Rien n'est supprimé physiquement : archivage et versions. Les fichiers sortent avec un `Content-Disposition` (`attachment` pour les exports, `inline` pour les justificatifs) ; les réponses publiques portent un `Cache-Control` explicite.
 
-    **Version du contrat** : `info.version` suit le plan D6-A4, un tag `contract-vX.Y.Z` est posé à chaque bump. Les tags regroupent les opérations par contrôleur, dans l'ordre d'usage : identité, dossier clinique, exploration, annuaire, administration.
+    **Version du contrat** : `info.version` est incrémentée à chaque changement du contrat et un tag `contract-vX.Y.Z` est posé. Les tags regroupent les opérations par contrôleur, dans l'ordre d'usage : identité, dossier clinique, exploration, annuaire, administration.
   title: PsyMate API
   version: 0.6.0
 openapi: 3.1.0
@@ -4539,6 +4563,11 @@ paths:
         name: status
         required: false
         schema:
+          default: open
+          enum:
+          - open
+          - decided
+          - all
           type: string
       - description: 'Curseur opaque (nextCursor de la page précédente, à renvoyer tel quel) ; absent pour la première page. Illisible : 422 INVALID_CURSOR.'
         in: query
@@ -4552,6 +4581,7 @@ paths:
         name: limit
         required: false
         schema:
+          default: 50
           format: int32
           type: integer
       responses:
@@ -4585,6 +4615,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste les recours à examiner ou déjà examinés
       tags:
       - Recours
@@ -4656,6 +4692,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Accepte ou écarte un recours
       tags:
       - Recours
@@ -4711,6 +4753,7 @@ paths:
         name: limit
         required: false
         schema:
+          default: 50
           format: int32
           type: integer
       responses:
@@ -4744,6 +4787,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste le journal d'administration, du plus récent au plus ancien
       tags:
       - 'Administration : journal'
@@ -4765,6 +4814,15 @@ paths:
         name: status
         required: false
         schema:
+          enum:
+          - email_pending
+          - docs_pending
+          - under_review
+          - approved
+          - needs_more
+          - rejected
+          - suspended
+          - closed
           type: string
       - description: 'Rôle du compte : practitioner ou admin. Absent : tous les rôles. Autre valeur : 422 INVALID_ROLE.'
         example: practitioner
@@ -4772,6 +4830,9 @@ paths:
         name: role
         required: false
         schema:
+          enum:
+          - practitioner
+          - admin
           type: string
       - description: 'Profession : psychologist, psychiatrist ou coach. Absent : toutes. Autre valeur : 422 INVALID_PROFESSION.'
         example: psychologist
@@ -4779,6 +4840,10 @@ paths:
         name: profession
         required: false
         schema:
+          enum:
+          - psychologist
+          - psychiatrist
+          - coach
           type: string
       - description: 'Curseur opaque (nextCursor de la page précédente, à renvoyer tel quel) ; absent pour la première page. Illisible : 422 INVALID_CURSOR.'
         in: query
@@ -4792,6 +4857,7 @@ paths:
         name: limit
         required: false
         schema:
+          default: 50
           format: int32
           type: integer
       responses:
@@ -4825,6 +4891,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste les comptes avec recherche, filtres et compteurs par statut
       tags:
       - 'Administration : praticiens'
@@ -4872,6 +4944,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Affiche le compte d'un praticien avec ses décisions et ses recours
       tags:
       - 'Administration : praticiens'
@@ -4943,6 +5021,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Réactive un compte suspendu ou refusé avec un motif obligatoire
       tags:
       - 'Administration : praticiens'
@@ -5014,6 +5098,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Suspend un compte avec un motif obligatoire
       tags:
       - 'Administration : praticiens'
@@ -5028,6 +5118,10 @@ paths:
         name: status
         required: false
         schema:
+          default: under_review
+          enum:
+          - under_review
+          - needs_more
           type: string
       - description: 'Ordre de tri par date de soumission : oldest (défaut, du plus ancien au plus récent) ou newest. Autre valeur : 422 INVALID_SORT.'
         example: oldest
@@ -5035,6 +5129,10 @@ paths:
         name: sort
         required: false
         schema:
+          default: oldest
+          enum:
+          - oldest
+          - newest
           type: string
       - description: 'Curseur opaque (nextCursor de la page précédente, à renvoyer tel quel) ; absent pour la première page. Illisible : 422 INVALID_CURSOR.'
         in: query
@@ -5048,6 +5146,7 @@ paths:
         name: limit
         required: false
         schema:
+          default: 50
           format: int32
           type: integer
       responses:
@@ -5081,6 +5180,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste la file des dossiers de vérification à traiter
       tags:
       - 'Administration : vérifications'
@@ -5128,6 +5233,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Affiche le dossier de vérification d'un praticien
       tags:
       - 'Administration : vérifications'
@@ -5199,6 +5310,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Approuve, demande un complément ou refuse un dossier
       tags:
       - 'Administration : vérifications'
@@ -5272,6 +5389,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Qualifie un justificatif du dossier
       tags:
       - 'Administration : vérifications'
@@ -5366,6 +5489,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Sert le justificatif déchiffré et consigne l'accès
       tags:
       - 'Administration : vérifications'
@@ -5427,6 +5556,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Émet une URL signée de 5 minutes pour ouvrir un justificatif
       tags:
       - 'Administration : vérifications'
@@ -5476,7 +5611,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
-      summary: Spécialités et publics de l'annuaire, actifs ou non, avec le nombre de fiches publiées qui les utilisent
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Liste les spécialités et publics de l'annuaire, actifs ou non
       tags:
       - 'Administration : vocabulaire de l''annuaire'
     post:
@@ -5531,7 +5672,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
-      summary: Ajoute une spécialité ou un public (409 VOCABULARY_EXISTS si le code existe)
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Ajoute une spécialité ou un public à l'annuaire
       tags:
       - 'Administration : vocabulaire de l''annuaire'
   /api/admin/vocabulary/directory/{kind}/{code}:
@@ -5611,7 +5758,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
-      summary: Modifie libellés, rang ou activation (409 VOCABULARY_IN_USE pour désactiver un code utilisé par une fiche publiée)
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Modifie les libellés, le rang ou l'activation d'une entrée du vocabulaire
       tags:
       - 'Administration : vocabulaire de l''annuaire'
   /api/auth/email/change:
@@ -5643,12 +5796,6 @@ paths:
             Retry-After:
               description: Secondes avant nouvel essai
               style: simple
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: Corrige l'adresse d'un compte non confirmé
       tags:
       - Authentification
@@ -5681,12 +5828,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'VALIDATION_FAILED avec errors[] : INVALID_FIELD (token absent, vide ou de plus de 200 caractères).'
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: Confirme l'adresse e-mail et ouvre une session
       tags:
       - Authentification
@@ -5709,12 +5850,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'VALIDATION_FAILED avec errors[] : INVALID_FIELD (email absent, mal formé ou de plus de 254 caractères).'
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: Renvoie l'e-mail de confirmation (202 dans tous les cas)
       tags:
       - Authentification
@@ -5756,7 +5891,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'EMAIL_NOT_CONFIRMED : adresse non confirmée ; ACCOUNT_SUSPENDED : compte refusé (rejected), suspendu (suspended) ou clos (closed), sessions révoquées (recours via POST /api/me/appeal) ; PASSWORD_CHANGE_REQUIRED : mot de passe à usage unique à remplacer d''abord via POST /api/auth/password/change.'
+          description: 'EMAIL_NOT_CONFIRMED : adresse non confirmée ; ACCOUNT_SUSPENDED : compte refusé (rejected), suspendu (suspended) ou clos (closed), sessions révoquées (un recours via POST /api/me/appeal n''est possible que pour un compte refusé ou suspendu, pas pour un compte clos) ; PASSWORD_CHANGE_REQUIRED : mot de passe à usage unique à remplacer d''abord via POST /api/auth/password/change.'
         '422':
           content:
             application/problem+json:
@@ -5773,12 +5908,6 @@ paths:
             Retry-After:
               description: Secondes avant nouvel essai
               style: simple
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: Connexion par e-mail et mot de passe (code 2FA si activée)
       tags:
       - Authentification
@@ -5789,12 +5918,6 @@ paths:
       responses:
         '204':
           description: Session fermée (ou déjà absente).
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: Ferme la session courante
       tags:
       - Authentification
@@ -5821,6 +5944,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Praticien connecté (identité, profession, statut de vérification)
       tags:
       - Authentification
@@ -5849,12 +5978,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'PASSWORD_POLICY avec errors[] sur le champ password et les codes PASSWORD_TOO_SHORT, PASSWORD_CASE, PASSWORD_COMPROMISED, PASSWORD_CONTAINS_PERSONAL_DATA ; VALIDATION_FAILED avec errors[] : INVALID_FIELD (token ou password absent ou trop long).'
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: Définit un nouveau mot de passe à partir du lien reçu par e-mail
       tags:
       - Authentification
@@ -5877,18 +6000,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'VALIDATION_FAILED avec errors[] : INVALID_FIELD (email absent, mal formé ou de plus de 254 caractères).'
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: Demande un lien de réinitialisation du mot de passe (202 dans tous les cas)
       tags:
       - Authentification
   /api/auth/password/change:
     post:
-      description: 'Public, sans session : email + currentPassword prouvent l''identité (+ otp si la 2FA est active ; s''il manque, 202 {otpRequired: true}). Sert notamment à remplacer le mot de passe à usage unique d''un compte de bootstrap (403 PASSWORD_CHANGE_REQUIRED au login). Le nouveau mot de passe est contrôlé avant les identifiants (un 422 ne consomme ni code 2FA ni essai). Succès : toutes les sessions du compte sont révoquées, aucune n''est ouverte (se reconnecter via POST /api/auth/login). Mêmes refus 403 et même verrou 423 que le login (5 échecs, 15 min).'
+      description: 'Public, sans session : email + currentPassword prouvent l''identité (+ otp si la 2FA est active ; s''il manque, 202 {otpRequired: true}). Sert notamment à remplacer le mot de passe à usage unique d''un compte de bootstrap (403 PASSWORD_CHANGE_REQUIRED au login). Les contrôles du nouveau mot de passe qui ne dépendent que de la requête (longueur, casse, mots de passe courants, e-mail, identique à l''actuel) passent avant les identifiants : ces 422 ne consomment ni code 2FA ni essai ; le contrôle du prénom et du nom (PASSWORD_CONTAINS_PERSONAL_DATA) n''a lieu qu''après, le code 2FA peut alors être consommé. Succès : toutes les sessions du compte sont révoquées, aucune n''est ouverte (se reconnecter via POST /api/auth/login). Mêmes refus 403 et même verrou 423 que le login (5 échecs, 15 min).'
       operationId: changePassword
       requestBody:
         content:
@@ -5937,12 +6054,6 @@ paths:
             Retry-After:
               description: Secondes avant nouvel essai
               style: simple
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: 'Change le mot de passe (public : e-mail + mot de passe actuel)'
       tags:
       - Authentification
@@ -5977,12 +6088,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'VALIDATION_FAILED avec errors[] {field, code, message} ; codes de champ : INVALID_FIELD (champ du corps absent, trop long, e-mail mal formé, profession hors liste, consents.terms ou consents.privacy différent de true), PHONE_INVALID (phone), ADDRESS_REQUIRED (address, sauf remoteOnly), REQUIRED (address.street, address.city), POSTAL_CODE_INVALID (address.postalCode) ; PASSWORD_POLICY avec errors[] sur le champ password et les codes PASSWORD_TOO_SHORT, PASSWORD_CASE, PASSWORD_COMPROMISED, PASSWORD_CONTAINS_PERSONAL_DATA.'
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: Inscription d'un praticien (ouverte, sans code d'invitation)
       tags:
       - Authentification
@@ -6009,6 +6114,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: État courant de la session (statut de vérification à jour)
       tags:
       - Authentification
@@ -6035,6 +6146,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Déconnecte tous les autres appareils (la session courante est conservée)
       tags:
       - Authentification
@@ -6070,13 +6187,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'VALIDATION_FAILED avec errors[] {field, code, message} ; codes de champ : INVALID_FIELD (champ du corps absent, trop long, e-mail mal formé, profession hors liste, consents.terms ou consents.privacy différent de true), PHONE_INVALID (phone), ADDRESS_REQUIRED (address, sauf remoteOnly), REQUIRED (address.street, address.city), POSTAL_CODE_INVALID (address.postalCode) ; PASSWORD_POLICY avec errors[] sur le champ password et les codes PASSWORD_TOO_SHORT, PASSWORD_CASE, PASSWORD_COMPROMISED, PASSWORD_CONTAINS_PERSONAL_DATA.'
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
-      summary: Alias déprécié de POST /api/auth/register
+      summary: Alias déprécié de l'inscription d'un praticien
       tags:
       - Authentification
   /api/entries/{id}:
@@ -6125,6 +6236,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Archive une entrée sans la supprimer physiquement
       tags:
       - Entrées
@@ -6177,6 +6294,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Lit une entrée avec sa version courante, son détail et ses tags
       tags:
       - Entrées
@@ -6247,6 +6370,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Corrige une entrée par une nouvelle version ou en place pendant la grâce
       tags:
       - Entrées
@@ -6296,6 +6425,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste les liens acceptés d'une entrée
       tags:
       - Liens
@@ -6370,6 +6505,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Pose un lien manuel entre l'entrée ouverte et une autre entrée du même patient
       tags:
       - Liens
@@ -6423,6 +6564,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Restaure une entrée archivée
       tags:
       - Entrées
@@ -6478,6 +6625,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste les versions d'une entrée, de la plus récente à la plus ancienne
       tags:
       - Entrées
@@ -6521,6 +6674,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Supprime un lien sans l'effacer
       tags:
       - Liens
@@ -6591,6 +6750,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Change le type d'un lien en le remplaçant par un nouveau lien
       tags:
       - Liens
@@ -6647,6 +6812,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Désactive la 2FA (mot de passe et code TOTP ou de secours)
       tags:
       - Double authentification
@@ -6685,6 +6856,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Génère le secret TOTP (en attente) et l'URI otpauth:// du QR code
       tags:
       - Double authentification
@@ -6723,12 +6900,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Remplace les codes de secours par 10 nouveaux (anciens invalidés)
       tags:
       - Double authentification
   /api/me/2fa/verify:
     post:
-      description: 'Session praticien. Deuxième étape d''activation, après POST /api/me/2fa/enable : valide le code TOTP à 6 chiffres, active la 2FA et renvoie 10 codes de secours en clair, montrés une seule fois. Ce code ne pourra pas être rejoué au login dans la même fenêtre de 30 s. 5 codes faux d''affilée verrouillent les essais 15 min (423).'
+      description: 'Session praticien. Deuxième étape d''activation, après POST /api/me/2fa/enable : valide le code TOTP à 6 chiffres, active la 2FA et renvoie 10 codes de secours en clair, montrés une seule fois. Ce code ne pourra pas être rejoué au login dans la même fenêtre de 30 s. 5 codes faux en 15 minutes verrouillent les essais 15 min (423).'
       operationId: verifyTwoFactor
       requestBody:
         content:
@@ -6783,12 +6966,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Vérifie le premier code, active la 2FA et renvoie 10 codes de secours (une fois)
       tags:
       - Double authentification
   /api/me/appeal:
     post:
-      description: 'Public, sans session : le praticien s''identifie par {email, password, otp?} dans le corps, car son compte refusé ou suspendu ne peut plus se connecter. Le corps est validé en premier (422), sans consommer de tentative. Le compte doit être rejected ou suspended (409 sinon) ; si la 2FA est active et que otp manque, réponse 202 avec otpRequired et rien n''est enregistré. Un seul recours ouvert à la fois, et un seul par décision contestée (la dernière décision de refus ou de suspension). Débit propre : 5 échecs en 15 minutes verrouillent le couple e-mail et adresse IP pendant 15 minutes (423). Le dépôt est inscrit au journal d''administration ; réponse 201 sans en-tête Location.'
+      description: 'Public, sans session : le praticien s''identifie par {email, password, otp?} dans le corps, car son compte refusé ou suspendu ne peut plus se connecter. Le corps est validé en premier (422), sans consommer de tentative. Le compte doit être rejected ou suspended (409 sinon) ; si la 2FA est active et que otp manque, réponse 202 avec otpRequired et rien n''est enregistré. Un seul recours ouvert à la fois et un seul par décision contestée ; 5 échecs en 15 minutes verrouillent le couple e-mail et IP 15 minutes (423). Dépôt inscrit au journal d''administration ; 201 sans en-tête Location.'
       operationId: submitAppeal
       requestBody:
         content:
@@ -6849,12 +7038,6 @@ paths:
             Retry-After:
               description: Secondes à attendre avant un nouvel essai (15 minutes au plus).
               style: simple
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: Dépose le recours d'un compte refusé ou suspendu
       tags:
       - Recours
@@ -6905,6 +7088,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Crée une émotion personnalisée
       tags:
       - Émotions personnelles
@@ -6958,6 +7147,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Annule une fusion d'émotions dans les 30 jours
       tags:
       - Émotions personnelles
@@ -7022,6 +7217,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Renomme une émotion personnalisée
       tags:
       - Émotions personnelles
@@ -7086,6 +7287,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Fusionne une émotion personnalisée dans une autre émotion
       tags:
       - Émotions personnelles
@@ -7124,7 +7331,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'EXPORT_IN_PROGRESS : un export de ce compte est déjà en file ou en cours ; ACCOUNT_NOT_SUSPENDED : compte approuvé sans session (se connecter) ou compte clos.'
+          description: 'EXPORT_IN_PROGRESS : un export de ce compte est déjà en file ou en cours ; ACCOUNT_NOT_SUSPENDED : le compte n''est ni refusé ni suspendu (approuvé, en cours de vérification ou clos) : se connecter normalement.'
         '422':
           content:
             application/problem+json:
@@ -7143,12 +7350,6 @@ paths:
               schema:
                 type: integer
               style: simple
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: Lance l'export asynchrone de tous les patients du compte
       tags:
       - Export de compte
@@ -7185,12 +7386,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'EXPORT_NOT_FOUND : job inconnu, d''un autre praticien, ou jeton token absent ou invalide.'
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: Donne le statut d'un export de compte
       tags:
       - Export de compte
@@ -7247,12 +7442,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'EXPORT_EXPIRED : échéance passée ou fichier purgé.'
-        '429':
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
       summary: Télécharge le zip d'un export de compte par son URL signée
       tags:
       - Export de compte
@@ -7285,6 +7474,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Préférences du compte (valeurs stockées complétées par les défauts)
       tags:
       - Préférences
@@ -7332,6 +7527,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Modifie les préférences (merge-patch RFC 7396, null = retour au défaut)
       tags:
       - Préférences
@@ -7382,6 +7583,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Met à jour n° professionnel, téléphone, adresse et exercice à distance
       tags:
       - Vérification du praticien
@@ -7420,6 +7627,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Lit le profil d'annuaire du praticien connecté
       tags:
       - Profil annuaire
@@ -7475,6 +7688,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Remplace les champs éditables du profil d'annuaire
       tags:
       - Profil annuaire
@@ -7509,6 +7728,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Retire la photo du profil d'annuaire
       tags:
       - Profil annuaire
@@ -7576,6 +7801,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Envoie la photo du profil d'annuaire
       tags:
       - Profil annuaire
@@ -7610,6 +7841,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Publie le profil dans l'annuaire public
       tags:
       - Profil annuaire
@@ -7644,6 +7881,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Retire le profil de l'annuaire public
       tags:
       - Profil annuaire
@@ -7682,12 +7925,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: État du dossier professionnel, justificatifs, pièces manquantes
       tags:
       - Vérification du praticien
   /api/me/verification/documents:
     post:
-      description: 'Session praticien (compte confirmé), requête multipart/form-data : le fichier (champ file) et ses métadonnées. Autorisé seulement en docs_pending et needs_more ; 20 justificatifs actifs au maximum. Le format est reconnu d''après le contenu du fichier (jamais l''extension) ; les images sont ré-encodées sans métadonnées (EXIF, GPS), les PDF conservés tels quels. Le fichier est stocké chiffré. Limites : 10 Mo par fichier, image de 25 millions de pixels au maximum. Réponse 201 avec le justificatif créé.'
+      description: 'Session praticien (compte confirmé), requête multipart/form-data : le fichier dans le champ file ; type, title, issuer et year sont lus comme paramètres de requête ou champs du formulaire (équivalents pour le serveur) ; type, title et file sont obligatoires (422 sinon). Autorisé seulement en docs_pending et needs_more ; 20 justificatifs actifs au maximum. Le format est reconnu d''après le contenu du fichier (jamais l''extension) ; les images sont ré-encodées sans métadonnées (EXIF, GPS), les PDF conservés tels quels. Le fichier est stocké chiffré. Limites : 10 Mo par fichier, image de 25 millions de pixels au maximum. Réponse 201 avec le justificatif créé.'
       operationId: uploadDocument
       parameters:
       - description: 'Nature du justificatif : diploma, registration, certification, professional_card, identity ou other. Obligatoire.'
@@ -7783,6 +8032,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Dépose un justificatif (PDF, JPEG ou PNG, 10 Mo au maximum)
       tags:
       - Vérification du praticien
@@ -7832,6 +8087,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Retire un justificatif (docs_pending ou needs_more seulement)
       tags:
       - Vérification du praticien
@@ -7878,6 +8139,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Métadonnées d'un justificatif (403 s'il appartient à un autre praticien)
       tags:
       - Vérification du praticien
@@ -7903,7 +8170,7 @@ paths:
           format: int64
           type: integer
       - description: Signature de l'URL, telle que renvoyée dans l'url de GET .../url.
-        example: ab12cd34
+        example: x7F2k9Qw0m5T3bYh8LrN1cVdE6aGsUoJpZiXtKyA4Hc
         in: query
         name: sig
         required: false
@@ -7965,6 +8232,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Sert le justificatif déchiffré (URL signée, praticien propriétaire)
       tags:
       - Vérification du praticien
@@ -8018,6 +8291,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: URL signée de 5 minutes pour lire le justificatif déchiffré
       tags:
       - Vérification du praticien
@@ -8062,6 +8341,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Soumet le dossier pour vérification (409 avec les pièces manquantes)
       tags:
       - Vérification du praticien
@@ -8152,6 +8437,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste les patients du praticien connecté
       tags:
       - Patients
@@ -8201,6 +8492,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Crée un patient dans le cabinet du praticien
       tags:
       - Patients
@@ -8244,6 +8541,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Archive un patient
       tags:
       - Patients
@@ -8290,11 +8593,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Lit la fiche d'un patient
       tags:
       - Patients
     patch:
-      description: 'Session praticien propriétaire du patient, patient actif (409 PATIENT_ARCHIVED sinon). Mise à jour partielle : seules les clés présentes du corps sont modifiées ; une valeur null ou vide efface un champ texte. context et followUp sont fusionnés clé à clé (une clé à null est retirée ; l''objet entier à null le vide). Chaque appel réussi incrémente currentVersion et archive un instantané (GET /versions) ; reason, facultatif, est le motif conservé dans la version.'
+      description: 'Session praticien propriétaire du patient, patient actif (409 PATIENT_ARCHIVED sinon). Mise à jour partielle : seules les clés présentes du corps sont modifiées ; une valeur null ou vide efface un champ texte (sauf displayName, obligatoire : 422) ; birthDate s''efface avec null (une chaîne vide est refusée en 422). context et followUp sont fusionnés clé à clé (une clé à null est retirée ; l''objet entier à null le vide). Chaque appel réussi incrémente currentVersion et archive un instantané (GET /versions) ; reason, facultatif, est le motif conservé dans la version.'
       operationId: patchPatient
       parameters:
       - description: Identifiant du patient.
@@ -8356,6 +8665,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Modifie la fiche d'un patient en créant une version
       tags:
       - Patients
@@ -8426,13 +8741,19 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED avec errors[] {field, code, message}, un par champ. Codes : REQUIRED, OUT_OF_RANGE (intensité hors 0 à 10, plus de 20 liens), INVALID_VALUE (type, status, visibility, occurred.precision, links[i].direction), INVALID_FORMAT (date ou UUID illisible), INVALID_TIME (occurred.to avant occurred.from), UNKNOWN_EMOTION (feeling.emotionCode), UNKNOWN_TAG (tags[i]), UNKNOWN_FIELD (authorType ou submissionId envoyé), DETAIL_NOT_ALLOWED (feeling, medication ou session d''un autre type), NOT_ALLOWED_ON_CREATE (title, body, tags, links, session.durationMin sur une séance), SESSION_NOT_ALLOWED (sessionId sur une séance). Liens refusés (champ links[i].linkType ou links[i].targetId, allowedLinkTypes pour LINK_TYPE_NOT_ALLOWED) : ENTRY_NOT_FOUND, SELF_LINK, DIFFERENT_PATIENT, UNKNOWN_LINK_TYPE, LINK_TYPE_NOT_ALLOWED, LINK_EXISTS, ENTRY_ARCHIVED. Codes portés par le code racine, errors[0].field renseigné : SESSION_REQUIRED et SESSION_INVALID (sessionId), INVALID_TIME (occurred : période sans libellé ou sans fin, phase de vie inconnue ou patient sans date de naissance).'
+          description: 'VALIDATION_FAILED avec errors[] {field, code, message}, un par champ. Codes : REQUIRED, OUT_OF_RANGE (intensité hors 0 à 10, plus de 20 liens), INVALID_VALUE (session.modality, type, status, visibility, occurred.precision, links[i].direction), INVALID_FORMAT (date ou UUID illisible), INVALID_TIME (occurred.to avant occurred.from), UNKNOWN_EMOTION (feeling.emotionCode), UNKNOWN_TAG (tags[i]), UNKNOWN_FIELD (authorType ou submissionId envoyé), DETAIL_NOT_ALLOWED (feeling, medication ou session d''un autre type), NOT_ALLOWED_ON_CREATE (title, body, tags, links, session.durationMin sur une séance), SESSION_NOT_ALLOWED (sessionId sur une séance). Liens refusés (champ links[i].linkType ou links[i].targetId, allowedLinkTypes = liste de codes de type, ex. ["caused_by","co_occurs"], pour LINK_TYPE_NOT_ALLOWED) : ENTRY_NOT_FOUND, SELF_LINK, DIFFERENT_PATIENT, UNKNOWN_LINK_TYPE, LINK_TYPE_NOT_ALLOWED, LINK_EXISTS, ENTRY_ARCHIVED. Codes portés par le code racine, errors[0].field renseigné : SESSION_REQUIRED et SESSION_INVALID (sessionId), INVALID_TIME (occurred : période sans libellé ou sans fin, phase de vie inconnue ou patient sans date de naissance).'
         '429':
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Crée une entrée clinique dans le dossier du patient
       tags:
       - Entrées
@@ -8506,6 +8827,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
         '500':
           content:
             application/problem+json:
@@ -8577,6 +8904,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Pose un drapeau sur un patient
       tags:
       - Patients
@@ -8647,6 +8980,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Lève un drapeau actif d'un patient
       tags:
       - Patients
@@ -8679,6 +9018,8 @@ paths:
         schema:
           default: 2
           format: int32
+          maximum: 3
+          minimum: 1
           type: integer
       - description: 'Codes de types de liens suivis, parmi ceux de GET /api/vocabulary/link-types : liste séparée par des virgules ou paramètre répété. Absent : tous les types.'
         example: triggers,worsens
@@ -8748,6 +9089,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Rend le graphe de liens autour d'une entrée ou, sans racine, du dossier du patient
       tags:
       - Graphe
@@ -8813,6 +9160,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Développe un super-nœud ou une liste d'entrées du graphe
       tags:
       - Graphe
@@ -8878,12 +9231,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Synthèse clinique d'un patient sur une fenêtre de temps
       tags:
       - Vue d'ensemble
   /api/patients/{id}/restore:
     post:
-      description: 'Session praticien propriétaire du patient. Lève l''archivage ; le patient réapparaît dans la liste par défaut et accepte de nouveau les écritures. Elle est acceptée sur un patient archivé, contrairement aux autres écritures. Idempotent : sur un patient actif, renvoie la fiche inchangée en 200. Aucun corps de requête.'
+      description: 'Session praticien propriétaire du patient. Lève l''archivage : le patient réapparaît dans la liste par défaut et accepte de nouveau les écritures. Contrairement aux autres écritures, la restauration est acceptée sur un patient archivé. Idempotent : sur un patient actif, renvoie la fiche inchangée en 200. Aucun corps de requête.'
       operationId: restorePatient
       parameters:
       - description: Identifiant du patient.
@@ -8925,6 +9284,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Restaure un patient archivé
       tags:
       - Patients
@@ -8980,7 +9345,7 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Fin de période sur la date de l''entrée, incluse : date AAAA-MM-JJ (jour entier compris) ou instant ISO 8601 avec fuseau. Doit rester postérieure à from (une même journée est admise) : 400 RANGE_INVERTED sinon.'
+      - description: 'Fin de période sur la date de l''entrée, incluse : date AAAA-MM-JJ (jour entier compris) ou instant ISO 8601 avec fuseau. Ne doit pas être antérieure à from (la même journée est admise) : 400 RANGE_INVERTED sinon.'
         example: 2026-03-31T00:00:00Z
         in: query
         name: to
@@ -9026,7 +9391,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'SEARCH_BAD_REQUEST : errors[] {field, code, message}, toutes les erreurs ensemble ; codes par champ : q = TOO_LONG (plus de 200 caractères) ou INVALID_DATE (date invalide dans avant: ou après:), page = INVALID_PAGE (hors 1..500), from et to = INVALID_DATE, to = RANGE_INVERTED (début non antérieur à la fin), types = UNKNOWN_TYPE, et INVALID_FORMAT sur le paramètre concerné pour une valeur non convertible (page non numérique, sessionId qui n''est pas un UUID, includeArchived non booléen). Le contrôle de propriété passe avant : un patient d''un autre praticien reste en 403.'
+          description: 'SEARCH_BAD_REQUEST : errors[] {field, code, message}, toutes les erreurs ensemble ; codes par champ : q = TOO_LONG (plus de 200 caractères) ou INVALID_DATE (date invalide dans avant: ou après:), page = INVALID_PAGE (hors 1..500), from et to = INVALID_DATE, to = RANGE_INVERTED (to antérieur à from), types = UNKNOWN_TYPE, et INVALID_FORMAT sur le paramètre concerné pour une valeur non convertible (page non numérique, sessionId qui n''est pas un UUID, includeArchived non booléen, id qui n''est pas un UUID : field = id). Le contrôle de propriété passe avant les contrôles de q, page, from, to et types (patient d''un autre praticien : 403), mais pas avant INVALID_FORMAT, détecté à la conversion des paramètres.'
         '401':
           content:
             application/problem+json:
@@ -9051,6 +9416,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Recherche des entrées dans le dossier d'un patient
       tags:
       - Recherche
@@ -9122,6 +9493,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Consigne un contact hors rendez-vous comme une séance déjà clôturée
       tags:
       - Séances
@@ -9175,6 +9552,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Donne la séance courante du patient
       tags:
       - Séances
@@ -9245,13 +9628,19 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED avec errors[] : modality REQUIRED (absente ou vide) ou INVALID_VALUE (hors in_person, video, phone, email) ; UNKNOWN_FIELD si authorType ou submissionId est envoyé.'
+          description: 'VALIDATION_FAILED avec errors[] : modality REQUIRED (absente) ou INVALID_VALUE (vide ou hors in_person, video, phone, email) ; UNKNOWN_FIELD si authorType ou submissionId est envoyé.'
         '429':
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Démarre une séance maintenant pour le patient
       tags:
       - Séances
@@ -9317,12 +9706,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Remplace la liste des tags d'un patient
       tags:
       - Patients
   /api/patients/{id}/timeline:
     get:
-      description: 'Session praticien, propriétaire du patient. Entrées non archivées dont le début d''occurrence est dans [from, to[, de la plus récente à la plus ancienne. Brouillons inclus (draftsOnly=true pour eux seuls) ; entrées privées exclues sauf includePrivate=true. Dans une même liste de filtres (types, emotions, tags), un élément doit correspondre à l''une des valeurs ; les trois filtres se cumulent. Les facettes portent sur toute la fenêtre filtrée et ongoingSituations liste les situations en cours qui chevauchent la fenêtre. Pagination par curseur opaque : renvoyer nextCursor dans cursor, nextCursor null sur la dernière page. limit : 1 à 200, 50 par défaut.'
+      description: 'Session praticien, propriétaire du patient. Entrées non archivées dont le début d''occurrence est dans [from, to[, de la plus récente à la plus ancienne. Brouillons inclus (draftsOnly=true pour eux seuls) ; entrées privées exclues sauf includePrivate=true. Dans une même liste de filtres (types, emotions, tags), un élément doit correspondre à l''une des valeurs ; les trois filtres se cumulent. Les facettes portent sur toute la fenêtre filtrée ; ongoingSituations liste les situations, terminées ou non, dont la plage chevauche la fenêtre (ongoing = true pour celles sans fin ; seuls les filtres de brouillon et de visibilité s''y appliquent). Curseur opaque : renvoyer nextCursor dans cursor, nextCursor null sur la dernière page. limit : 1 à 200, 50 par défaut.'
       operationId: getTimeline
       parameters:
       - description: Identifiant du patient.
@@ -9358,8 +9753,8 @@ paths:
           items:
             type: string
           type: array
-      - description: 'Codes d''émotion à garder (ressentis seulement). Valeurs séparées par des virgules ou paramètre répété. Absent : sans filtre.'
-        example: anxiete,tristesse
+      - description: 'Codes d''émotion à garder : seuls les ressentis de ces émotions sont renvoyés, les autres types sont exclus tant que ce filtre est donné. Valeurs séparées par des virgules ou paramètre répété. Absent : sans filtre.'
+        example: anxiety,sadness
         in: query
         name: emotions
         required: false
@@ -9406,6 +9801,8 @@ paths:
         schema:
           default: 50
           format: int32
+          maximum: 200
+          minimum: 1
           type: integer
       responses:
         '200':
@@ -9450,6 +9847,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste la chronologie du patient par fenêtre de dates et curseur
       tags:
       - Chronologie
@@ -9543,6 +9946,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Résume la chronologie du patient par mois ou par année
       tags:
       - Chronologie
@@ -9592,16 +10001,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste l'historique des versions de la fiche d'un patient
       tags:
       - Patients
   /api/public/directory:
     get:
-      description: 'Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). Ne rend que les profils publiés. Les filtres se cumulent ; pour modalities, audiences et languages une fiche est retenue si elle a au moins une des valeurs demandées. Réponse paginée par page de 20 (page, totalPages) ; au plus 500 fiches sont examinées avant pagination, total et facettes portent sur ce lot. 200 avec Cache-Control: public, max-age=60.'
+      description: 'Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). Ne rend que les profils publiés. Les filtres se cumulent ; pour modalities, audiences et languages une fiche est retenue si elle a au moins une des valeurs demandées. Réponse paginée par page de 20 (page, totalPages) ; au plus 500 fiches sont examinées avant pagination, total et facettes portent sur ce lot. 200 avec Cache-Control: max-age=60, public.'
       operationId: searchPublicDirectory
       parameters:
-      - description: 'Texte libre, 100 caractères au plus : cherche dans le nom, les spécialités, la ville et la présentation, sans tenir compte des accents ; un nom proche est aussi retenu. Absent : pas de filtre texte.'
-        example: anxiété
+      - description: 'Texte libre, 100 caractères au plus : tous les mots doivent correspondre, dans le nom, les codes de spécialités (ex. anxiety), la ville ou la présentation, sans tenir compte des accents ; un nom proche est aussi retenu. Absent : pas de filtre texte.'
+        example: Lyon
         in: query
         name: q
         required: false
@@ -9614,7 +10029,7 @@ paths:
         required: false
         schema:
           type: string
-      - description: Latitude du point de recherche en degrés, de -90 à 90 ; va avec lng. Ne rend que les fiches dont la position est renseignée, dans radiusKm, avec distanceKm.
+      - description: 'Latitude du point de recherche en degrés, de -90 à 90 ; va avec lng. Ne rend que les fiches dont la position est renseignée, dans radiusKm, avec distanceKm. En V1 aucune fiche n''a encore de position : un filtre lat/lng ne renvoie aucun résultat.'
         example: 45.76
         in: query
         name: lat
@@ -9711,7 +10126,7 @@ paths:
           description: Page de résultats avec facettes.
           headers:
             Cache-Control:
-              description: public, max-age=60.
+              description: max-age=60, public.
               schema:
                 type: string
               style: simple
@@ -9727,12 +10142,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Recherche les praticiens publiés de l'annuaire
       tags:
       - Annuaire public
   /api/public/directory/practitioners/{slug}:
     get:
-      description: 'Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). Ne rend que les profils publiés. Téléphone, e-mail et adresse n''apparaissent que si le praticien a coché l''interrupteur correspondant, le numéro professionnel que s''il l''autorise ; les champs masqués sont null. 200 avec Cache-Control: public, max-age=60.'
+      description: 'Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). Ne rend que les profils publiés. Téléphone, e-mail et adresse n''apparaissent que si le praticien a coché l''interrupteur correspondant, le numéro professionnel que s''il l''autorise ; les champs masqués sont null. 200 avec Cache-Control: max-age=60, public.'
       operationId: getPublicPractitionerProfile
       parameters:
       - description: Adresse publique (slug) du praticien, rendue par la recherche.
@@ -9751,7 +10172,7 @@ paths:
           description: Fiche publique du praticien.
           headers:
             Cache-Control:
-              description: public, max-age=60.
+              description: max-age=60, public.
               schema:
                 type: string
               style: simple
@@ -9767,6 +10188,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Rend la fiche publique d'un praticien publié
       tags:
       - Annuaire public
@@ -9817,10 +10244,10 @@ paths:
           description: 'RATE_LIMITED : plus de 5 envois par heure depuis cette adresse IP ; en-tête Retry-After et champ retryAfterSeconds en secondes.'
           headers:
             Retry-After:
-              description: Secondes à attendre avant un nouvel envoi.
+              description: Secondes avant nouvel essai.
               schema:
+                format: int32
                 type: integer
-              style: simple
       summary: Envoie un message au praticien (relayé par e-mail, non rattaché à un dossier)
       tags:
       - Contact public
@@ -9849,7 +10276,7 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/EntryDto'
-          description: Séance clôturée, version 2 avec compte rendu.
+          description: 'Séance clôturée : nouvelle version portant durée, fin et compte rendu.'
         '400':
           content:
             application/problem+json:
@@ -9892,6 +10319,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Clôture une séance ouverte en figeant durée, fin et compte rendu
       tags:
       - Séances
@@ -9926,6 +10359,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste les tags actifs du praticien
       tags:
       - Tags
@@ -9975,6 +10414,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Crée un tag pour le praticien
       tags:
       - Tags
@@ -10040,6 +10485,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Renomme un tag du praticien
       tags:
       - Tags
@@ -10099,6 +10550,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Fusionne un tag dans un autre
       tags:
       - Tags
@@ -10131,6 +10588,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste les valeurs admises pour remplir le profil d'annuaire
       tags:
       - Vocabulaire de l'annuaire
@@ -10165,6 +10628,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste les émotions utilisables par le praticien
       tags:
       - Vocabulaire
@@ -10199,6 +10668,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste les types d'entrées cliniques
       tags:
       - Vocabulaire
@@ -10233,6 +10708,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
       summary: Liste les types de liens et leur matrice source/cible
       tags:
       - Vocabulaire

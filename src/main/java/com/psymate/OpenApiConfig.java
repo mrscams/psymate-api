@@ -3,6 +3,7 @@ package com.psymate;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
@@ -96,45 +97,54 @@ class OpenApiConfig {
       la seule référence nécessaire pour écrire un client : chaque opération décrit qui peut \
       l'appeler, ce qu'elle attend, ce qu'elle renvoie et chaque erreur à gérer.
 
-      **Authentification.** Session serveur portée par un cookie HttpOnly, SameSite=Lax, posé par \
-      `POST /api/auth/login` (12 h, 30 j avec rememberMe) ; aucun jeton à envoyer. Sans session \
-      valide, toute route hors `/api/auth/*` et `/api/public/**` répond 401 UNAUTHENTICATED. Un \
-      compte dont l'e-mail n'est pas confirmé reçoit 403 EMAIL_NOT_CONFIRMED hors `/api/auth/*`. \
-      Les routes `/api/admin/**` exigent le rôle admin (403 ADMIN_ROLE_REQUIRED) et la double \
-      authentification active (403 TWO_FACTOR_REQUIRED). Un compte suspendu n'a pas de session : \
-      `POST /api/me/appeal` et `/api/me/export` l'identifient par `{email, password, otp?}` dans le \
-      corps (202 `{otpRequired: true}` quand le code 2FA manque).
+      **Authentification.** Session serveur portée par un cookie HttpOnly, Secure, SameSite=Lax, \
+      posé par `POST /api/auth/login` (expire après 12 h d'inactivité, 30 j avec rememberMe) ; \
+      aucun jeton à envoyer. Sans session valide, toute route répond 401 UNAUTHENTICATED, sauf les \
+      routes publiques : inscription, confirmation, renvoi et changement d'e-mail, connexion, \
+      changement et réinitialisation du mot de passe, déconnexion, `POST /api/me/appeal`, \
+      `/api/me/export*` et `/api/public/**`. Un compte dont l'e-mail n'est pas confirmé reçoit 403 \
+      EMAIL_NOT_CONFIRMED hors `/api/auth/*`. Les routes `/api/admin/**` exigent le rôle admin (403 \
+      ADMIN_ROLE_REQUIRED) et la double authentification active (403 TWO_FACTOR_REQUIRED). Un \
+      compte suspendu n'a pas de session : `POST /api/me/appeal` et `/api/me/export` l'identifient \
+      par `{email, password, otp?}` dans le corps (202 `{otpRequired: true}` quand le code 2FA \
+      manque).
 
       **Erreurs.** Toujours `application/problem+json` (RFC 9457), schéma `ProblemDetail` : `type`, \
       `title`, `status`, `detail`, `instance`, plus `code` (identifiant stable, à tester en \
-      priorité) et, pour les 422, `errors[]` `{field, code, message}` par champ. Codes transverses \
-      : 400 MALFORMED_JSON (JSON illisible ; les modules clinical, linking et admin répondent \
-      MALFORMED_REQUEST pour un corps absent ou illisible) ou BAD_REQUEST (paramètre manquant ou mal typé, \
-      `errors[]` avec INVALID_FIELD), 401 UNAUTHENTICATED, 403 FORBIDDEN / EMAIL_NOT_CONFIRMED / \
-      ADMIN_ROLE_REQUIRED / TWO_FACTOR_REQUIRED, 404 NOT_FOUND (route inconnue), 405 \
-      METHOD_NOT_ALLOWED, 406 NOT_ACCEPTABLE, 413 UPLOAD_TOO_LARGE (plafond multipart global), 415 \
-      UNSUPPORTED_MEDIA_TYPE, 422 VALIDATION_FAILED, 429 RATE_LIMITED, 500 INTERNAL_ERROR (détail \
-      générique, jamais le message interne). Les codes métier (PATIENT_ARCHIVED, LINK_EXISTS, \
-      SESSION_REQUIRED…) sont listés sur chaque opération. Les textes `title`, `detail` et \
-      `message` suivent `Accept-Language` (français par défaut, anglais).
+      priorité) et, pour les 422 et les 400 de paramètre, `errors[]` `{field, code?, message}` par \
+      champ. Codes transverses : 400 MALFORMED_JSON (JSON illisible) ou BAD_REQUEST (paramètre \
+      manquant ou mal typé, `errors[]` avec INVALID_FIELD) ; certains modules ont leur propre code \
+      400, indiqué sur chaque opération (MALFORMED_REQUEST pour clinical, linking et admin ; \
+      INVALID_BODY et INVALID_PARAMETERS pour directory ; SEARCH_BAD_REQUEST ; \
+      OVERVIEW_BAD_REQUEST) ; 401 UNAUTHENTICATED ; 403 FORBIDDEN / EMAIL_NOT_CONFIRMED / \
+      ADMIN_ROLE_REQUIRED / TWO_FACTOR_REQUIRED ; 404 NOT_FOUND (route inconnue) ; 405 \
+      METHOD_NOT_ALLOWED ; 406 NOT_ACCEPTABLE ; 413 UPLOAD_TOO_LARGE (plafond multipart global) ; \
+      415 UNSUPPORTED_MEDIA_TYPE ; 422 VALIDATION_FAILED ; 429 RATE_LIMITED ; 500 INTERNAL_ERROR \
+      (détail générique, jamais le message interne). Les codes métier (PATIENT_ARCHIVED, \
+      LINK_EXISTS, SESSION_REQUIRED…) sont listés sur chaque opération. Les textes `detail` et \
+      `message` sont en français par défaut et en anglais avec `Accept-Language: en` pour la plupart \
+      des erreurs (quelques messages métier restent en français) ; `title` n'est pas fiable pour \
+      l'affichage : tester `code`.
 
-      **Limites de débit** (G Q24) : 600 requêtes/min par session sur `/api/**`, 60/min par IP \
-      sur `/api/public/**`, 5/h par IP sur l'envoi de contact. Au-delà : 429 RATE_LIMITED avec \
-      l'en-tête `Retry-After` (secondes) et le champ `retryAfterSeconds` ; les 423 d'authentification \
-      (verrou après échecs) portent les mêmes.
+      **Limites de débit** : 600 requêtes/min par session sur `/api/**` (les requêtes sans session \
+      ne sont pas comptées), 60/min par IP sur `/api/public/**`, 5/h par IP sur l'envoi de contact. \
+      Au-delà : 429 RATE_LIMITED avec l'en-tête `Retry-After` (secondes) et le champ \
+      `retryAfterSeconds` ; les 423 d'authentification (verrou après échecs) portent les mêmes.
 
       **Formats.** JSON camelCase ; dates-heures en UTC ISO 8601 (`2026-03-14T09:30:00Z`), dates \
-      civiles `AAAA-MM-JJ` ; identifiants UUID. Les listes sont paginées par curseur opaque \
-      (`cursor`, `limit`, réponse `{items[], nextCursor}`, `nextCursor` null en fin), sauf \
-      l'annuaire public et la recherche (`page`, 20 résultats par page). Les champs en lecture \
-      seule (`authorType`, `submissionId`) sont refusés en écriture (422 UNKNOWN_FIELD). Rien n'est \
-      supprimé physiquement : archivage et versions. Les fichiers sortent avec un \
-      `Content-Disposition` (`attachment` pour les exports, `inline` pour les justificatifs) ; les \
-      réponses publiques portent un `Cache-Control` explicite.
+      civiles `AAAA-MM-JJ` ; identifiants UUID. Les grandes listes (patients, chronologie, files \
+      d'administration) sont paginées par curseur opaque (`cursor`, `limit`, réponse `{items[], \
+      nextCursor}`, `nextCursor` null en fin) ; les listes courtes (versions, vocabulaires…) sont \
+      renvoyées en entier ; l'annuaire public et la recherche utilisent `page` (20 résultats par \
+      page). Voir chaque opération. Les champs en lecture seule (`authorType`, `submissionId`) sont \
+      refusés en écriture (422 UNKNOWN_FIELD). Rien n'est supprimé physiquement : archivage et \
+      versions. Les fichiers sortent avec un `Content-Disposition` (`attachment` pour les exports, \
+      `inline` pour les justificatifs) ; les réponses publiques portent un `Cache-Control` \
+      explicite.
 
-      **Version du contrat** : `info.version` suit le plan D6-A4, un tag `contract-vX.Y.Z` est posé \
-      à chaque bump. Les tags regroupent les opérations par contrôleur, dans l'ordre d'usage : \
-      identité, dossier clinique, exploration, annuaire, administration.""";
+      **Version du contrat** : `info.version` est incrémentée à chaque changement du contrat et un \
+      tag `contract-vX.Y.Z` est posé. Les tags regroupent les opérations par contrôleur, dans \
+      l'ordre d'usage : identité, dossier clinique, exploration, annuaire, administration.""";
 
   @Bean
   OpenAPI psymateOpenApi(@Value("${app.contract.version}") String contractVersion) {
@@ -188,11 +198,22 @@ class OpenApiConfig {
             "ADMIN_ROLE_REQUIRED : compte sans rôle admin ; TWO_FACTOR_REQUIRED : double"
                 + " authentification non activée sur le compte admin.");
       }
-      merge(
-          responses,
-          "429",
-          "RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ"
-              + " retryAfterSeconds, en secondes).");
+      // Le filtre « session » ne compte pas les requêtes sans session : seules les routes
+      // authentifiées et l'annuaire public (règle par IP) peuvent répondre 429.
+      if (!isPublic || path.startsWith("/api/public/")) {
+        merge(
+            responses,
+            "429",
+            "RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ"
+                + " retryAfterSeconds, en secondes).");
+        responses
+            .get("429")
+            .addHeaderObject(
+                "Retry-After",
+                new Header()
+                    .description("Secondes avant nouvel essai.")
+                    .schema(new IntegerSchema()));
+      }
     }
   }
 
@@ -258,8 +279,8 @@ class OpenApiConfig {
             .example("La valeur est obligatoire."));
     return new ObjectSchema()
         .description(
-            "Une erreur de champ dans errors[] d'une réponse 422 VALIDATION_FAILED (ou 400"
-                + " BAD_REQUEST / INVALID_PARAMETERS pour un paramètre de requête).")
+            "Une erreur de champ dans errors[] (422, 400 de paramètre, 409 ENTRY_ARCHIVED des"
+                + " liens).")
         .properties(props)
         .required(List.of("field", "message"));
   }
@@ -277,8 +298,8 @@ class OpenApiConfig {
         "title",
         new StringSchema()
             .description(
-                "Titre court du problème, libellé HTTP ou titre métier, dans la langue"
-                    + " d'Accept-Language.")
+                "Titre court : libellé HTTP en anglais (Not Found) ou titre métier ; ne pas"
+                    + " l'afficher, utiliser code.")
             .example("Unprocessable Content"));
     props.put(
         "status",
@@ -311,8 +332,10 @@ class OpenApiConfig {
         new ArraySchema()
             .items(new Schema<>().$ref("#/components/schemas/" + FIELD_PROBLEM_SCHEMA))
             .description(
-                "Erreurs par champ ; présent sur les 422 VALIDATION_FAILED et les 400 BAD_REQUEST"
-                    + " de paramètre, absent sinon."));
+                "Erreurs par champ ; présentes sur les 422 (VALIDATION_FAILED ou code métier de"
+                    + " champ comme SESSION_REQUIRED), sur les 400 de paramètre (BAD_REQUEST,"
+                    + " INVALID_PARAMETERS, SEARCH_BAD_REQUEST, OVERVIEW_BAD_REQUEST) et sur le 409"
+                    + " ENTRY_ARCHIVED des liens ; absentes sinon."));
     props.put(
         "retryAfterSeconds",
         new IntegerSchema()
@@ -329,21 +352,32 @@ class OpenApiConfig {
         "allowedLinkTypes",
         new ArraySchema()
             .items(
-                new ObjectSchema()
-                    .description("Un type de lien autorisé.")
-                    .addProperty(
-                        "code",
-                        new StringSchema()
-                            .description("Code du type de lien.")
-                            .example("medication_of"))
-                    .addProperty(
-                        "label",
-                        new StringSchema()
-                            .description("Libellé du type de lien.")
-                            .example("Médicament de")))
+                new Schema<>()
+                    .description(
+                        "Un type de lien autorisé : objet {code, label} sur les routes de liens,"
+                            + " simple code (chaîne) sur la création d'entrée.")
+                    .oneOf(
+                        List.of(
+                            new StringSchema()
+                                .description("Code du type de lien.")
+                                .example("treats"),
+                            new ObjectSchema()
+                                .description("Type de lien avec son libellé.")
+                                .addProperty(
+                                    "code",
+                                    new StringSchema()
+                                        .description("Code du type de lien.")
+                                        .example("treats"))
+                                .addProperty(
+                                    "label",
+                                    new StringSchema()
+                                        .description("Libellé du type de lien.")
+                                        .example("traite")))))
             .description(
-                "Types de lien autorisés entre les deux entrées, objets {code, label} ; présent"
-                    + " sur 422 LINK_TYPE_NOT_ALLOWED."));
+                "Types de lien autorisés pour ce couple d'entrées ; présent quand le code de champ"
+                    + " est LINK_TYPE_NOT_ALLOWED. Objets {code, label} sur les routes de liens"
+                    + " (POST /api/entries/{id}/links, PATCH /api/links/{id}) ; simples codes"
+                    + " (chaînes) dans le 422 de POST /api/patients/{id}/entries."));
     props.put(
         "usedByPublishedProfiles",
         new IntegerSchema()
@@ -379,7 +413,7 @@ class OpenApiConfig {
                 + " missing, pendingDocuments, usedByPublishedProfiles, suggestedEmotion)"
                 + " seulement pour les codes indiqués.")
         .properties(props)
-        .required(List.of("type", "title", "status", "code"));
+        .required(List.of("type", "title", "status", "detail", "code"));
   }
 
   private static void orderTags(OpenAPI openApi) {

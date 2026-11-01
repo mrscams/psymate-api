@@ -46,9 +46,7 @@ class DirectoryVocabularyAdminController {
   @GetMapping
   @Operation(
       operationId = "listAdminDirectoryVocabulary",
-      summary =
-          "Spécialités et publics de l'annuaire, actifs ou non, avec le nombre de fiches publiées"
-              + " qui les utilisent",
+      summary = "Liste les spécialités et publics de l'annuaire, actifs ou non",
       description =
           """
           Admin avec double authentification active. Rend toutes les entrées, actives ou non, des \
@@ -82,7 +80,7 @@ class DirectoryVocabularyAdminController {
   @PostMapping
   @Operation(
       operationId = "createAdminDirectoryVocabulary",
-      summary = "Ajoute une spécialité ou un public (409 VOCABULARY_EXISTS si le code existe)",
+      summary = "Ajoute une spécialité ou un public à l'annuaire",
       description =
           """
           Admin avec double authentification active. Crée une entrée active ; le code ne change \
@@ -125,9 +123,7 @@ class DirectoryVocabularyAdminController {
   @PatchMapping("/{kind}/{code}")
   @Operation(
       operationId = "updateAdminDirectoryVocabulary",
-      summary =
-          "Modifie libellés, rang ou activation (409 VOCABULARY_IN_USE pour désactiver un code"
-              + " utilisé par une fiche publiée)",
+      summary = "Modifie les libellés, le rang ou l'activation d'une entrée du vocabulaire",
       description =
           """
           Admin avec double authentification active. Modification partielle : un champ absent reste \

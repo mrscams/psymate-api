@@ -124,6 +124,13 @@ class GraphController {
               description =
                   "Nombre de sauts depuis la racine, de 1 à 3, défaut 2 (422 OUT_OF_RANGE"
                       + " sinon, même sans root) ; ignoré pour le voisinage quand root est absent.",
+              schema =
+                  @Schema(
+                      type = "integer",
+                      format = "int32",
+                      minimum = "1",
+                      maximum = "3",
+                      defaultValue = "2"),
               example = "2")
           @RequestParam(defaultValue = "" + DEFAULT_DEPTH)
           int depth,

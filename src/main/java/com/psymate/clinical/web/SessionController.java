@@ -99,8 +99,8 @@ class SessionController {
     @ApiResponse(
         responseCode = "422",
         description =
-            "VALIDATION_FAILED avec errors[] : modality REQUIRED (absente ou vide) ou INVALID_VALUE"
-                + " (hors in_person, video, phone, email) ; UNKNOWN_FIELD si authorType ou"
+            "VALIDATION_FAILED avec errors[] : modality REQUIRED (absente) ou INVALID_VALUE (vide"
+                + " ou hors in_person, video, phone, email) ; UNKNOWN_FIELD si authorType ou"
                 + " submissionId est envoyé.",
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class)))
@@ -129,7 +129,7 @@ class SessionController {
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
-        description = "Séance clôturée, version 2 avec compte rendu."),
+        description = "Séance clôturée : nouvelle version portant durée, fin et compte rendu."),
     @ApiResponse(
         responseCode = "400",
         description =

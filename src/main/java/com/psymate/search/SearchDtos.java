@@ -83,7 +83,9 @@ final class SearchDtos {
               example = "exact")
           String occurredPrecision,
       @Schema(
-              description = "Identifiant de la séance de rattachement.",
+              description =
+                  "Identifiant de la séance de rattachement ; null pour une entrée de type session"
+                      + " (une séance n'est rattachée à aucune séance).",
               example = "9b4c0c7e-3c1a-4f2e-9d6a-2a4d6f8b1c3e")
           UUID sessionId,
       @Schema(

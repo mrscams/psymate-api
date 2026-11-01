@@ -67,7 +67,7 @@ final class LinkDtos {
               description =
                   "Code du nouveau type de lien, parmi ceux de GET /api/vocabulary/link-types ;"
                       + " il doit être autorisé pour le couple de types des deux entrées et"
-                      + " différent du type actuel.",
+                      + " différent du type actuel (sinon 409 LINK_EXISTS).",
               example = "worsens")
           @NotBlank
           String linkType) {}

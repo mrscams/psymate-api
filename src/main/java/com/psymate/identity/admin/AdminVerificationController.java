@@ -86,6 +86,10 @@ class AdminVerificationController {
               description =
                   "Statut des dossiers à lister : under_review (défaut) ou needs_more. Autre"
                       + " valeur : 422 INVALID_STATUS.",
+              schema =
+                  @Schema(
+                      allowableValues = {"under_review", "needs_more"},
+                      defaultValue = "under_review"),
               example = "under_review")
           @RequestParam(required = false)
           String status,
@@ -93,6 +97,10 @@ class AdminVerificationController {
               description =
                   "Ordre de tri par date de soumission : oldest (défaut, du plus ancien au plus"
                       + " récent) ou newest. Autre valeur : 422 INVALID_SORT.",
+              schema =
+                  @Schema(
+                      allowableValues = {"oldest", "newest"},
+                      defaultValue = "oldest"),
               example = "oldest")
           @RequestParam(required = false)
           String sort,
@@ -106,6 +114,7 @@ class AdminVerificationController {
               description =
                   "Nombre maximal de dossiers par page : 50 par défaut, ramené dans l'intervalle"
                       + " 1 à 200 sans erreur.",
+              schema = @Schema(type = "integer", format = "int32", defaultValue = "50"),
               example = "50")
           @RequestParam(required = false)
           Integer limit) {

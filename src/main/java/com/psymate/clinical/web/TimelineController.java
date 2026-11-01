@@ -71,8 +71,9 @@ class TimelineController {
           inclus (draftsOnly=true pour eux seuls) ; entrées privées exclues sauf \
           includePrivate=true. Dans une même liste de filtres (types, emotions, tags), un élément \
           doit correspondre à l'une des valeurs ; les trois filtres se cumulent. Les facettes \
-          portent sur toute la fenêtre filtrée et ongoingSituations liste les situations en cours \
-          qui chevauchent la fenêtre. Pagination par curseur opaque : renvoyer nextCursor dans \
+          portent sur toute la fenêtre filtrée ; ongoingSituations liste les situations, terminées \
+          ou non, dont la plage chevauche la fenêtre (ongoing = true pour celles sans fin ; seuls \
+          les filtres de brouillon et de visibilité s'y appliquent). Curseur opaque : renvoyer nextCursor dans \
           cursor, nextCursor null sur la dernière page. limit : 1 à 200, 50 par défaut.\
           """)
   @ApiResponses({
@@ -130,9 +131,10 @@ class TimelineController {
           List<String> types,
       @Parameter(
               description =
-                  "Codes d'émotion à garder (ressentis seulement). Valeurs séparées par des"
-                      + " virgules ou paramètre répété. Absent : sans filtre.",
-              example = "anxiete,tristesse")
+                  "Codes d'émotion à garder : seuls les ressentis de ces émotions sont renvoyés,"
+                      + " les autres types sont exclus tant que ce filtre est donné. Valeurs"
+                      + " séparées par des virgules ou paramètre répété. Absent : sans filtre.",
+              example = "anxiety,sadness")
           @RequestParam(required = false)
           List<String> emotions,
       @Parameter(
@@ -161,6 +163,13 @@ class TimelineController {
           String cursor,
       @Parameter(
               description = "Nombre maximal d'éléments par page, de 1 à 200. Défaut : 50.",
+              schema =
+                  @Schema(
+                      type = "integer",
+                      format = "int32",
+                      minimum = "1",
+                      maximum = "200",
+                      defaultValue = "50"),
               example = "50")
           @RequestParam(defaultValue = "50")
           int limit) {

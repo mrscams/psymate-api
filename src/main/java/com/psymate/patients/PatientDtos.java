@@ -154,6 +154,7 @@ final class PatientDtos {
                   "Nature du drapeau : watch = à surveiller, risk = risque, shared_care = suivi"
                       + " partagé. Toute autre valeur est refusée (422 VALIDATION_FAILED).",
               allowableValues = {"watch", "risk", "shared_care"},
+              requiredMode = Schema.RequiredMode.REQUIRED,
               example = "risk")
           String kind,
       @Schema(

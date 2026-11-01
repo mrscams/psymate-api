@@ -163,7 +163,7 @@ final class AdminDtos {
               description =
                   "Nature de l'acte : approved, needs_more, rejected (vérification du dossier),"
                       + " suspended, reactivated (gestion du compte), appeal_accepted,"
-                      + " appeal_rejected (recours).",
+                      + " appeal_rejected (recours), report_resolved (réservé, jamais produit en V1).",
               allowableValues = {
                 "approved",
                 "needs_more",
@@ -171,7 +171,8 @@ final class AdminDtos {
                 "suspended",
                 "reactivated",
                 "appeal_accepted",
-                "appeal_rejected"
+                "appeal_rejected",
+                "report_resolved"
               })
           String kind,
       @Schema(
@@ -293,7 +294,8 @@ final class AdminDtos {
               description =
                   "Nouvel état du justificatif : pending (à examiner), conform ou non_conform ;"
                       + " toute autre valeur donne 422 INVALID_REVIEWED_STATUS.",
-              allowableValues = {"pending", "conform", "non_conform"})
+              allowableValues = {"pending", "conform", "non_conform"},
+              requiredMode = Schema.RequiredMode.REQUIRED)
           String reviewedStatus) {}
 
   /** Champs absents : checklist = {}, force = false. */
@@ -303,7 +305,8 @@ final class AdminDtos {
               description =
                   "Issue : approved (dossier validé), needs_more (complément demandé) ou rejected"
                       + " (dossier refusé).",
-              allowableValues = {"approved", "needs_more", "rejected"})
+              allowableValues = {"approved", "needs_more", "rejected"},
+              requiredMode = Schema.RequiredMode.REQUIRED)
           String kind,
       @Schema(
               description =

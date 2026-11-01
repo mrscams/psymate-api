@@ -198,7 +198,9 @@ class PatientController {
           """
           Session praticien propriétaire du patient, patient actif (409 PATIENT_ARCHIVED sinon). \
           Mise à jour partielle : seules les clés présentes du corps sont modifiées ; une valeur \
-          null ou vide efface un champ texte. context et followUp sont fusionnés clé à clé (une clé \
+          null ou vide efface un champ texte (sauf displayName, obligatoire : 422) ; birthDate \
+          s'efface avec null (une chaîne vide est refusée en 422). context et followUp sont \
+          fusionnés clé à clé (une clé \
           à null est retirée ; l'objet entier à null le vide). Chaque appel réussi incrémente \
           currentVersion et archive un instantané (GET /versions) ; reason, facultatif, est le \
           motif conservé dans la version.""")
@@ -333,10 +335,10 @@ class PatientController {
       summary = "Restaure un patient archivé",
       description =
           """
-          Session praticien propriétaire du patient. Lève l'archivage ; le patient réapparaît dans \
-          la liste par défaut et accepte de nouveau les écritures. Elle est \
-          acceptée sur un patient archivé, contrairement aux autres écritures. Idempotent : sur un patient actif, renvoie la fiche inchangée en 200. \
-          Aucun corps de requête.""")
+          Session praticien propriétaire du patient. Lève l'archivage : le patient réapparaît dans \
+          la liste par défaut et accepte de nouveau les écritures. Contrairement aux autres \
+          écritures, la restauration est acceptée sur un patient archivé. Idempotent : sur un \
+          patient actif, renvoie la fiche inchangée en 200. Aucun corps de requête.""")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Patient restauré ; corps = fiche complète."),
     @ApiResponse(

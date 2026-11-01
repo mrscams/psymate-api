@@ -75,7 +75,7 @@ class TwoFactorController {
           Session praticien. Deuxième étape d'activation, après POST /api/me/2fa/enable : valide \
           le code TOTP à 6 chiffres, active la 2FA et renvoie 10 codes de secours en clair, montrés \
           une seule fois. Ce code ne pourra pas être rejoué au login dans la même fenêtre de 30 s. \
-          5 codes faux d'affilée verrouillent les essais 15 min (423).\
+          5 codes faux en 15 minutes verrouillent les essais 15 min (423).\
           """)
   @ApiResponses({
     @ApiResponse(

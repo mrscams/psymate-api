@@ -85,6 +85,18 @@ class AdminPractitionerController {
                   "Statut de vérification : email_pending, docs_pending, under_review, approved,"
                       + " needs_more, rejected, suspended ou closed. Absent : tous les statuts."
                       + " Autre valeur : 422 INVALID_STATUS.",
+              schema =
+                  @Schema(
+                      allowableValues = {
+                        "email_pending",
+                        "docs_pending",
+                        "under_review",
+                        "approved",
+                        "needs_more",
+                        "rejected",
+                        "suspended",
+                        "closed"
+                      }),
               example = "suspended")
           @RequestParam(required = false)
           String status,
@@ -92,6 +104,7 @@ class AdminPractitionerController {
               description =
                   "Rôle du compte : practitioner ou admin. Absent : tous les rôles. Autre valeur :"
                       + " 422 INVALID_ROLE.",
+              schema = @Schema(allowableValues = {"practitioner", "admin"}),
               example = "practitioner")
           @RequestParam(required = false)
           String role,
@@ -99,6 +112,7 @@ class AdminPractitionerController {
               description =
                   "Profession : psychologist, psychiatrist ou coach. Absent : toutes. Autre"
                       + " valeur : 422 INVALID_PROFESSION.",
+              schema = @Schema(allowableValues = {"psychologist", "psychiatrist", "coach"}),
               example = "psychologist")
           @RequestParam(required = false)
           String profession,
@@ -112,6 +126,7 @@ class AdminPractitionerController {
               description =
                   "Nombre maximal de comptes par page : 50 par défaut, ramené dans l'intervalle"
                       + " 1 à 200 sans erreur.",
+              schema = @Schema(type = "integer", format = "int32", defaultValue = "50"),
               example = "50")
           @RequestParam(required = false)
           Integer limit) {

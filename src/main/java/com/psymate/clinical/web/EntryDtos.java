@@ -62,11 +62,13 @@ final class EntryDtos {
   record EntryFeelingDto(
       @Schema(
               description = "Code de l'émotion, issu du catalogue de vocabulaire du praticien.",
-              example = "anxiete")
+              example = "anxiety")
           String emotionCode,
       @Schema(
-              description = "Famille de l'émotion d'après le catalogue. Null si elle est inconnue.",
-              example = "peur")
+              description =
+                  "Famille de l'émotion d'après le catalogue : joy, trust, fear, surprise, sadness,"
+                      + " disgust, anger ou anticipation. Null si elle est inconnue.",
+              example = "fear")
           String family,
       @Schema(description = "Intensité du ressenti, de 0 à 10.", minimum = "0", maximum = "10")
           Integer intensity,
@@ -308,7 +310,7 @@ final class EntryDtos {
               description =
                   "Code d'une émotion active du catalogue du praticien. Inconnu : UNKNOWN_EMOTION"
                       + " sur feeling.emotionCode.",
-              example = "anxiete")
+              example = "anxiety")
           String emotionCode,
       @Schema(
               description = "Intensité du ressenti, de 0 à 10 (OUT_OF_RANGE sinon).",

@@ -66,11 +66,13 @@ class SearchController {
             "SEARCH_BAD_REQUEST : errors[] {field, code, message}, toutes les erreurs ensemble ;"
                 + " codes par champ : q = TOO_LONG (plus de 200 caractères) ou INVALID_DATE (date"
                 + " invalide dans avant: ou après:), page = INVALID_PAGE (hors 1..500), from et"
-                + " to = INVALID_DATE, to = RANGE_INVERTED (début non antérieur à la fin),"
+                + " to = INVALID_DATE, to = RANGE_INVERTED (to antérieur à from),"
                 + " types = UNKNOWN_TYPE, et INVALID_FORMAT sur le paramètre concerné pour une"
                 + " valeur non convertible (page non numérique, sessionId qui n'est pas un UUID,"
-                + " includeArchived non booléen). Le contrôle de propriété passe avant : un"
-                + " patient d'un autre praticien reste en 403.",
+                + " includeArchived non booléen, id qui n'est pas un UUID : field = id). Le"
+                + " contrôle de propriété passe avant les contrôles de q, page, from, to et types"
+                + " (patient d'un autre praticien : 403), mais pas avant INVALID_FORMAT, détecté"
+                + " à la conversion des paramètres.",
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -142,8 +144,8 @@ class SearchController {
       @Parameter(
               description =
                   "Fin de période sur la date de l'entrée, incluse : date AAAA-MM-JJ (jour entier"
-                      + " compris) ou instant ISO 8601 avec fuseau. Doit rester postérieure à from"
-                      + " (une même journée est admise) : 400 RANGE_INVERTED sinon.",
+                      + " compris) ou instant ISO 8601 avec fuseau. Ne doit pas être antérieure à"
+                      + " from (la même journée est admise) : 400 RANGE_INVERTED sinon.",
               example = "2026-03-31")
           @RequestParam(required = false)
           String to,

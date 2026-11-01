@@ -135,7 +135,7 @@ class AuthController {
   @PostMapping("/signup")
   @Deprecated
   @Operation(
-      summary = "Alias déprécié de POST /api/auth/register",
+      summary = "Alias déprécié de l'inscription d'un praticien",
       description =
           """
           Même contrat, mêmes codes et mêmes effets que POST /api/auth/register ; utiliser \
@@ -381,9 +381,10 @@ class AuthController {
         responseCode = "403",
         description =
             "EMAIL_NOT_CONFIRMED : adresse non confirmée ; ACCOUNT_SUSPENDED : compte refusé"
-                + " (rejected), suspendu (suspended) ou clos (closed), sessions révoquées (recours"
-                + " via POST /api/me/appeal) ; PASSWORD_CHANGE_REQUIRED : mot de passe à usage"
-                + " unique à remplacer d'abord via POST /api/auth/password/change.",
+                + " (rejected), suspendu (suspended) ou clos (closed), sessions révoquées (un"
+                + " recours via POST /api/me/appeal n'est possible que pour un compte refusé ou"
+                + " suspendu, pas pour un compte clos) ; PASSWORD_CHANGE_REQUIRED : mot de passe"
+                + " à usage unique à remplacer d'abord via POST /api/auth/password/change.",
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -440,8 +441,11 @@ class AuthController {
           Public, sans session : email + currentPassword prouvent l'identité (+ otp si la 2FA est \
           active ; s'il manque, 202 {otpRequired: true}). Sert notamment à remplacer le mot de \
           passe à usage unique d'un compte de bootstrap (403 PASSWORD_CHANGE_REQUIRED au login). \
-          Le nouveau mot de passe est contrôlé avant les identifiants (un 422 ne consomme ni code \
-          2FA ni essai). Succès : toutes les sessions du compte sont révoquées, aucune n'est \
+          Les contrôles du nouveau mot de passe qui ne dépendent que de la requête (longueur, casse, \
+          mots de passe courants, e-mail, identique à l'actuel) passent avant les identifiants : \
+          ces 422 ne consomment ni code 2FA ni essai ; le contrôle du prénom et du nom \
+          (PASSWORD_CONTAINS_PERSONAL_DATA) n'a lieu qu'après, le code 2FA peut alors être \
+          consommé. Succès : toutes les sessions du compte sont révoquées, aucune n'est \
           ouverte (se reconnecter via POST /api/auth/login). Mêmes refus 403 et même verrou 423 \
           que le login (5 échecs, 15 min).\
           """)

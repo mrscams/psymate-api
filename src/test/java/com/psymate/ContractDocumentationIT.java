@@ -102,7 +102,9 @@ class ContractDocumentationIT {
           responses.forEach(
               (status, r) -> {
                 Map<String, Object> response = map(r);
-                if (text(response.get("description")).isBlank()) {
+                String description = text(response.get("description"));
+                // « OK » est la description par défaut de springdoc : réponse non annotée.
+                if (description.isBlank() || description.equals("OK")) {
                   problems.add(id + " : réponse " + status + " sans description");
                 }
                 if (status.startsWith("4") || status.startsWith("5")) {

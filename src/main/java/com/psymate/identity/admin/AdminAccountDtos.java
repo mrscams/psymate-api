@@ -224,7 +224,8 @@ final class AdminAccountDtos {
                       + " suspension). Erreurs 422 :"
                       + " REQUIRED, TOO_SHORT, TOO_LONG.",
               minLength = 20,
-              maxLength = 4000)
+              maxLength = 4000,
+              requiredMode = Schema.RequiredMode.REQUIRED)
           String reason) {}
 
   @Schema(description = "Résultat d'une suspension de compte.")
@@ -357,9 +358,13 @@ final class AdminAccountDtos {
   record AppealRequest(
       @Schema(
               description = "Adresse e-mail du compte (insensible à la casse).",
+              requiredMode = Schema.RequiredMode.REQUIRED,
               example = "claire.martin@example.org")
           String email,
-      @Schema(description = "Mot de passe du compte.", accessMode = Schema.AccessMode.WRITE_ONLY)
+      @Schema(
+              description = "Mot de passe du compte.",
+              requiredMode = Schema.RequiredMode.REQUIRED,
+              accessMode = Schema.AccessMode.WRITE_ONLY)
           String password,
       @Schema(
               description =
@@ -374,7 +379,8 @@ final class AdminAccountDtos {
                   "Argumentaire du recours, de 20 à 4000 caractères après suppression des blancs"
                       + " de bord. Erreurs 422 : REQUIRED, TOO_SHORT, TOO_LONG.",
               minLength = 20,
-              maxLength = 4000)
+              maxLength = 4000,
+              requiredMode = Schema.RequiredMode.REQUIRED)
           String message) {}
 
   @Schema(description = "Recours enregistré.")
@@ -468,12 +474,14 @@ final class AdminAccountDtos {
               description =
                   "Issue : accepted (le compte est réactivé) ou dismissed (le compte reste"
                       + " inchangé). Autre valeur : 422 INVALID_OUTCOME.",
-              allowableValues = {"accepted", "dismissed"})
+              allowableValues = {"accepted", "dismissed"},
+              requiredMode = Schema.RequiredMode.REQUIRED)
           String outcome,
       @Schema(
               description =
                   "Réponse transmise au praticien par e-mail, obligatoire (422 REQUIRED), 4000"
                       + " caractères au plus (422 TOO_LONG).",
-              maxLength = 4000)
+              maxLength = 4000,
+              requiredMode = Schema.RequiredMode.REQUIRED)
           String messageToPractitioner) {}
 }

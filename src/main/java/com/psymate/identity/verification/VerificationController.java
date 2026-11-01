@@ -82,8 +82,10 @@ class VerificationController {
       summary = "Dépose un justificatif (PDF, JPEG ou PNG, 10 Mo au maximum)",
       description =
           """
-          Session praticien (compte confirmé), requête multipart/form-data : le fichier (champ \
-          file) et ses métadonnées. Autorisé seulement en docs_pending et needs_more ; 20 \
+          Session praticien (compte confirmé), requête multipart/form-data : le fichier dans le \
+          champ file ; type, title, issuer et year sont lus comme paramètres de requête ou champs \
+          du formulaire (équivalents pour le serveur) ; type, title et file sont obligatoires \
+          (422 sinon). Autorisé seulement en docs_pending et needs_more ; 20 \
           justificatifs actifs au maximum. Le format est reconnu d'après le contenu du fichier \
           (jamais l'extension) ; les images sont ré-encodées sans métadonnées (EXIF, GPS), les PDF \
           conservés tels quels. Le fichier est stocké chiffré. Limites : 10 Mo par fichier, image \
@@ -375,7 +377,7 @@ class VerificationController {
           Long exp,
       @Parameter(
               description = "Signature de l'URL, telle que renvoyée dans l'url de GET .../url.",
-              example = "ab12cd34")
+              example = "x7F2k9Qw0m5T3bYh8LrN1cVdE6aGsUoJpZiXtKyA4Hc")
           @RequestParam(required = false)
           String sig,
       HttpServletRequest request) {

@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T14:52:04.021Z",
+  "task": "M8-03",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Module vocabulary converti de JdbcClient a Spring Data JPA / Hibernate 7.4.13 (G Q32) : entites package-private Emotion, Tag, EmotionMerge (@DynamicUpdate), EntryType et LinkType (@Immutable, text[] via SqlTypes.ARRAY), 26 requetes en JPA, natives : fusions de tags a sous-requetes (entry_tag, patient_tag, usage_count), to_regclass, reecritures entry_feeling. for update -> @Lock(PESSIMISTIC_WRITE), undo sous verrou, 409 TAG_EXISTS / EMOTION_LABEL_EXISTS attrapes apres commit (TransactionTemplate). Facades vocabulary.api, controleurs, contrat 0.9.0 inchanges ; aucune migration ni dependance. verify vert : 359 unitaires, 864 IT. Revue : 0 bloquant, 3 points de tests appliques.",
+  "notes": "Tests ajoutes : VocabularyPersistenceIT (15 : 409 au commit prouves par transaction annexe non validee + pg_stat_activity, courses a 4 threads sur create/rename/merge/undo), VocabularyAppRoleIT (4, role psymate_app), EmotionTest (10), TagTest (5). Perdant d un undo concurrent : MERGE_ALREADY_UNDONE au lieu de MERGE_UNDO_EXPIRED (meme 409). make perf non relance.",
+  "next": "M8-04 directory (en cours en parallele), puis M8-05 identity, M8-06 clinical.export",
+  "pr": "https://github.com/mrscams/psymate-api/pull/45",
+  "branch": "worktree-M8-03",
+  "checkout": "M8-03"
+}

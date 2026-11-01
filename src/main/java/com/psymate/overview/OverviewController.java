@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,10 +26,13 @@ class OverviewController {
 
   private final OverviewService service;
   private final PatientOwnershipGuard guard;
+  private final OverviewMessages messages;
 
-  OverviewController(OverviewService service, PatientOwnershipGuard guard) {
+  OverviewController(
+      OverviewService service, PatientOwnershipGuard guard, OverviewMessages messages) {
     this.service = service;
     this.guard = guard;
+    this.messages = messages;
   }
 
   @GetMapping("/api/patients/{id}/overview")
@@ -44,7 +48,15 @@ class OverviewController {
               + " est recalculée et réécrite avant de répondre : la réponse n'est jamais"
               + " obsolète. recentActivity (10 dernières entrées non archivées) est toujours lu"
               + " en direct. Les entrées archivées sont exclues, les entrées privées du"
-              + " praticien incluses.")
+              + " praticien incluses. Ajouts (M4-06, additifs) : narrative (résumé « En bref »"
+              + " de 5 phrases au plus, chacune omise si ses données manquent, rédigé par"
+              + " règles, sans IA, plus un point d'attention issu"
+              + " des drapeaux ; composé dans la langue de Accept-Language, français par"
+              + " défaut), feelings (un point par ressenti réel de la fenêtre, une série par"
+              + " émotion, repères de médicament et jours de séance), sinceLastSession (entrées"
+              + " postérieures à la dernière séance clôturée, 20 au plus) et recentSessions (5"
+              + " dernières séances, la plus récente avec son compte rendu entier). Le client"
+              + " choisit la vue simple ou complète : la réponse porte tout.")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Vue d'ensemble pour la fenêtre demandée"),
     @ApiResponse(
@@ -78,11 +90,12 @@ class OverviewController {
                       allowableValues = {"30d", "90d", "12m"},
                       defaultValue = "90d"))
           @RequestParam(defaultValue = "90d")
-          String window) {
+          String window,
+      @Parameter(hidden = true) HttpServletRequest request) {
     guard.requireOwned(patientId);
     OverviewWindow parsed =
         OverviewWindow.parse(window)
             .orElseThrow(() -> new OverviewRequestException("window", "INVALID_WINDOW"));
-    return service.overview(patientId, parsed);
+    return service.overview(patientId, parsed, messages.localeOf(request));
   }
 }

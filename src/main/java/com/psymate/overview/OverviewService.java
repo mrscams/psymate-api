@@ -9,6 +9,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,13 +36,19 @@ class OverviewService {
 
   private final OverviewProjector projector;
   private final OverviewRepository repository;
+  private final NarrativeComposer composer;
   private final JsonMapper json;
   private final Clock clock;
 
   OverviewService(
-      OverviewProjector projector, OverviewRepository repository, JsonMapper json, Clock clock) {
+      OverviewProjector projector,
+      OverviewRepository repository,
+      NarrativeComposer composer,
+      JsonMapper json,
+      Clock clock) {
     this.projector = projector;
     this.repository = repository;
+    this.composer = composer;
     this.json = json;
     this.clock = clock;
   }
@@ -80,7 +87,7 @@ class OverviewService {
    * ; {@code recentActivity} est toujours lu en direct.
    */
   @Transactional
-  public OverviewDto overview(UUID patientId, OverviewWindow window) {
+  public OverviewDto overview(UUID patientId, OverviewWindow window, Locale locale) {
     PatientState state =
         repository
             .patientState(patientId)
@@ -95,6 +102,11 @@ class OverviewService {
         block.emotions(),
         served.payload().drafts(),
         repository.recentActivity(patientId, RECENT_ACTIVITY_SIZE),
+        composer.compose(served.payload().narrativeFacts(), locale),
+        FeelingsAssembler.assemble(
+            served.payload(), window, LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC)),
+        served.payload().sinceLastSession(),
+        served.payload().recentSessions(),
         served.computedAt(),
         served.sourceRev());
   }
@@ -107,7 +119,7 @@ class OverviewService {
     }
     try {
       OverviewPayload payload = json.readValue(stored.get().payload(), OverviewPayload.class);
-      if (payload.windows() == null
+      if (!payload.hasAllBlocks()
           || !payload.windows().keySet().containsAll(windowCodes())
           || isStale(stored.get(), payload, state)) {
         return Optional.empty();

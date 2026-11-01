@@ -1113,6 +1113,81 @@ components:
             $ref: '#/components/schemas/FacetCount'
           type: array
       type: object
+    FeelingPointDto:
+      description: 'Un ressenti : une valeur par point'
+      properties:
+        at:
+          description: occurred_from de l'entrée
+          format: date-time
+          type: string
+        date:
+          description: Jour UTC de placement (milieu de période, plafonné à aujourd'hui)
+          format: date
+          type: string
+        emotionCode:
+          type: string
+        entryId:
+          format: uuid
+          type: string
+        family:
+          description: Famille de l'émotion (joy, trust, fear, ...)
+          type: string
+        intensity:
+          description: 0 à 10
+          format: int32
+          type: integer
+        sessionId:
+          description: Séance de rattachement
+          format: uuid
+          type: string
+        valence:
+          description: -2 à 2, null si inconnue
+          format: int32
+          type: integer
+      type: object
+    FeelingSeriesDto:
+      description: 'Série de la courbe : une émotion de la fenêtre'
+      properties:
+        count:
+          description: Nombre de ressentis de cette émotion dans la fenêtre
+          format: int32
+          type: integer
+        emotionCode:
+          type: string
+        family:
+          type: string
+        label:
+          description: Libellé français
+          type: string
+        labelEn:
+          description: Libellé anglais, null s'il n'existe pas
+          type: string
+      type: object
+    FeelingsDto:
+      description: Ressentis réels de la fenêtre, repères de médicament et jours de séance
+      properties:
+        markers:
+          description: Repères de médicament (début, fin) de la fenêtre
+          items:
+            $ref: '#/components/schemas/TrendMarkerDto'
+          type: array
+        points:
+          description: Exactement un point par ressenti non archivé de la fenêtre
+          items:
+            $ref: '#/components/schemas/FeelingPointDto'
+          type: array
+        series:
+          description: Une entrée par émotion présente dans la fenêtre, par effectif décroissant
+          items:
+            $ref: '#/components/schemas/FeelingSeriesDto'
+          type: array
+        ticks:
+          description: Jours des séances de la fenêtre, croissants, sans doublon
+          items:
+            format: date
+            type: string
+          type: array
+      type: object
     FlagDto:
       properties:
         kind:
@@ -1412,6 +1487,18 @@ components:
           format: date-time
           type: string
       type: object
+    NarrativeDto:
+      description: 'Résumé rédigé par règles (jusqu''à 5 phrases, chacune omise si ses données manquent, sans IA), dans la langue de la requête (Accept-Language : français par défaut, anglais si demandé)'
+      properties:
+        attention:
+          description: Point d'attention issu des drapeaux actifs, null sans drapeau
+          type: string
+        sentences:
+          description: Phrases dans l'ordre cadre, tendance, situations, événement, traitement ; chacune est omise si ses données manquent
+          items:
+            type: string
+          type: array
+      type: object
     OpenSessionDto:
       description: Séance ouverte
       properties:
@@ -1450,11 +1537,25 @@ components:
           $ref: '#/components/schemas/EmotionsDto'
         facts:
           $ref: '#/components/schemas/OverviewFactsDto'
+        feelings:
+          $ref: '#/components/schemas/FeelingsDto'
+          description: 'Ressentis réels de la fenêtre : un point par ressenti'
+        narrative:
+          $ref: '#/components/schemas/NarrativeDto'
+          description: Résumé « En bref » rédigé par règles, dans la langue de la requête
         recentActivity:
           description: 10 dernières entrées non archivées, lues en direct (hors projection)
           items:
             $ref: '#/components/schemas/RecentActivityItemDto'
           type: array
+        recentSessions:
+          description: 5 dernières séances, la plus récente avec son compte rendu entier
+          items:
+            $ref: '#/components/schemas/RecentSessionDto'
+          type: array
+        sinceLastSession:
+          $ref: '#/components/schemas/SinceLastSessionDto'
+          description: Entrées saisies depuis la dernière séance clôturée
         sourceRev:
           description: patient.clinical_rev au moment du calcul de la projection
           format: int64
@@ -1956,6 +2057,41 @@ components:
           description: private ou clinical
           type: string
       type: object
+    RecentSessionDto:
+      description: Séance récente ; seule la plus récente porte le compte rendu entier
+      properties:
+        closedAt:
+          description: Clôture, null si la séance est ouverte
+          format: date-time
+          type: string
+        durationMin:
+          format: int32
+          type: integer
+        entryCount:
+          description: Entrées non archivées rattachées à la séance
+          format: int32
+          type: integer
+        entryId:
+          format: uuid
+          type: string
+        kind:
+          description: intake, session ou contact
+          type: string
+        modality:
+          description: in_person, video, phone ou email
+          type: string
+        occurredFrom:
+          format: date-time
+          type: string
+        summary:
+          description: Compte rendu entier (séance la plus récente seulement), sinon null
+          type: string
+        summaryFirstLine:
+          description: Première ligne du compte rendu, null sans compte rendu
+          type: string
+        title:
+          type: string
+      type: object
     RecordContactRequest:
       properties:
         body:
@@ -2083,6 +2219,46 @@ components:
           format: date-time
           type: string
         url:
+          type: string
+      type: object
+    SinceLastSessionDto:
+      description: Entrées postérieures à la dernière séance clôturée
+      properties:
+        entries:
+          description: 20 au plus, de la plus récente à la plus ancienne
+          items:
+            $ref: '#/components/schemas/SinceLastSessionEntryDto'
+          type: array
+        lastSessionAt:
+          description: occurred_from de cette séance, null s'il n'y en a pas
+          format: date-time
+          type: string
+        lastSessionId:
+          description: Dernière séance clôturée non archivée, null s'il n'y en a pas
+          format: uuid
+          type: string
+      type: object
+    SinceLastSessionEntryDto:
+      description: Entrée saisie depuis la dernière séance clôturée
+      properties:
+        entryId:
+          format: uuid
+          type: string
+        occurredFrom:
+          format: date-time
+          type: string
+        sessionId:
+          format: uuid
+          type: string
+        status:
+          description: draft ou final
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        visibility:
+          description: private ou clinical
           type: string
       type: object
     StartSessionRequest:
@@ -4407,7 +4583,7 @@ paths:
       - graph-controller
   /api/patients/{id}/overview:
     get:
-      description: 'Lit la projection patient_overview : faits clés, situations actives, tendance d''intensité (moyenne glissante sur 7 jours, 90 points au plus, repères de séances et de médicaments), émotions dominantes avec variation sur la fenêtre précédente, brouillons et séance ouverte. La fenêtre (window) borne la tendance et les émotions. Si la projection est en retard sur patient.clinical_rev, elle est recalculée et réécrite avant de répondre : la réponse n''est jamais obsolète. recentActivity (10 dernières entrées non archivées) est toujours lu en direct. Les entrées archivées sont exclues, les entrées privées du praticien incluses.'
+      description: 'Lit la projection patient_overview : faits clés, situations actives, tendance d''intensité (moyenne glissante sur 7 jours, 90 points au plus, repères de séances et de médicaments), émotions dominantes avec variation sur la fenêtre précédente, brouillons et séance ouverte. La fenêtre (window) borne la tendance et les émotions. Si la projection est en retard sur patient.clinical_rev, elle est recalculée et réécrite avant de répondre : la réponse n''est jamais obsolète. recentActivity (10 dernières entrées non archivées) est toujours lu en direct. Les entrées archivées sont exclues, les entrées privées du praticien incluses. Ajouts (M4-06, additifs) : narrative (résumé « En bref » de 5 phrases au plus, chacune omise si ses données manquent, rédigé par règles, sans IA, plus un point d''attention issu des drapeaux ; composé dans la langue de Accept-Language, français par défaut), feelings (un point par ressenti réel de la fenêtre, une série par émotion, repères de médicament et jours de séance), sinceLastSession (entrées postérieures à la dernière séance clôturée, 20 au plus) et recentSessions (5 dernières séances, la plus récente avec son compte rendu entier). Le client choisit la vue simple ou complète : la réponse porte tout.'
       operationId: getPatientOverview
       parameters:
       - description: Identifiant du patient

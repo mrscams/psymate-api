@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Accès JPA à {@code practitioner_profile} ; la recherche publique reste en JdbcClient. */
 interface PractitionerProfileRepository extends JpaRepository<PractitionerProfile, UUID> {
@@ -35,6 +36,7 @@ interface PractitionerProfileRepository extends JpaRepository<PractitionerProfil
    * (checklist §6) : {@code on conflict do nothing} et les DEFAULT du DDL plutôt qu'une exception
    * d'unicité au flush. Vide le contexte de persistance pour que la relecture voie la ligne.
    */
+  @Transactional
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(
       value =

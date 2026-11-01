@@ -2,6 +2,7 @@ package com.psymate.directory;
 
 import com.psymate.directory.VocabularyException.FieldError;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -188,8 +189,26 @@ class DirectoryVocabularyAdminService {
     try {
       return tx.execute(status -> doCreate(r, labelFr, labelEn));
     } catch (DataIntegrityViolationException race) {
-      throw exists();
+      // Seule la course sur la clé (kind, code) devient un 409 ; toute autre violation
+      // d'intégrité reste une erreur serveur, comme l'ancien catch de DuplicateKeyException.
+      if (isUniqueViolation(race)) {
+        throw exists();
+      }
+      throw race;
     }
+  }
+
+  /** Vrai si la chaîne de causes contient une violation d'unicité PostgreSQL (SQLSTATE 23505). */
+  static boolean isUniqueViolation(Throwable t) {
+    for (Throwable c = t; c != null; c = c.getCause()) {
+      if (c instanceof SQLException sql && "23505".equals(sql.getSQLState())) {
+        return true;
+      }
+      if (c.getCause() == c) {
+        break;
+      }
+    }
+    return false;
   }
 
   private ItemDto doCreate(CreateRequest r, String labelFr, String labelEn) {

@@ -105,19 +105,12 @@ class PractitionerProfile implements Persistable<UUID> {
 
   @Transient private boolean isNew = true;
 
-  protected PractitionerProfile() {}
-
   /**
-   * Profil vide, non publié, avec les valeurs par défaut du DDL. La création en production passe
-   * par {@code PractitionerProfileRepository.insertIfAbsent} (le premier gagne) ; ce constructeur
-   * sert aux tests et à toute création explicite.
+   * Hibernate seul instancie cette entité : la création d'un profil passe toujours par la requête
+   * native {@code PractitionerProfileRepository.insertIfAbsent} (le premier gagne, DEFAULT du DDL),
+   * jamais par {@code save} d'une instance neuve.
    */
-  PractitionerProfile(UUID practitionerId, String slug, String displayName, OffsetDateTime now) {
-    this.practitionerId = Objects.requireNonNull(practitionerId);
-    this.slug = Objects.requireNonNull(slug);
-    this.displayName = Objects.requireNonNull(displayName);
-    this.updatedAt = Objects.requireNonNull(now);
-  }
+  protected PractitionerProfile() {}
 
   /**
    * Applique une modification de l'éditeur de profil, avec les normalisations de l'ancien UPDATE

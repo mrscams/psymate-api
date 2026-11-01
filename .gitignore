@@ -7,3 +7,5 @@ target/
 docs/progress/index.html
 docs/progress/.lock/
 docs/progress/events/*.tmp
+# Configuration de lancement locale de l'app Claude (chemins absolus propres a chaque poste).
+.claude/launch.json

@@ -91,7 +91,7 @@ class GraphPerfIT {
     }
     insertLinks(fx, patient, pairs);
 
-    UUID hub = graphRepository.mostLinkedEntries(patient, 1).get(0);
+    UUID hub = graphRepository.mostLinkedEntries(patient, 1, null).get(0);
     GraphQuery fromHub = new GraphQuery(patient, hub, 2, null, null, null);
     GraphQuery fromPatient = new GraphQuery(patient, null, 2, null, null, null);
     GraphQuery depthThree = new GraphQuery(patient, hub, 3, null, null, null);
@@ -99,7 +99,7 @@ class GraphPerfIT {
     long hubMs = median(() -> graph.neighborhood(fromHub));
     long patientMs = median(() -> graph.neighborhood(fromPatient));
     long depthThreeMs = median(() -> graph.neighborhood(depthThree));
-    long cteMs = median(() -> graphRepository.neighborhood(hub, 2, null));
+    long cteMs = median(() -> graphRepository.neighborhood(patient, hub, 2, null));
 
     GraphView view = graph.neighborhood(fromHub);
     GraphView depth3 = graph.neighborhood(depthThree);

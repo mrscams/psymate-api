@@ -24,7 +24,11 @@ public interface GraphQueryFacade {
   /**
    * Développe un groupe : les nœuds du groupe et tous les liens acceptés qui les touchent. Le
    * groupe est désigné soit par l'identifiant d'un super-nœud ({@code superNodeId}), soit par la
-   * liste de ses membres ({@code memberIds}) : exactement l'un des deux.
+   * liste de ses membres ({@code memberIds}) : exactement l'un des deux. Un super-nœud se développe
+   * sans les filtres (types de liens, période) du graphe qui l'a produit : ses membres sont toutes
+   * les entrées non archivées du type, reliées au voisin par leur seul lien accepté ; au-delà de
+   * 500 membres la réponse est tronquée ({@code truncated = true}). Pour un développement exact, le
+   * client envoie les {@code memberIds} reçus avec le super-nœud.
    *
    * @throws com.psymate.linking.domain.GraphRequestException 422 si les paramètres sont invalides
    *     ou si un membre n'est pas une entrée non archivée du patient

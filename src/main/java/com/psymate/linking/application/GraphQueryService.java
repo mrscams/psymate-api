@@ -85,9 +85,12 @@ public class GraphQueryService implements GraphQueryFacade {
     Map<UUID, Integer> distances = new LinkedHashMap<>();
     boolean limited = false;
     if (root != null) {
-      distances.putAll(graph.neighborhood(root, query.depth(), types));
+      distances.putAll(graph.neighborhood(patientId, root, query.depth(), types));
     } else {
-      List<UUID> linked = graph.mostLinkedEntries(patientId, MAX_NODES + 1);
+      // Les plus liées au sens des types demandés ; la période et l'archivage se filtrent après
+      // la lecture par lot (le graphe ne lit pas entry), donc un filtre de période très étroit
+      // peut rendre moins de 150 nœuds qu'il n'en existe.
+      List<UUID> linked = graph.mostLinkedEntries(patientId, MAX_NODES + 1, types);
       limited = linked.size() > MAX_NODES;
       linked.stream().limit(MAX_NODES).forEach(id -> distances.put(id, 1));
     }
@@ -181,6 +184,12 @@ public class GraphQueryService implements GraphQueryFacade {
         hasSuperNode
             ? membersOfSuperNode(patientId, superNodeId)
             : membersOfList(patientId, memberIds);
+    // Un super-nœud se développe sans les filtres du graphe d'origine (types, période) : il peut
+    // compter plus de membres que le count rendu ; au-delà de MAX_MEMBER_IDS on tronque.
+    boolean truncated = members.size() > MAX_MEMBER_IDS;
+    if (truncated) {
+      members = members.subList(0, MAX_MEMBER_IDS);
+    }
     List<UUID> ids = members.stream().map(GraphNode::id).toList();
 
     List<Link> touching = graph.acceptedEdgesTouching(ids);
@@ -199,7 +208,7 @@ public class GraphQueryService implements GraphQueryFacade {
                         && isLive(summaries.get(l.targetId()), patientId))
             .map(GraphQueryService::edge)
             .toList();
-    return new GraphView(GraphGrouping.detailOrder(members), edges, List.of(), false);
+    return new GraphView(GraphGrouping.detailOrder(members), edges, List.of(), truncated);
   }
 
   private List<GraphNode> membersOfSuperNode(UUID patientId, String superNodeId) {
@@ -266,7 +275,8 @@ public class GraphQueryService implements GraphQueryFacade {
     if (from == null && to == null) {
       return true;
     }
-    return at != null && (from == null || !at.isBefore(from)) && (to == null || !at.isAfter(to));
+    // Même convention que la timeline et la recherche : from inclus, to exclu.
+    return at != null && (from == null || !at.isBefore(from)) && (to == null || at.isBefore(to));
   }
 
   private static GraphNode node(EntrySummary s, int degree, int distance) {

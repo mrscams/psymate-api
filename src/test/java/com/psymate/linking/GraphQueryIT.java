@@ -318,6 +318,18 @@ class GraphQueryIT {
   }
 
   @Test
+  void periodBoundsAreFromInclusiveAndToExclusiveLikeTheTimeline() {
+    // C=J+3 exactement : inclus par from = J+3, exclu par to = J+3
+    GraphView fromAtC =
+        graph.neighborhood(new GraphQuery(patient, a, 3, null, D1.plus(Duration.ofDays(3)), null));
+    assertThat(titles(fromAtC)).contains("C");
+
+    GraphView toAtC =
+        graph.neighborhood(new GraphQuery(patient, a, 3, null, null, D1.plus(Duration.ofDays(3))));
+    assertThat(titles(toAtC)).contains("B").doesNotContain("C", "D");
+  }
+
+  @Test
   void invertedPeriodIsRefused() {
     GraphRequestException ex =
         thrown(
@@ -377,6 +389,18 @@ class GraphQueryIT {
     // les plus liés d'abord : X et Y (4 liens chacun)
     assertThat(view.nodes().get(0).title()).isIn("X", "Y");
     assertThat(view.nodes().get(0).degree()).isEqualTo(4);
+  }
+
+  @Test
+  void patientRootCountsOnlyTheRequestedLinkTypes() {
+    // triggers : A-B et C-D seulement ; E, X, Y ne sont reliés que par co_occurs / follows /
+    // part_of
+    GraphView view =
+        graph.neighborhood(new GraphQuery(patient, null, 2, List.of("triggers"), null, null));
+
+    assertThat(titles(view)).containsExactlyInAnyOrder("A", "B", "C", "D");
+    assertThat(edgeNames(view, names())).containsExactlyInAnyOrder("AB", "CD");
+    assertThat(view.edges()).allSatisfy(ed -> assertThat(ed.linkType()).isEqualTo("triggers"));
   }
 
   @Test

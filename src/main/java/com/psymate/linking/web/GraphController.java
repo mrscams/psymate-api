@@ -38,8 +38,8 @@ class GraphController {
   /**
    * Voisinage de {@code root} à {@code depth} sauts (1 à 3, défaut 2), limité à 150 nœuds ; sans
    * {@code root}, les entrées les plus liées du patient. {@code linkTypes} limite les types de
-   * liens suivis (liste séparée par des virgules ou paramètre répété) ; {@code from} et {@code to}
-   * bornent occurred_from des nœuds (la racine est toujours rendue).
+   * liens suivis (liste séparée par des virgules ou paramètre répété) ; {@code from} (inclus) et
+   * {@code to} (exclu) bornent occurred_from des nœuds (la racine est toujours rendue).
    */
   @GetMapping("/api/patients/{id}/graph")
   GraphDto getPatientGraph(

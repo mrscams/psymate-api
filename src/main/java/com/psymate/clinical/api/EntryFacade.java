@@ -62,10 +62,12 @@ public interface EntryFacade {
   boolean isArchived(UUID entryId);
 
   /**
-   * Lecture par lot, en une requête, des entrées demandées (graphe de linking). Sans garde de
-   * propriété : l'appelant (linking) a déjà passé PatientOwnershipGuard.requireOwned et filtre sur
-   * {@link EntrySummary#patientId()}. Les identifiants inconnus sont absents de la map ; les
-   * entrées archivées sont incluses avec {@code archived = true}.
+   * Lecture par lot, en une requête, des entrées demandées (graphe de linking). Comme les autres
+   * lectures de la façade (ADR-09), seules les entrées des patients du praticien courant sont
+   * rendues : les identifiants inconnus ou d'un autre praticien sont absents de la map, et la map
+   * est vide sans principal. Les entrées archivées sont incluses avec {@code archived = true}.
+   * L'appelant (linking) a déjà passé PatientOwnershipGuard.requireOwned et filtre encore sur
+   * {@link EntrySummary#patientId()}.
    */
   Map<UUID, EntrySummary> summariesOf(Collection<UUID> entryIds);
 }

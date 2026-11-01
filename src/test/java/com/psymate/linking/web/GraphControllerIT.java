@@ -337,7 +337,9 @@ class GraphControllerIT {
     get("?root=" + note)
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("ENTRY_ARCHIVED"))
-        .andExpect(jsonPath("$.errors[0].field").value("root"));
+        .andExpect(jsonPath("$.errors[0].field").value("root"))
+        .andExpect(
+            jsonPath("$.detail").value("L'entrée racine est archivée : choisir une autre racine."));
   }
 
   @Test

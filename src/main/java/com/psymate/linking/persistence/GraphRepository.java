@@ -47,9 +47,13 @@ public class GraphRepository {
    * récursive sur les nœuds, bornée par la profondeur : l'UNION écarte les lignes (nœud,
    * profondeur) déjà vues, donc un cycle (part_of réciproque) ne boucle pas.
    *
+   * <p>Seuls les liens du patient sont suivis : par construction un lien relie deux entrées d'un
+   * même patient, le prédicat est une défense en profondeur.
+   *
    * @return identifiant du nœud vers sa distance minimale à la racine (la racine vaut 0)
    */
-  public Map<UUID, Integer> neighborhood(UUID rootId, int maxDepth, List<String> linkTypes) {
+  public Map<UUID, Integer> neighborhood(
+      UUID patientId, UUID rootId, int maxDepth, List<String> linkTypes) {
     String[] types = typesOf(linkTypes);
     Map<UUID, Integer> out = new HashMap<>();
     jdbc.sql(
@@ -58,11 +62,12 @@ public class GraphRepository {
                 + " UNION"
                 + " SELECT CASE WHEN l.source_id = h.id THEN l.target_id ELSE l.source_id END,"
                 + " h.depth + 1"
-                + " FROM hood h JOIN link l ON l.status = 'accepted'"
+                + " FROM hood h JOIN link l ON l.status = 'accepted' AND l.patient_id = :patient"
                 + " AND (l.source_id = h.id OR l.target_id = h.id)"
                 + " AND (:noTypeFilter OR l.link_type = ANY(:types))"
                 + " WHERE h.depth < :maxDepth)"
                 + " SELECT id, min(depth) AS distance FROM hood GROUP BY id")
+        .param("patient", patientId)
         .param("root", rootId)
         .param("noTypeFilter", types.length == 0)
         .param("types", types)
@@ -75,16 +80,22 @@ public class GraphRepository {
 
   /**
    * Les {@code limit} entrées (source ou cible) les plus liées parmi les liens acceptés du patient,
-   * par nombre de liens décroissant puis identifiant.
+   * des types de {@code linkTypes} (tous si nul ou vide), par nombre de liens décroissant puis
+   * identifiant. Les entrées archivées ne sont pas connues ici : l'appelant les retire ensuite.
    */
-  public List<UUID> mostLinkedEntries(UUID patientId, int limit) {
+  public List<UUID> mostLinkedEntries(UUID patientId, int limit, List<String> linkTypes) {
+    String[] types = typesOf(linkTypes);
     return jdbc.sql(
             "SELECT e FROM ("
                 + " SELECT source_id AS e FROM link WHERE patient_id = :p AND status = 'accepted'"
+                + " AND (:noTypeFilter OR link_type = ANY(:types))"
                 + " UNION ALL"
                 + " SELECT target_id AS e FROM link WHERE patient_id = :p AND status = 'accepted'"
+                + " AND (:noTypeFilter OR link_type = ANY(:types))"
                 + ") t GROUP BY e ORDER BY count(*) DESC, e LIMIT :limit")
         .param("p", patientId)
+        .param("noTypeFilter", types.length == 0)
+        .param("types", types)
         .param("limit", limit)
         .query(UUID.class)
         .list();

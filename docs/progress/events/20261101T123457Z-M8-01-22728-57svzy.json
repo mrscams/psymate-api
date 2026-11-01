@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T12:34:57.372Z",
+  "task": "M8-01",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Fondation JPA : spring-boot-starter-data-jpa (Hibernate ORM 7.4.13.Final), open-in-view=false, ddl-auto=none/validate, naming snake_case, time_zone UTC, pas de cache L2 ; 4 regles ArchUnit avec fixtures (association inter-modules, entite exposee web/api/Dto, @Immutable append-only et entry_version, colonnes trigger/generees) ; JpaFoundationIT (transaction commune JdbcClient/EntityManager) ; G Q32, A l. 311, CLAUDE.md, checklist de conversion. verify vert : 337 unitaires, 826 IT.",
+  "notes": "Aucun module converti, aucune migration, contrat 0.6.0 inchange. Aucun Jackson 2 nouveau (ceux presents viennent de springdoc et de Jackson 3, deja sur main). Revue reviewer : fusionnable, 5 points mineurs appliques.",
+  "next": "M8-02 patients, M8-03 vocabulary, M8-04 directory (puis M8-05 identity, M8-06 clinical.export) en suivant docs/etudes/jpa-conversion-checklist.md",
+  "pr": "https://github.com/mrscams/psymate-api/pull/40",
+  "branch": "worktree-M8-01",
+  "checkout": "M8-01"
+}

@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-01T00:19:10.783Z",
+  "task": "M2-02",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 30 fusionnee dans main (entree + liens en une transaction, EntryLinksPort)",
+  "next": "M2-03, M4-03, M6-05 en parallele",
+  "pr": "https://github.com/mrscams/psymate-api/pull/30",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

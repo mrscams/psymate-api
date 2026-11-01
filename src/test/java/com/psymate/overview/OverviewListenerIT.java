@@ -38,21 +38,6 @@ class OverviewListenerIT extends OverviewSupport {
         "%" + patientId + "%");
   }
 
-  /** Attend que toutes les publications du patient destinées à overview soient terminées. */
-  private void awaitQuiet() {
-    await()
-        .atMost(WAIT)
-        .untilAsserted(
-            () ->
-                assertThat(
-                        count(
-                            "select count(*) from event_publication where listener_id like"
-                                + " 'overview.%' and serialized_event like ?"
-                                + " and completion_date is null",
-                            "%" + patient + "%"))
-                    .isZero());
-  }
-
   private void publish(DomainEvent... events) {
     tx.executeWithoutResult(
         s -> {
@@ -91,7 +76,7 @@ class OverviewListenerIT extends OverviewSupport {
   @Test
   void eachSubscribedEventRecomputesTheProjection() throws Exception {
     note("Une note", daysAgo(1));
-    awaitQuiet();
+    awaitOverviewQuiet();
     UUID someEntry = UUID.randomUUID();
 
     record Case(String listenerId, Supplier<DomainEvent> event) {}
@@ -133,39 +118,25 @@ class OverviewListenerIT extends OverviewSupport {
                 assertThat(storedPayload(patient)).isNotNull();
                 assertThat(completed(c.listenerId(), patient)).isGreaterThan(before);
               });
-      awaitQuiet();
+      awaitOverviewQuiet();
     }
   }
 
   @Test
   void theSameEventDeliveredTwiceLeavesOneRowWithTheSamePayload() throws Exception {
     UUID id = feeling("sadness", 6, daysAgo(2));
-    awaitQuiet();
+    awaitOverviewQuiet();
     deleteRow();
     EntryCreated event = new EntryCreated(tenant, id, patient, "feeling", 1);
-    int before = completed("overview.entry-created", patient);
 
-    publish(event, event);
-
-    await()
-        .atMost(WAIT)
-        .untilAsserted(
-            () -> {
-              assertThat(completed("overview.entry-created", patient))
-                  .isGreaterThanOrEqualTo(before + 2);
-              assertThat(storedPayload(patient)).isNotNull();
-            });
+    deliver(event);
+    deliver(event);
     String first = storedPayload(patient);
-    int afterFirst = completed("overview.entry-created", patient);
+    assertThat(first).isNotNull();
 
-    publish(event, event);
+    deliver(event);
+    deliver(event);
 
-    await()
-        .atMost(WAIT)
-        .untilAsserted(
-            () ->
-                assertThat(completed("overview.entry-created", patient))
-                    .isGreaterThanOrEqualTo(afterFirst + 2));
     assertThat(count("select count(*) from patient_overview where patient_id = ?", patient))
         .isEqualTo(1);
     assertThat(storedPayload(patient)).isEqualTo(first);
@@ -173,10 +144,27 @@ class OverviewListenerIT extends OverviewSupport {
         .isEqualTo(1);
   }
 
+  /**
+   * Publie l'événement et attend que l'abonné entry-created l'ait traité, puis seulement rend la
+   * main : une livraison après l'autre, comme un rejeu (EventRepublisher). Jamais deux copies du
+   * même événement en vol en même temps : le registre de Spring Modulith suit les publications en
+   * cours dans une table indexée par (événement, abonné), deux copies identiques y partagent la
+   * même clé, et deux complétions quasi simultanées marquent alors la même ligne de {@code
+   * event_publication}, l'autre restant incomplète (course observée sur la CI à 2 CPU).
+   */
+  private void deliver(EntryCreated event) {
+    int before = completed("overview.entry-created", patient);
+    publish(event);
+    await()
+        .atMost(WAIT)
+        .untilAsserted(
+            () -> assertThat(completed("overview.entry-created", patient)).isEqualTo(before + 1));
+  }
+
   @Test
   void aPatientUpdatedEventRefreshesTheFlagsOfTheProjection() throws Exception {
     note("Une note", daysAgo(1));
-    awaitQuiet();
+    awaitOverviewQuiet();
     jdbc.update(
         "insert into patient_flag (id, patient_id, kind, reason, set_by)"
             + " values (?, ?, 'risk', 'Risque évalué', ?)",

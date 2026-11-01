@@ -88,6 +88,10 @@ class OverviewSchemaIT extends OverviewSupport {
 
   @Test
   void theApplicationRoleCanReadAndWritePatientOverview() throws Exception {
+    // Patient inséré par SQL, qui n'a jamais émis d'événement : l'abonné asynchrone de la vue
+    // d'ensemble (déclenché pour `patient` par la séance ouverte dans baseSetUp) ne peut pas
+    // insérer sa ligne entre l'insertion du test et son commit (DuplicateKey observé sur la CI).
+    UUID quiet = newPatient(me);
     DataSource ds = jdbc.getDataSource();
     try (var connection = ds.getConnection()) {
       connection.setAutoCommit(false);
@@ -96,27 +100,27 @@ class OverviewSchemaIT extends OverviewSupport {
       asApp.update(
           "insert into patient_overview (patient_id, payload, source_rev, compute_ms)"
               + " values (?, '{\"facts\":{}}'::jsonb, 3, 12)",
-          patient);
+          quiet);
       asApp.update(
           "update patient_overview set payload = '{\"facts\":{\"a\":1}}'::jsonb, source_rev = 4,"
               + " computed_at = ? where patient_id = ?",
           Timestamp.from(Instant.now()),
-          patient);
+          quiet);
       assertThat(
               asApp.queryForObject(
                   "select source_rev from patient_overview where patient_id = ?",
                   Long.class,
-                  patient))
+                  quiet))
           .isEqualTo(4L);
       assertThat(
               asApp.queryForObject(
                   "select payload->'facts'->>'a' from patient_overview where patient_id = ?",
                   String.class,
-                  patient))
+                  quiet))
           .isEqualTo("1");
       connection.commit();
     }
-    assertThat(count("select count(*) from patient_overview where patient_id = ?", patient))
+    assertThat(count("select count(*) from patient_overview where patient_id = ?", quiet))
         .isEqualTo(1);
   }
 }

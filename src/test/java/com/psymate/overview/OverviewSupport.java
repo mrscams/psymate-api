@@ -1,5 +1,6 @@
 package com.psymate.overview;
 
+import static org.awaitility.Awaitility.await;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -8,6 +9,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.psymate.PostgresTestConfig;
 import com.psymate.identity.api.CurrentPractitioner;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -267,6 +269,28 @@ abstract class OverviewSupport {
 
   protected int count(String sql, Object... args) {
     return jdbc.queryForObject(sql, Integer.class, args);
+  }
+
+  /**
+   * Attend que toutes les publications du patient destinées aux abonnés de la vue d'ensemble soient
+   * complétées. À appeler avant toute écriture SQL sur {@code patient_overview} : chaque entrée
+   * créée par l'API (et la séance ouverte dans {@link #baseSetUp}) déclenche un recalcul asynchrone
+   * qui réécrit la ligne entière, et qui écraserait la ligne préparée par le test s'il passait
+   * entre son écriture et sa lecture (constaté sur la CI à 2 CPU). Le délai couvre aussi l'arriéré
+   * laissé par les tests précédents (abonnés servis dans l'ordre d'arrivée).
+   */
+  protected void awaitOverviewQuiet() {
+    await()
+        .atMost(Duration.ofSeconds(60))
+        .pollInterval(Duration.ofMillis(100))
+        .until(
+            () ->
+                count(
+                        "select count(*) from event_publication where listener_id like"
+                            + " 'overview.%' and serialized_event like ?"
+                            + " and completion_date is null",
+                        "%" + patient + "%")
+                    == 0);
   }
 
   /** payload jsonb de la ligne du patient, en texte normalisé par PostgreSQL ; null si absente. */

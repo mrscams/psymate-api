@@ -101,14 +101,24 @@ class EntryWithLinksIT extends ClinicalWebSupport {
         type.getName(), "%" + entryId + "%");
   }
 
-  /** POST d'un ressenti avec ces liens : 422, et ni entrée ni lien n'ont été écrits. */
+  private int publications() {
+    return count(
+        "select count(*) from event_publication where listener_id like '%OutboxListeners%'");
+  }
+
+  /**
+   * POST d'un ressenti avec ces liens : 422, et ni entrée, ni lien, ni événement (LinkAccepted d'un
+   * premier lien accepté, EntryCreated) n'ont été écrits.
+   */
   private ResultActions refused(String links) throws Exception {
     int entriesBefore = entryRows();
     int linksBefore = linkRows();
+    int publicationsBefore = publications();
     ResultActions result = post(entriesUrl(patient), feeling(links));
     result.andExpect(status().isUnprocessableEntity());
     assertThat(entryRows()).as("aucune entrée créée").isEqualTo(entriesBefore);
     assertThat(linkRows()).as("aucun lien créé").isEqualTo(linksBefore);
+    assertThat(publications()).as("aucun événement publié").isEqualTo(publicationsBefore);
     return result;
   }
 
@@ -339,6 +349,19 @@ class EntryWithLinksIT extends ClinicalWebSupport {
         .andExpect(jsonPath("$.errors[?(@.field == 'links[0].direction')].message").isNotEmpty());
     assertThat(entryRows()).isEqualTo(entriesBefore);
     assertThat(linkRows()).isZero();
+  }
+
+  @Test
+  void moreThanTwentyLinksAreRefusedBeforeAnyWrite() throws Exception {
+    StringBuilder links = new StringBuilder("[");
+    for (int i = 0; i < 21; i++) {
+      links.append(i == 0 ? "" : ",").append(link(event, "triggers", "incoming"));
+    }
+    refused(links.append("]").toString())
+        .andExpect(jsonPath("$.errors.length()").value(1))
+        .andExpect(jsonPath("$.errors[0].field").value("links"))
+        .andExpect(jsonPath("$.errors[0].code").value("OUT_OF_RANGE"))
+        .andExpect(jsonPath("$.errors[0].message").value(containsString("20")));
   }
 
   @Test

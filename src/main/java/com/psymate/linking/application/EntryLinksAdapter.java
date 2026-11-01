@@ -25,6 +25,12 @@ import org.springframework.stereotype.Component;
  * par LINK_EXISTS, au second élément). Une entrée cible d'un patient d'un AUTRE praticien n'est pas
  * traduite : le 403 PATIENT_FORBIDDEN de la garde de propriété remonte tel quel, comme pour POST
  * /api/entries/{id}/links.
+ *
+ * <p>Course {@code DuplicateKeyException} : {@link LinkService#create} la rattrape pour rendre
+ * LINK_EXISTS, ce qui suppose une transaction encore utilisable. Ici elle rejoindrait une
+ * transaction déjà abandonnée par Postgres (500 au lieu de 422), mais ce cas ne peut pas se
+ * produire : l'entrée neuve n'est visible d'aucune autre transaction avant le commit, et le doublon
+ * interne à {@code links[]} est refusé par {@code requireNoDuplicate} avant toute insertion.
  */
 @Component
 class EntryLinksAdapter implements EntryLinksPort {

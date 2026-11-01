@@ -45,6 +45,9 @@ import org.springframework.stereotype.Component;
 class EntryCommandFactory {
 
   /** Instant factice : sert seulement à satisfaire @NotNull sur le temps pendant la validation. */
+  /** Nombre maximal de liens posés avec une entrée (une transaction bornée). */
+  static final int MAX_LINKS = 20;
+
   private static final TimeSpan PLACEHOLDER_TIME =
       new TimeSpan(Instant.EPOCH, null, Precision.EXACT, null);
 
@@ -147,9 +150,9 @@ class EntryCommandFactory {
 
   /**
    * Liens demandés avec la nouvelle entrée, validés AVANT toute écriture et cumulés : targetId et
-   * linkType obligatoires, direction incoming ou outgoing (nul : outgoing). Une séance ne se lie
-   * pas à sa création. Les règles métier (même patient, matrice des types, doublon) sont celles de
-   * linking, appliquées pendant la transaction.
+   * linkType obligatoires, direction incoming ou outgoing (nul : outgoing), au plus {@link
+   * #MAX_LINKS} liens. Une séance ne se lie pas à sa création. Les règles métier (même patient,
+   * matrice des types, doublon) sont celles de linking, appliquées pendant la transaction.
    */
   private static List<LinkRequest> parseLinks(
       EntryType type, List<EntryLinkRequest> requested, List<FieldProblem> problems) {
@@ -158,6 +161,10 @@ class EntryCommandFactory {
     }
     if (type == EntryType.SESSION) {
       problems.add(new FieldProblem("links", "NOT_ALLOWED_ON_CREATE"));
+      return List.of();
+    }
+    if (requested.size() > MAX_LINKS) {
+      problems.add(new FieldProblem("links", "OUT_OF_RANGE"));
       return List.of();
     }
     List<LinkRequest> links = new ArrayList<>();

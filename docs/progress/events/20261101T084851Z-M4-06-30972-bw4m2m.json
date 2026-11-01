@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-01T08:48:51.123Z",
+  "task": "M4-06",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 35 fusionnee dans main (recit par regles, payload overview enrichi)",
+  "next": "M7-01 : derniere tache backend",
+  "pr": "https://github.com/mrscams/psymate-api/pull/35",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

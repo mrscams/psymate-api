@@ -23,6 +23,8 @@
 		<bouncycastle.version>1.83</bouncycastle.version>
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<openhtmltopdf.version>1.1.105</openhtmltopdf.version>
+		<!-- M7-01 : le package com.psymate.perf (tests de charge) n'est compile que sous le profil perf -->
+		<perf.testExclude>**/perf/**</perf.testExclude>
 	</properties>
 
 	<dependencyManagement>
@@ -178,6 +180,10 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
+					<!-- M7-01 : com.psymate.perf importe com.psymate.seed (tools/seed) ; hors profil perf il est ignore -->
+					<testExcludes>
+						<testExclude>${perf.testExclude}</testExclude>
+					</testExcludes>
 					<annotationProcessorPaths>
 						<path>
 							<groupId>org.mapstruct</groupId>
@@ -190,6 +196,12 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
+				<configuration>
+					<!-- les tests de charge (M7-01) ne tournent que sous `-Pperf` (make perf) -->
+					<excludes>
+						<exclude>**/perf/**</exclude>
+					</excludes>
+				</configuration>
 				<executions>
 					<execution>
 						<goals>
@@ -221,4 +233,51 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<!-- M7-01 : tests de charge (make perf). Reutilise le generateur de tools/seed comme racine de sources
+		     de test, sans copie ni dependance : com.psymate.seed n'existe donc que sous ce profil. -->
+		<profile>
+			<id>perf</id>
+			<properties>
+				<perf.testExclude>__none__/**</perf.testExclude>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-compiler-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>default-testCompile</id>
+								<configuration>
+									<compileSourceRoots>
+										<root>${project.basedir}/src/test/java</root>
+										<root>${project.basedir}/tools/seed/src/main/java</root>
+									</compileSourceRoots>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<configuration>
+							<skip>true</skip>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-failsafe-plugin</artifactId>
+						<configuration>
+							<includes>
+								<include>**/perf/*PerfIT.java</include>
+							</includes>
+							<excludes combine.self="override"/>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

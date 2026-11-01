@@ -17,6 +17,9 @@ jobs:
           cache: maven
       - name: Build, tests, verifications
         run: ./mvnw -B verify
+      # M7-01 : compile l outil de seed et lance ses tests unitaires (generateur pur, sans reseau).
+      - name: Seed - compilation
+        run: ./mvnw -B -q -f tools/seed/pom.xml verify
 
   # Le contrat commite doit etre exactement celui que l'application genere (M0-05).
   # Job separe de `verify` : echec lisible (diff affiche) et sans relancer toute la suite.

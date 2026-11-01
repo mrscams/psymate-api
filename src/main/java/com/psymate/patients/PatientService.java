@@ -7,18 +7,27 @@ import com.psymate.patients.PatientDtos.FlagRequest;
 import com.psymate.patients.PatientDtos.PatientDto;
 import com.psymate.patients.PatientDtos.PatientPage;
 import com.psymate.patients.PatientDtos.VersionDto;
-import com.psymate.patients.PatientRepository.Ownership;
 import com.psymate.patients.api.PatientArchived;
 import com.psymate.patients.api.PatientCreated;
 import com.psymate.patients.api.PatientFacade;
 import com.psymate.patients.api.PatientOwnershipGuard;
 import com.psymate.patients.api.PatientRef;
 import com.psymate.patients.api.PatientUpdated;
+import com.psymate.patients.persistence.Patient;
+import com.psymate.patients.persistence.PatientFlag;
+import com.psymate.patients.persistence.PatientFlagRepository;
+import com.psymate.patients.persistence.PatientJpaRepository;
+import com.psymate.patients.persistence.PatientTag;
+import com.psymate.patients.persistence.PatientTagId;
+import com.psymate.patients.persistence.PatientTagRepository;
+import com.psymate.patients.persistence.PatientVersion;
+import com.psymate.patients.persistence.PatientVersionRepository;
 import com.psymate.vocabulary.api.EmotionCatalog;
 import com.psymate.vocabulary.api.TagFacade;
 import com.psymate.vocabulary.api.TagView;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -29,10 +38,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -54,20 +64,38 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   private static final int DEFAULT_LIMIT = 50;
   private static final int MAX_LIMIT = 200;
 
-  private final PatientRepository repo;
+  /** Propriétaire et état d'un patient, lus sans exposer l'entité. */
+  record Ownership(UUID tenantId, UUID ownerId, boolean archived) {}
+
+  private final PatientJpaRepository patients;
+  private final PatientVersionRepository versions;
+  private final PatientFlagRepository patientFlags;
+  private final PatientTagRepository patientTags;
+  private final PatientAssembler assembler;
   private final DomainEventPublisher events;
   private final TagFacade tagFacade;
   private final EmotionCatalog emotions;
+  private final TransactionTemplate tx;
 
   PatientService(
-      PatientRepository repo,
+      PatientJpaRepository patients,
+      PatientVersionRepository versions,
+      PatientFlagRepository patientFlags,
+      PatientTagRepository patientTags,
+      PatientAssembler assembler,
       DomainEventPublisher events,
       TagFacade tagFacade,
-      EmotionCatalog emotions) {
-    this.repo = repo;
+      EmotionCatalog emotions,
+      TransactionTemplate tx) {
+    this.patients = patients;
+    this.versions = versions;
+    this.patientFlags = patientFlags;
+    this.patientTags = patientTags;
+    this.assembler = assembler;
     this.events = events;
     this.tagFacade = tagFacade;
     this.emotions = emotions;
+    this.tx = tx;
   }
 
   // ---- façade et garde
@@ -75,13 +103,15 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Override
   @Transactional(readOnly = true)
   public boolean exists(UUID patientId) {
-    return repo.ownership(patientId).isPresent();
+    return patients.existsById(patientId);
   }
 
   @Override
   @Transactional(readOnly = true)
   public boolean ownedBy(UUID patientId, UUID practitionerId) {
-    return repo.ownership(patientId)
+    return patients
+        .findById(patientId)
+        .map(PatientService::ownership)
         .filter(o -> o.ownerId().equals(practitionerId))
         .filter(
             o ->
@@ -94,25 +124,30 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Override
   @Transactional(readOnly = true)
   public List<PatientRef> ownedBy(UUID practitionerId) {
-    return repo.refsOwnedBy(practitionerId);
+    return patients.findOwnedByOrdered(practitionerId).stream()
+        .map(
+            p ->
+                new PatientRef(
+                    p.getId(), p.getDisplayName(), p.getBirthDate(), p.getArchivedAt() != null))
+        .toList();
   }
 
   @Override
   @Transactional(readOnly = true)
   public Optional<String> displayName(UUID patientId) {
-    return repo.displayName(patientId);
+    return patients.findById(patientId).map(Patient::getDisplayName);
   }
 
   @Override
   @Transactional(readOnly = true)
   public Optional<LocalDate> birthDate(UUID patientId) {
-    return repo.birthDate(patientId);
+    return patients.findById(patientId).map(Patient::getBirthDate);
   }
 
   @Override
   @Transactional
   public void touchClinicalRev(UUID patientId) {
-    repo.touchClinicalRev(patientId);
+    patients.touchClinicalRev(patientId);
   }
 
   @Override
@@ -128,16 +163,29 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
     }
   }
 
+  private static Ownership ownership(Patient p) {
+    return new Ownership(p.getTenantId(), p.getOwnerId(), p.getArchivedAt() != null);
+  }
+
   private Ownership owned(UUID patientId) {
+    return ownership(ownedEntity(patientId, false));
+  }
+
+  /** Fiche du praticien courant (404 si absente, 403 si d'un autre) ; verrouillée si demandé. */
+  private Patient ownedEntity(UUID patientId, boolean forUpdate) {
     CurrentPractitioner me = me();
-    Ownership o =
-        repo.ownership(patientId)
+    Patient p =
+        (forUpdate ? patients.findForUpdate(patientId) : patients.findById(patientId))
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Patient introuvable."));
-    if (!o.ownerId().equals(me.id()) || !o.tenantId().equals(me.tenantId())) {
+    if (!p.getOwnerId().equals(me.id()) || !p.getTenantId().equals(me.tenantId())) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ce patient n'est pas le vôtre.");
     }
-    return o;
+    return p;
+  }
+
+  private PatientDto find(UUID id) {
+    return patients.findById(id).map(p -> assembler.withRelations(List.of(p)).get(0)).orElseThrow();
   }
 
   private static CurrentPractitioner me() {
@@ -170,8 +218,8 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
       }
       tagId = resolved.get().id();
     }
-    List<PatientDto> rows =
-        repo.list(
+    List<Patient> rows =
+        patients.list(
             me.tenantId(),
             me.id(),
             NameFilter.pattern(q),
@@ -182,19 +230,29 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
             offset);
     boolean more = rows.size() > limit;
     return new PatientPage(
-        more ? rows.subList(0, limit) : rows, more ? encodeCursor(offset + limit) : null);
+        assembler.withRelations(more ? rows.subList(0, limit) : rows),
+        more ? encodeCursor(offset + limit) : null);
   }
 
   @Transactional(readOnly = true)
   PatientDto get(UUID id) {
     owned(id);
-    return repo.find(id).orElseThrow();
+    return find(id);
   }
 
   @Transactional(readOnly = true)
   List<VersionDto> versions(UUID id) {
     owned(id);
-    return repo.versions(id);
+    return versions.findByPatientIdOrderByVersion(id).stream()
+        .map(
+            v ->
+                new VersionDto(
+                    v.getVersion(),
+                    new LinkedHashMap<>(v.getSnapshot()),
+                    v.getReason(),
+                    v.getAuthorId(),
+                    v.getCreatedAt()))
+        .toList();
   }
 
   // ---- écriture
@@ -218,9 +276,13 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
     }
 
     UUID id = UUID.randomUUID();
-    PatientDto draft =
-        new PatientDto(
+    OffsetDateTime now = Patient.now();
+    List<UUID> tagIds = resolveTags(r.tags());
+    patients.save(
+        new Patient(
             id,
+            me.tenantId(),
+            me.id(),
             displayName,
             blankToNull(r.firstName()),
             blankToNull(r.lastName()),
@@ -228,43 +290,36 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
             blankToNull(r.pronoun()),
             blankToNull(r.phone()),
             blankToNull(r.email()),
-            r.context() == null ? Map.of() : r.context(),
-            r.followUp() == null ? Map.of() : r.followUp(),
-            List.of(),
-            List.of(),
-            1,
-            null,
-            null,
-            null);
-    List<UUID> tagIds = resolveTags(r.tags());
-    repo.insert(id, me.tenantId(), me.id(), draft);
+            r.context(),
+            r.followUp(),
+            now));
     for (FlagRequest f : flags) {
-      repo.insertFlag(id, f.kind(), blankToNull(f.reason()), me.id());
+      patientFlags.save(
+          new PatientFlag(UUID.randomUUID(), id, f.kind(), blankToNull(f.reason()), me.id(), now));
     }
-    if (!tagIds.isEmpty()) {
-      repo.replaceTags(id, tagIds);
-    }
+    patientTags.saveAll(
+        tagIds.stream().map(t -> new PatientTag(new PatientTagId(id, t), now)).toList());
     events.publish(new PatientCreated(me.tenantId(), id, me.id()));
-    return repo.find(id).orElseThrow();
+    return find(id);
   }
 
   @Transactional
   PatientDto patch(UUID id, Map<String, Object> body) {
     CurrentPractitioner me = me();
-    Ownership o = owned(id);
-    requireActive(o);
+    // Verrou de ligne : deux PATCH concurrents se sérialisent (une version chacun, sans doublon).
+    Patient cur = ownedEntity(id, true);
+    requireActive(ownership(cur));
     List<FieldProblem> problems = new ArrayList<>();
     for (String key : body.keySet()) {
       if (!PATCHABLE.contains(key)) {
         problems.add(new FieldProblem(key, "Champ non modifiable ou inconnu."));
       }
     }
-    PatientDto cur = repo.find(id).orElseThrow();
-    String displayName = cur.displayName();
+    String displayName = cur.getDisplayName();
     if (body.containsKey("displayName")) {
       displayName = requireName(asString(body.get("displayName")), problems);
     }
-    LocalDate birth = cur.birthDate();
+    LocalDate birth = cur.getBirthDate();
     if (body.containsKey("birthDate")) {
       Object v = body.get("birthDate");
       try {
@@ -275,69 +330,81 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
     }
     throwIfAny(problems);
 
-    PatientDto next =
-        new PatientDto(
-            id,
+    OffsetDateTime now = Patient.now();
+    int version =
+        cur.applyEdit(
             displayName,
-            text(body, "firstName", cur.firstName()),
-            text(body, "lastName", cur.lastName()),
+            text(body, "firstName", cur.getFirstName()),
+            text(body, "lastName", cur.getLastName()),
             birth,
-            text(body, "pronoun", cur.pronoun()),
-            text(body, "phone", cur.phone()),
-            text(body, "email", cur.email()),
-            merge(body, "context", cur.context()),
-            merge(body, "followUp", cur.followUp()),
-            cur.flags(),
-            cur.tags(),
-            cur.currentVersion(),
-            null,
-            cur.createdAt(),
-            cur.updatedAt());
-    int version = repo.update(id, next);
-    repo.insertVersion(id, version, snapshot(next), me.id(), asString(body.get("reason")));
+            text(body, "pronoun", cur.getPronoun()),
+            text(body, "phone", cur.getPhone()),
+            text(body, "email", cur.getEmail()),
+            merge(body, "context", cur.getContext()),
+            merge(body, "followUp", cur.getFollowUp()),
+            now);
+    versions.save(
+        new PatientVersion(
+            UUID.randomUUID(),
+            id,
+            version,
+            snapshot(cur),
+            me.id(),
+            asString(body.get("reason")),
+            now));
     events.publish(new PatientUpdated(me.tenantId(), id, me.id()));
-    return repo.find(id).orElseThrow();
+    return find(id);
   }
 
   @Transactional
   void archive(UUID id) {
     CurrentPractitioner me = me();
-    Ownership o = owned(id);
-    if (o.archived()) {
+    Patient p = ownedEntity(id, false);
+    if (p.isArchived()) {
       return;
     }
-    repo.setArchived(id, true);
+    p.archive(Patient.now());
     events.publish(new PatientArchived(me.tenantId(), id, me.id()));
   }
 
   @Transactional
   PatientDto restore(UUID id) {
     CurrentPractitioner me = me();
-    Ownership o = owned(id);
-    if (o.archived()) {
-      repo.setArchived(id, false);
+    Patient p = ownedEntity(id, false);
+    if (p.isArchived()) {
+      p.restore(Patient.now());
       events.publish(new PatientUpdated(me.tenantId(), id, me.id()));
     }
-    return repo.find(id).orElseThrow();
+    return find(id);
   }
 
-  @Transactional
+  /**
+   * Pas de {@code @Transactional} ici : l'unicité du drapeau actif (ux_patient_flag_active) est
+   * contrôlée au flush / commit, donc le 409 d'une course est attrapé APRÈS le commit (même schéma
+   * que LinkService).
+   */
   PatientDto addFlag(UUID id, FlagRequest f) {
+    try {
+      return tx.execute(status -> doAddFlag(id, f));
+    } catch (DataIntegrityViolationException race) {
+      throw flagConflict();
+    }
+  }
+
+  private PatientDto doAddFlag(UUID id, FlagRequest f) {
     CurrentPractitioner me = me();
     requireActive(owned(id));
     List<FieldProblem> problems = new ArrayList<>();
     checkFlag(f, "flag", problems);
     throwIfAny(problems);
-    if (repo.activeFlagExists(id, f.kind())) {
+    if (patientFlags.existsByPatientIdAndKindAndClearedAtIsNull(id, f.kind())) {
       throw flagConflict();
     }
-    try {
-      repo.insertFlag(id, f.kind(), blankToNull(f.reason()), me.id());
-    } catch (DuplicateKeyException e) {
-      throw flagConflict();
-    }
+    patientFlags.save(
+        new PatientFlag(
+            UUID.randomUUID(), id, f.kind(), blankToNull(f.reason()), me.id(), Patient.now()));
     events.publish(new PatientUpdated(me.tenantId(), id, me.id()));
-    return repo.find(id).orElseThrow();
+    return find(id);
   }
 
   @Transactional
@@ -347,21 +414,41 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
     if (!FLAG_KINDS.contains(kind)) {
       throw PatientException.invalid("kind", "Drapeau inconnu : watch, risk ou shared_care.");
     }
-    if (repo.clearFlag(id, kind, me.id()) == 0) {
-      throw PatientException.of(
-          HttpStatus.NOT_FOUND, "FLAG_NOT_ACTIVE", "Ce drapeau n'est pas actif.");
-    }
+    PatientFlag flag =
+        patientFlags
+            .findByPatientIdAndKindAndClearedAtIsNull(id, kind)
+            .orElseThrow(
+                () ->
+                    PatientException.of(
+                        HttpStatus.NOT_FOUND, "FLAG_NOT_ACTIVE", "Ce drapeau n'est pas actif."));
+    flag.clear(me.id(), Patient.now());
     events.publish(new PatientUpdated(me.tenantId(), id, me.id()));
-    return repo.find(id).orElseThrow();
+    return find(id);
   }
 
   @Transactional
   PatientDto replaceTags(UUID id, List<String> labels) {
     CurrentPractitioner me = me();
     requireActive(owned(id));
-    repo.replaceTags(id, resolveTags(labels));
+    List<UUID> wanted = resolveTags(labels);
+    List<PatientTag> existing = patientTags.findByIdPatientId(id);
+    Set<UUID> existingIds = new LinkedHashSet<>();
+    List<PatientTag> obsolete = new ArrayList<>();
+    for (PatientTag t : existing) {
+      existingIds.add(t.getId().getTagId());
+      if (!wanted.contains(t.getId().getTagId())) {
+        obsolete.add(t);
+      }
+    }
+    patientTags.deleteAll(obsolete);
+    OffsetDateTime now = Patient.now();
+    patientTags.saveAll(
+        wanted.stream()
+            .filter(t -> !existingIds.contains(t))
+            .map(t -> new PatientTag(new PatientTagId(id, t), now))
+            .toList());
     events.publish(new PatientUpdated(me.tenantId(), id, me.id()));
-    return repo.find(id).orElseThrow();
+    return find(id);
   }
 
   // ---- règles
@@ -450,17 +537,17 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
         HttpStatus.CONFLICT, "FLAG_ALREADY_ACTIVE", "Ce drapeau est déjà actif.");
   }
 
-  private static Map<String, Object> snapshot(PatientDto p) {
+  private static Map<String, Object> snapshot(Patient p) {
     Map<String, Object> s = new LinkedHashMap<>();
-    s.put("displayName", p.displayName());
-    s.put("firstName", p.firstName());
-    s.put("lastName", p.lastName());
-    s.put("birthDate", p.birthDate() == null ? null : p.birthDate().toString());
-    s.put("pronoun", p.pronoun());
-    s.put("phone", p.phone());
-    s.put("email", p.email());
-    s.put("context", p.context());
-    s.put("followUp", p.followUp());
+    s.put("displayName", p.getDisplayName());
+    s.put("firstName", p.getFirstName());
+    s.put("lastName", p.getLastName());
+    s.put("birthDate", p.getBirthDate() == null ? null : p.getBirthDate().toString());
+    s.put("pronoun", p.getPronoun());
+    s.put("phone", p.getPhone());
+    s.put("email", p.getEmail());
+    s.put("context", new LinkedHashMap<>(p.getContext()));
+    s.put("followUp", new LinkedHashMap<>(p.getFollowUp()));
     return s;
   }
 

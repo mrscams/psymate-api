@@ -73,9 +73,9 @@ class DirectoryVocabularyController {
       List.of(
           "fr", "en", "es", "de", "it", "pt", "ar", "nl", "ru", "pl", "tr", "zh", "ja", "ro", "hi");
 
-  private final ProfileRepository repo;
+  private final DirectoryVocabularyRepository repo;
 
-  DirectoryVocabularyController(ProfileRepository repo) {
+  DirectoryVocabularyController(DirectoryVocabularyRepository repo) {
     this.repo = repo;
   }
 
@@ -104,7 +104,7 @@ class DirectoryVocabularyController {
   }
 
   private List<Item> items(String kind) {
-    return repo.activeVocabulary(kind).stream()
+    return repo.activeItems(kind).stream()
         .map(r -> new Item(r.code(), r.labelFr(), r.labelEn()))
         .toList();
   }

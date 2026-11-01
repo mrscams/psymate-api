@@ -3,23 +3,21 @@ package com.psymate.directory;
 import com.psymate.directory.api.ProfileFacade;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
 @Component
 class ProfileFacadeImpl implements ProfileFacade {
 
-  private final JdbcClient jdbc;
+  private final PractitionerProfileRepository profiles;
 
-  ProfileFacadeImpl(JdbcClient jdbc) {
-    this.jdbc = jdbc;
+  ProfileFacadeImpl(PractitionerProfileRepository profiles) {
+    this.profiles = profiles;
   }
 
   @Override
   public Optional<ProfileSummary> find(UUID practitionerId) {
-    return jdbc.sql("select slug, published from practitioner_profile where practitioner_id = ?")
-        .param(practitionerId)
-        .query((rs, i) -> new ProfileSummary(practitionerId, rs.getString(1), rs.getBoolean(2)))
-        .optional();
+    return profiles
+        .findSummary(practitionerId)
+        .map(s -> new ProfileSummary(practitionerId, s.slug(), s.published()));
   }
 }

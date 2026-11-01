@@ -7,6 +7,7 @@ import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.PractitionerFacade;
 import com.psymate.identity.api.PractitionerFacade.PractitionerView;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,20 +26,26 @@ class ProfileService {
   private static final int SLUG_ATTEMPTS = 5;
   private static final String APPROVED = "approved";
 
-  private final ProfileRepository repo;
+  private final PractitionerProfileRepository profiles;
+  private final DirectoryVocabularyRepository vocabulary;
   private final PhotoStorage storage;
   private final DomainEventPublisher events;
   private final PractitionerFacade practitioners;
+  private final Clock clock;
 
   ProfileService(
-      ProfileRepository repo,
+      PractitionerProfileRepository profiles,
+      DirectoryVocabularyRepository vocabulary,
       PhotoStorage storage,
       DomainEventPublisher events,
-      PractitionerFacade practitioners) {
-    this.repo = repo;
+      PractitionerFacade practitioners,
+      Clock clock) {
+    this.profiles = profiles;
+    this.vocabulary = vocabulary;
     this.storage = storage;
     this.events = events;
     this.practitioners = practitioners;
+    this.clock = clock;
   }
 
   private static CurrentPractitioner me() {
@@ -53,51 +60,74 @@ class ProfileService {
   @Transactional
   public ProfileDto get() {
     CurrentPractitioner p = me();
+    ensureExists(p);
+    return ProfileAssembler.toDto(profiles.findById(p.id()).orElseThrow(), p.profession());
+  }
+
+  /**
+   * Crée le profil vide s'il n'existe pas (concurrence : le premier gagne). Ne charge pas l'entité
+   * : les écritures la chargent ensuite sous verrou, jamais avant (un état déjà chargé ne serait
+   * pas relu par {@code findForUpdate}).
+   */
+  private void ensureExists(CurrentPractitioner p) {
     for (int i = 0; i < SLUG_ATTEMPTS; i++) {
-      var existing = repo.find(p.id(), p.profession());
-      if (existing.isPresent()) {
-        return existing.get();
+      if (profiles.existsById(p.id())) {
+        return;
       }
-      repo.insertIfAbsent(
-          p.id(), SlugGenerator.unique(p.displayName(), repo::slugExists), p.displayName());
+      profiles.insertIfAbsent(
+          p.id(), SlugGenerator.unique(p.displayName(), profiles::existsBySlug), p.displayName());
     }
     throw ProfileException.of(
         HttpStatus.CONFLICT, "SLUG_CONFLICT", "Impossible de générer une adresse unique.");
   }
 
+  private PractitionerProfile lock(UUID practitionerId) {
+    return profiles
+        .findForUpdate(practitionerId)
+        .orElseThrow(
+            () ->
+                ProfileException.of(
+                    HttpStatus.NOT_FOUND, "PROFILE_NOT_FOUND", "Profil introuvable."));
+  }
+
   @Transactional
   public ProfileDto update(UpdateProfileRequest request) {
     CurrentPractitioner p = me();
-    get();
+    ensureExists(p);
     List<FieldError> errors =
         ProfileValidator.validate(
-            request, repo.activeCodes("specialty"), repo.activeCodes("audience"));
+            request, vocabulary.activeCodes("specialty"), vocabulary.activeCodes("audience"));
     if (!errors.isEmpty()) {
       throw ProfileException.invalid(errors);
     }
-    repo.update(p.id(), request);
-    return get();
+    PractitionerProfile profile = lock(p.id());
+    profile.applyEdit(request, DirectoryClock.now(clock));
+    return ProfileAssembler.toDto(profile, p.profession());
   }
 
   @Transactional
   public ProfileDto uploadPhoto(byte[] bytes) {
     CurrentPractitioner p = me();
-    ProfileDto before = get();
+    ensureExists(p);
     byte[] processed = PhotoProcessor.process(bytes);
     String key = storage.store(p.id(), processed);
     afterRollbackDelete(key);
-    repo.setPhoto(p.id(), key);
-    afterCommitDelete(before.photoAssetKey());
-    return get();
+    PractitionerProfile profile = lock(p.id());
+    String previousKey = profile.getPhotoAssetKey();
+    profile.setPhoto(key, DirectoryClock.now(clock));
+    afterCommitDelete(previousKey);
+    return ProfileAssembler.toDto(profile, p.profession());
   }
 
   @Transactional
   public void deletePhoto() {
     CurrentPractitioner p = me();
-    ProfileDto before = get();
-    if (before.photoAssetKey() != null) {
-      repo.setPhoto(p.id(), null);
-      afterCommitDelete(before.photoAssetKey());
+    ensureExists(p);
+    PractitionerProfile profile = lock(p.id());
+    String previousKey = profile.getPhotoAssetKey();
+    if (previousKey != null) {
+      profile.setPhoto(null, DirectoryClock.now(clock));
+      afterCommitDelete(previousKey);
     }
   }
 
@@ -131,7 +161,9 @@ class ProfileService {
   @Transactional
   public void publish() {
     CurrentPractitioner p = me();
-    ProfileDto profile = get();
+    ensureExists(p);
+    PractitionerProfile entity = lock(p.id());
+    ProfileDto profile = ProfileAssembler.toDto(entity, p.profession());
     boolean verified =
         practitioners
             .find(p.id())
@@ -141,10 +173,10 @@ class ProfileService {
     List<String> missing = new ArrayList<>(missingForPublication(p, profile, verified));
     // Un code désactivé par l'administration depuis l'enregistrement du brouillon (M1-14b) ne
     // doit pas être publié : un profil publié n'utilise que des codes actifs.
-    if (!repo.activeCodes("specialty").containsAll(profile.specialties())) {
+    if (!vocabulary.activeCodes("specialty").containsAll(profile.specialties())) {
       missing.add("specialties");
     }
-    if (!repo.activeCodes("audience").containsAll(profile.audiences())) {
+    if (!vocabulary.activeCodes("audience").containsAll(profile.audiences())) {
       missing.add("audiences");
     }
     if (!missing.isEmpty()) {
@@ -155,17 +187,18 @@ class ProfileService {
           List.of(),
           Map.of("missing", missing));
     }
-    if (repo.setPublished(p.id(), true)) {
-      events.publish(new ProfilePublished(p.tenantId(), p.id(), profile.slug()));
+    if (entity.publish(DirectoryClock.now(clock))) {
+      events.publish(new ProfilePublished(p.tenantId(), p.id(), entity.getSlug()));
     }
   }
 
   @Transactional
   public void unpublish() {
     CurrentPractitioner p = me();
-    ProfileDto profile = get();
-    if (repo.setPublished(p.id(), false)) {
-      events.publish(new ProfileUnpublished(p.tenantId(), p.id(), profile.slug()));
+    ensureExists(p);
+    PractitionerProfile entity = lock(p.id());
+    if (entity.unpublish(DirectoryClock.now(clock))) {
+      events.publish(new ProfileUnpublished(p.tenantId(), p.id(), entity.getSlug()));
     }
   }
 
@@ -177,9 +210,9 @@ class ProfileService {
    */
   @Transactional
   public void unpublishByPractitioner(UUID tenantId, UUID practitionerId) {
-    Optional<String> slug = repo.findSlug(practitionerId);
-    if (slug.isPresent() && repo.setPublished(practitionerId, false)) {
-      events.publish(new ProfileUnpublished(tenantId, practitionerId, slug.get()));
+    Optional<PractitionerProfile> found = profiles.findForUpdate(practitionerId);
+    if (found.isPresent() && found.get().unpublish(DirectoryClock.now(clock))) {
+      events.publish(new ProfileUnpublished(tenantId, practitionerId, found.get().getSlug()));
     }
   }
 

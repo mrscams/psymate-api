@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T00:11:10.971Z",
+  "task": "M2-02",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Création d'entrée avec links[] en une transaction : port EntryLinksPort (clinical.api) implémenté par linking, EntryService.createWithLinks, POST /entries accepte et renvoie links[], 422 indexés links[i].*, NOT_SUPPORTED_ON_PATCH",
+  "notes": "verify vert (237 unit + 656 IT, 0 échec). Revue : 0 bloquant, 2 à corriger traités (borne 20 liens, course DuplicateKeyException documentée). Contrat +34 additif, version 0.5.0 inchangée. Aucune dépendance Maven, aucune migration. Décisions : tous les refus de lien à la création en 422 ; cible d'un autre praticien 403 comme M2-01 ; links null hors création.",
+  "next": "Fusion PR 30 puis V8 : M2-03, M4-03, M6-05 en parallèle ; M2-05 (web) peut consommer links[]",
+  "pr": "https://github.com/mrscams/psymate-api/pull/30",
+  "branch": "worktree-M2-02",
+  "checkout": "M2-02"
+}

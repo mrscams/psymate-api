@@ -1,5 +1,6 @@
 package com.psymate.clinical.web;
 
+import com.psymate.clinical.application.EntryCreation;
 import com.psymate.clinical.application.EntryDetails;
 import com.psymate.clinical.application.EntryQueryService;
 import com.psymate.clinical.application.EntryService;
@@ -7,9 +8,11 @@ import com.psymate.clinical.application.SessionService;
 import com.psymate.clinical.web.EntryCommandFactory.ParsedCreate;
 import com.psymate.clinical.web.EntryDtos.CreateEntryRequest;
 import com.psymate.clinical.web.EntryDtos.EntryDto;
+import com.psymate.clinical.web.EntryDtos.EntryLinkDto;
 import com.psymate.clinical.web.EntryDtos.EntryVersionDto;
 import com.psymate.clinical.web.EntryDtos.PatchEntryRequest;
 import com.psymate.patients.api.PatientOwnershipGuard;
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
@@ -37,6 +40,8 @@ class EntryController {
   private final EntryCommandFactory commands;
   private final EntryMapper mapper;
   private final PatientOwnershipGuard guard;
+  private final EntryLinkPresenter linkPresenter;
+  private final ClinicalMessages messages;
 
   EntryController(
       EntryService entries,
@@ -44,29 +49,36 @@ class EntryController {
       EntryQueryService queries,
       EntryCommandFactory commands,
       EntryMapper mapper,
-      PatientOwnershipGuard guard) {
+      PatientOwnershipGuard guard,
+      EntryLinkPresenter linkPresenter,
+      ClinicalMessages messages) {
     this.entries = entries;
     this.sessions = sessions;
     this.queries = queries;
     this.commands = commands;
     this.mapper = mapper;
     this.guard = guard;
+    this.linkPresenter = linkPresenter;
+    this.messages = messages;
   }
 
   /**
-   * Crée une entrée. Un corps de type session est routé vers le démarrage de séance (verrou, 409 si
-   * une séance est déjà ouverte).
+   * Crée une entrée, avec ses liens éventuels dans la même transaction (tout ou rien, M2-02) ; la
+   * réponse porte {@code links}. Un corps de type session est routé vers le démarrage de séance
+   * (verrou, 409 si une séance est déjà ouverte).
    */
   @PostMapping("/api/patients/{id}/entries")
   ResponseEntity<EntryDto> createEntry(
-      @PathVariable UUID id, @RequestBody CreateEntryRequest request) {
+      @PathVariable UUID id, @RequestBody CreateEntryRequest request, HttpServletRequest http) {
     guard.requireOwned(id);
     ParsedCreate parsed = commands.parseCreate(request);
-    UUID entryId =
-        parsed.start() != null
-            ? sessions.start(id, parsed.start())
-            : entries.create(id, parsed.command());
-    return created(entryId);
+    if (parsed.start() != null) {
+      return created(sessions.start(id, parsed.start()), List.of());
+    }
+    EntryCreation creation = entries.createWithLinks(id, parsed.command(), parsed.links());
+    List<EntryLinkDto> links =
+        linkPresenter.present(creation.id(), creation.links(), messages.localeOf(http));
+    return created(creation.id(), links);
   }
 
   @GetMapping("/api/entries/{id}")
@@ -101,8 +113,9 @@ class EntryController {
     return mapper.toDto(queries.get(id));
   }
 
-  private ResponseEntity<EntryDto> created(UUID entryId) {
+  private ResponseEntity<EntryDto> created(UUID entryId, List<EntryLinkDto> links) {
+    EntryDto dto = mapper.toDto(queries.get(entryId));
     return ResponseEntity.created(URI.create("/api/entries/" + entryId))
-        .body(mapper.toDto(queries.get(entryId)));
+        .body(mapper.withLinks(dto, links));
   }
 }

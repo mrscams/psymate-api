@@ -253,30 +253,34 @@ class ValidationIT extends ClinicalWebSupport {
   }
 
   @Test
-  void linksAreNotYetSupported() throws Exception {
-    // M2-02 : les liens à la création arrivent avec le module linking.
-    create(
+  void linksAreRefusedOnPatch() throws Exception {
+    // M2-02 : les liens se posent à la création ; ensuite par /api/entries/{id}/links.
+    String id = createEntry(patient, "{\"type\":\"note\",\"body\":\"x\"}");
+    patch(
+            "/api/entries/" + id,
             """
-            {"type":"note","body":"x",
-             "links":[{"targetId":"%s","linkType":"triggers","direction":"incoming"}]}
+            {"links":[{"targetId":"%s","linkType":"triggers","direction":"incoming"}]}
             """
                 .formatted(session))
         .andExpect(status().isUnprocessableEntity())
         .andExpect(jsonPath("$.errors.length()").value(1))
         .andExpect(jsonPath("$.errors[0].field").value("links"))
-        .andExpect(jsonPath("$.errors[0].code").value("NOT_YET_SUPPORTED"))
-        .andExpect(jsonPath("$.errors[0].message").value(containsString("M2-02")));
+        .andExpect(jsonPath("$.errors[0].code").value("NOT_SUPPORTED_ON_PATCH"))
+        .andExpect(jsonPath("$.errors[0].message").value(containsString("/links")));
   }
 
   @Test
   void forbiddenFieldsAreAllReportedAtOnce() throws Exception {
+    // links est accepté à la création (M2-02) : seuls authorType et submissionId sont refusés.
     create(
             "{\"type\":\"note\",\"body\":\"x\",\"authorType\":\"a\",\"submissionId\":\"b\",\"links\":[]}")
         .andExpect(status().isUnprocessableEntity())
-        .andExpect(jsonPath("$.errors.length()").value(3))
+        .andExpect(jsonPath("$.errors.length()").value(2))
         .andExpect(
-            jsonPath("$.errors[*].field")
-                .value(containsInAnyOrder("authorType", "submissionId", "links")));
+            jsonPath("$.errors[*].field").value(containsInAnyOrder("authorType", "submissionId")));
+    create("{\"type\":\"note\",\"body\":\"x\",\"links\":[]}")
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.links.length()").value(0));
   }
 
   // ---- modification

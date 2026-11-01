@@ -1,7 +1,7 @@
 package com.psymate.clinical.web;
 
 import com.psymate.clinical.web.EntryDtos.ClinicalRequest;
-import com.psymate.clinical.web.EntryDtos.EntryWriteRequest;
+import com.psymate.clinical.web.EntryDtos.PatchEntryRequest;
 import com.psymate.shared.problem.AdviceOrder;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -23,7 +23,8 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * Refuse, avant la désérialisation, les clés de premier niveau que le client n'a pas le droit
  * d'envoyer : authorType et submissionId (A11 : lecture seule, provenance fixée par le serveur) et,
- * pour les entrées, links (M2-02). Les autres clés inconnues restent ignorées (défaut Boot).
+ * pour la modification d'entrée, links (M2-02). Les autres clés inconnues restent ignorées (défaut
+ * Boot).
  *
  * <p>Jackson 3 uniquement (tools.jackson.*) : le corps est lu en octets, inspecté en arbre, puis
  * rejoué tel quel au convertisseur.
@@ -66,10 +67,10 @@ class ForbiddenFieldsAdvice extends RequestBodyAdviceAdapter {
           problems.add(new FieldProblem(key, "UNKNOWN_FIELD"));
         }
       }
-      // M2-02 : les liens à la création arriveront avec le module linking.
-      if (EntryWriteRequest.class.isAssignableFrom(parameter.getParameterType())
+      // M2-02 : les liens se posent à la création ; après coup, par /api/entries/{id}/links.
+      if (PatchEntryRequest.class.isAssignableFrom(parameter.getParameterType())
           && root.has("links")) {
-        problems.add(new FieldProblem("links", "NOT_YET_SUPPORTED"));
+        problems.add(new FieldProblem("links", "NOT_SUPPORTED_ON_PATCH"));
       }
       if (!problems.isEmpty()) {
         throw new EntryRequestException(problems);

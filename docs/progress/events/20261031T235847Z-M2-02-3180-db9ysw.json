@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-31T23:58:47.089Z",
+  "task": "M2-02",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant(s), 2 à corriger, 5 remarque(s)",
+  "notes": "aucun",
+  "branch": "worktree-M2-02",
+  "checkout": "M2-02"
+}

@@ -303,6 +303,10 @@ components:
           type: string
         feeling:
           $ref: '#/components/schemas/EntryFeelingRequest'
+        links:
+          items:
+            $ref: '#/components/schemas/EntryLinkRequest'
+          type: array
         medication:
           $ref: '#/components/schemas/EntryMedicationRequest'
         occurred:
@@ -599,6 +603,10 @@ components:
         linkCount:
           format: int32
           type: integer
+        links:
+          items:
+            $ref: '#/components/schemas/EntryLinkDto'
+          type: array
         medication:
           $ref: '#/components/schemas/EntryMedicationDto'
         occurred:
@@ -653,6 +661,32 @@ components:
         intensity:
           format: int32
           type: integer
+      type: object
+    EntryLinkDto:
+      properties:
+        id:
+          format: uuid
+          type: string
+        label:
+          type: string
+        linkType:
+          type: string
+        sourceId:
+          format: uuid
+          type: string
+        targetId:
+          format: uuid
+          type: string
+      type: object
+    EntryLinkRequest:
+      properties:
+        direction:
+          type: string
+        linkType:
+          type: string
+        targetId:
+          format: uuid
+          type: string
       type: object
     EntryMedicationDto:
       properties:

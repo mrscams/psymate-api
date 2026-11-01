@@ -1,5 +1,7 @@
 package com.psymate.clinical.web;
 
+import com.psymate.clinical.api.LinkDirection;
+import com.psymate.clinical.api.LinkRequest;
 import com.psymate.clinical.application.CorrectEntryCommand;
 import com.psymate.clinical.application.CreateEntryCommand;
 import com.psymate.clinical.application.EntryDetails;
@@ -17,6 +19,7 @@ import com.psymate.clinical.domain.TimeSpec;
 import com.psymate.clinical.domain.Visibility;
 import com.psymate.clinical.web.EntryDtos.CreateEntryRequest;
 import com.psymate.clinical.web.EntryDtos.EntryFeelingRequest;
+import com.psymate.clinical.web.EntryDtos.EntryLinkRequest;
 import com.psymate.clinical.web.EntryDtos.EntryMedicationRequest;
 import com.psymate.clinical.web.EntryDtos.EntryOccurredRequest;
 import com.psymate.clinical.web.EntryDtos.EntrySessionRequest;
@@ -42,13 +45,20 @@ import org.springframework.stereotype.Component;
 class EntryCommandFactory {
 
   /** Instant factice : sert seulement à satisfaire @NotNull sur le temps pendant la validation. */
+  /** Nombre maximal de liens posés avec une entrée (une transaction bornée). */
+  static final int MAX_LINKS = 20;
+
   private static final TimeSpan PLACEHOLDER_TIME =
       new TimeSpan(Instant.EPOCH, null, Precision.EXACT, null);
 
   /**
    * Création analysée : soit une commande de création, soit (type session) un démarrage de séance.
    */
-  record ParsedCreate(EntryType type, CreateEntryCommand command, StartSessionCommand start) {}
+  record ParsedCreate(
+      EntryType type,
+      CreateEntryCommand command,
+      StartSessionCommand start,
+      List<LinkRequest> links) {}
 
   private final Validator validator;
   private final EmotionCatalog emotions;
@@ -84,6 +94,7 @@ class EntryCommandFactory {
     }
     TimeSpec spec = timeSpec(type, r.occurred(), problems);
     List<UUID> tagIds = type == EntryType.SESSION ? null : resolveTags(r.tags(), problems);
+    List<LinkRequest> links = parseLinks(type, r.links(), problems);
 
     FeelingDetail feeling =
         r.feeling() == null
@@ -116,7 +127,8 @@ class EntryCommandFactory {
 
     if (type == EntryType.SESSION) {
       Instant from = r.occurred() == null ? null : r.occurred().from();
-      return new ParsedCreate(type, null, new StartSessionCommand(r.session().modality(), from));
+      return new ParsedCreate(
+          type, null, new StartSessionCommand(r.session().modality(), from), List.of());
     }
     return new ParsedCreate(
         type,
@@ -132,7 +144,54 @@ class EntryCommandFactory {
             medication,
             session,
             tagIds == null ? List.of() : tagIds),
-        null);
+        null,
+        links);
+  }
+
+  /**
+   * Liens demandés avec la nouvelle entrée, validés AVANT toute écriture et cumulés : targetId et
+   * linkType obligatoires, direction incoming ou outgoing (nul : outgoing), au plus {@link
+   * #MAX_LINKS} liens. Une séance ne se lie pas à sa création. Les règles métier (même patient,
+   * matrice des types, doublon) sont celles de linking, appliquées pendant la transaction.
+   */
+  private static List<LinkRequest> parseLinks(
+      EntryType type, List<EntryLinkRequest> requested, List<FieldProblem> problems) {
+    if (requested == null || requested.isEmpty()) {
+      return List.of();
+    }
+    if (type == EntryType.SESSION) {
+      problems.add(new FieldProblem("links", "NOT_ALLOWED_ON_CREATE"));
+      return List.of();
+    }
+    if (requested.size() > MAX_LINKS) {
+      problems.add(new FieldProblem("links", "OUT_OF_RANGE"));
+      return List.of();
+    }
+    List<LinkRequest> links = new ArrayList<>();
+    for (int i = 0; i < requested.size(); i++) {
+      String prefix = "links[" + i + "].";
+      EntryLinkRequest link = requested.get(i);
+      if (link == null) {
+        problems.add(FieldProblem.required("links[" + i + "]"));
+        continue;
+      }
+      if (link.targetId() == null) {
+        problems.add(FieldProblem.required(prefix + "targetId"));
+      }
+      if (blank(link.linkType())) {
+        problems.add(FieldProblem.required(prefix + "linkType"));
+      }
+      LinkDirection direction = LinkDirection.OUTGOING;
+      if (link.direction() != null) {
+        switch (link.direction()) {
+          case "outgoing" -> direction = LinkDirection.OUTGOING;
+          case "incoming" -> direction = LinkDirection.INCOMING;
+          default -> problems.add(FieldProblem.invalidValue(prefix + "direction"));
+        }
+      }
+      links.add(new LinkRequest(link.targetId(), link.linkType(), direction));
+    }
+    return links;
   }
 
   // ---- modification

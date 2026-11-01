@@ -9,6 +9,7 @@ import com.psymate.clinical.domain.SessionDetail;
 import com.psymate.clinical.domain.TimeSpan;
 import com.psymate.clinical.web.EntryDtos.EntryDto;
 import com.psymate.clinical.web.EntryDtos.EntryFeelingDto;
+import com.psymate.clinical.web.EntryDtos.EntryLinkDto;
 import com.psymate.clinical.web.EntryDtos.EntryMedicationDto;
 import com.psymate.clinical.web.EntryDtos.EntryOccurredDto;
 import com.psymate.clinical.web.EntryDtos.EntrySessionDto;
@@ -41,8 +42,33 @@ interface EntryMapper {
   @Mapping(target = "medication", source = "medication")
   @Mapping(target = "session", source = "session")
   @Mapping(target = "linkCount", source = "entry.linkCount")
+  @Mapping(target = "links", ignore = true)
   @Mapping(target = "archivedAt", source = "entry.archivedAt")
   EntryDto toDto(EntryDetails details);
+
+  /** Réponse de création : le DTO complet avec les liens posés (null partout ailleurs). */
+  default EntryDto withLinks(EntryDto dto, List<EntryLinkDto> links) {
+    return new EntryDto(
+        dto.id(),
+        dto.patientId(),
+        dto.type(),
+        dto.status(),
+        dto.visibility(),
+        dto.authorType(),
+        dto.occurred(),
+        dto.recordedAt(),
+        dto.sessionId(),
+        dto.version(),
+        dto.title(),
+        dto.body(),
+        dto.tags(),
+        dto.feeling(),
+        dto.medication(),
+        dto.session(),
+        dto.linkCount(),
+        links,
+        dto.archivedAt());
+  }
 
   @Mapping(target = "precision", expression = "java(time.precision().code())")
   EntryOccurredDto toOccurred(TimeSpan time);

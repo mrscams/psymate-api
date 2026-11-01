@@ -67,7 +67,7 @@ components:
           description: Vrai si la double authentification est activée sur le compte.
           type: boolean
         verification:
-          $ref: '#/components/schemas/VerificationDto'
+          $ref: '#/components/schemas/AccountVerificationDto'
           description: État de vérification du compte.
       type: object
     AccountExportRequest:
@@ -142,7 +142,7 @@ components:
           description: Vrai si la double authentification est activée sur le compte.
           type: boolean
         verification:
-          $ref: '#/components/schemas/VerificationDto'
+          $ref: '#/components/schemas/AccountVerificationDto'
           description: État de vérification du compte.
       type: object
     AccountListDto:
@@ -161,6 +161,30 @@ components:
           type: array
         nextCursor:
           description: Curseur opaque à renvoyer dans le paramètre cursor pour la page suivante ; null sur la dernière page.
+          type: string
+      type: object
+    AccountVerificationDto:
+      description: 'État de vérification d''un compte : statut, date d''entrée dans ce statut et retard de traitement.'
+      properties:
+        overdue:
+          description: Vrai si le dossier est under_review depuis plus de 2 jours ouvrés après sa soumission ; faux pour tout autre statut.
+          type: boolean
+        since:
+          description: 'Date-heure UTC (ISO 8601) d''entrée dans le statut courant : approbation pour approved, soumission pour under_review, suspension ou refus pour suspended, rejected et closed ; à défaut, dernière mise à jour du compte.'
+          example: 2026-03-15T08:00:00Z
+          format: date-time
+          type: string
+        status:
+          description: 'Statut : email_pending (e-mail à confirmer), docs_pending (justificatifs à déposer), under_review (dossier soumis, en attente d''un administrateur), approved, needs_more (complément demandé), rejected (dossier refusé), suspended ou closed.'
+          enum:
+          - email_pending
+          - docs_pending
+          - under_review
+          - approved
+          - needs_more
+          - rejected
+          - suspended
+          - closed
           type: string
       type: object
     ActiveMedicationDto:
@@ -287,6 +311,139 @@ components:
           example: 12 rue de la Paix
           type: string
       type: object
+    AdminAddressDto:
+      description: Adresse professionnelle du praticien, telle que saisie dans son profil.
+      properties:
+        city:
+          description: Ville ; null si non renseignée.
+          type: string
+        postalCode:
+          description: Code postal ; null si non renseigné.
+          type: string
+        street:
+          description: Numéro et nom de la rue ; null si non renseigné.
+          type: string
+      type: object
+    AdminDecisionDto:
+      description: Décision enregistrée sur un dossier, avec le nouvel état de vérification.
+      properties:
+        adminId:
+          description: Identifiant de l'administrateur qui a décidé.
+          example: 5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e8f
+          format: uuid
+          type: string
+        checklist:
+          additionalProperties: {}
+          description: Liste de contrôle enregistrée ; objet vide s'il n'y en avait pas.
+          type: object
+        decidedAt:
+          description: Date-heure UTC (ISO 8601) de la décision.
+          example: 2026-03-15T08:00:00Z
+          format: date-time
+          type: string
+        id:
+          description: Identifiant de la décision créée.
+          example: 0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+          format: uuid
+          type: string
+        internalNote:
+          description: Note interne enregistrée (blancs de bord retirés) ; null si absente.
+          type: string
+        kind:
+          description: Issue enregistrée.
+          enum:
+          - approved
+          - needs_more
+          - rejected
+          type: string
+        messageToPractitioner:
+          description: Message au praticien enregistré (blancs de bord retirés) ; null si absent.
+          type: string
+        verificationStatus:
+          description: 'État de vérification du compte après la décision : approved, needs_more ou rejected.'
+          enum:
+          - approved
+          - needs_more
+          - rejected
+          type: string
+      type: object
+    AdminDocumentDto:
+      description: Justificatif du dossier de vérification d'un praticien. Le contenu ne s'ouvre que par une URL signée (getAdminDocumentUrl).
+      properties:
+        id:
+          description: Identifiant du justificatif.
+          example: 4d8f1e52-7a3b-4c19-8e60-1f2a3b4c5d6e
+          format: uuid
+          type: string
+        issuer:
+          description: Organisme émetteur ; null si non renseigné.
+          example: Université Lyon 2
+          type: string
+        mime:
+          description: Type MIME du fichier.
+          enum:
+          - application/pdf
+          - image/jpeg
+          - image/png
+          type: string
+        purged:
+          description: 'Vrai si le fichier a été purgé (90 jours après la décision) : il n''est plus téléchargeable (410 ADMIN_DOCUMENT_PURGED), seules les métadonnées restent.'
+          type: boolean
+        reviewedAt:
+          description: Date-heure UTC (ISO 8601) de la dernière qualification ; null tant que le justificatif n'a pas été qualifié.
+          example: 2026-03-14T10:05:00Z
+          format: date-time
+          type: string
+        reviewedStatus:
+          description: 'Qualification par l''administration : pending (pas encore examiné), conform ou non_conform.'
+          enum:
+          - pending
+          - conform
+          - non_conform
+          type: string
+        sizeBytes:
+          description: Taille du fichier en octets (10 Mo au plus).
+          example: 482113
+          format: int32
+          type: integer
+        title:
+          description: Intitulé donné par le praticien.
+          example: Master de psychologie
+          type: string
+        type:
+          description: Nature de la pièce.
+          enum:
+          - diploma
+          - registration
+          - certification
+          - professional_card
+          - identity
+          - other
+          type: string
+        uploadedAt:
+          description: Date-heure UTC (ISO 8601) du dépôt.
+          example: 2026-03-14T09:12:00Z
+          format: date-time
+          type: string
+        year:
+          description: Année d'obtention (1950 à 2100) ; null si non renseignée.
+          example: 2014
+          format: int32
+          type: integer
+      type: object
+    AdminSignedUrlDto:
+      description: URL signée et éphémère pour ouvrir un justificatif.
+      properties:
+        expiresAt:
+          description: Date-heure UTC (ISO 8601) d'expiration, 5 minutes après l'émission.
+          example: 2026-03-15T08:05:00Z
+          format: date-time
+          type: string
+        url:
+          description: Chemin relatif de l'API (getAdminDocumentFile) avec exp et sig en paramètres de requête ; valable uniquement pour l'administrateur qui l'a demandée.
+          example: /api/admin/verifications/9b4c0c7e-3c1a-4f2e-9d6a-2a4d6f8b1c3e/documents/4d8f1e52-7a3b-4c19-8e60-1f2a3b4c5d6e/file?exp=1773564900&sig=Zm9v
+          type: string
+      type: object
     AppealCreatedDto:
       description: Recours enregistré.
       properties:
@@ -393,6 +550,14 @@ components:
         nextCursor:
           description: Curseur opaque à renvoyer dans le paramètre cursor pour la page suivante ; null sur la dernière page.
           type: string
+      type: object
+    AppealOtpRequiredDto:
+      description: 'Corps du 202 : le mot de passe est correct, la double authentification est active et le code est absent ; rien n''a été enregistré, renvoyer la demande avec otp.'
+      properties:
+        otpRequired:
+          description: Toujours vrai.
+          example: true
+          type: boolean
       type: object
     AppealRequest:
       description: 'Dépôt d''un recours par un praticien dont le compte est refusé ou suspendu. Public : le praticien s''identifie par son e-mail et son mot de passe dans le corps, car il n''a pas de session.'
@@ -565,7 +730,7 @@ components:
       description: Coordonnées professionnelles du praticien, vues par l'administration.
       properties:
         address:
-          $ref: '#/components/schemas/AddressDto'
+          $ref: '#/components/schemas/AdminAddressDto'
           description: Adresse du cabinet ; ses champs sont null si non renseignés.
         phone:
           description: Téléphone professionnel ; null si non renseigné.
@@ -990,7 +1155,7 @@ components:
         documents:
           description: Justificatifs de vérification non retirés par le praticien, du plus ancien au plus récent.
           items:
-            $ref: '#/components/schemas/DocumentDto'
+            $ref: '#/components/schemas/AdminDocumentDto'
           type: array
         email:
           description: Adresse e-mail de connexion.
@@ -2625,11 +2790,10 @@ components:
           type: string
       type: object
     OtpRequiredDto:
-      description: 'Corps du 202 : le mot de passe est correct, la double authentification est active et le code est absent ; rien n''a été enregistré, renvoyer la demande avec otp.'
+      description: 'Réponse 202 sans job créé : le mot de passe est correct, la double authentification est active et aucun code n''a été fourni. Renvoyer la même requête avec otp.'
       properties:
         otpRequired:
-          description: Toujours vrai.
-          example: true
+          description: 'Toujours vrai : un code de double authentification est requis.'
           type: boolean
       type: object
     OtpRequiredResponse:
@@ -5266,7 +5430,7 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/DecisionDto'
+                $ref: '#/components/schemas/AdminDecisionDto'
           description: Décision enregistrée, avec le nouvel état de vérification du compte.
         '400':
           content:
@@ -5351,7 +5515,7 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/DocumentDto'
+                $ref: '#/components/schemas/AdminDocumentDto'
           description: Justificatif à jour.
         '400':
           content:
@@ -5524,7 +5688,7 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/SignedUrlDto'
+                $ref: '#/components/schemas/AdminSignedUrlDto'
           description: URL signée et son échéance.
         '401':
           content:
@@ -6996,7 +7160,7 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/OtpRequiredDto'
+                $ref: '#/components/schemas/AppealOtpRequiredDto'
           description: 'Identifiants corrects, 2FA active et code absent : renvoyer la même requête avec otp. Rien n''est enregistré.'
         '400':
           content:

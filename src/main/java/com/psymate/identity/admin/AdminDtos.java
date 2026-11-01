@@ -72,7 +72,9 @@ final class AdminDtos {
                       + " sur la dernière page.")
           String nextCursor) {}
 
-  @Schema(description = "Adresse professionnelle du praticien, telle que saisie dans son profil.")
+  @Schema(
+      name = "AdminAddressDto",
+      description = "Adresse professionnelle du praticien, telle que saisie dans son profil.")
   record AddressDto(
       @Schema(description = "Numéro et nom de la rue ; null si non renseigné.") String street,
       @Schema(description = "Code postal ; null si non renseigné.") String postalCode,
@@ -94,6 +96,7 @@ final class AdminDtos {
           boolean remoteOnly) {}
 
   @Schema(
+      name = "AdminDocumentDto",
       description =
           "Justificatif du dossier de vérification d'un praticien. Le contenu ne s'ouvre que par"
               + " une URL signée (getAdminDocumentUrl).")
@@ -274,7 +277,9 @@ final class AdminDtos {
                   "Historique des décisions sur ce compte, du plus récent au plus ancien.")
           List<DecisionItemDto> decisions) {}
 
-  @Schema(description = "URL signée et éphémère pour ouvrir un justificatif.")
+  @Schema(
+      name = "AdminSignedUrlDto",
+      description = "URL signée et éphémère pour ouvrir un justificatif.")
   record SignedUrlDto(
       @Schema(
               description =
@@ -331,7 +336,9 @@ final class AdminDtos {
                       + " faux.")
           Boolean force) {}
 
-  @Schema(description = "Décision enregistrée sur un dossier, avec le nouvel état de vérification.")
+  @Schema(
+      name = "AdminDecisionDto",
+      description = "Décision enregistrée sur un dossier, avec le nouvel état de vérification.")
   record DecisionDto(
       @Schema(
               description = "Identifiant de la décision créée.",

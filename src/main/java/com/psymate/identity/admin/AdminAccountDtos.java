@@ -18,6 +18,7 @@ final class AdminAccountDtos {
 
   /** État de vérification : statut, depuis quand, et retard de traitement (under_review). */
   @Schema(
+      name = "AccountVerificationDto",
       description =
           "État de vérification d'un compte : statut, date d'entrée dans ce statut et retard de"
               + " traitement.")
@@ -395,6 +396,7 @@ final class AdminAccountDtos {
           String status) {}
 
   @Schema(
+      name = "AppealOtpRequiredDto",
       description =
           "Corps du 202 : le mot de passe est correct, la double authentification est active et le"
               + " code est absent ; rien n'a été enregistré, renvoyer la demande avec otp.")

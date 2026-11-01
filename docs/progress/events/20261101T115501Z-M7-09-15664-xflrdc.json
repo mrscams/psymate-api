@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T11:55:01.365Z",
+  "task": "M7-09",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Documentation OpenAPI complete : 99/99 operations (summary, description, parametres, 450 reponses 4xx/5xx avec codes et schema ProblemDetail), 145/145 schemas et toutes leurs proprietes decrits, 26 tags lisibles, info.description, garde-fou ContractDocumentationIT ; aucune modification de comportement, verify vert",
+  "notes": "Diff structurel du contrat verifie par script : aucune suppression de chemin, schema ou champ ; 22 statuts 2xx faux de springdoc remplaces par le statut reel ; enums, bornes et required ajoutes et verifies contre le code. Ecarts constates listes dans la PR (collision de noms de schemas admin/verification, pas de PATIENT_ARCHIVED sur les ecritures clinical, errors[].code absent dans patients/vocabulary/directory, quatre codes 400 selon le module, geolocalisation annuaire inoperante). app.contract.version laissee a 0.6.0 sur consigne.",
+  "next": "Bump 0.9.0 apres fusion ; poser @Schema(name = Admin...) sur les 6 records admin en collision ; decider du 409 PATIENT_ARCHIVED sur les ecritures clinical",
+  "pr": "https://github.com/mrscams/psymate-api/pull/39",
+  "branch": "worktree-M7-09",
+  "checkout": "M7-09"
+}

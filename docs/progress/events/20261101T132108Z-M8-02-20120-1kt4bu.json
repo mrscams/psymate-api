@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T13:21:08.262Z",
+  "task": "M8-02",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant, 2 à corriger, 5 remarque(s)",
+  "notes": "Aucun bloquant. A corriger : (1) archive/restore sans verrou ni @DynamicUpdate : un UPDATE complet de la fiche peut écraser un PATCH concurrent et ramener current_version en arrière (ux_patient_version ensuite en 500) ; utiliser findForUpdate ou @DynamicUpdate. (2) replaceTags réécrit en lecture-différence-écriture au lieu de delete not-in + insert on conflict do nothing : deux PUT concurrents donnent une violation de clé en 500 (checklist 6, 3e case).",
+  "branch": "worktree-M8-02",
+  "checkout": "M8-01"
+}

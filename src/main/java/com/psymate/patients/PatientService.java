@@ -17,6 +17,7 @@ import com.psymate.patients.persistence.Patient;
 import com.psymate.patients.persistence.PatientFlag;
 import com.psymate.patients.persistence.PatientFlagRepository;
 import com.psymate.patients.persistence.PatientJpaRepository;
+import com.psymate.patients.persistence.PatientOwnership;
 import com.psymate.patients.persistence.PatientTag;
 import com.psymate.patients.persistence.PatientTagId;
 import com.psymate.patients.persistence.PatientTagRepository;
@@ -110,7 +111,7 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Transactional(readOnly = true)
   public boolean ownedBy(UUID patientId, UUID practitionerId) {
     return patients
-        .findById(patientId)
+        .findOwnership(patientId)
         .map(PatientService::ownership)
         .filter(o -> o.ownerId().equals(practitionerId))
         .filter(
@@ -167,21 +168,41 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
     return new Ownership(p.getTenantId(), p.getOwnerId(), p.getArchivedAt() != null);
   }
 
-  private Ownership owned(UUID patientId) {
-    return ownership(ownedEntity(patientId, false));
+  private static Ownership ownership(PatientOwnership o) {
+    return new Ownership(o.tenantId(), o.ownerId(), o.archivedAt() != null);
   }
 
-  /** Fiche du praticien courant (404 si absente, 403 si d'un autre) ; verrouillée si demandé. */
-  private Patient ownedEntity(UUID patientId, boolean forUpdate) {
+  /** Propriété sans charger la fiche (projection) : 404 si absente, 403 si d'un autre praticien. */
+  private Ownership owned(UUID patientId) {
     CurrentPractitioner me = me();
-    Patient p =
-        (forUpdate ? patients.findForUpdate(patientId) : patients.findById(patientId))
-            .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Patient introuvable."));
-    if (!p.getOwnerId().equals(me.id()) || !p.getTenantId().equals(me.tenantId())) {
+    Ownership o =
+        patients
+            .findOwnership(patientId)
+            .map(PatientService::ownership)
+            .orElseThrow(PatientService::notFound);
+    requireMine(me, o.tenantId(), o.ownerId());
+    return o;
+  }
+
+  /**
+   * Fiche du praticien courant chargée avec un verrou de ligne : toute écriture de l'entité (PATCH,
+   * archivage, restauration) se sérialise avec les autres, sans mise à jour perdue.
+   */
+  private Patient lockedOwned(UUID patientId) {
+    CurrentPractitioner me = me();
+    Patient p = patients.findForUpdate(patientId).orElseThrow(PatientService::notFound);
+    requireMine(me, p.getTenantId(), p.getOwnerId());
+    return p;
+  }
+
+  private static ResponseStatusException notFound() {
+    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Patient introuvable.");
+  }
+
+  private static void requireMine(CurrentPractitioner me, UUID tenantId, UUID ownerId) {
+    if (!ownerId.equals(me.id()) || !tenantId.equals(me.tenantId())) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ce patient n'est pas le vôtre.");
     }
-    return p;
   }
 
   private PatientDto find(UUID id) {
@@ -307,7 +328,7 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   PatientDto patch(UUID id, Map<String, Object> body) {
     CurrentPractitioner me = me();
     // Verrou de ligne : deux PATCH concurrents se sérialisent (une version chacun, sans doublon).
-    Patient cur = ownedEntity(id, true);
+    Patient cur = lockedOwned(id);
     requireActive(ownership(cur));
     List<FieldProblem> problems = new ArrayList<>();
     for (String key : body.keySet()) {
@@ -359,7 +380,7 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Transactional
   void archive(UUID id) {
     CurrentPractitioner me = me();
-    Patient p = ownedEntity(id, false);
+    Patient p = lockedOwned(id);
     if (p.isArchived()) {
       return;
     }
@@ -370,7 +391,7 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Transactional
   PatientDto restore(UUID id) {
     CurrentPractitioner me = me();
-    Patient p = ownedEntity(id, false);
+    Patient p = lockedOwned(id);
     if (p.isArchived()) {
       p.restore(Patient.now());
       events.publish(new PatientUpdated(me.tenantId(), id, me.id()));
@@ -414,14 +435,10 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
     if (!FLAG_KINDS.contains(kind)) {
       throw PatientException.invalid("kind", "Drapeau inconnu : watch, risk ou shared_care.");
     }
-    PatientFlag flag =
-        patientFlags
-            .findByPatientIdAndKindAndClearedAtIsNull(id, kind)
-            .orElseThrow(
-                () ->
-                    PatientException.of(
-                        HttpStatus.NOT_FOUND, "FLAG_NOT_ACTIVE", "Ce drapeau n'est pas actif."));
-    flag.clear(me.id(), Patient.now());
+    if (patientFlags.clearActive(id, kind, me.id(), Patient.now()) == 0) {
+      throw PatientException.of(
+          HttpStatus.NOT_FOUND, "FLAG_NOT_ACTIVE", "Ce drapeau n'est pas actif.");
+    }
     events.publish(new PatientUpdated(me.tenantId(), id, me.id()));
     return find(id);
   }
@@ -431,22 +448,16 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
     CurrentPractitioner me = me();
     requireActive(owned(id));
     List<UUID> wanted = resolveTags(labels);
-    List<PatientTag> existing = patientTags.findByIdPatientId(id);
-    Set<UUID> existingIds = new LinkedHashSet<>();
-    List<PatientTag> obsolete = new ArrayList<>();
-    for (PatientTag t : existing) {
-      existingIds.add(t.getId().getTagId());
-      if (!wanted.contains(t.getId().getTagId())) {
-        obsolete.add(t);
-      }
+    // Même sémantique d'ensemble que l'ancien SQL : suppression des absents, insertion idempotente
+    // (on conflict do nothing) des manquants, sans lecture préalable ni course entre deux PUT.
+    if (wanted.isEmpty()) {
+      patientTags.deleteAllOf(id);
+    } else {
+      patientTags.deleteOthers(id, wanted);
     }
-    patientTags.deleteAll(obsolete);
-    OffsetDateTime now = Patient.now();
-    patientTags.saveAll(
-        wanted.stream()
-            .filter(t -> !existingIds.contains(t))
-            .map(t -> new PatientTag(new PatientTagId(id, t), now))
-            .toList());
+    for (UUID tagId : wanted) {
+      patientTags.insertIgnoringDuplicate(id, tagId);
+    }
     events.publish(new PatientUpdated(me.tenantId(), id, me.id()));
     return find(id);
   }

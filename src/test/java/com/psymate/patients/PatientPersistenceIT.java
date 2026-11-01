@@ -294,6 +294,94 @@ class PatientPersistenceIT {
         .isEqualTo(1);
   }
 
+  @Test
+  void concurrentClearFlagGivesOneWinnerAndTheOthersGet404() throws Exception {
+    UUID id = create("Levée");
+    service.addFlag(id, new FlagRequest("risk", null));
+    int workers = 4;
+    List<Future<?>> results = runConcurrently(workers, i -> service.clearFlag(id, "risk"));
+    int ok = 0;
+    List<PatientException> misses = new ArrayList<>();
+    for (Future<?> f : results) {
+      try {
+        f.get();
+        ok++;
+      } catch (java.util.concurrent.ExecutionException e) {
+        assertThat(e.getCause()).isInstanceOf(PatientException.class);
+        misses.add((PatientException) e.getCause());
+      }
+    }
+    assertThat(ok).isEqualTo(1);
+    assertThat(misses)
+        .hasSize(workers - 1)
+        .allSatisfy(
+            c -> {
+              assertThat(c.status()).isEqualTo(HttpStatus.NOT_FOUND);
+              assertThat(c.code()).isEqualTo("FLAG_NOT_ACTIVE");
+            });
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from patient_flag where patient_id = ? and cleared_at is not null",
+                Integer.class,
+                id))
+        .isEqualTo(1);
+  }
+
+  @Test
+  void concurrentReplaceTagsWithTheSameTagAllSucceed() throws Exception {
+    UUID id = create("Étiquettes");
+    UUID sommeil = fx.newTag(alice, "sommeil");
+    List<Future<?>> results = runConcurrently(4, i -> service.replaceTags(id, List.of("sommeil")));
+    for (Future<?> f : results) {
+      f.get();
+    }
+    assertThat(tagIds(id)).containsExactly(sommeil);
+  }
+
+  /**
+   * L'archivage charge la fiche sous verrou : un PATCH validé entre-temps n'est jamais écrasé (ni
+   * ses colonnes, ni current_version), sinon le PATCH suivant retomberait sur ux_patient_version.
+   */
+  @Test
+  void archiveConcurrentWithPatchesNeverLosesAVersion() throws Exception {
+    UUID id = create("Archive");
+    int workers = 4;
+    List<Future<?>> results =
+        runConcurrently(
+            workers,
+            i -> {
+              if (i == 0) {
+                service.archive(id);
+              } else {
+                service.patch(id, Map.of("phone", "0" + i));
+              }
+            });
+    results.get(0).get();
+    int patched = 0;
+    for (Future<?> f : results.subList(1, workers)) {
+      try {
+        f.get();
+        patched++;
+      } catch (java.util.concurrent.ExecutionException e) {
+        assertThat(e.getCause()).isInstanceOf(PatientException.class);
+        assertThat(((PatientException) e.getCause()).code()).isEqualTo("PATIENT_ARCHIVED");
+      }
+    }
+    assertThat(currentVersion(id)).isEqualTo(1 + patched);
+    assertThat(
+            jdbc.queryForList(
+                "select version from patient_version where patient_id = ? order by version",
+                Integer.class,
+                id))
+        .hasSize(patched);
+
+    service.restore(id);
+    service.patch(id, Map.of("phone", "fin"));
+    assertThat(currentVersion(id)).isEqualTo(2 + patched);
+    assertThat(jdbc.queryForObject("select phone from patient where id = ?", String.class, id))
+        .isEqualTo("fin");
+  }
+
   private interface Work {
     void run(int index) throws Exception;
   }

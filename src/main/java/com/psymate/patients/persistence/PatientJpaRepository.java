@@ -21,9 +21,20 @@ public interface PatientJpaRepository extends JpaRepository<Patient, UUID>, Pati
   int touchClinicalRev(@Param("id") UUID id);
 
   /**
-   * Charge la fiche avec un verrou de ligne (FOR UPDATE) : deux PATCH concurrents se sérialisent,
-   * comme le faisait {@code current_version = current_version + 1} en SQL, au lieu de produire deux
-   * fois la même version (ux_patient_version).
+   * Propriété et état sans charger la fiche entière : lue à chaque requête clinique par la garde.
+   */
+  @Query(
+      "select new com.psymate.patients.persistence.PatientOwnership("
+          + "p.tenantId, p.ownerId, p.archivedAt) from Patient p where p.id = :id")
+  Optional<PatientOwnership> findOwnership(@Param("id") UUID id);
+
+  /**
+   * Charge la fiche avec un verrou de ligne ({@code for no key update} sur PostgreSQL : les
+   * insertions d'entrées ou de liens qui référencent la fiche ne sont pas bloquées). Toute écriture
+   * de l'entité (PATCH, archivage, restauration) passe par ici : deux écritures concurrentes se
+   * sérialisent, comme le faisait {@code current_version = current_version + 1} en SQL, au lieu de
+   * produire deux fois la même version (ux_patient_version) ou d'écraser l'autre (mise à jour
+   * perdue).
    */
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select p from Patient p where p.id = :id")

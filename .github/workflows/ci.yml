@@ -35,7 +35,7 @@ jobs:
         run: ./mvnw -B -q -f tools/seed/pom.xml verify
 
   # Tests d'integration (failsafe, *IT, Testcontainers) seuls : surefire ne lance rien.
-  # Quatre tranches par paquets de modules, chacune sur son runner et en serie dans une JVM :
+  # Trois tranches par paquets de modules, chacune sur son runner et en serie dans une JVM :
   # les IT sont lourds et deviennent flaky si on les parallelise sur une machine.
   # Les motifs de chaque tranche vivent dans tools/it-slices.txt (source unique, partagee avec
   # `make verify-fast`) : la matrice ne porte que les noms, et `tools/verify-fast.sh --check`
@@ -48,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        slice: [clinical, identity-auth, identity-admin, core]
+        slice: [clinical, identity, core]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4

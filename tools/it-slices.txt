@@ -5,9 +5,10 @@
 # Chaque *IT.java (hors perf, profil -Pperf) doit appartenir a exactement une tranche ; `-Dit.test`
 # remplace les excludes du pom, d'ou `!**/perf/**` sur chaque ligne. `tools/verify-fast.sh --check`
 # verifie cette couverture et que ci.yml liste exactement ces tranches (lance dans le job unit).
-# Quatre tranches equilibrees par temps de test sequentiel (identity seule pesait 63 % du total) :
-# clinical (+ directory) ~96 s, identity-auth ~139 s, identity-admin (+ preferences, verification) ~167 s, core ~148 s.
-clinical=com/psymate/clinical/**/*IT.java,com/psymate/vocabulary/*IT.java,com/psymate/patients/*IT.java,com/psymate/events/*IT.java,com/psymate/directory/*IT.java,!**/perf/**
-identity-auth=com/psymate/identity/auth/**/*IT.java,!**/perf/**
-identity-admin=com/psymate/identity/admin/**/*IT.java,com/psymate/identity/preferences/*IT.java,com/psymate/identity/verification/*IT.java,!**/perf/**
+# Trois tranches, celles de la CI. identity pese ~63 % du temps de test et finit seule : une decoupe en
+# 4 (identity/auth ; identity/admin + preferences + verification ; directory avec clinical) gagne 2 a 3 min
+# sur un poste libre mais manque de memoire des qu'un autre build tourne (PR #42) ; a reessayer avec
+# un plafond -Xmx par voie.
+clinical=com/psymate/clinical/**/*IT.java,com/psymate/vocabulary/*IT.java,com/psymate/patients/*IT.java,com/psymate/events/*IT.java,!**/perf/**
+identity=com/psymate/identity/**/*IT.java,com/psymate/directory/*IT.java,!**/perf/**
 core=com/psymate/linking/**/*IT.java,com/psymate/overview/*IT.java,com/psymate/search/*IT.java,com/psymate/shared/*IT.java,com/psymate/*IT.java,!**/perf/**

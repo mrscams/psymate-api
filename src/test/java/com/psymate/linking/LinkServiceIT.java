@@ -118,10 +118,11 @@ class LinkServiceIT {
     return fx.count("select count(*) from link where patient_id = ?", patient);
   }
 
+  /** Événements publiés (un par événement, quel que soit le nombre d'abonnés). */
   private int publications(Class<?> type, UUID linkId) {
     return fx.count(
-        "select count(*) from event_publication where event_type = ?"
-            + " and serialized_event::text like ?",
+        "select count(distinct (serialized_event::jsonb ->> 'id')) from event_publication"
+            + " where event_type = ? and serialized_event::text like ?",
         type.getName(),
         "%" + linkId + "%");
   }

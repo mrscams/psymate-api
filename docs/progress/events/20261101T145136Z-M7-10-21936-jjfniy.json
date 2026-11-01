@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T14:51:36.119Z",
+  "task": "M7-10",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 42 fusionnee dans main (make verify-fast : build unique puis unitaires + 3 tranches d'IT en parallele, tranches partagees avec ci.yml)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/42",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

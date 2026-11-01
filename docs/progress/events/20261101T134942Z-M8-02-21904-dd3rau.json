@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T13:49:42.686Z",
+  "task": "M8-02",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Module patients converti de JdbcClient a Spring Data JPA / Hibernate 7.4.13 (G Q32) : entites Patient (jsonb Jackson 3), PatientVersion @Immutable, PatientFlag, PatientTag dans patients.persistence, UUID nus, Persistable ; 17 requetes en JPA, 2 lectures f_unaccent natives (liste dynamique, liste du praticien) + insert patient_tag on conflict do nothing ; clinical_rev par UPDATE JPQL atomique, verrou de ligne sur PATCH/archive/restore, 409 FLAG_ALREADY_ACTIVE apres commit (TransactionTemplate), chargement par lot des tags et drapeaux ; DTO, controleur, facade, evenements et contrat 0.6.0 inchanges, aucune migration ni dependance. verify vert : 344 unitaires, 845 IT. Revue : 0 bloquant, 2 a corriger appliques.",
+  "notes": "Perf (-Pperf) : cibles A6 tenues a la premiere execution (p50 proche de M7-01), seconde execution degradee uniformement par la charge machine (autres sessions) : a refaire sur machine calme avant fusion. Tests ajoutes : PatientTest (7), PatientPersistenceIT (12 dont 5 courses), PatientAppRoleIT (4, role psymate_app).",
+  "next": "M8-03 vocabulary",
+  "pr": "https://github.com/mrscams/psymate-api/pull/41",
+  "branch": "worktree-M8-02",
+  "checkout": "M8-01"
+}

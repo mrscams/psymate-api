@@ -15,11 +15,13 @@ import com.psymate.shared.problem.FieldProblem;
 import com.psymate.shared.problem.ProblemException;
 import com.psymate.shared.problem.ProblemMessages;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,8 +68,16 @@ import org.springframework.web.bind.annotation.RestController;
  * l'URL du fichier, dont la signature est invalide, répond 403 SIGNED_URL_INVALID (comme les URL
  * signées des justificatifs).
  */
+@Tag(
+    name = "Export de compte",
+    description =
+        "Export asynchrone de tous les patients d'un compte, y compris refusé ou suspendu"
+            + " (zip de fichiers Markdown et PDF, lien valable 7 jours).")
 @RestController
 class AccountExportController implements AuthErrorScope {
+
+  private static final String PROBLEM = "application/problem+json";
+  private static final String JOB_ID_EXAMPLE = "5c1d7e2a-8b3f-4a69-b0d4-7e6f5a4b3c2d";
 
   private final SuspendedAccountAuthenticator authenticator;
   private final ExportJobService jobs;
@@ -80,53 +90,64 @@ class AccountExportController implements AuthErrorScope {
   @PostMapping("/api/me/export")
   @Operation(
       operationId = "requestAccountExport",
-      summary =
-          "Lance l'export asynchrone de tous les patients du compte (zip chiffré, lien 7 jours) :"
-              + " 202 jobId et statusUrl, ou 202 otpRequired. Compte connecté (corps ignoré) ou"
-              + " compte refusé/suspendu par e-mail + mot de passe (+ code 2FA) dans le corps.")
+      summary = "Lance l'export asynchrone de tous les patients du compte",
+      description =
+          """
+          Public pour la chaîne de sécurité, contrôle fait par la route : compte approuvé connecté \
+          (session praticien, corps ignoré), ou compte refusé ou suspendu sans session, qui fournit \
+          {email, password, otp?} dans le corps. Un seul export en cours par compte. Réponse 202 \
+          asynchrone : jobId et statusUrl à interroger (GET /api/me/export/{jobId}), ou otpRequired \
+          sans création de job si la double authentification est active et que otp manque. Le zip \
+          (patients.md, puis un .md et un .pdf par patient) est conservé chiffré et téléchargeable \
+          7 jours. Verrouillage de 15 minutes après 5 échecs d'authentification (423 Retry-After).\
+          """)
   @ApiResponses({
     @ApiResponse(
         responseCode = "202",
-        description = "Job créé (jobId, statusUrl), ou code 2FA requis (otpRequired)",
-        content = @Content(schema = @Schema(implementation = ExportRequestedDto.class))),
+        description =
+            "Deux corps possibles : {jobId, statusUrl} quand le job est créé ; {otpRequired: true}"
+                + " quand le code de double authentification manque (aucun job créé).",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(oneOf = {ExportRequestedDto.class, OtpRequiredDto.class}))),
     @ApiResponse(
         responseCode = "401",
-        description = "INVALID_CREDENTIALS : identifiants incorrects ou code 2FA faux",
+        description = "INVALID_CREDENTIALS : identifiants incorrects ou code 2FA faux.",
         content =
-            @Content(
-                mediaType = "application/problem+json",
-                schema = @Schema(implementation = ProblemDetail.class))),
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
         responseCode = "403",
-        description = "EMAIL_NOT_CONFIRMED",
+        description = "EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.",
         content =
-            @Content(
-                mediaType = "application/problem+json",
-                schema = @Schema(implementation = ProblemDetail.class))),
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
         responseCode = "409",
         description =
-            "EXPORT_IN_PROGRESS (un seul export en cours) ou ACCOUNT_NOT_SUSPENDED (compte"
-                + " approuvé ou clos sans session)",
+            "EXPORT_IN_PROGRESS : un export de ce compte est déjà en file ou en cours ;"
+                + " ACCOUNT_NOT_SUSPENDED : compte approuvé sans session (se connecter) ou compte"
+                + " clos.",
         content =
-            @Content(
-                mediaType = "application/problem+json",
-                schema = @Schema(implementation = ProblemDetail.class))),
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
         responseCode = "422",
-        description = "VALIDATION_FAILED : e-mail ou mot de passe manquants sans session",
+        description =
+            "VALIDATION_FAILED avec errors[] : email et password REQUIRED quand il n'y a ni session"
+                + " ni identifiants dans le corps.",
         content =
-            @Content(
-                mediaType = "application/problem+json",
-                schema = @Schema(implementation = ProblemDetail.class))),
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
         responseCode = "423",
-        description = "Verrouillage après 5 échecs (15 min)",
-        headers = @Header(name = "Retry-After", description = "Secondes avant nouvel essai"),
+        description =
+            "ACCOUNT_LOCKED : 5 échecs d'identification en 15 minutes, réessayer après"
+                + " Retry-After.",
+        headers =
+            @Header(
+                name = "Retry-After",
+                description = "Secondes avant un nouvel essai.",
+                schema = @Schema(type = "integer")),
         content =
-            @Content(
-                mediaType = "application/problem+json",
-                schema = @Schema(implementation = ProblemDetail.class)))
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class)))
   })
   ResponseEntity<Object> request(
       @RequestBody(required = false) AccountExportRequest body, HttpServletRequest http) {
@@ -174,25 +195,36 @@ class AccountExportController implements AuthErrorScope {
   @GetMapping("/api/me/export/{jobId}")
   @Operation(
       operationId = "getAccountExport",
-      summary =
-          "Statut d'un export du compte : praticien connecté propriétaire du job, ou paramètre"
-              + " token du statusUrl. downloadUrl seulement quand le job est terminé et non"
-              + " expiré.")
+      summary = "Donne le statut d'un export de compte",
+      description =
+          """
+          Public pour la chaîne de sécurité : praticien connecté propriétaire du job, ou porteur du \
+          paramètre token du statusUrl (compte suspendu sans session). À interroger jusqu'à ce que \
+          status vaille done ou failed. downloadUrl n'est renseigné que si le job est terminé et le \
+          lien non expiré (7 jours). Un job inconnu, d'un autre praticien ou un jeton faux donnent \
+          le même 404, pour ne rien révéler.\
+          """)
   @ApiResponses({
-    @ApiResponse(
-        responseCode = "200",
-        content = @Content(schema = @Schema(implementation = ExportStatusDto.class))),
+    @ApiResponse(responseCode = "200", description = "Statut du job d'export."),
     @ApiResponse(
         responseCode = "404",
-        description = "EXPORT_NOT_FOUND : job inconnu, d'un autre praticien, ou jeton invalide",
+        description =
+            "EXPORT_NOT_FOUND : job inconnu, d'un autre praticien, ou jeton token absent ou"
+                + " invalide.",
         content =
-            @Content(
-                mediaType = "application/problem+json",
-                schema = @Schema(implementation = ProblemDetail.class)))
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class)))
   })
   ExportStatusDto status(
-      @PathVariable UUID jobId,
-      @RequestParam(required = false) String token,
+      @Parameter(description = "Identifiant du job d'export.", example = JOB_ID_EXAMPLE)
+          @PathVariable
+          UUID jobId,
+      @Parameter(
+              description =
+                  "Jeton de suivi porté par le statusUrl, pour un compte sans session. Inutile"
+                      + " quand le praticien propriétaire du job est connecté.",
+              example = "Zm9vYmFy")
+          @RequestParam(required = false)
+          String token,
       HttpServletRequest http) {
     ExportTexts texts = ExportTexts.of(ProblemMessages.localeOf(http));
     JobStatus s =
@@ -210,36 +242,54 @@ class AccountExportController implements AuthErrorScope {
   @GetMapping("/api/me/export/{jobId}/file")
   @Operation(
       operationId = "downloadAccountExport",
-      summary =
-          "Télécharge le zip de l'export (URL signée valable 7 jours) : 200 application/zip, 403"
-              + " signature invalide, 410 expiré ou purgé.")
+      summary = "Télécharge le zip d'un export de compte par son URL signée",
+      description =
+          """
+          Public pour la chaîne de sécurité : l'autorisation est la signature (paramètres exp et \
+          sig) de la downloadUrl renvoyée par GET /api/me/export/{jobId}, valable 7 jours. Renvoie \
+          le zip déchiffré en pièce jointe (Content-Disposition attachment, nom \
+          export-psymate-AAAAMMJJ.zip). Passé l'échéance ou une fois le fichier purgé : 410.\
+          """)
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
-        description = "Zip en pièce jointe : patients.md, puis un .md et un .pdf par patient",
+        description = "Zip en pièce jointe : patients.md, puis un .md et un .pdf par patient.",
+        headers =
+            @Header(
+                name = "Content-Disposition",
+                description = "attachment avec le nom du fichier, export-psymate-AAAAMMJJ.zip.",
+                schema = @Schema(type = "string")),
         content =
             @Content(
                 mediaType = "application/zip",
                 schema = @Schema(type = "string", format = "binary"))),
     @ApiResponse(
         responseCode = "403",
-        description = "SIGNED_URL_INVALID",
+        description =
+            "SIGNED_URL_INVALID : signature ou échéance absente, falsifiée ou illisible, job"
+                + " inconnu ou non terminé.",
         content =
-            @Content(
-                mediaType = "application/problem+json",
-                schema = @Schema(implementation = ProblemDetail.class))),
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
         responseCode = "410",
-        description = "EXPORT_EXPIRED : échéance passée ou fichier purgé",
+        description = "EXPORT_EXPIRED : échéance passée ou fichier purgé.",
         content =
-            @Content(
-                mediaType = "application/problem+json",
-                schema = @Schema(implementation = ProblemDetail.class)))
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class)))
   })
   ResponseEntity<byte[]> download(
-      @PathVariable UUID jobId,
-      @RequestParam(required = false) String exp,
-      @RequestParam(required = false) String sig,
+      @Parameter(description = "Identifiant du job d'export.", example = JOB_ID_EXAMPLE)
+          @PathVariable
+          UUID jobId,
+      @Parameter(
+              description = "Échéance du lien, en secondes depuis l'epoch UTC, telle que signée.",
+              example = "1793649600")
+          @RequestParam(required = false)
+          String exp,
+      @Parameter(
+              description = "Signature du lien, telle que renvoyée dans downloadUrl.",
+              example = "q3Zk0w")
+          @RequestParam(required = false)
+          String sig,
       HttpServletRequest http) {
     ExportTexts texts = ExportTexts.of(ProblemMessages.localeOf(http));
     ZipFile file = jobs.file(jobId, exp, sig, texts);

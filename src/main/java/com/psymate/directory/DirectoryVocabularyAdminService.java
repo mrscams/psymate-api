@@ -2,6 +2,7 @@ package com.psymate.directory;
 
 import com.psymate.directory.DirectoryVocabularyAdminRepository.Row;
 import com.psymate.directory.VocabularyException.FieldError;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,22 +29,105 @@ class DirectoryVocabularyAdminService {
   static final int MAX_SORT = 32767;
 
   /** Création : type, code, libellés, rang (absent : après le dernier du type). */
+  @Schema(description = "Nouvelle entrée du vocabulaire de l'annuaire (spécialité ou public).")
   record CreateRequest(
-      String kind, String code, String labelFr, String labelEn, Integer sortOrder) {}
+      @Schema(
+              description = "Type de l'entrée : specialty (spécialité) ou audience (public).",
+              allowableValues = {"specialty", "audience"},
+              requiredMode = Schema.RequiredMode.REQUIRED,
+              example = "specialty")
+          String kind,
+      @Schema(
+              description =
+                  "Code stable de l'entrée, unique pour le type : commence par une lettre"
+                      + " minuscule, puis minuscules, chiffres et underscores, 2 à 40 caractères."
+                      + " Ne change plus ensuite.",
+              pattern = "^[a-z][a-z0-9_]{1,39}$",
+              requiredMode = Schema.RequiredMode.REQUIRED,
+              example = "sleep_therapy")
+          String code,
+      @Schema(
+              description = "Libellé français, 120 caractères au plus.",
+              maxLength = 120,
+              requiredMode = Schema.RequiredMode.REQUIRED,
+              example = "Thérapie du sommeil")
+          String labelFr,
+      @Schema(
+              description =
+                  "Libellé anglais, 120 caractères au plus ; vide ou absent : pas de libellé"
+                      + " anglais.",
+              maxLength = 120,
+              example = "Sleep therapy")
+          String labelEn,
+      @Schema(
+              description =
+                  "Rang d'affichage dans le type, de 0 à 32767 ; absent : après le dernier du"
+                      + " type.",
+              minimum = "0",
+              maximum = "32767",
+              example = "23")
+          Integer sortOrder) {}
 
   /** Modification partielle : un champ absent reste inchangé ; labelEn vide efface le libellé. */
-  record PatchRequest(String labelFr, String labelEn, Integer sortOrder, Boolean active) {}
+  @Schema(
+      description =
+          "Modification partielle d'une entrée : un champ absent reste inchangé. Le code et le"
+              + " type ne se modifient pas.")
+  record PatchRequest(
+      @Schema(
+              description = "Nouveau libellé français, non vide, 120 caractères au plus.",
+              maxLength = 120)
+          String labelFr,
+      @Schema(
+              description =
+                  "Nouveau libellé anglais, 120 caractères au plus ; chaîne vide : efface le"
+                      + " libellé anglais.",
+              maxLength = 120)
+          String labelEn,
+      @Schema(
+              description = "Nouveau rang d'affichage dans le type, de 0 à 32767.",
+              minimum = "0",
+              maximum = "32767")
+          Integer sortOrder,
+      @Schema(
+              description =
+                  "false pour désactiver l'entrée (409 VOCABULARY_IN_USE si une fiche publiée"
+                      + " l'utilise), true pour la réactiver.")
+          Boolean active) {}
 
+  @Schema(description = "Entrée du vocabulaire de l'annuaire, active ou non.")
   record ItemDto(
-      String kind,
-      String code,
-      String labelFr,
-      String labelEn,
-      int sortOrder,
-      boolean active,
-      int usedByPublishedProfiles) {}
+      @Schema(
+              description = "Type de l'entrée : specialty (spécialité) ou audience (public).",
+              allowableValues = {"specialty", "audience"},
+              example = "specialty")
+          String kind,
+      @Schema(description = "Code stable de l'entrée, unique pour le type.", example = "anxiety")
+          String code,
+      @Schema(description = "Libellé français.", example = "Anxiété") String labelFr,
+      @Schema(description = "Libellé anglais ; null s'il n'y en a pas.", example = "Anxiety")
+          String labelEn,
+      @Schema(description = "Rang d'affichage dans le type, de 0 à 32767.", example = "1")
+          int sortOrder,
+      @Schema(
+              description =
+                  "true si l'entrée est proposée dans l'annuaire ; false si désactivée (invisible"
+                      + " dans GET /api/vocabulary/directory et refusée dans les profils).")
+          boolean active,
+      @Schema(
+              description =
+                  "Nombre de fiches publiées qui utilisent ce code ; tant qu'il est supérieur à 0,"
+                      + " l'entrée ne peut pas être désactivée.",
+              example = "3")
+          int usedByPublishedProfiles) {}
 
-  record ListDto(List<ItemDto> items) {}
+  @Schema(description = "Entrées du vocabulaire de l'annuaire.")
+  record ListDto(
+      @Schema(
+              description =
+                  "Entrées, actives ou non, par type puis rang puis libellé français quand les"
+                      + " deux types sont listés.")
+          List<ItemDto> items) {}
 
   private final DirectoryVocabularyAdminRepository repo;
   private final Clock clock;

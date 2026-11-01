@@ -30,6 +30,12 @@ import tools.jackson.databind.exc.MismatchedInputException;
 /**
  * Erreurs RFC 9457 (application/problem+json) des contrôleurs clinical : errors[] = [{field, code,
  * message}] pour les 422, statut HTTP du domaine pour les erreurs métier, 403 pour la propriété.
+ *
+ * <p>Codes racine produits (champ {@code code}) : VALIDATION_FAILED (422, errors[] par champ),
+ * MALFORMED_REQUEST (400 : corps JSON illisible sans champ identifiable, ou identifiant de chemin
+ * qui n'est pas un UUID), PATIENT_FORBIDDEN (403) et PATIENT_NOT_FOUND (404) levés par la garde de
+ * propriété, et le nom de chaque {@link ClinicalError} (statut du domaine ; pour un 422, errors[0]
+ * porte le même code).
  */
 @Order(AdviceOrder.MODULE)
 @RestControllerAdvice(

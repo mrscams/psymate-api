@@ -12,11 +12,13 @@ import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.SuspendedAccount;
 import com.psymate.identity.auth.AppealAuthenticator;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +42,12 @@ import org.springframework.web.bind.annotation.RestController;
  * /api/auth/password/change. Les routes /api/admin/appeals sont gardées par AdminTwoFactorFilter.
  * AuthErrorScope rend les erreurs d'authentification (401, 423) avec le format de AuthController.
  */
+@Tag(
+    name = "Recours",
+    description =
+        "Recours d'un praticien dont le compte est refusé ou suspendu (dépôt public, identifié par"
+            + " e-mail et mot de passe) et examen des recours par un administrateur avec"
+            + " double authentification active.")
 @RestController
 class AppealController implements AuthErrorScope {
 
@@ -54,20 +62,52 @@ class AppealController implements AuthErrorScope {
   @PostMapping("/api/me/appeal")
   @Operation(
       operationId = "submitAppeal",
-      summary =
-          "Dépose le recours d'un compte refusé ou suspendu (public : e-mail + mot de passe) : 201,"
-              + " 202 code 2FA requis, 401, 403, 409, 422, 423. Un seul recours par décision.")
+      summary = "Dépose le recours d'un compte refusé ou suspendu",
+      description =
+          """
+          Public, sans session : le praticien s'identifie par {email, password, otp?} dans le \
+          corps, car son compte refusé ou suspendu ne peut plus se connecter. Le corps est \
+          validé en premier (422), sans consommer de tentative. Le compte doit être rejected ou \
+          suspended (409 sinon) ; si la 2FA est active et que otp manque, réponse 202 avec \
+          otpRequired et rien n'est enregistré. Un seul recours ouvert à la fois, et un seul par \
+          décision contestée (la dernière décision de refus ou de suspension). Débit propre : \
+          5 échecs en 15 minutes verrouillent le couple e-mail et adresse IP pendant 15 minutes \
+          (423). Le dépôt est inscrit au journal d'administration ; réponse 201 sans en-tête \
+          Location.""")
   @ApiResponses({
     @ApiResponse(
         responseCode = "201",
+        description = "Recours enregistré, au statut open ; en attente d'un administrateur.",
         content = @Content(schema = @Schema(implementation = AppealCreatedDto.class))),
     @ApiResponse(
         responseCode = "202",
-        description = "Mot de passe correct, 2FA active et code manquant",
+        description =
+            "Identifiants corrects, 2FA active et code absent : renvoyer la même requête avec"
+                + " otp. Rien n'est enregistré.",
         content = @Content(schema = @Schema(implementation = OtpRequiredDto.class))),
     @ApiResponse(
+        responseCode = "400",
+        description =
+            "MALFORMED_REQUEST : corps absent ou JSON illisible (code propre à ce module, à la"
+                + " place de MALFORMED_JSON).",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
         responseCode = "401",
-        description = "Identifiants incorrects (message unique) ou code 2FA faux",
+        description =
+            "INVALID_CREDENTIALS : e-mail inconnu, mot de passe incorrect ou code 2FA faux"
+                + " (message unique, sans indiquer lequel).",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description =
+            "EMAIL_NOT_CONFIRMED : mot de passe correct mais l'adresse e-mail n'a jamais été"
+                + " confirmée.",
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -75,15 +115,34 @@ class AppealController implements AuthErrorScope {
     @ApiResponse(
         responseCode = "409",
         description =
-            "ACCOUNT_NOT_SUSPENDED, APPEAL_NOT_ALLOWED, APPEAL_ALREADY_OPEN ou APPEAL_ALREADY_USED",
+            "ACCOUNT_NOT_SUSPENDED : identifiants corrects mais le compte n'est ni refusé ni"
+                + " suspendu ; APPEAL_NOT_ALLOWED : aucune décision de refus ou de suspension à"
+                + " contester ; APPEAL_ALREADY_OPEN : un recours est déjà en attente ;"
+                + " APPEAL_ALREADY_USED : la décision contestée a déjà fait l'objet d'un recours"
+                + " examiné.",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "422",
+        description =
+            "VALIDATION_FAILED avec errors[] {field, code, message} ; codes de champ : REQUIRED"
+                + " (email, password, message), TOO_SHORT (message, moins de 20 caractères),"
+                + " TOO_LONG (message, plus de 4000 caractères).",
         content =
             @Content(
                 mediaType = "application/problem+json",
                 schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
         responseCode = "423",
-        description = "Verrouillage après 5 échecs (15 min)",
-        headers = @Header(name = "Retry-After", description = "Secondes avant nouvel essai"),
+        description =
+            "ACCOUNT_LOCKED : 5 échecs d'identification en 15 minutes ; réessayer après"
+                + " retryAfterSeconds.",
+        headers =
+            @Header(
+                name = "Retry-After",
+                description = "Secondes à attendre avant un nouvel essai (15 minutes au plus)."),
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -118,25 +177,111 @@ class AppealController implements AuthErrorScope {
   @GetMapping("/api/admin/appeals")
   @Operation(
       operationId = "listAdminAppeals",
-      summary =
-          "Recours (status open par défaut, decided ou all), pagination par curseur ; les plus"
-              + " anciens d'abord pour open")
+      summary = "Liste les recours à examiner ou déjà examinés",
+      description =
+          """
+          Administrateur avec 2FA. Filtre status : open (non examinés, par défaut), decided \
+          (examinés) ou all. Les recours open sont triés du plus ancien au plus récent (file de \
+          traitement), decided et all du plus récent au plus ancien. Pagination par curseur \
+          opaque : limit 50 par défaut, bornée à 1..200 sans erreur ; nextCursor est null sur la \
+          dernière page.""")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Page de recours."),
+    @ApiResponse(
+        responseCode = "422",
+        description =
+            "VALIDATION_FAILED avec errors[] {field, code, message} ; codes de champ :"
+                + " INVALID_STATUS (status, autre que open, decided, all), INVALID_CURSOR (cursor"
+                + " illisible).",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class)))
+  })
   AppealListDto list(
-      @RequestParam(required = false) String status,
-      @RequestParam(required = false) String cursor,
-      @RequestParam(required = false) Integer limit) {
+      @Parameter(
+              description =
+                  "Recours à lister : open (défaut), decided ou all. Autre valeur : 422"
+                      + " INVALID_STATUS.",
+              example = "open")
+          @RequestParam(required = false)
+          String status,
+      @Parameter(
+              description =
+                  "Curseur opaque (nextCursor de la page précédente, à renvoyer tel quel) ;"
+                      + " absent pour la première page. Illisible : 422 INVALID_CURSOR.")
+          @RequestParam(required = false)
+          String cursor,
+      @Parameter(
+              description =
+                  "Nombre maximal de recours par page : 50 par défaut, ramené dans l'intervalle"
+                      + " 1 à 200 sans erreur.",
+              example = "50")
+          @RequestParam(required = false)
+          Integer limit) {
     return service.list(status, cursor, limit);
   }
 
   @PostMapping("/api/admin/appeals/{id}/decision")
   @Operation(
       operationId = "decideAdminAppeal",
-      summary =
-          "Accepte ou rejette un recours (accepted réactive le compte) ; l'administrateur doit"
-              + " différer de l'auteur de la décision contestée")
+      summary = "Accepte ou écarte un recours",
+      description =
+          """
+          Administrateur avec 2FA, différent de l'auteur de la décision contestée. Le corps est \
+          validé en premier (422). accepted : le compte est réactivé comme par la réactivation \
+          manuelle (statut d'avant la suspension, ou docs_pending pour un dossier refusé), \
+          décision appeal_accepted au journal, un seul e-mail. dismissed : le compte reste \
+          inchangé, décision appeal_rejected, e-mail de réponse. Dans les deux cas la réponse \
+          est transmise au praticien, l'e-mail part de façon asynchrone après l'enregistrement, \
+          et le recours est clos : il ne peut plus être décidé ni redéposé pour la même décision.""")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Recours examiné, avec son issue."),
+    @ApiResponse(
+        responseCode = "400",
+        description =
+            "MALFORMED_REQUEST : corps absent ou JSON illisible (code propre à ce module).",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "APPEAL_NOT_FOUND : aucun recours avec cet identifiant.",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "409",
+        description =
+            "APPEAL_ALREADY_DECIDED : le recours a déjà été examiné ; APPEAL_SELF_REVIEW :"
+                + " l'administrateur est l'auteur de la décision contestée ;"
+                + " APPEAL_ACCOUNT_NOT_REACTIVABLE : outcome accepted alors que le compte n'est"
+                + " plus suspended ni rejected.",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "422",
+        description =
+            "VALIDATION_FAILED avec errors[] {field, code, message} ; codes de champ :"
+                + " INVALID_OUTCOME (outcome, autre que accepted ou dismissed), REQUIRED"
+                + " (messageToPractitioner), TOO_LONG (messageToPractitioner, plus de 4000"
+                + " caractères). Contrôlé avant la recherche du recours.",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class)))
+  })
   AppealItemDto decide(
       @AuthenticationPrincipal CurrentPractitioner admin,
-      @PathVariable UUID id,
+      @Parameter(
+              description = "Identifiant du recours.",
+              example = "7e8f9a0b-1c2d-4e3f-8a4b-5c6d7e8f9a0b")
+          @PathVariable
+          UUID id,
       @RequestBody AppealDecisionRequest body,
       HttpServletRequest request) {
     return service.decide(admin, id, body, request.getRemoteAddr());

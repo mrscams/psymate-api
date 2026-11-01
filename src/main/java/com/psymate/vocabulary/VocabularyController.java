@@ -25,13 +25,13 @@ class VocabularyController {
 
   private final EmotionCatalog emotions;
   private final LinkTypeCatalog linkTypes;
-  private final VocabularyRepository repo;
+  private final EntryTypeService entryTypes;
 
   VocabularyController(
-      EmotionCatalog emotions, LinkTypeCatalog linkTypes, VocabularyRepository repo) {
+      EmotionCatalog emotions, LinkTypeCatalog linkTypes, EntryTypeService entryTypes) {
     this.emotions = emotions;
     this.linkTypes = linkTypes;
-    this.repo = repo;
+    this.entryTypes = entryTypes;
   }
 
   @GetMapping("/emotions")
@@ -76,6 +76,6 @@ class VocabularyController {
           praticiens, liste complète, non paginée.""")
   @ApiResponses({@ApiResponse(responseCode = "200", description = "Types d'entrées actifs.")})
   List<EntryTypeView> entryTypes() {
-    return repo.entryTypes();
+    return entryTypes.activeEntryTypes();
   }
 }

@@ -1,6 +1,5 @@
 package com.psymate.vocabulary;
 
-import com.psymate.vocabulary.VocabularyRepository.MergeRow;
 import com.psymate.vocabulary.api.EmotionAffect;
 import com.psymate.vocabulary.api.EmotionCatalog;
 import com.psymate.vocabulary.api.EmotionView;
@@ -10,10 +9,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 class EmotionService implements EmotionCatalog {
@@ -59,30 +59,47 @@ class EmotionService implements EmotionCatalog {
               example = "2026-03-20T10:00:00Z")
           OffsetDateTime undoneAt) {}
 
-  private final VocabularyRepository repo;
+  private final EmotionRepository emotions;
+  private final EmotionMergeRepository merges;
   private final CurrentPractitioner current;
+  private final TransactionTemplate tx;
 
-  EmotionService(VocabularyRepository repo, CurrentPractitioner current) {
-    this.repo = repo;
+  EmotionService(
+      EmotionRepository emotions,
+      EmotionMergeRepository merges,
+      CurrentPractitioner current,
+      TransactionTemplate tx) {
+    this.emotions = emotions;
+    this.merges = merges;
     this.current = current;
+    this.tx = tx;
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<EmotionView> activeEmotions() {
-    return repo.activeEmotions(current.id());
+    return emotions.findActiveFor(current.id()).stream().map(VocabularyViews::emotion).toList();
   }
 
   @Override
+  @Transactional(readOnly = true)
   public Optional<EmotionView> findActiveByLabel(String label) {
-    return repo.activeEmotionByNormalized(current.id(), TextNormalizer.normalize(label));
+    return emotions
+        .findFirstActiveByNormalized(current.id(), TextNormalizer.normalize(label))
+        .map(VocabularyViews::emotion);
   }
 
   @Override
+  @Transactional(readOnly = true)
   public Optional<EmotionAffect> affectOf(String code) {
-    return repo.emotionAffect(current.id(), code);
+    return emotions.findUsable(current.id(), code).map(VocabularyViews::affect);
   }
 
-  @Transactional
+  /**
+   * Pas de {@code @Transactional} ici : l'unicité du libellé (ux_emotion_custom_label) est
+   * contrôlée au flush / commit, donc le 409 d'une course est attrapé APRÈS le commit (même schéma
+   * que PatientService.addFlag).
+   */
   EmotionView create(String labelFr, String family) {
     String label = validateLabel(labelFr);
     if (family == null || family.isBlank()) {
@@ -91,99 +108,136 @@ class EmotionService implements EmotionCatalog {
     if (!FAMILIES.contains(family)) {
       throw VocabularyException.invalid("family", "Famille inconnue : " + family + ".");
     }
+    try {
+      return tx.execute(status -> doCreate(label, family));
+    } catch (DataIntegrityViolationException race) {
+      throw conflict();
+    }
+  }
+
+  private EmotionView doCreate(String label, String family) {
     UUID practitioner = current.id();
     String norm = TextNormalizer.normalize(label);
-    if (repo.emotionLabelTaken(practitioner, norm, null)) {
+    if (emotions.labelTaken(practitioner, norm, "")) {
       throw conflict();
     }
     String code = "c_" + HexFormat.of().formatHex(randomBytes());
-    try {
-      repo.insertCustomEmotion(code, current.tenantId(), practitioner, family, label, norm);
-    } catch (DuplicateKeyException e) {
-      throw conflict();
-    }
-    return repo.ownCustomEmotion(practitioner, code).orElseThrow();
+    Emotion created =
+        emotions.save(
+            Emotion.custom(
+                code, current.tenantId(), practitioner, family, label, norm, Timestamps.now()));
+    return VocabularyViews.emotion(created);
   }
 
-  @Transactional
+  /** Même principe que {@link #create} : le renommage peut violer l'unicité au commit. */
   EmotionView rename(String code, String labelFr) {
+    try {
+      return tx.execute(status -> doRename(code, labelFr));
+    } catch (DataIntegrityViolationException race) {
+      throw conflict();
+    }
+  }
+
+  private EmotionView doRename(String code, String labelFr) {
     UUID practitioner = current.id();
-    EmotionView e = activeOwn(practitioner, code);
+    Emotion e = activeOwn(practitioner, code);
     String label = validateLabel(labelFr);
     String norm = TextNormalizer.normalize(label);
-    if (repo.emotionLabelTaken(practitioner, norm, e.code())) {
+    if (emotions.labelTaken(practitioner, norm, e.getCode())) {
       throw conflict();
     }
-    try {
-      repo.renameEmotion(code, label, norm);
-    } catch (DuplicateKeyException ex) {
-      throw conflict();
-    }
-    return repo.ownCustomEmotion(practitioner, code).orElseThrow();
+    e.rename(label, norm);
+    return VocabularyViews.emotion(e);
   }
 
   /** Fusionne une custom active dans une globale active ou une custom active du praticien. */
   @Transactional
   MergeView merge(String sourceCode, String targetCode) {
     UUID practitioner = current.id();
-    repo.lockEmotion(sourceCode);
-    EmotionView source = activeOwn(practitioner, sourceCode);
+    // Verrou de la source d'abord : deux fusions concurrentes de la même émotion se sérialisent.
+    Emotion source =
+        emotions.findByCodeForUpdate(sourceCode).orElseThrow(EmotionService::emotionNotFound);
+    requireActiveOwn(practitioner, source);
     if (targetCode == null || targetCode.isBlank()) {
       throw VocabularyException.invalid("targetCode", "La cible est obligatoire.");
     }
-    if (targetCode.equals(source.code())) {
+    if (targetCode.equals(source.getCode())) {
       throw VocabularyException.invalid("targetCode", "La cible doit différer de la source.");
     }
-    repo.usableEmotion(practitioner, targetCode)
+    emotions
+        .findUsable(practitioner, targetCode)
         .orElseThrow(
             () ->
                 VocabularyException.of(
                     HttpStatus.NOT_FOUND, "EMOTION_NOT_FOUND", "Émotion cible introuvable."));
-    int affected = repo.rewriteFeelings(sourceCode, targetCode);
-    UUID id = UUID.randomUUID();
-    repo.insertMerge(id, practitioner, sourceCode, targetCode, affected, UNDO_DAYS);
-    repo.setEmotionActive(sourceCode, false);
-    return view(repo.merge(id, practitioner).orElseThrow());
+    int affected = emotions.rewriteFeelings(sourceCode, targetCode);
+    EmotionMerge merge =
+        merges.save(
+            EmotionMerge.open(
+                UUID.randomUUID(),
+                practitioner,
+                sourceCode,
+                targetCode,
+                affected,
+                Timestamps.now(),
+                UNDO_DAYS));
+    source.deactivate();
+    return view(merge);
   }
 
   /** Annule une fusion dans les 30 jours ; après undo_until ou déjà annulée : 409. */
   @Transactional
   MergeView undo(UUID mergeId) {
     UUID practitioner = current.id();
-    MergeRow m =
-        repo.merge(mergeId, practitioner)
+    // Fusion verrouillée : deux undo concurrents se sérialisent, le second voit undone_at posé.
+    EmotionMerge m =
+        merges
+            .findOwnForUpdate(mergeId, practitioner)
             .orElseThrow(
                 () ->
                     VocabularyException.of(
                         HttpStatus.NOT_FOUND, "MERGE_NOT_FOUND", "Fusion introuvable."));
-    if (m.undoneAt() != null) {
+    if (m.isUndone()) {
       throw VocabularyException.of(
           HttpStatus.CONFLICT, "MERGE_ALREADY_UNDONE", "Cette fusion a déjà été annulée.");
     }
-    // Mise à jour conditionnelle : échoue si le délai est dépassé ou si un undo concurrent a gagné.
-    if (!repo.markMergeUndone(mergeId)) {
+    OffsetDateTime now = Timestamps.now();
+    if (!m.isUndoableAt(now)) {
       throw VocabularyException.of(
           HttpStatus.CONFLICT,
           "MERGE_UNDO_EXPIRED",
           "Le délai d'annulation de 30 jours est dépassé.");
     }
-    repo.restoreFeelings(m.sourceCode(), m.targetCode());
-    repo.setEmotionActive(m.sourceCode(), true);
-    return view(repo.merge(mergeId, practitioner).orElseThrow());
+    m.markUndone(now);
+    emotions.restoreFeelings(m.getSourceCode(), m.getTargetCode());
+    emotions.findById(m.getSourceCode()).ifPresent(Emotion::activate);
+    return view(m);
   }
 
-  private EmotionView activeOwn(UUID practitioner, String code) {
-    EmotionView e =
-        repo.ownCustomEmotion(practitioner, code)
-            .orElseThrow(
-                () ->
-                    VocabularyException.of(
-                        HttpStatus.NOT_FOUND, "EMOTION_NOT_FOUND", "Émotion introuvable."));
-    if (!e.active()) {
+  private Emotion activeOwn(UUID practitioner, String code) {
+    Emotion e =
+        emotions.findOwnCustom(practitioner, code).orElseThrow(EmotionService::emotionNotFound);
+    requireActive(e);
+    return e;
+  }
+
+  private static void requireActiveOwn(UUID practitioner, Emotion e) {
+    if (!e.isCustomOf(practitioner)) {
+      throw emotionNotFound();
+    }
+    requireActive(e);
+  }
+
+  private static void requireActive(Emotion e) {
+    if (!e.isActive()) {
       throw VocabularyException.of(
           HttpStatus.CONFLICT, "EMOTION_INACTIVE", "Cette émotion a été fusionnée.");
     }
-    return e;
+  }
+
+  private static VocabularyException emotionNotFound() {
+    return VocabularyException.of(
+        HttpStatus.NOT_FOUND, "EMOTION_NOT_FOUND", "Émotion introuvable.");
   }
 
   private static String validateLabel(String labelFr) {
@@ -203,14 +257,14 @@ class EmotionService implements EmotionCatalog {
     return new byte[] {(byte) (v >>> 24), (byte) (v >>> 16), (byte) (v >>> 8), (byte) v};
   }
 
-  private static MergeView view(MergeRow m) {
+  private static MergeView view(EmotionMerge m) {
     return new MergeView(
-        m.id(),
-        m.sourceCode(),
-        m.targetCode(),
-        m.affectedCount(),
-        m.mergedAt(),
-        m.undoUntil(),
-        m.undoneAt());
+        m.getId(),
+        m.getSourceCode(),
+        m.getTargetCode(),
+        m.getAffectedCount(),
+        m.getMergedAt(),
+        m.getUndoUntil(),
+        m.getUndoneAt());
   }
 }

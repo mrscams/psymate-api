@@ -86,6 +86,49 @@ components:
         nextCursor:
           type: string
       type: object
+    ActiveMedicationDto:
+      description: Médicament en cours
+      properties:
+        dosage:
+          type: string
+        entryId:
+          format: uuid
+          type: string
+        frequency:
+          type: string
+        molecule:
+          type: string
+        prescriber:
+          type: string
+        since:
+          description: Début (occurred_from)
+          format: date-time
+          type: string
+      type: object
+    ActiveSituationDto:
+      description: Situation en cours (occurred_to nul)
+      properties:
+        averageIntensity:
+          description: Moyenne des intensités de ces ressentis, null s'il n'y en a aucun
+          format: double
+          type: number
+        entryId:
+          format: uuid
+          type: string
+        linkCount:
+          format: int32
+          type: integer
+        linkedFeelingCount:
+          description: Ressentis non archivés reliés par un lien accepté, dans un sens ou l'autre
+          format: int32
+          type: integer
+        since:
+          description: Début (occurred_from)
+          format: date-time
+          type: string
+        title:
+          type: string
+      type: object
     ActorDto:
       properties:
         displayName:
@@ -529,6 +572,17 @@ components:
           format: date-time
           type: string
       type: object
+    DraftsDto:
+      description: Brouillons et séance ouverte
+      properties:
+        count:
+          description: Entrées en brouillon non archivées
+          format: int32
+          type: integer
+        openSession:
+          $ref: '#/components/schemas/OpenSessionDto'
+          description: Séance non clôturée la plus récente, null s'il n'y en a pas
+      type: object
     EmailChangeRequest:
       properties:
         email:
@@ -585,6 +639,15 @@ components:
           type: string
         scope:
           type: string
+      type: object
+    EmotionsDto:
+      description: Émotions dominantes de la fenêtre
+      properties:
+        top:
+          description: 5 au plus, par effectif décroissant
+          items:
+            $ref: '#/components/schemas/TopEmotionDto'
+          type: array
       type: object
     EntryDto:
       properties:
@@ -1210,6 +1273,16 @@ components:
           format: date-time
           type: string
       type: object
+    OpenSessionDto:
+      description: Séance ouverte
+      properties:
+        entryId:
+          format: uuid
+          type: string
+        startedAt:
+          format: date-time
+          type: string
+      type: object
     OtpRequiredDto:
       properties:
         otpRequired:
@@ -1219,6 +1292,76 @@ components:
       properties:
         otpRequired:
           type: boolean
+      type: object
+    OverviewDto:
+      description: Vue d'ensemble d'un patient pour une fenêtre (30d, 90d ou 12m).
+      properties:
+        activeSituations:
+          description: Situations en cours, triées par nombre de liens décroissant
+          items:
+            $ref: '#/components/schemas/ActiveSituationDto'
+          type: array
+        computedAt:
+          description: Instant (UTC) du calcul de la projection
+          format: date-time
+          type: string
+        drafts:
+          $ref: '#/components/schemas/DraftsDto'
+        emotions:
+          $ref: '#/components/schemas/EmotionsDto'
+        facts:
+          $ref: '#/components/schemas/OverviewFactsDto'
+        recentActivity:
+          description: 10 dernières entrées non archivées, lues en direct (hors projection)
+          items:
+            $ref: '#/components/schemas/RecentActivityItemDto'
+          type: array
+        sourceRev:
+          description: patient.clinical_rev au moment du calcul de la projection
+          format: int64
+          type: integer
+        trend:
+          $ref: '#/components/schemas/TrendDto'
+        window:
+          description: 'Fenêtre appliquée à trend et emotions : 30d, 90d ou 12m'
+          type: string
+      type: object
+    OverviewFactsDto:
+      description: Faits clés du patient
+      properties:
+        activeMedications:
+          items:
+            $ref: '#/components/schemas/ActiveMedicationDto'
+          type: array
+        age:
+          description: Âge en années, null sans date de naissance
+          format: int32
+          type: integer
+        flags:
+          description: Drapeaux actifs (non levés)
+          items:
+            $ref: '#/components/schemas/OverviewFlagDto'
+          type: array
+        followedSince:
+          description: follow_up.since, sinon la date de création du dossier
+          format: date
+          type: string
+        sessionCount:
+          description: Nombre de séances non archivées
+          format: int32
+          type: integer
+      type: object
+    OverviewFlagDto:
+      description: Drapeau actif posé à la main sur le dossier
+      properties:
+        kind:
+          description: watch, risk ou shared_care
+          type: string
+        reason:
+          type: string
+        setAt:
+          format: date-time
+          type: string
       type: object
     PasswordChangeRequest:
       properties:
@@ -1641,6 +1784,39 @@ components:
         reason:
           type: string
       type: object
+    RecentActivityItemDto:
+      description: Entrée récente
+      properties:
+        entryId:
+          format: uuid
+          type: string
+        occurredFrom:
+          format: date-time
+          type: string
+        occurredTo:
+          format: date-time
+          type: string
+        recordedAt:
+          format: date-time
+          type: string
+        sessionId:
+          format: uuid
+          type: string
+        status:
+          description: draft ou final
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        version:
+          description: Version courante
+          format: int32
+          type: integer
+        visibility:
+          description: private ou clinical
+          type: string
+      type: object
     RecordContactRequest:
       properties:
         body:
@@ -1975,6 +2151,71 @@ components:
           items:
             $ref: '#/components/schemas/TimelinePeriodDto'
           type: array
+      type: object
+    TopEmotionDto:
+      description: Émotion dominante et variation par rapport à la fenêtre précédente
+      properties:
+        code:
+          type: string
+        count:
+          description: Nombre de ressentis dans la fenêtre
+          format: int32
+          type: integer
+        delta:
+          description: count moins previousCount
+          format: int32
+          type: integer
+        label:
+          type: string
+        previousCount:
+          description: Nombre dans la fenêtre précédente de même longueur
+          format: int32
+          type: integer
+      type: object
+    TrendDto:
+      description: Courbe d'intensité et repères de la fenêtre
+      properties:
+        markers:
+          items:
+            $ref: '#/components/schemas/TrendMarkerDto'
+          type: array
+        points:
+          items:
+            $ref: '#/components/schemas/TrendPointDto'
+          type: array
+      type: object
+    TrendMarkerDto:
+      description: 'Repère sur la courbe : séance ou changement de médicament'
+      properties:
+        change:
+          description: start ou end pour un médicament, null pour une séance
+          type: string
+        date:
+          format: date
+          type: string
+        entryId:
+          format: uuid
+          type: string
+        kind:
+          description: session ou medication
+          type: string
+        label:
+          type: string
+      type: object
+    TrendPointDto:
+      description: 'Point de la courbe : moyenne glissante sur 7 jours à cette date'
+      properties:
+        averageIntensity:
+          description: Intensité moyenne (0 à 10) des ressentis des 7 derniers jours, null si aucun
+          format: double
+          type: number
+        date:
+          format: date
+          type: string
+        valence:
+          description: Valence moyenne (-2 à 2) des valences connues, null sinon
+          format: double
+          type: number
       type: object
     TwoFactorDisableRequest:
       properties:
@@ -3766,6 +4007,57 @@ paths:
           description: OK
       tags:
       - patient-controller
+  /api/patients/{id}/overview:
+    get:
+      description: 'Lit la projection patient_overview : faits clés, situations actives, tendance d''intensité (moyenne glissante sur 7 jours, 90 points au plus, repères de séances et de médicaments), émotions dominantes avec variation sur la fenêtre précédente, brouillons et séance ouverte. La fenêtre (window) borne la tendance et les émotions. Si la projection est en retard sur patient.clinical_rev, elle est recalculée et réécrite avant de répondre : la réponse n''est jamais obsolète. recentActivity (10 dernières entrées non archivées) est toujours lu en direct. Les entrées archivées sont exclues, les entrées privées du praticien incluses.'
+      operationId: getPatientOverview
+      parameters:
+      - description: Identifiant du patient
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'Fenêtre de la tendance et des émotions : 30d, 90d (défaut) ou 12m'
+        in: query
+        name: window
+        required: false
+        schema:
+          default: 90d
+          enum:
+          - 30d
+          - 90d
+          - 12m
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OverviewDto'
+          description: Vue d'ensemble pour la fenêtre demandée
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Fenêtre invalide (errors[] par champ, code INVALID_WINDOW)
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Le patient n'appartient pas au praticien courant
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Patient inconnu
+      summary: Vue d'ensemble d'un patient
+      tags:
+      - overview
   /api/patients/{id}/restore:
     post:
       operationId: restorePatient

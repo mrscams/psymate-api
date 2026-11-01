@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-01T11:55:01.161Z",
+  "task": "M7-09",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "3 bloquants, 29 a corriger, 33 remarques (trois relectures module par module contre le code)",
+  "notes": "Bloquants : allowedLinkTypes liste de codes sur la creation d'entree et objets sur les liens (corrige en oneOf) ; FlagRequest.kind non requis (corrige) ; collision de noms de schemas VerificationDto/DecisionDto/DocumentDto/SignedUrlDto/AddressDto entre identity.verification et identity.admin (non corrige : changement structurel, liste dans la PR, correctif a poser avec le bump 0.9.0)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/39",
+  "branch": "worktree-M7-09",
+  "checkout": "M7-09"
+}

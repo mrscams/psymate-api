@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T09:44:31.609Z",
+  "task": "PROJET",
+  "agent": "claude",
+  "status": "done",
+  "summary": "CI-flaky : IT asynchrones rendus deterministes, 3 causes (course de completion Modulith sur evenement duplique, projection inseree avant le test, arriere de l'executeur) ; 3 passes et verify complet verts",
+  "notes": "Tache nommee CI-flaky faute d'ID C2 (l'outil n'accepte que Mx-yy ou PROJET). Correctifs cote tests seulement : OverviewListenerIT, OverviewSchemaIT, GraphQueryIT, LinkServiceIT, LinkingFixtures.awaitPublicationsSettled ; aucun test desactive ni delai raccourci",
+  "next": "Constater la CI verte sur la PR 37 puis fusionner",
+  "pr": "https://github.com/mrscams/psymate-api/pull/37",
+  "branch": "ci-flaky",
+  "checkout": "ci-flaky"
+}

@@ -26,6 +26,7 @@ Pour la base de données, docs/E-modele-donnees.md fait autorité sur A et C. Po
 - L'IA V2 n'existe pas en V1 : ne pas écrire de code IA, mais ne pas casser les hooks (outbox, tables vides).
 - Le compagnon patient n'existe pas en V1 (A11) : `entry.author_type` vaut toujours 'practitioner', `entry.submission_id` toujours NULL, `patient_device` et `patient_submission` restent vides, le package `companion` reste vide. Ne jamais les supprimer, ne jamais les remplir, ne jamais exposer `authorType` en écriture.
 - L'agenda Google (fiches 15, 15b) est hors V1 (G, Q25) : aucun module scheduling.
+- Accès aux données (G Q32) : JPA pour les modules CRUD (patients, vocabulary, directory, identity, clinical.export), `JdbcClient` pour search, overview, graphe, timeline et keyset admin. Gardes ArchUnit : `@Immutable` sur les tables append-only, `@DynamicUpdate` sur `entry_version`, aucune association JPA entre modules (UUID nus), jamais d'entité dans un DTO ni dans `web` ; `open-in-view=false`, Flyway seul maître du DDL (`ddl-auto=validate` en test).
 
 ## Versions
 Spring Boot 4.1.x, Spring Modulith 2.1.2, Java 21 : ne jamais rétrograder, ne jamais ajouter une dépendance de la ligne Boot 3 / Jackson 2 (`com.fasterxml.jackson.*` est Jackson 2 ; Jackson 3 vit sous `tools.jackson.*`). Les noms de starters sont ceux de la ligne 4 : vérifie dans la documentation officielle, pas de mémoire. Toute version est figée dans pom.xml, jamais une plage.

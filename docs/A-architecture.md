@@ -308,7 +308,7 @@ com/psymate/clinical/
   api/            EntryFacade, EntryDto, EntryCreated (événement)
   domain/         Entry, EntryVersion, TimeSpan, règles métier
   application/    EntryService, commandes, validation
-  persistence/    EntryRepository (JPA), entités, mappers
+  persistence/    EntryRepository : JPA (Spring Data) pour le CRUD, JdbcClient pour les projections et requêtes natives (G Q32)
   web/            EntryController (REST)
   package-info.java  @ApplicationModule(allowedDependencies = {"patients", "vocabulary", "events"})
 ```

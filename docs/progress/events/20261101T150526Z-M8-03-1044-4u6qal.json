@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-01T15:05:26.417Z",
+  "task": "M8-03",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 45 fusionnee dans main (module vocabulary en JPA, fusions de tags natives)",
+  "next": "M8-05 identity, puis M8-06 clinical.export",
+  "pr": "https://github.com/mrscams/psymate-api/pull/45",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

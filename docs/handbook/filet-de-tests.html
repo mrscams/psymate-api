@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filet de tests PsyMate</title>
+</head>
+<body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout : une colonne de lecture (68ch) avec des figures qui s'élargissent ; teinte "papier clinique" bleu-gris, accent vert pin pour "vérifié", rouge brique pour "interdit". */
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --fg: #1b2230; --muted: #5b6676; --line: #d6dbe3;
+    --accent: #1f6f5c; --accent-soft: #dcefe8; --danger: #a33a2a; --danger-soft: #f6e1dc;
+    --warn: #8a6d1f; --warn-soft: #f4ead0; --info: #2b5f9e; --info-soft: #dde8f6;
+    --code-bg: #eef1f5;
+    --display: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #12161c; --surface: #1a2029; --fg: #e6e9ee; --muted: #9aa5b4; --line: #2c3542;
+    --accent: #5fc39f; --accent-soft: #163a30; --danger: #e4836f; --danger-soft: #3d201a;
+    --warn: #d9b35a; --warn-soft: #3a2f14; --info: #7fa9e0; --info-soft: #1b2a40;
+    --code-bg: #232a35; color-scheme: dark;
+  } }
+  :root[data-theme="dark"] {
+    --bg: #12161c; --surface: #1a2029; --fg: #e6e9ee; --muted: #9aa5b4; --line: #2c3542;
+    --accent: #5fc39f; --accent-soft: #163a30; --danger: #e4836f; --danger-soft: #3d201a;
+    --warn: #d9b35a; --warn-soft: #3a2f14; --info: #7fa9e0; --info-soft: #1b2a40;
+    --code-bg: #232a35; color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px; }
+  main { max-width: 68ch; margin: 0 auto; }
+  header.hero { padding-block: 48px 24px; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: var(--display); font-weight: 600; font-size: clamp(30px, 5vw, 42px); line-height: 1.1; margin: 8px 0 12px; text-wrap: balance; }
+  h2 { font-family: var(--display); font-weight: 600; font-size: 26px; margin: 48px 0 12px; text-wrap: balance; }
+  h3 { font-family: var(--body); font-weight: 600; font-size: 17px; margin: 28px 0 8px; }
+  p, li { max-width: 68ch; }
+  p.lead { font-size: 18px; color: var(--muted); }
+  code, pre { font-family: var(--mono); font-size: 13.5px; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre.code { background: var(--code-bg); padding: 14px 16px; border-radius: 6px; overflow-x: auto; line-height: 1.5; }
+  .figure { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin: 20px 0; overflow-x: auto; }
+  .figure figcaption { font-size: 13px; color: var(--muted); margin-top: 10px; }
+  .wide { max-width: 100%; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 20px 0; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+  .tile .n { font-family: var(--display); font-size: 34px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+  .tile .l { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 600; font-size: 13px; letter-spacing: .03em; color: var(--muted); }
+  td.num { font-variant-numeric: tabular-nums; text-align: right; }
+  .tbl { overflow-x: auto; margin: 16px 0; }
+  .pill { display: inline-block; font-family: var(--mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
+  .pill.ok { background: var(--accent-soft); color: var(--accent); }
+  .pill.no { background: var(--danger-soft); color: var(--danger); }
+  .pill.info { background: var(--info-soft); color: var(--info); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .callout { border-left: 3px solid var(--accent); background: var(--surface); padding: 12px 16px; margin: 20px 0; border-radius: 0 6px 6px 0; }
+  .callout.danger { border-left-color: var(--danger); }
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 10px; }
+  .steps li { counter-increment: s; display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; }
+  .steps li::before { content: counter(s); font-family: var(--mono); font-size: 13px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+  .caught { display: grid; gap: 10px; margin: 16px 0; }
+  .caught > div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; min-width: 0; }
+  .caught .who { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; padding-top: 3px; }
+  svg text { font-family: var(--body); }
+  svg .mono { font-family: var(--mono); }
+  pre.mermaid { background: transparent; }
+  @media (max-width: 520px) { .caught > div { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">psymate-api · état au 1er novembre 2026 · 29 tâches fusionnées</div>
+  <h1>Comment le code est vérifié avant d'arriver sur <code>main</code></h1>
+  <p class="lead">Quatre familles de tests, un seul verdict : <code>./mvnw verify</code> doit être vert, en local puis en CI, avant qu'une PR soit fusionnée. Cette page explique ce que chaque famille vérifie, comment elle le fait, et ce qu'elle a réellement attrapé pendant les sept vagues.</p>
+</header>
+
+<div class="tiles">
+  <div class="tile"><div class="n">28</div><div class="l">classes de tests unitaires (<code>*Test</code>)</div></div>
+  <div class="tile"><div class="n">54</div><div class="l">classes d'intégration (<code>*IT</code>) sur vraie base</div></div>
+  <div class="tile"><div class="n">12</div><div class="l">règles d'architecture (ArchUnit + Modulith)</div></div>
+  <div class="tile"><div class="n">~880</div><div class="l">cas exécutés par un <code>verify</code> complet (≈ 8 min)</div></div>
+</div>
+
+<h2>1. La pyramide, vue d'en haut</h2>
+<p>Le projet ne distingue pas les tests par « niveau » abstrait mais par <em>ce qu'ils peuvent casser</em>. Du plus rapide au plus lent :</p>
+
+<figure class="figure wide">
+<svg viewBox="0 0 720 300" width="100%" role="img" aria-label="Pyramide des quatre familles de tests">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+  </defs>
+  <!-- strates -->
+  <polygon points="300,20 420,20 460,85 260,85" fill="var(--accent-soft)" stroke="var(--accent)"/>
+  <polygon points="260,90 460,90 510,155 210,155" fill="var(--info-soft)" stroke="var(--info)"/>
+  <polygon points="210,160 510,160 570,225 150,225" fill="var(--warn-soft)" stroke="var(--warn)"/>
+  <polygon points="150,230 570,230 640,290 80,290" fill="var(--surface)" stroke="var(--line)"/>
+  <text x="360" y="48" text-anchor="middle" font-size="13" font-weight="600" fill="var(--fg)">Transverses (racine)</text>
+  <text x="360" y="66" text-anchor="middle" font-size="11.5" fill="var(--muted)">schéma Flyway · contrat OpenAPI · réserves V2</text>
+  <text x="360" y="118" text-anchor="middle" font-size="13" font-weight="600" fill="var(--fg)">Architecture</text>
+  <text x="360" y="136" text-anchor="middle" font-size="11.5" fill="var(--muted)">ArchUnit + Spring Modulith : frontières entre modules</text>
+  <text x="360" y="188" text-anchor="middle" font-size="13" font-weight="600" fill="var(--fg)">Intégration · 54 classes *IT</text>
+  <text x="360" y="206" text-anchor="middle" font-size="11.5" fill="var(--muted)">Spring Boot + Postgres réel (Testcontainers) + MockMvc, un IT par endpoint</text>
+  <text x="360" y="258" text-anchor="middle" font-size="13" font-weight="600" fill="var(--fg)">Unitaires · 28 classes *Test</text>
+  <text x="360" y="276" text-anchor="middle" font-size="11.5" fill="var(--muted)">domaine pur : règles, parsing, calculs — sans Spring, sans base</text>
+  <!-- axe -->
+  <line x1="40" y1="285" x2="40" y2="30" stroke="var(--muted)" stroke-width="1" marker-end="url(#arr)"/>
+  <text x="34" y="160" transform="rotate(-90 34 160)" text-anchor="middle" font-size="11" fill="var(--muted)">plus lent · plus rare · plus large</text>
+  <text x="690" y="285" text-anchor="end" font-size="11" fill="var(--muted)">ms</text>
+  <text x="690" y="48" text-anchor="end" font-size="11" fill="var(--muted)">secondes</text>
+</svg>
+<figcaption>Les quatre familles. Les strates du haut sont peu nombreuses mais tournent sur tout le projet à la fois ; celles du bas sont nombreuses et ciblées.</figcaption>
+</figure>
+
+<h2>2. Un seul verdict : <code>./mvnw verify</code></h2>
+<p>Maven enchaîne les familles dans un ordre fixe. Le premier échec arrête tout, et c'est voulu : un test unitaire rouge ne vaut pas la peine de démarrer Postgres.</p>
+
+<figure class="figure wide">
+<pre class="mermaid">
+flowchart LR
+  A[spotless:check<br/>formatage google-java-format] --> B[compile<br/>MapStruct génère les mappers]
+  B --> C[surefire<br/>*Test · unitaires]
+  C --> D[package<br/>jar + repackage]
+  D --> E[failsafe<br/>*IT · intégration + architecture]
+  E --> F{verify}
+  F -->|vert| G[PR fusionnable]
+  F -->|rouge| H[corriger, relancer]
+  style F fill:#dcefe8,stroke:#1f6f5c,color:#1b2230
+  style H fill:#f6e1dc,stroke:#a33a2a,color:#1b2230
+</pre>
+<figcaption>Phases Maven. <code>ArchitectureTests</code> et <code>ModularityTests</code> n'ont pas de suffixe <code>IT</code> mais tournent avec surefire, avant même la base de données.</figcaption>
+</figure>
+
+<p>La CI GitHub (<code>.github/workflows/ci.yml</code>) rejoue exactement la même commande dans un job <code>verify</code>, plus un second job <code>contract</code> qui regénère <code>contract/openapi.yaml</code> et échoue si le fichier commité diffère. Deux jobs séparés pour que l'échec du contrat soit lisible (le diff est affiché) sans relancer toute la suite.</p>
+
+<h2>3. Les tests unitaires : le domaine sans Spring</h2>
+<p>Ils ne chargent ni contexte Spring ni base. Ils testent des règles pures, souvent sous forme de <strong>table de cas</strong> (<code>@ParameterizedTest</code>) : une ligne par situation, le résultat attendu à côté.</p>
+<div class="tbl"><table>
+<tr><th>Classe</th><th>Ce qu'elle fige</th></tr>
+<tr><td><code>GraceRuleTest</code></td><td>la règle de grâce (1 h 15, même auteur, aucun lien, aucune autre version) avec une horloge injectée</td></tr>
+<tr><td><code>TimeSpanTest</code></td><td>les bornes des six précisions temporelles (jour, mois, année, période, phase de vie…)</td></tr>
+<tr><td><code>LinkRulesTest</code></td><td>la matrice des types de liens autorisés entre types d'entrées</td></tr>
+<tr><td><code>TotpTest</code></td><td>TOTP RFC 6238 contre les vecteurs officiels, Base32, URI otpauth</td></tr>
+<tr><td><code>PreferencesTest</code></td><td>le merge RFC 7396 des 9 clés et leurs domaines (dont le refus d'un BigInteger tronqué)</td></tr>
+<tr><td><code>QuerySyntaxTest</code></td><td>le parsing de <code>tag:travail émotion:anxiété avant:2026-03</code></td></tr>
+<tr><td><code>NameFilterTest</code>, <code>SlugGeneratorTest</code>, <code>PasswordPolicyTest</code>…</td><td>normalisation, slugs uniques, politique de mot de passe</td></tr>
+</table></div>
+
+<h2>4. Les tests d'intégration : jamais de mock de la base</h2>
+<p>C'est la règle la plus structurante de CLAUDE.md. Chaque endpoint a son <code>*IT</code>, qui démarre l'application complète contre un <strong>vrai Postgres</strong> éphémère. Rien n'est simulé entre le contrôleur et la table : les migrations Flyway, les triggers, les contraintes <code>CHECK</code>, les <code>REVOKE</code> du rôle <code>psymate_app</code> s'exécutent pour de vrai.</p>
+
+<figure class="figure wide">
+<pre class="mermaid">
+sequenceDiagram
+  participant T as Classe *IT (JUnit)
+  participant S as Contexte Spring Boot
+  participant TC as Testcontainers
+  participant D as Docker
+  participant PG as Postgres pgvector:pg16
+  T->>TC: @ServiceConnection PostgreSQLContainer
+  TC->>D: docker run pgvector/pgvector:pg16 (+ init rôle psymate_app)
+  D-->>TC: port aléatoire
+  TC-->>S: URL JDBC injectée
+  S->>PG: Flyway V01 → V10
+  T->>S: MockMvc + principal (spring-security-test)
+  S->>PG: SQL réel (JdbcClient)
+  PG-->>T: assertions sur les lignes (jdbc.queryForObject)
+  Note over TC,D: à la fin du JVM, le conteneur « ryuk » supprime tout
+</pre>
+<figcaption>Déroulé d'un IT. Le même schéma sert à tous les modules ; identity ajoute un conteneur Mailpit pour lire les e-mails envoyés.</figcaption>
+</figure>
+
+<h3>Les ingrédients, module par module</h3>
+<ul>
+  <li><strong>Un conteneur par classe de configuration</strong> (<code>PostgresTestConfig</code>, <code>ClinicalTestConfig</code>, <code>AuthTestConfig</code>…). Spring met les contextes en cache, donc une dizaine de Postgres au plus par <code>verify</code>, pas un par test.</li>
+  <li><strong>Le principal est posé sur chaque requête</strong> avec <code>spring-security-test</code> (<code>authentication(…)</code>) au lieu de rejouer un login : on teste la règle métier, pas la session. Les tests de login, eux, font le vrai parcours (<code>LoginHardeningIT</code>).</li>
+  <li><strong>Une horloge pilotable</strong> (<code>MutableClock</code>) pour les règles temporelles : grâce 1 h 15, jeton 24 h, verrou 15 min, sans attendre.</li>
+  <li><strong>Mailpit</strong> comme SMTP réel : les tests lisent le mail reçu (destinataire, reply-to, lien de confirmation) via son API.</li>
+  <li><strong>Les événements</strong> sont vérifiés dans la table <code>event_publication</code> (outbox Modulith), pas par un mock du publisher.</li>
+  <li><strong>Les tests de rôle</strong> : <code>GraceRuleAppRoleIT</code> exécute le service réel connecté en <code>psymate_app</code>, le rôle de production, pour attraper ce que les tests en propriétaire du schéma ne voient pas.</li>
+</ul>
+
+<div class="callout">
+<strong>Isolation : le test qui ne manque jamais.</strong> Chaque IT d'un endpoint patient contient un cas « praticien B ne voit pas la donnée de A » (403, pas 404), et pour les écrans admin un cas « la réponse ne contient aucun champ de <code>patient</code> ni <code>entry</code> » vérifié sur le JSON brut.
+</div>
+
+<h2>5. Les vérifications d'architecture : qui a le droit de parler à qui</h2>
+<p>C'est ici que la question des frontières est tranchée mécaniquement. Deux outils, complémentaires, tournent à chaque build.</p>
+
+<h3>5.1 Spring Modulith — <code>ModularityTests</code></h3>
+<p>Chaque module déclare ses dépendances autorisées dans son <code>package-info.java</code>. <code>ApplicationModules.of(App.class).verify()</code> parcourt le bytecode et refuse toute dépendance non déclarée, et toute dépendance vers une classe <em>interne</em> d'un autre module : seuls les packages marqués <code>@NamedInterface("api")</code> sont visibles.</p>
+
+<pre class="code">@ApplicationModule(allowedDependencies = {"identity :: api", "events :: api", "vocabulary :: api", "patients :: api", "shared"})
+package com.psymate.clinical;</pre>
+
+<figure class="figure wide">
+<svg viewBox="0 0 760 400" width="100%" role="img" aria-label="Graphe des dépendances autorisées entre modules">
+  <defs>
+    <marker id="ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+    <marker id="no" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/></marker>
+  </defs>
+  <g font-size="13" text-anchor="middle">
+    <!-- socle -->
+    <rect x="300" y="330" width="160" height="42" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="380" y="356" fill="var(--fg)">shared (OPEN)</text>
+    <rect x="80" y="250" width="130" height="42" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="145" y="276" fill="var(--fg)">identity</text>
+    <rect x="550" y="250" width="130" height="42" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="615" y="276" fill="var(--fg)">events</text>
+    <rect x="300" y="250" width="160" height="42" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="380" y="276" fill="var(--fg)">vocabulary</text>
+    <!-- métier -->
+    <rect x="80" y="150" width="130" height="42" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="145" y="176" fill="var(--fg)">patients</text>
+    <rect x="300" y="150" width="160" height="42" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="380" y="176" fill="var(--fg)">clinical</text>
+    <rect x="550" y="150" width="130" height="42" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="615" y="176" fill="var(--fg)">directory</text>
+    <!-- couche haute -->
+    <rect x="80" y="50" width="130" height="42" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="145" y="76" fill="var(--fg)">search</text>
+    <rect x="300" y="50" width="160" height="42" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="380" y="76" fill="var(--fg)">linking</text>
+    <rect x="550" y="50" width="130" height="42" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="615" y="76" fill="var(--fg)">overview</text>
+  </g>
+  <g stroke="var(--accent)" stroke-width="1.6" fill="none" marker-end="url(#ok)">
+    <path d="M145,192 L145,250"/>
+    <path d="M330,192 L190,252"/>
+    <path d="M380,192 L380,250"/>
+    <path d="M440,192 L560,252"/>
+    <path d="M310,180 L212,172"/>
+    <path d="M580,192 L212,268"/>
+    <path d="M615,192 L615,250"/>
+    <path d="M380,92 L380,150"/>
+    <path d="M330,92 L205,152"/>
+    <path d="M145,92 L145,150"/>
+    <path d="M190,70 L560,262"/>
+    <path d="M615,92 L615,150"/>
+    <path d="M565,70 L212,160"/>
+  </g>
+  <g stroke="var(--danger)" stroke-width="1.6" fill="none" stroke-dasharray="6 4" marker-end="url(#no)">
+    <path d="M585,160 L462,120 L462,172"/>
+    <path d="M160,250 L160,222 L300,200"/>
+  </g>
+  <g font-size="11" fill="var(--danger)">
+    <text x="498" y="128">directory → clinical ✕</text>
+    <text x="214" y="236">identity.admin → patients ✕</text>
+  </g>
+  <g font-size="11" fill="var(--muted)">
+    <text x="40" y="385">vert : dépendance déclarée, via le package <tspan class="mono">api</tspan> seulement · rouge pointillé : interdite et testée par une règle dédiée</text>
+  </g>
+</svg>
+<figcaption>Les flèches vertes sont les dépendances déclarées (vers <code>:: api</code>). Tout ce qui n'est pas dessiné est refusé par <code>verify()</code>. <code>shared</code> est un module ouvert, lisible par tous, qui ne dépend de rien.</figcaption>
+</figure>
+
+<h3>5.2 ArchUnit — <code>ArchitectureTests</code></h3>
+<p>Modulith vérifie les dépendances entre packages. ArchUnit ajoute des règles que Modulith n'exprime pas, écrites en Java sur le bytecode :</p>
+<div class="tbl"><table>
+<tr><th>Règle</th><th>Ce qu'elle interdit</th><th>Pourquoi</th></tr>
+<tr><td><code>noRepositoryAccessAcrossModules</code></td><td>qu'une classe d'un module touche une classe <code>*Repository</code> d'un autre module</td><td>CLAUDE.md : un module ne lit jamais les tables d'un autre ; il passe par la façade</td></tr>
+<tr><td><code>directoryDoesNotTouchClinicalModules</code></td><td>tout import de <code>patients</code>, <code>clinical</code>, <code>linking</code>, <code>overview</code>, <code>search</code> depuis <code>directory</code></td><td>l'annuaire public ne doit jamais pouvoir atteindre une donnée patient</td></tr>
+<tr><td><code>identityAdminDoesNotTouchClinicalModules</code></td><td>la même liste depuis <code>identity.admin</code></td><td>un administrateur valide des praticiens, jamais des dossiers</td></tr>
+<tr><td><code>reservedPackagesContainNoClassBesidesPackageInfo</code></td><td>toute classe dans <code>ai</code> et <code>companion</code></td><td>les réserves V2 restent vides (A11)</td></tr>
+<tr><td><code>moduleAdvicesAreOrderedBeforeTheGlobalHandler</code></td><td>un <code>@RestControllerAdvice</code> de module sans <code>@Order(MODULE)</code></td><td>sinon le filet global de <code>shared</code> attraperait les erreurs avant les handlers précis</td></tr>
+</table></div>
+
+<div class="callout">
+<strong>Une règle qui ne peut pas échouer ne vaut rien.</strong> Chaque règle est doublée d'un test « négatif » sur un mini-projet factice dans <code>src/test/java/psymatefixture</code> (<code>badarch</code>, <code>badadmin</code>, <code>badmodule</code>, <code>good</code>) : <code>repositoryRuleDetectsCrossModuleAccess</code> prouve que la règle voit bien <code>AService → BRepository</code>, <code>forbiddenDependencyMakesVerifyFail</code> prouve que Modulith refuse bien <code>a → b</code> non déclaré. Si quelqu'un affaiblit une règle, ces tests-là passent au rouge.
+</div>
+
+<h3>5.3 Ce que ça donne en pratique : trois cas vécus</h3>
+<figure class="figure wide">
+<pre class="mermaid">
+flowchart TB
+  subgraph c1["M1-03 — clinical voulait écrire patient.clinical_rev"]
+    a1[UPDATE patient<br/>depuis EntryRepository] -->|revue : table d'un autre module| a2[PatientFacade.touchClinicalRev<br/>ajoutée dans patients.api]
+  end
+  subgraph c2["M1-14b — identity.admin voulait une façade directory.api"]
+    b1[identity → directory :: api] -->|directory dépend déjà d'identity : cycle| b2[endpoints admin du vocabulaire<br/>placés dans directory, gardés par /api/admin/**]
+  end
+  subgraph c3["M2-02 — clinical doit appeler linking dans sa transaction"]
+    d1[clinical → linking] -->|linking dépend de clinical : cycle| d2[port EntryLinksPort dans clinical.api,<br/>implémenté par linking]
+  end
+  style a1 fill:#f6e1dc,stroke:#a33a2a,color:#1b2230
+  style b1 fill:#f6e1dc,stroke:#a33a2a,color:#1b2230
+  style d1 fill:#f6e1dc,stroke:#a33a2a,color:#1b2230
+  style a2 fill:#dcefe8,stroke:#1f6f5c,color:#1b2230
+  style b2 fill:#dcefe8,stroke:#1f6f5c,color:#1b2230
+  style d2 fill:#dcefe8,stroke:#1f6f5c,color:#1b2230
+</pre>
+<figcaption>Trois fois où une frontière a été rencontrée : une fois par la revue (M1-03), deux fois par <code>ModularityTests</code> lui-même (cycle refusé). Dans les trois cas la solution est la même : une interface dans le package <code>api</code> du module qui possède la donnée.</figcaption>
+</figure>
+
+<h2>6. Les vérifications transverses, à la racine du projet</h2>
+<div class="tbl"><table>
+<tr><th>Classe</th><th>Vérifie</th><th>A attrapé</th></tr>
+<tr><td><code>FlywayMigrationIT</code></td><td>que les migrations s'appliquent sur base vierge, que tables/colonnes/index correspondent à <code>expected-schema-v01.yaml</code>, que les tables réservées existent et sont vides, que le rôle <code>psymate_app</code> ne peut ni <code>UPDATE</code> ni <code>DELETE</code> les tables append-only (test SQL réel sous ce rôle)</td><td>chaque PR avec migration doit déclarer ses tables dans le schéma attendu, sinon rouge</td></tr>
+<tr><td><code>ContractIT</code></td><td>que <code>contract/openapi.yaml</code> commité est identique au contrat généré par l'application, et que <code>app.contract.version</code> est la version attendue du plan de tags</td><td>le bump 0.1.0 → 0.2.0 fait sans mettre à jour le test ; les PR qui modifient un contrôleur sans regénérer</td></tr>
+<tr><td><code>ReservesConformanceIT</code></td><td>les réserves V2 et compagnon (A11) : événements attendus dans l'outbox, tables <code>entry_embedding</code>/<code>entry_chunk</code>/<code>patient_device</code>/<code>patient_submission</code>/<code>ai_feedback</code> vides, <code>author_type = 'practitioner'</code> partout, contrainte <code>ck_entry_session_required</code>, <code>authorType</code> en lecture seule dans le contrat, packages <code>ai</code>/<code>companion</code> vides</td><td>ses points <code>@Disabled</code> sont réactivés tâche par tâche (M1-05, M2-01 faits ; M6-05 reste)</td></tr>
+<tr><td><code>ModularityTests</code> / <code>ArchitectureTests</code></td><td>section 5</td><td>deux cycles de modules, un accès direct à la table <code>tag</code> depuis patients</td></tr>
+<tr><td><code>AppContextTest</code> / <code>AppIT</code></td><td>le contexte démarre ; les valeurs de configuration clés (grâce 75 min…)</td><td>—</td></tr>
+</table></div>
+
+<h2>7. Le circuit d'une tâche, de l'agent à <code>main</code></h2>
+<ol class="steps">
+  <li><div><strong>Agent de développement</strong> (<code>backend-module-dev</code>) implémente dans son seul module, écrit les <code>*Test</code> et <code>*IT</code> de la tâche, lance <code>spotless:apply</code> puis un premier <code>verify</code>.</div></li>
+  <li><div><strong>Agent reviewer</strong> relit <code>git diff main...HEAD</code> sans rien modifier : isolation, frontières, règles CLAUDE.md (Jackson 2, dépendances, secrets), sécurité, qualité des tests. Il classe : bloquant / à corriger / à trancher par l'humain.</div></li>
+  <li><div><strong>Corrections</strong> des bloquants et de ce qui est utile ; les décisions produit remontent (règle de grâce 1 h 15, 403 vs 404, publication par pagination…).</div></li>
+  <li><div><strong>Contrat regénéré</strong> (<code>make contract</code>), puis <strong><code>verify</code> complet</strong> en arrière-plan : vert obligatoire.</div></li>
+  <li><div><strong>PR</strong> avec critères cochés un par un, tests ajoutés, dépendances Maven listées, écarts hors module signalés en tête. Un événement <code>done</code> est journalisé dans <code>docs/progress</code>.</div></li>
+  <li><div><strong>CI GitHub</strong> rejoue <code>verify</code> + <code>contract</code> sur le head de la PR ; après une fusion voisine, la PR est rebasée et le contrat regénéré avant d'être proposée au merge.</div></li>
+  <li><div><strong>Fusion</strong> par vous ; journal <code>merged</code>, archivage de la session, tag de contrat quand le plan le prévoit.</div></li>
+</ol>
+
+<h2>8. Ce que ce filet a réellement attrapé</h2>
+<p>Quelques prises, par ordre chronologique. Chacune serait passée sans la vérification correspondante.</p>
+<div class="caught">
+  <div><span class="who">ModularityTests</span><div>M1-01 : <code>patients</code> lisait la table <code>tag</code> de vocabulary par un <code>JOIN</code>. Remplacé par <code>TagFacade.labelsByIds</code>.</div></div>
+  <div><span class="who">reviewer + IT de rôle</span><div>M1-03 : la règle de grâce faisait un <code>UPDATE</code> sur <code>entry_version</code>, table que V05 révoque pour <code>psymate_app</code>. Les tests passaient car ils tournaient en propriétaire du schéma. Résultat : <code>GRANT</code> sur trois colonnes + trigger de garde, et <code>GraceRuleAppRoleIT</code> qui exécute le service réel sous le rôle de production.</div></div>
+  <div><span class="who">reviewer</span><div>M1-12 : un entier <code>BigInteger</code> (2⁶⁴ + 60) tronqué par <code>longValue()</code> passait la validation « 15–180 » comme un 60.</div></div>
+  <div><span class="who">reviewer</span><div>M5-02 : une requête anonyme sur l'annuaire déclenchait un appel façade par profil publié (N+1 non borné). Remplacé par un appel par lot, plafonné à 500.</div></div>
+  <div><span class="who">ContractIT</span><div>Tag 0.2.0 : le bump de version a été poussé sans mettre à jour la valeur attendue ; le test l'a dit en deux minutes.</div></div>
+  <div><span class="who">AdminBootstrapCliIT</span><div>M7-08 : en résolvant un conflit de merge, le bloc de profil <code>cli</code> d'<code>application.yml</code> avait été perdu ; le test « le profil cli démarre sans serveur web » l'a vu.</div></div>
+  <div><span class="who">reviewer</span><div>M1-14b : les filtres admin et e-mail décidaient sur l'URI brute alors que Spring route sur le chemin décodé : <code>/api/%61dmin/…</code> passait sans garde. Corrigé avec un test sur sept chemins encodés.</div></div>
+</div>
+
+<div class="callout danger">
+<strong>Ce que le filet ne couvre pas (encore).</strong> Les seuils de performance sont mesurés et loggués, jamais assertés (ils dépendent de la machine) ; les tests de timing anti-énumération sont robustes mais sensibles à une machine saturée ; et l'IT ne remplace pas un vrai parcours navigateur, qui viendra avec le frontend.
+</div>
+
+<p style="color:var(--muted);font-size:13.5px;margin-top:40px">Sources : <code>src/test/java/com/psymate/**</code>, <code>ArchitectureTests</code>, <code>ModularityTests</code>, <code>FlywayMigrationIT</code>, <code>ContractIT</code>, <code>ReservesConformanceIT</code>, <code>.github/workflows/ci.yml</code>, <code>pom.xml</code> (surefire / failsafe), CLAUDE.md, docs/D-orchestration-backend.md.</p>
+</main>
+
+</body>
+</html>

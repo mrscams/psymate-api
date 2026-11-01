@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T08:21:18.435Z",
+  "task": "M7-06",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 34 fusionnee dans main (document de passation hebergement : 36 decisions, secrets, checklist)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/34",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

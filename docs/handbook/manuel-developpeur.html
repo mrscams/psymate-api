@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manuel du développeur PsyMate</title>
+</head>
+<body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout : manuel à lire de haut en bas, colonne 70ch, figures SVG inline (aucune bibliothèque, imprimable en PDF depuis le navigateur). Palette "dossier clinique" bleu-gris, vert pin pour l'autorisé, brique pour l'interdit. */
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --fg: #1b2230; --muted: #5b6676; --line: #d6dbe3;
+    --accent: #1f6f5c; --accent-soft: #dcefe8; --danger: #a33a2a; --danger-soft: #f6e1dc;
+    --warn: #8a6d1f; --warn-soft: #f4ead0; --info: #2b5f9e; --info-soft: #dde8f6; --violet: #6b4fa3; --violet-soft: #e9e2f6;
+    --code-bg: #eef1f5;
+    --display: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #12161c; --surface: #1a2029; --fg: #e6e9ee; --muted: #9aa5b4; --line: #2c3542;
+    --accent: #5fc39f; --accent-soft: #163a30; --danger: #e4836f; --danger-soft: #3d201a;
+    --warn: #d9b35a; --warn-soft: #3a2f14; --info: #7fa9e0; --info-soft: #1b2a40; --violet: #b49ae6; --violet-soft: #2a2140;
+    --code-bg: #232a35; color-scheme: dark;
+  } }
+  :root[data-theme="dark"] {
+    --bg: #12161c; --surface: #1a2029; --fg: #e6e9ee; --muted: #9aa5b4; --line: #2c3542;
+    --accent: #5fc39f; --accent-soft: #163a30; --danger: #e4836f; --danger-soft: #3d201a;
+    --warn: #d9b35a; --warn-soft: #3a2f14; --info: #7fa9e0; --info-soft: #1b2a40; --violet: #b49ae6; --violet-soft: #2a2140;
+    --code-bg: #232a35; color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 72px; }
+  main { max-width: 72ch; margin: 0 auto; }
+  header.hero { padding-block: 48px 24px; border-bottom: 1px solid var(--line); margin-bottom: 28px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: var(--display); font-weight: 600; font-size: clamp(30px, 5vw, 44px); line-height: 1.08; margin: 8px 0 12px; text-wrap: balance; }
+  h2 { font-family: var(--display); font-weight: 600; font-size: 27px; margin: 56px 0 10px; text-wrap: balance; padding-top: 8px; border-top: 1px solid var(--line); }
+  h3 { font-family: var(--body); font-weight: 600; font-size: 17.5px; margin: 30px 0 8px; }
+  h4 { font-family: var(--body); font-weight: 600; font-size: 15px; margin: 20px 0 6px; color: var(--muted); }
+  p, li { max-width: 72ch; }
+  p.lead { font-size: 18px; color: var(--muted); }
+  code, pre { font-family: var(--mono); font-size: 13.5px; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre.code { background: var(--code-bg); padding: 14px 16px; border-radius: 6px; overflow-x: auto; line-height: 1.5; margin: 12px 0 18px; }
+  pre.code code { background: none; padding: 0; }
+  .figure { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin: 18px 0 24px; overflow-x: auto; }
+  .figure figcaption { font-size: 13px; color: var(--muted); margin-top: 10px; }
+  .toc { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 20px; margin: 20px 0 8px; columns: 2; column-gap: 28px; }
+  .toc ol { margin: 0; padding-left: 20px; font-size: 14.5px; }
+  .toc li { break-inside: avoid; margin: 3px 0; }
+  .toc a { color: var(--info); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 600; font-size: 13px; letter-spacing: .03em; color: var(--muted); }
+  .tbl { overflow-x: auto; margin: 14px 0 20px; }
+  .pill { display: inline-block; font-family: var(--mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .pill.ok { background: var(--accent-soft); color: var(--accent); }
+  .pill.no { background: var(--danger-soft); color: var(--danger); }
+  .pill.info { background: var(--info-soft); color: var(--info); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .callout { border-left: 3px solid var(--accent); background: var(--surface); padding: 12px 16px; margin: 18px 0; border-radius: 0 6px 6px 0; }
+  .callout.danger { border-left-color: var(--danger); }
+  .callout.info { border-left-color: var(--info); }
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 14px 0; display: grid; gap: 10px; }
+  .steps li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; }
+  .steps li::before { content: counter(s); font-family: var(--mono); font-size: 13px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 14px 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+  .card h4 { margin: 0 0 6px; color: var(--fg); }
+  .card p { margin: 0; font-size: 14.5px; }
+  svg text { font-family: var(--body); }
+  svg .mono { font-family: var(--mono); }
+  kbd { font-family: var(--mono); font-size: 12.5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; background: var(--surface); }
+  @media (max-width: 560px) { .toc { columns: 1; } }
+  @media print { body { background: #fff; color: #111; } .figure { break-inside: avoid; } h2 { break-after: avoid; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">psymate-api · manuel du développeur · état au 1er novembre 2026 (vagues V0 à V8 fusionnées)</div>
+  <h1>Comment ce projet est construit, et ce qu'il faut savoir pour y contribuer</h1>
+  <p class="lead">PsyMate est une API de suivi clinique pour psychologues, psychiatres et coachs. Ce manuel explique le flux de travail, l'architecture, la base de données, les événements, la sécurité, les tests et la chaîne CI/CD, avec des extraits de code réels et des schémas. Il se termine par un arbre des connaissances à acquérir, dans l'ordre.</p>
+</header>
+
+<nav class="toc" aria-label="Sommaire">
+<ol>
+  <li><a href="#s1">Le produit en une page</a></li>
+  <li><a href="#s2">Le flux de travail : des docs à <code>main</code></a></li>
+  <li><a href="#s3">L'architecture : un monolithe modulaire</a></li>
+  <li><a href="#s4">Anatomie d'un module</a></li>
+  <li><a href="#s5">La vie d'une requête HTTP</a></li>
+  <li><a href="#s6">La base de données</a></li>
+  <li><a href="#s7">Versions, règle de grâce, append-only</a></li>
+  <li><a href="#s8">Événements et outbox</a></li>
+  <li><a href="#s9">Sécurité : sessions, filtres, rôles</a></li>
+  <li><a href="#s10">Erreurs et contrat OpenAPI</a></li>
+  <li><a href="#s11">Les tests</a></li>
+  <li><a href="#s12">CI/CD et livraison</a></li>
+  <li><a href="#s13">Les décisions techniques et leurs raisons</a></li>
+  <li><a href="#s14">L'arbre des connaissances</a></li>
+  <li><a href="#s15">Glossaire du domaine</a></li>
+  <li><a href="#s16">Votre première tâche : la checklist</a></li>
+</ol>
+</nav>
+
+<!-- ============================================================ -->
+<h2 id="s1">1. Le produit en une page</h2>
+<p>Un <strong>praticien</strong> (psychologue, psychiatre ou coach) tient le <strong>dossier</strong> de ses <strong>patients</strong>. Tout ce qu'il note est une <strong>entrée</strong> : une note, un événement, une situation, un ressenti (émotion + intensité), une séance, un médicament. Chaque entrée appartient à une <strong>séance</strong> et porte une date d'occurrence avec une précision (jour, mois, année, période, phase de vie). Les entrées se relient entre elles par des <strong>liens</strong> typés (« déclenche », « précède »…). Une <strong>timeline</strong>, une <strong>recherche</strong> plein texte et une <strong>vue d'ensemble</strong> permettent de relire un dossier. À côté, un <strong>annuaire public</strong> présente les praticiens vérifiés, et un <strong>administrateur</strong> valide leurs justificatifs.</p>
+
+<figure class="figure">
+<svg viewBox="0 0 760 250" width="100%" role="img" aria-label="Les acteurs et objets principaux">
+  <g font-size="13" text-anchor="middle">
+    <rect x="20" y="95" width="130" height="60" rx="8" fill="var(--info-soft)" stroke="var(--info)"/><text x="85" y="121" fill="var(--fg)" font-weight="600">Praticien</text><text x="85" y="139" fill="var(--muted)" font-size="11.5">tenant · rôle · 2FA</text>
+    <rect x="230" y="95" width="130" height="60" rx="8" fill="var(--surface)" stroke="var(--line)"/><text x="295" y="121" fill="var(--fg)" font-weight="600">Patient</text><text x="295" y="139" fill="var(--muted)" font-size="11.5">owner · versions · drapeaux</text>
+    <rect x="440" y="20" width="140" height="56" rx="8" fill="var(--surface)" stroke="var(--line)"/><text x="510" y="44" fill="var(--fg)" font-weight="600">Séance</text><text x="510" y="62" fill="var(--muted)" font-size="11.5">intake · session · contact</text>
+    <rect x="440" y="100" width="140" height="56" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="510" y="124" fill="var(--fg)" font-weight="600">Entrée</text><text x="510" y="142" fill="var(--muted)" font-size="11.5">6 types · versions · occurred</text>
+    <rect x="440" y="180" width="140" height="56" rx="8" fill="var(--surface)" stroke="var(--line)"/><text x="510" y="204" fill="var(--fg)" font-weight="600">Lien</text><text x="510" y="222" fill="var(--muted)" font-size="11.5">type · provenance · statut</text>
+    <rect x="630" y="100" width="110" height="56" rx="8" fill="var(--violet-soft)" stroke="var(--violet)"/><text x="685" y="124" fill="var(--fg)" font-weight="600">Émotion</text><text x="685" y="142" fill="var(--muted)" font-size="11.5">29 globales + custom</text>
+    <rect x="20" y="190" width="130" height="50" rx="8" fill="var(--surface)" stroke="var(--line)"/><text x="85" y="211" fill="var(--fg)" font-weight="600">Profil public</text><text x="85" y="228" fill="var(--muted)" font-size="11.5">annuaire · vérifié</text>
+  </g>
+  <g stroke="var(--muted)" stroke-width="1.4" fill="none">
+    <path d="M150,125 L230,125"/><path d="M360,118 L440,52"/><path d="M360,125 L440,128"/>
+    <path d="M510,76 L510,100"/><path d="M510,156 L510,180"/><path d="M580,128 L630,128"/>
+    <path d="M85,155 L85,190"/>
+  </g>
+  <g font-size="11" fill="var(--muted)">
+    <text x="190" y="118" text-anchor="middle">possède</text>
+    <text x="398" y="78" text-anchor="middle">a des</text>
+    <text x="528" y="92">appartient à</text>
+    <text x="528" y="172">relie 2 entrées</text>
+    <text x="605" y="120" text-anchor="middle">ressenti</text>
+    <text x="100" y="176">publie</text>
+  </g>
+</svg>
+<figcaption>Le langage ubiquitaire (A1). Ces mots sont ceux du code : <code>Entry</code>, <code>EntryVersion</code>, <code>SessionDetail</code>, <code>Link</code>, <code>Patient</code>, <code>Practitioner</code>.</figcaption>
+</figure>
+
+<p>Trois règles de fond gouvernent tout le reste (CLAUDE.md) : <strong>toute entrée appartient à une séance</strong> ; <strong>toute correction crée une version</strong> (sauf règle de grâce) ; <strong>rien n'est jamais supprimé physiquement</strong> (archivage par <code>archived_at</code>).</p>
+
+<!-- ============================================================ -->
+<h2 id="s2">2. Le flux de travail : des documents à <code>main</code></h2>
+<p>Le projet est piloté par ses documents, pas par des tickets libres. Tout commence dans <code>docs/</code> :</p>
+<div class="tbl"><table>
+<tr><th>Document</th><th>Rôle</th><th>Autorité</th></tr>
+<tr><td><code>A-architecture.md</code></td><td>modules, cas d'usage, séquences, règles</td><td>référence générale</td></tr>
+<tr><td><code>E-modele-donnees.md</code></td><td>tables, colonnes, index, numéros de migration (E4)</td><td><strong>fait autorité</strong> sur A et C pour la base</td></tr>
+<tr><td><code>G-decisions.md</code></td><td>questions tranchées Q1…Q31</td><td><strong>fait autorité</strong> sur tout le reste</td></tr>
+<tr><td><code>C-plan.md</code></td><td>les tâches M0-01 … M7-08, critères d'acceptation</td><td>backlog</td></tr>
+<tr><td><code>D-orchestration-backend.md</code></td><td>vagues V0…V9, couloirs parallèles, plan des tags</td><td>ordonnancement</td></tr>
+<tr><td><code>F-runbook-agents-backend.md</code></td><td>le texte exact de chaque tâche à confier à un agent</td><td>mode d'emploi</td></tr>
+<tr><td><code>design/*.md</code></td><td>les 23 fiches d'écran (champs, états, erreurs attendues)</td><td>ce que le frontend attend</td></tr>
+</table></div>
+
+<figure class="figure">
+<svg viewBox="0 0 780 330" width="100%" role="img" aria-label="Flux de travail d'une tâche">
+  <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>
+  <g font-size="12" text-anchor="middle">
+    <!-- lane labels -->
+    <rect x="0" y="10" width="780" height="70" fill="var(--surface)" stroke="var(--line)"/><text x="40" y="50" fill="var(--muted)" font-size="11" transform="rotate(-90 40 50)">Humain</text>
+    <rect x="0" y="90" width="780" height="110" fill="var(--surface)" stroke="var(--line)"/><text x="40" y="150" fill="var(--muted)" font-size="11" transform="rotate(-90 40 150)">Agents</text>
+    <rect x="0" y="210" width="780" height="110" fill="var(--surface)" stroke="var(--line)"/><text x="40" y="268" fill="var(--muted)" font-size="11" transform="rotate(-90 40 268)">Machine</text>
+    <!-- humain -->
+    <rect x="70" y="25" width="120" height="40" rx="6" fill="var(--info-soft)" stroke="var(--info)"/><text x="130" y="49" fill="var(--fg)">Vague Vn (D9)</text>
+    <rect x="600" y="25" width="110" height="40" rx="6" fill="var(--info-soft)" stroke="var(--info)"/><text x="655" y="49" fill="var(--fg)">Merge</text>
+    <!-- agents -->
+    <rect x="70" y="105" width="120" height="40" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="130" y="129" fill="var(--fg)">worktree + brief F</text>
+    <rect x="215" y="105" width="130" height="40" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="280" y="129" fill="var(--fg)">backend-module-dev</text>
+    <rect x="370" y="105" width="100" height="40" rx="6" fill="var(--warn-soft)" stroke="var(--warn)"/><text x="420" y="129" fill="var(--fg)">reviewer</text>
+    <rect x="495" y="105" width="90" height="40" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="540" y="129" fill="var(--fg)">correctifs</text>
+    <rect x="215" y="155" width="130" height="34" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="280" y="176" fill="var(--fg)">PR + make log</text>
+    <!-- machine -->
+    <rect x="215" y="225" width="130" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="280" y="249" fill="var(--fg)">./mvnw verify</text>
+    <rect x="370" y="225" width="120" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="430" y="249" fill="var(--fg)">CI : verify + contract</text>
+    <rect x="600" y="225" width="110" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="655" y="249" fill="var(--fg)">tag contract-vX</text>
+    <rect x="495" y="275" width="215" height="34" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="602" y="296" fill="var(--fg)">rebase + contrat regénéré si PR voisine fusionnée</text>
+  </g>
+  <g stroke="var(--muted)" stroke-width="1.3" fill="none" marker-end="url(#a1)">
+    <path d="M130,65 L130,105"/><path d="M190,125 L215,125"/><path d="M345,125 L370,125"/><path d="M470,125 L495,125"/>
+    <path d="M540,145 L540,200 L345,200 L345,172"/><path d="M280,189 L280,225"/><path d="M345,245 L370,245"/>
+    <path d="M490,245 L600,245 "/><path d="M655,225 L655,65"/><path d="M655,65 L655,25"/>
+  </g>
+</svg>
+<figcaption>Une tâche = un worktree git, un brief tiré du runbook F, un agent de développement, une revue indépendante, des correctifs, un <code>verify</code> vert, une PR, la CI, puis la fusion par l'humain et, parfois, un tag de contrat.</figcaption>
+</figure>
+
+<h3>Les vagues et les couloirs</h3>
+<p>D9 découpe le backlog en vagues (V0 → V9). Dans une vague, les tâches tournent en parallèle à condition d'être dans des <strong>couloirs</strong> différents (un couloir = un module). Deux règles empêchent les conflits : une seule tâche à la fois par module, et une tâche qui touche deux modules (M2-02) tourne <em>seule</em>. À la fusion, chaque PR suivante est rebasée et son contrat regénéré, car toutes regénèrent <code>contract/openapi.yaml</code>.</p>
+
+<h3>Les trois agents</h3>
+<div class="grid2">
+  <div class="card"><h4>backend-module-dev</h4><p>Implémente <em>une</em> tâche dans <em>un</em> module. Lit CLAUDE.md et les docs cités, écrit code + tests, lance <code>spotless:apply</code> et <code>verify</code>, ouvre la PR, journalise l'avancement.</p></div>
+  <div class="card"><h4>reviewer</h4><p>Relit <code>git diff main...HEAD</code> sans rien modifier. Classe en bloquant / à corriger / à trancher. Cherche les fuites d'isolation, les frontières franchies, les règles CLAUDE.md violées, les tests manquants.</p></div>
+  <div class="card"><h4>seed-perf</h4><p>Génère les données fictives (patient DEMO, Q22) et mesure les scénarios de performance de A6. Entre en jeu en V9 (M7-01).</p></div>
+</div>
+
+<h3>Le suivi d'avancement</h3>
+<p><code>make log TASK=… AGENT=… STATUS=… SUMMARY="…"</code> écrit un fichier d'événement JSON unique dans <code>docs/progress/events/</code> (jamais modifié ensuite) et regénère <code>docs/progress/index.html</code>. Deux agents qui terminent au même instant n'entrent jamais en conflit : ils écrivent deux fichiers, et les fichiers fusionnent sans effort entre branches.</p>
+
+<!-- ============================================================ -->
+<h2 id="s3">3. L'architecture : un monolithe modulaire</h2>
+<p>Une seule application Spring Boot, un seul déploiement, une seule base, mais découpée en <strong>modules Spring Modulith</strong> aux frontières vérifiées à chaque build. Chaque module possède ses tables et n'expose aux autres qu'un package <code>api</code> (façades, événements, vues en lecture).</p>
+
+<figure class="figure">
+<svg viewBox="0 0 780 430" width="100%" role="img" aria-label="Carte des modules et de leurs dépendances">
+  <defs>
+    <marker id="ok3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+  </defs>
+  <g font-size="12.5" text-anchor="middle">
+    <!-- rangée 1 : projections -->
+    <rect x="40" y="30" width="150" height="56" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="115" y="53" fill="var(--fg)" font-weight="600">search</text><text x="115" y="71" fill="var(--muted)" font-size="11">V08 · recherche plein texte</text>
+    <rect x="315" y="30" width="150" height="56" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="390" y="53" fill="var(--fg)" font-weight="600">linking</text><text x="390" y="71" fill="var(--muted)" font-size="11">V07 · liens, graphe</text>
+    <rect x="590" y="30" width="150" height="56" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="665" y="53" fill="var(--fg)" font-weight="600">overview</text><text x="665" y="71" fill="var(--muted)" font-size="11">V09 · vue d'ensemble</text>
+    <!-- rangée 2 : métier -->
+    <rect x="40" y="150" width="150" height="56" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="115" y="173" fill="var(--fg)" font-weight="600">patients</text><text x="115" y="191" fill="var(--muted)" font-size="11">fiche, versions, drapeaux, tags</text>
+    <rect x="315" y="150" width="150" height="56" rx="7" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="390" y="173" fill="var(--fg)" font-weight="600">clinical</text><text x="390" y="191" fill="var(--muted)" font-size="11">V05 · entrées, séances, timeline</text>
+    <rect x="590" y="150" width="150" height="56" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="665" y="173" fill="var(--fg)" font-weight="600">directory</text><text x="665" y="191" fill="var(--muted)" font-size="11">V04/V06 · annuaire public</text>
+    <!-- rangée 3 : socle -->
+    <rect x="40" y="270" width="150" height="56" rx="7" fill="var(--info-soft)" stroke="var(--info)"/><text x="115" y="293" fill="var(--fg)" font-weight="600">identity</text><text x="115" y="311" fill="var(--muted)" font-size="11">auth · admin · verification · preferences</text>
+    <rect x="315" y="270" width="150" height="56" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="390" y="293" fill="var(--fg)" font-weight="600">vocabulary</text><text x="390" y="311" fill="var(--muted)" font-size="11">V02 · émotions, types, tags</text>
+    <rect x="590" y="270" width="150" height="56" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="665" y="293" fill="var(--fg)" font-weight="600">events</text><text x="665" y="311" fill="var(--muted)" font-size="11">outbox Modulith</text>
+    <!-- shared -->
+    <rect x="200" y="370" width="380" height="44" rx="7" fill="var(--surface)" stroke="var(--line)" stroke-dasharray="4 3"/><text x="390" y="390" fill="var(--fg)" font-weight="600">shared (OPEN)</text><text x="390" y="406" fill="var(--muted)" font-size="11">erreurs RFC 9457 · RateLimiter · AuditFilter — ne dépend de rien</text>
+    <rect x="40" y="370" width="130" height="44" rx="7" fill="var(--surface)" stroke="var(--line)" stroke-dasharray="4 3"/><text x="105" y="396" fill="var(--muted)">ai · companion</text><text x="105" y="410" fill="var(--muted)" font-size="10">réservés, vides</text>
+  </g>
+  <g stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#ok3)">
+    <!-- search -> patients, events, identity -->
+    <path d="M115,86 L115,150"/><path d="M170,86 L600,268"/>
+    <!-- linking -> clinical, vocabulary, events, identity, patients -->
+    <path d="M390,86 L390,150"/><path d="M340,86 L190,152"/><path d="M440,86 L600,150"/>
+    <!-- overview -> events, patients -->
+    <path d="M665,86 L665,150"/><path d="M590,70 L190,160"/>
+    <!-- clinical -> patients, vocabulary, events, identity -->
+    <path d="M315,178 L190,178"/><path d="M390,206 L390,270"/><path d="M465,190 L590,286"/><path d="M330,206 L180,272"/>
+    <!-- patients -> identity, events, vocabulary -->
+    <path d="M115,206 L115,270"/><path d="M190,185 L315,280"/>
+    <!-- directory -> identity, events -->
+    <path d="M665,206 L665,270"/><path d="M590,200 L190,290"/>
+    <!-- vocabulary -> identity ; identity -> events -->
+    <path d="M315,298 L190,298"/><path d="M190,312 L590,312"/>
+  </g>
+  <text x="400" y="118" text-anchor="middle" font-size="11" fill="var(--muted)">flèche = « dépend de », toujours vers le package api de la cible</text>
+</svg>
+<figcaption>Dix modules, trois rangées. Les projections du haut (search, overview) reconstruisent leurs données depuis les événements et des lectures SQL ; le socle du bas ne dépend que d'<code>events</code> et <code>shared</code>.</figcaption>
+</figure>
+
+<div class="callout danger">
+<strong>Deux interdits absolus</strong> (A5, CLAUDE.md) : <code>directory</code> ne touche jamais une donnée patient ; <code>identity.admin</code> ne dépend d'aucun module clinique. Les deux sont des règles ArchUnit, pas des conventions.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s4">4. Anatomie d'un module</h2>
+<p>Tous les modules suivent le même plan de packages. Voici <code>clinical</code>, le plus complet :</p>
+<pre class="code"><code>com.psymate.clinical
+├── package-info.java        @ApplicationModule(allowedDependencies = {...})
+├── api/                     @NamedInterface("api") — la SEULE chose visible des autres modules
+│   ├── EntryFacade.java         exists, belongsToPatient, sameOwnedPatient, adjustLinkCount…
+│   ├── EntryCreated.java        événements (records, au passé)
+│   ├── EntryLinksPort.java      port implémenté par linking (M2-02)
+│   └── SessionView.java         vues en lecture
+├── domain/                  objets métier purs, sans Spring : Entry, TimeSpan, GraceRule…
+├── application/             services @Transactional : EntryService, SessionService, listeners
+├── persistence/             EntryRepository (JdbcClient, SQL explicite)
+└── web/                     EntryController, EntryDtos, EntryMapper (MapStruct), handler d'erreurs</code></pre>
+
+<h3>Déclarer ses dépendances</h3>
+<pre class="code"><code>// src/main/java/com/psymate/clinical/package-info.java
+@ApplicationModule(
+    allowedDependencies = {"identity :: api", "patients :: api", "vocabulary :: api", "events :: api", "shared"})
+package com.psymate.clinical;
+
+import org.springframework.modulith.ApplicationModule;</code></pre>
+<p><code>identity :: api</code> se lit « le package <code>api</code> du module identity, et rien d'autre ». Si une classe de <code>clinical</code> importe <code>com.psymate.identity.auth.LoginService</code>, <code>ModularityTests</code> échoue avec le nom de la classe fautive.</p>
+
+<h3>Une façade</h3>
+<pre class="code"><code>// com.psymate.patients.api — ce que les autres modules peuvent demander à patients
+public interface PatientFacade {
+  boolean exists(UUID patientId);
+  boolean ownedBy(UUID patientId, UUID practitionerId);   // propriétaire ET même tenant
+  Optional&lt;String&gt; displayName(UUID patientId);
+  void touchClinicalRev(UUID patientId);                 // E7 O10, G Q30 : seul chemin d'écriture
+}</code></pre>
+
+<h3>Un événement de domaine</h3>
+<pre class="code"><code>// com.psymate.clinical.api — nommé au passé, porteur d'identifiants, jamais de texte clinique
+public record EntryCreated(UUID id, Instant occurredAt, UUID tenantId,
+                           UUID patientId, UUID entryId, String type) implements DomainEvent {}</code></pre>
+
+<h3>Un service</h3>
+<pre class="code"><code>@Service
+class EntryService {
+  @Transactional
+  public Entry create(UUID patientId, CreateEntryCommand cmd) {
+    guard.requireOwned(patientId);                       // 403 si pas mon patient
+    UUID sessionId = cmd.sessionId() != null ? cmd.sessionId() : sessions.current(patientId);
+    checkSession(patientId, sessionId);                  // séance du même patient, type session, non archivée
+    Entry entry = repository.insert(patientId, sessionId, cmd);   // entry + entry_version 1 + détail
+    links.createForNewEntry(entry.id(), cmd.links());    // M2-02 : même transaction, rollback total
+    patients.touchClinicalRev(patientId);
+    events.publish(new EntryCreated(...));               // écrit dans l'outbox avant le commit
+    return entry;
+  }
+}</code></pre>
+<p>Trois réflexes à retenir : la garde de propriété en première ligne, <strong>une transaction par cas d'usage</strong>, et l'événement publié <em>dans</em> la transaction (section 8).</p>
+
+<!-- ============================================================ -->
+<h2 id="s5">5. La vie d'une requête HTTP</h2>
+<figure class="figure">
+<svg viewBox="0 0 780 420" width="100%" role="img" aria-label="Parcours d'une requête POST /api/patients/{id}/entries">
+  <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>
+  <g font-size="12" text-anchor="middle">
+    <rect x="20" y="20" width="740" height="46" rx="7" fill="var(--info-soft)" stroke="var(--info)"/>
+    <text x="390" y="40" fill="var(--fg)" font-weight="600">Chaîne de filtres Spring Security (identity.auth + shared)</text>
+    <text x="390" y="56" fill="var(--muted)" font-size="11">RateLimiter (IP / session) → session cookie → EmailConfirmationFilter → AdminTwoFactorFilter → AuditFilter</text>
+    <rect x="20" y="90" width="230" height="60" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="135" y="113" fill="var(--fg)" font-weight="600">EntryController (web)</text><text x="135" y="131" fill="var(--muted)" font-size="11">@Valid CreateEntryRequest · 422 errors[]</text>
+    <rect x="275" y="90" width="230" height="60" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="390" y="113" fill="var(--fg)" font-weight="600">EntryCommandFactory + MapStruct</text><text x="390" y="131" fill="var(--muted)" font-size="11">DTO ⇄ commande ⇄ domaine</text>
+    <rect x="530" y="90" width="230" height="60" rx="7" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="645" y="113" fill="var(--fg)" font-weight="600">EntryService (application)</text><text x="645" y="131" fill="var(--muted)" font-size="11">@Transactional · garde · règles</text>
+    <rect x="530" y="180" width="230" height="60" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="645" y="203" fill="var(--fg)" font-weight="600">EntryRepository (persistence)</text><text x="645" y="221" fill="var(--muted)" font-size="11">JdbcClient · SQL paramétré</text>
+    <rect x="275" y="180" width="230" height="60" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="390" y="203" fill="var(--fg)" font-weight="600">Façades des autres modules</text><text x="390" y="221" fill="var(--muted)" font-size="11">PatientOwnershipGuard · EmotionCatalog · EntryLinksPort</text>
+    <rect x="20" y="180" width="230" height="60" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="135" y="203" fill="var(--fg)" font-weight="600">DomainEventPublisher (events)</text><text x="135" y="221" fill="var(--muted)" font-size="11">→ table event_publication</text>
+    <rect x="275" y="290" width="485" height="60" rx="7" fill="var(--warn-soft)" stroke="var(--warn)"/><text x="517" y="313" fill="var(--fg)" font-weight="600">PostgreSQL 16 — rôle psymate_app</text><text x="517" y="331" fill="var(--muted)" font-size="11">entry · entry_version · entry_feeling · event_publication · triggers · CHECK · REVOKE</text>
+    <rect x="20" y="290" width="230" height="60" rx="7" fill="var(--surface)" stroke="var(--line)"/><text x="135" y="313" fill="var(--fg)" font-weight="600">Abonnés (après commit)</text><text x="135" y="331" fill="var(--muted)" font-size="11">search réindexe · overview recalcule</text>
+    <text x="390" y="395" fill="var(--muted)" font-size="11.5">Réponse : 201 EntryDto (authorType en lecture seule) ou 422 application/problem+json</text>
+  </g>
+  <g stroke="var(--muted)" stroke-width="1.3" fill="none" marker-end="url(#a5)">
+    <path d="M135,66 L135,90"/><path d="M250,120 L275,120"/><path d="M505,120 L530,120"/>
+    <path d="M645,150 L645,180"/><path d="M530,125 L505,200"/><path d="M275,210 L250,210"/>
+    <path d="M645,240 L645,290"/><path d="M135,240 L135,290"/><path d="M135,240 L300,292"/>
+  </g>
+</svg>
+<figcaption>Une création d'entrée traverse quatre couches dans le module, appelle trois façades d'autres modules, et termine par un commit unique qui contient aussi l'événement.</figcaption>
+</figure>
+
+<h3>Le contrat de l'API</h3>
+<ul>
+  <li>JSON <strong>camelCase</strong>, dates <strong>UTC ISO 8601</strong>, pagination <strong>par curseur</strong> (keyset, base64) sauf exceptions documentées (annuaire, recherche : par page).</li>
+  <li>Validation <strong>Jakarta</strong> sur les DTO, erreurs <strong>RFC 9457</strong> <code>application/problem+json</code> avec <code>errors[] = [{field, code, message}]</code>.</li>
+  <li>Les DTO sont mappés par <strong>MapStruct</strong> (généré à la compilation, pas de réflexion).</li>
+  <li><code>authorType</code> apparaît dans toute réponse d'entrée et est <strong>refusé en entrée</strong> (422 <code>UNKNOWN_FIELD</code>) : réserve A11 pour le futur compagnon patient.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="s6">6. La base de données</h2>
+<p>PostgreSQL 16 avec les extensions <code>pgvector</code> (réservée à la V2), <code>pg_trgm</code> et <code>unaccent</code> (fonction <code>f_unaccent</code> immuable pour les index). Le schéma est entièrement décrit dans <code>E-modele-donnees.md</code> et créé par <strong>Flyway</strong>.</p>
+
+<h3>Flyway et les numéros réservés</h3>
+<p>Chaque migration a un numéro <em>réservé à l'avance</em> dans E4, lié à une tâche. On n'édite jamais une migration fusionnée : on en ajoute une.</p>
+<div class="tbl"><table>
+<tr><th>Migration</th><th>Tâche</th><th>Contenu</th></tr>
+<tr><td><code>V01__init.sql</code></td><td>M0-03</td><td>tenant, practitioner, patient (+ version, flag, access), auth_token, security_event, event_publication, extensions, rôle <code>psymate_app</code></td></tr>
+<tr><td><code>V02__vocabulary_seed.sql</code></td><td>M1-02</td><td>emotion (29 globales), entry_type, link_type (matrice), tag, patient_tag</td></tr>
+<tr><td><code>V03__verification.sql</code></td><td>M1-10</td><td>verification_document, verification_decision, document_access_log, practitioner_appeal</td></tr>
+<tr><td><code>V04__directory_profile.sql</code></td><td>M5-01</td><td>practitioner_profile (+ trigger search_vector), directory_vocabulary</td></tr>
+<tr><td><code>V05__clinical.sql</code></td><td>M1-03</td><td>entry, entry_version, entry_feeling, entry_medication, entry_session, entry_tag, entry_embedding, entry_chunk, trigger de grâce</td></tr>
+<tr><td><code>V06__directory_contact.sql</code></td><td>M5-03</td><td>contact_request</td></tr>
+<tr><td><code>V07__linking.sql</code></td><td>M2-01</td><td>link, ai_feedback (vide)</td></tr>
+<tr><td><code>V08__search.sql</code></td><td>M4-02</td><td>entry_search_vector_refresh(), trigger, index GIN</td></tr>
+<tr><td><code>V09__overview.sql</code></td><td>M4-03</td><td>patient_overview</td></tr>
+<tr><td><code>V10__admin_journal.sql</code></td><td>M1-14b</td><td>vue admin_journal_v</td></tr>
+<tr><td><code>V11__export_job.sql</code></td><td>M6-05</td><td>export_job</td></tr>
+</table></div>
+<p>Les numéros ne sont pas appliqués dans l'ordre chronologique (V10 est arrivé avant V07). Flyway l'accepte sur une base vierge, ce qui est le cas de la CI et de Testcontainers ; en local, <code>make db-reset</code> recrée la base.</p>
+
+<figure class="figure">
+<svg viewBox="0 0 780 250" width="100%" role="img" aria-label="Deux rôles Postgres">
+  <defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="30" y="30" width="200" height="70" rx="7" fill="var(--warn-soft)" stroke="var(--warn)"/><text x="130" y="56" fill="var(--fg)" font-weight="600">psymate (propriétaire)</text><text x="130" y="76" fill="var(--muted)" font-size="11">exécute Flyway · possède le schéma</text>
+    <rect x="30" y="150" width="200" height="70" rx="7" fill="var(--info-soft)" stroke="var(--info)"/><text x="130" y="176" fill="var(--fg)" font-weight="600">psymate_app (application)</text><text x="130" y="196" fill="var(--muted)" font-size="11">SELECT / INSERT partout · UPDATE limité</text>
+    <rect x="300" y="30" width="450" height="190" rx="7" fill="var(--surface)" stroke="var(--line)"/>
+    <text x="525" y="55" fill="var(--fg)" font-weight="600">Tables append-only : REVOKE UPDATE, DELETE pour psymate_app</text>
+    <text x="525" y="80" fill="var(--muted)" font-size="12">security_event · verification_decision · document_access_log</text>
+    <text x="525" y="100" fill="var(--muted)" font-size="12">entry_version (sauf title/body/payload de la v1 sous trigger de grâce)</text>
+    <text x="525" y="120" fill="var(--muted)" font-size="12">event_publication géré par Modulith</text>
+    <line x1="320" y1="135" x2="730" y2="135" stroke="var(--line)"/>
+    <text x="525" y="158" fill="var(--fg)" font-weight="600">Jamais de DELETE physique sur les données métier</text>
+    <text x="525" y="178" fill="var(--muted)" font-size="12">archived_at, deleted_at, superseded_by, used_at, purged_at</text>
+    <text x="525" y="198" fill="var(--muted)" font-size="12">exceptions assumées : patient_tag (jointure), contact_request (purge RGPD, E2)</text>
+  </g>
+  <g stroke="var(--muted)" stroke-width="1.3" fill="none" marker-end="url(#a6)"><path d="M230,65 L300,65"/><path d="M230,185 L300,185"/></g>
+</svg>
+<figcaption>La garantie « rien n'est supprimé, l'historique est immuable » est portée par Postgres lui-même, pas seulement par le code. <code>FlywayMigrationIT</code> tente les UPDATE/DELETE sous <code>psymate_app</code> et attend un refus.</figcaption>
+</figure>
+
+<h3>Accès aux données : JdbcClient, pas JPA</h3>
+<p>Le projet écrit son SQL. <code>JdbcClient</code> (Spring 7) avec paramètres nommés, jamais de concaténation ; les colonnes jsonb (<code>payload</code>, <code>preferences</code>, <code>details</code>) sont lues et écrites via Jackson 3 (<code>tools.jackson.*</code>). Un index non trivial est documenté dans E et créé par la migration de la tâche qui en a besoin.</p>
+<pre class="code"><code>// EntryRepository — extrait simplifié
+UUID id = jdbc.sql("""
+    insert into entry (id, tenant_id, patient_id, session_id, type, status, visibility,
+                       occurred_from, occurred_to, precision, author_type, recorded_at)
+    values (:id, :tenant, :patient, :session, :type, :status, :visibility,
+            :from, :to, :precision, 'practitioner', now())
+    returning id""")
+  .param("id", UUID.randomUUID()).param("tenant", tenant).param("patient", patientId)
+  /* … */
+  .query(UUID.class).single();</code></pre>
+
+<h3>Isolation multi-tenant</h3>
+<p>Chaque table métier porte <code>tenant_id</code> ; chaque patient porte <code>owner_id</code>. La règle d'accès est « mon tenant <em>et</em> mon patient », appliquée par <code>PatientOwnershipGuard</code> avant toute lecture ou écriture, et renvoyant <strong>403</strong> (jamais 404) pour le patient d'un autre.</p>
+
+<!-- ============================================================ -->
+<h2 id="s7">7. Versions, règle de grâce, append-only</h2>
+<p>Une entrée est une ligne <code>entry</code> (identité, dates, statut) qui pointe vers sa version courante dans <code>entry_version</code> (titre, texte, payload). Corriger = insérer une nouvelle version et déplacer le pointeur. L'historique complet reste lisible via <code>GET /api/entries/{id}/versions</code>.</p>
+
+<figure class="figure">
+<svg viewBox="0 0 780 260" width="100%" role="img" aria-label="Ligne de temps d'une entrée : grâce puis versions">
+  <defs><marker id="a7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>
+  <line x1="40" y1="120" x2="750" y2="120" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#a7)"/>
+  <rect x="40" y="105" width="300" height="30" fill="var(--accent-soft)" opacity=".8"/>
+  <text x="190" y="98" text-anchor="middle" font-size="12" fill="var(--accent)" font-weight="600">fenêtre de grâce : 1 h 15 (G Q31)</text>
+  <g font-size="12" text-anchor="middle">
+    <circle cx="60" cy="120" r="6" fill="var(--accent)"/><text x="60" y="155" fill="var(--fg)" font-weight="600">création</text><text x="60" y="172" fill="var(--muted)" font-size="11">version 1</text>
+    <circle cx="180" cy="120" r="6" fill="var(--accent)"/><text x="180" y="155" fill="var(--fg)" font-weight="600">coquille corrigée</text><text x="180" y="172" fill="var(--muted)" font-size="11">UPDATE en place · toujours v1</text><text x="180" y="188" fill="var(--muted)" font-size="11">aucun événement</text>
+    <circle cx="300" cy="120" r="6" fill="var(--danger)"/><text x="300" y="155" fill="var(--fg)" font-weight="600">un lien est posé</text><text x="300" y="172" fill="var(--muted)" font-size="11">link_count = 1 → grâce fermée</text>
+    <circle cx="470" cy="120" r="6" fill="var(--info)"/><text x="470" y="155" fill="var(--fg)" font-weight="600">correction</text><text x="470" y="172" fill="var(--muted)" font-size="11">INSERT version 2</text><text x="470" y="188" fill="var(--muted)" font-size="11">EntryCorrected</text>
+    <circle cx="620" cy="120" r="6" fill="var(--info)"/><text x="620" y="155" fill="var(--fg)" font-weight="600">correction</text><text x="620" y="172" fill="var(--muted)" font-size="11">INSERT version 3</text>
+    <circle cx="720" cy="120" r="6" fill="var(--muted)"/><text x="720" y="155" fill="var(--fg)" font-weight="600">archivage</text><text x="720" y="172" fill="var(--muted)" font-size="11">archived_at · liens superseded</text>
+  </g>
+  <text x="40" y="40" font-size="12.5" fill="var(--fg)">Conditions de la grâce : même auteur · moins de 75 min après création · aucune autre version · <tspan font-weight="600">link_count = 0</tspan></text>
+  <text x="40" y="60" font-size="12" fill="var(--muted)">Gardée deux fois : dans le code (GraceRule, Clock injecté) et par un trigger Postgres sur entry_version (garde-fou dur à 2 h, colonnes title/body/payload seulement)</text>
+</svg>
+<figcaption>La règle de grâce évite de polluer l'historique avec des corrections de frappe faites pendant la séance ; dès qu'une entrée est référencée, elle devient immuable.</figcaption>
+</figure>
+
+<div class="callout">
+<strong>Pourquoi un trigger en plus du code ?</strong> Parce que <code>entry_version</code> est en <code>REVOKE UPDATE</code> pour le rôle applicatif. La grâce a besoin d'<em>un</em> UPDATE : plutôt que de rendre toute la table modifiable, on autorise trois colonnes (<code>GRANT UPDATE (title, body, payload)</code>) et un trigger refuse tout ce qui n'est pas « version 1, pas de v2, pas de lien, moins de 2 h ». Ce point a été découvert en revue de M1-03 : les tests tournaient en propriétaire du schéma et ne voyaient pas le refus. D'où <code>GraceRuleAppRoleIT</code>, qui exécute le service réel sous <code>psymate_app</code>.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s8">8. Événements et outbox</h2>
+<p>Les modules ne s'appellent pas en cascade : ils <strong>publient des événements</strong> que d'autres consomment. Spring Modulith enregistre chaque publication dans la table <code>event_publication</code> <em>dans la même transaction</em> que la donnée métier (pattern <em>transactional outbox</em>), puis livre les abonnés après le commit.</p>
+
+<figure class="figure">
+<svg viewBox="0 0 780 300" width="100%" role="img" aria-label="Transactional outbox avec Spring Modulith">
+  <defs><marker id="a8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>
+  <rect x="20" y="20" width="420" height="150" rx="8" fill="none" stroke="var(--accent)" stroke-dasharray="6 4"/>
+  <text x="30" y="40" font-size="11.5" fill="var(--accent)" font-weight="600">transaction du cas d'usage (PatientService.create)</text>
+  <g font-size="12" text-anchor="middle">
+    <rect x="40" y="60" width="170" height="44" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="125" y="86" fill="var(--fg)">INSERT patient</text>
+    <rect x="250" y="60" width="170" height="44" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="335" y="86" fill="var(--fg)">INSERT event_publication</text>
+    <text x="335" y="128" fill="var(--muted)" font-size="11">PatientCreated · listener_id · completion_date = NULL</text>
+    <rect x="500" y="60" width="250" height="44" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="625" y="86" fill="var(--fg)">COMMIT</text>
+    <rect x="500" y="190" width="250" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="625" y="214" fill="var(--fg)" font-weight="600">@ApplicationModuleListener</text><text x="625" y="232" fill="var(--muted)" font-size="11">clinical.IntakeSessionListener → séance d'accueil</text>
+    <rect x="250" y="190" width="200" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="350" y="214" fill="var(--fg)" font-weight="600">UPDATE completion_date</text><text x="350" y="232" fill="var(--muted)" font-size="11">si l'abonné a réussi</text>
+    <rect x="20" y="190" width="200" height="60" rx="6" fill="var(--warn-soft)" stroke="var(--warn)"/><text x="120" y="214" fill="var(--fg)" font-weight="600">Rejeu au redémarrage</text><text x="120" y="232" fill="var(--muted)" font-size="11">M4-01 : incomplètes &gt; N s</text>
+  </g>
+  <g stroke="var(--muted)" stroke-width="1.3" fill="none" marker-end="url(#a8)">
+    <path d="M210,82 L250,82"/><path d="M420,82 L500,82"/><path d="M625,104 L625,190"/><path d="M500,220 L450,220"/><path d="M250,220 L220,220"/>
+    <path d="M120,190 L120,120 L250,95"/>
+  </g>
+  <text x="400" y="285" text-anchor="middle" font-size="11.5" fill="var(--muted)">Asynchrone, après commit, une transaction propre par abonné · chaque abonné doit être idempotent (EventDeduplicator, verrou advisory)</text>
+</svg>
+<figcaption>Si l'application tombe entre le commit et la livraison, la ligne reste « incomplète » et sera rejouée. Si l'abonné est rejoué deux fois, il ne doit produire qu'un effet.</figcaption>
+</figure>
+
+<pre class="code"><code>// Un abonné, côté clinical : idempotent et indépendant du praticien courant
+@Component
+class IntakeSessionListener {
+  @ApplicationModuleListener
+  void on(PatientCreated event) {
+    jdbc.sql("select pg_advisory_xact_lock(hashtext(:k))").param("k", event.patientId()).query().listOfRows();
+    if (repository.intakeExists(event.patientId())) return;     // déjà fait : rejeu sans effet
+    repository.insertIntakeSession(event.tenantId(), event.patientId(), event.ownerId());
+  }
+}</code></pre>
+<p>Les événements V1 : <code>PractitionerRegistered</code>, <code>…Approved</code>, <code>…Rejected</code>, <code>…Suspended</code>, <code>VerificationSubmitted</code>, <code>PreferencesChanged</code>, <code>PatientCreated/Updated/Archived</code>, <code>EntryCreated/Corrected/Archived</code>, <code>LinkAccepted/Rejected</code>, <code>ProfilePublished/Unpublished</code>. Ils ne transportent jamais de texte clinique : des identifiants et des codes.</p>
+
+<!-- ============================================================ -->
+<h2 id="s9">9. Sécurité : sessions, filtres, rôles</h2>
+<p>Pas de JWT : une <strong>session serveur</strong> (Spring Session JDBC, table <code>spring_session</code>) avec un cookie HttpOnly / Secure / SameSite=Lax, 12 h d'inactivité ou 30 jours avec « rester connecté » (Q6). CSRF désactivé parce que l'API n'accepte que du JSON et que le cookie n'est pas envoyé inter-sites.</p>
+
+<figure class="figure">
+<svg viewBox="0 0 780 330" width="100%" role="img" aria-label="Chaînes de filtres de sécurité">
+  <defs><marker id="a9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>
+  <g font-size="12" text-anchor="middle">
+    <rect x="20" y="20" width="740" height="90" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+    <text x="40" y="42" fill="var(--fg)" font-weight="600" text-anchor="start">Chaîne @Order(1) — /api/public/** (directory.PublicSecurityConfig)</text>
+    <rect x="40" y="55" width="150" height="40" rx="6" fill="var(--info-soft)" stroke="var(--info)"/><text x="115" y="79" fill="var(--fg)">RateLimiter 60/min/IP</text>
+    <rect x="215" y="55" width="150" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="290" y="79" fill="var(--fg)">permitAll · STATELESS</text>
+    <rect x="390" y="55" width="150" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="465" y="79" fill="var(--fg)">Cache-Control public 60 s</text>
+    <rect x="565" y="55" width="170" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="650" y="79" fill="var(--fg)">contact : 5/h/IP + honeypot</text>
+
+    <rect x="20" y="130" width="740" height="180" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+    <text x="40" y="152" fill="var(--fg)" font-weight="600" text-anchor="start">Chaîne principale — /api/** (identity.auth.SecurityConfig)</text>
+    <rect x="40" y="165" width="130" height="40" rx="6" fill="var(--info-soft)" stroke="var(--info)"/><text x="105" y="189" fill="var(--fg)">session cookie</text>
+    <rect x="195" y="165" width="150" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="270" y="189" fill="var(--fg)">authenticated()</text>
+    <rect x="370" y="165" width="170" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="455" y="189" fill="var(--fg)">hasRole(ADMIN) /api/admin/**</text>
+    <rect x="565" y="165" width="170" height="40" rx="6" fill="var(--info-soft)" stroke="var(--info)"/><text x="650" y="189" fill="var(--fg)">RateLimiter 600/min/session</text>
+    <rect x="40" y="225" width="180" height="40" rx="6" fill="var(--warn-soft)" stroke="var(--warn)"/><text x="130" y="249" fill="var(--fg)">EmailConfirmationFilter</text>
+    <rect x="245" y="225" width="180" height="40" rx="6" fill="var(--warn-soft)" stroke="var(--warn)"/><text x="335" y="249" fill="var(--fg)">AdminTwoFactorFilter</text>
+    <rect x="450" y="225" width="150" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="525" y="249" fill="var(--fg)">AuditFilter</text>
+    <rect x="625" y="225" width="110" height="40" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="680" y="249" fill="var(--fg)">contrôleur</text>
+    <text x="40" y="292" fill="var(--muted)" font-size="11" text-anchor="start">permitAll : /api/auth/signup|register|login|logout|password-reset|email/*|appeal · 401/403 toujours en problem+json · chemins décodés (RequestPaths) contre /api/%61dmin</text>
+  </g>
+  <g stroke="var(--muted)" stroke-width="1.3" fill="none" marker-end="url(#a9)">
+    <path d="M190,75 L215,75"/><path d="M365,75 L390,75"/><path d="M540,75 L565,75"/>
+    <path d="M170,185 L195,185"/><path d="M345,185 L370,185"/><path d="M540,185 L565,185"/>
+    <path d="M650,205 L650,215 L130,215 L130,225"/><path d="M220,245 L245,245"/><path d="M425,245 L450,245"/><path d="M600,245 L625,245"/>
+  </g>
+</svg>
+<figcaption>Deux chaînes ordonnées. La chaîne publique est sans session et limitée par IP ; la chaîne principale exige la session puis applique les gardes métier (e-mail confirmé, 2FA pour les admins) avant d'auditer et d'atteindre le contrôleur.</figcaption>
+</figure>
+
+<h3>Ce qu'il faut savoir du compte praticien</h3>
+<ul>
+  <li><strong>États</strong> (A10.3) : <code>email_pending</code> → <code>docs_pending</code> → <code>under_review</code> → <code>approved</code> | <code>needs_more</code> | <code>rejected</code> ; plus <code>suspended</code>/<code>closed</code>. Le login répond 403 <code>EMAIL_NOT_CONFIRMED</code> ou <code>ACCOUNT_SUSPENDED</code> selon l'état, mais seulement <em>après</em> un mot de passe correct (anti-énumération).</li>
+  <li><strong>Mots de passe</strong> : Argon2id, ≥ 12 caractères, liste locale de 10 000 mots de passe courants (pas d'appel externe). <strong>Verrou</strong> : 5 échecs email+IP → 423 pendant 15 min, persisté dans <code>locked_until</code>.</li>
+  <li><strong>2FA TOTP</strong> (RFC 6238, Java standard, secret chiffré AES-GCM avec <code>app.crypto.key</code>), codes de secours hachés à usage unique, obligatoire pour accéder à <code>/api/admin/**</code>.</li>
+  <li><strong>Justificatifs</strong> chiffrés AES-256-GCM sur disque, servis par URL signée HMAC 5 min, chaque lecture journalisée dans <code>document_access_log</code> (append-only).</li>
+  <li><strong>Journal</strong> : tout est dans <code>security_event</code> (login_ok, 2fa_enabled, admin.decision, patient.read…), lu via la vue <code>admin_journal_v</code> (Q29).</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="s10">10. Erreurs et contrat OpenAPI</h2>
+<h3>Une seule forme d'erreur</h3>
+<pre class="code"><code>HTTP/1.1 422 Unprocessable Content
+Content-Type: application/problem+json
+
+{ "type": "about:blank", "title": "Validation échouée", "status": 422,
+  "detail": "Certains champs sont invalides.", "instance": "/api/patients/…/entries",
+  "code": "VALIDATION_FAILED",
+  "errors": [ { "field": "feeling.intensity", "code": "OUT_OF_RANGE", "message": "L'intensité doit être comprise entre 0 et 10." },
+              { "field": "feeling.emotionCode", "code": "UNKNOWN_EMOTION", "message": "Cette émotion n'existe pas dans votre catalogue." } ] }</code></pre>
+<p>Le builder et les codes vivent dans <code>shared</code> (M7-02). Chaque module garde son <code>@RestControllerAdvice</code> avec <code>@Order(AdviceOrder.MODULE)</code> pour ses exceptions métier ; le filet global de <code>shared</code> attrape le reste (JSON malformé, 404, 405, 415, 500). Les textes viennent de <code>messages_fr.properties</code> (<code>messages_en</code> si disponible), jamais en dur.</p>
+
+<h3>Le contrat est généré, jamais écrit</h3>
+<p>springdoc lit les contrôleurs et produit <code>contract/openapi.yaml</code> (clés triées, diff lisible). Le fichier est commité ; <code>ContractIT</code> échoue si le fichier commité diffère de ce que l'application génère. Les <code>operationId</code> sont les noms de méthode des contrôleurs : <strong>uniques dans tout le projet</strong> (<code>createPatient</code>, <code>getTimeline</code>, <code>searchPublicDirectory</code>…), sinon springdoc les renumérote et casse les clients générés.</p>
+
+<figure class="figure">
+<svg viewBox="0 0 780 150" width="100%" role="img" aria-label="Plan des tags de contrat">
+  <line x1="40" y1="70" x2="750" y2="70" stroke="var(--muted)" stroke-width="1.5"/>
+  <g font-size="11.5" text-anchor="middle">
+    <g><circle cx="70" cy="70" r="6" fill="var(--accent)"/><text x="70" y="50" class="mono" fill="var(--fg)">0.1.0</text><text x="70" y="95" fill="var(--muted)">auth minimale</text><text x="70" y="110" fill="var(--muted)">M0-05</text></g>
+    <g><circle cx="190" cy="70" r="6" fill="var(--accent)"/><text x="190" y="50" class="mono" fill="var(--fg)">0.2.0</text><text x="190" y="95" fill="var(--muted)">identité étendue</text><text x="190" y="110" fill="var(--muted)">M1-12 + M1-13</text></g>
+    <g><circle cx="310" cy="70" r="6" fill="var(--accent)"/><text x="310" y="50" class="mono" fill="var(--fg)">0.3.0</text><text x="310" y="95" fill="var(--muted)">patients + entrées</text><text x="310" y="110" fill="var(--muted)">M1-05</text></g>
+    <g><circle cx="430" cy="70" r="6" fill="var(--accent)"/><text x="430" y="50" class="mono" fill="var(--fg)">0.5.0</text><text x="430" y="95" fill="var(--muted)">timeline</text><text x="430" y="110" fill="var(--muted)">M3-01</text></g>
+    <g><circle cx="550" cy="70" r="6" fill="var(--accent)"/><text x="550" y="50" class="mono" fill="var(--fg)">0.7.0</text><text x="550" y="95" fill="var(--muted)">annuaire</text><text x="550" y="110" fill="var(--muted)">M5-03</text></g>
+    <g><circle cx="670" cy="70" r="6" fill="var(--accent)"/><text x="670" y="50" class="mono" fill="var(--fg)">0.8.0 / 0.8.1</text><text x="670" y="95" fill="var(--muted)">écrans admin</text><text x="670" y="110" fill="var(--muted)">M1-14 / M1-14b</text></g>
+  </g>
+  <text x="400" y="138" text-anchor="middle" font-size="11.5" fill="var(--muted)">Chaque tag = un jalon de contenu pour le frontend. La version bouge au moment du tag (tools/tag-contract.sh), pas dans les PR.</text>
+</svg>
+<figcaption>Les tags <code>contract-vX.Y.Z</code> sont des repères de contenu, pas une séquence : 0.7.0 a été posé avant 0.3.0. Il reste 0.4.0 (liens + graphe, M2-03) et 0.6.0 (recherche + vue d'ensemble, M4-03).</figcaption>
+</figure>
+
+<!-- ============================================================ -->
+<h2 id="s11">11. Les tests</h2>
+<p>Le détail est dans la page <a href="https://claude.ai/artifact/GGwXKrm53SNd8X2BcZgjZB">Filet de tests PsyMate</a>. L'essentiel :</p>
+<div class="grid2">
+  <div class="card"><h4>Unitaires <code>*Test</code> (28)</h4><p>Domaine pur, tables de cas : grâce, précisions temporelles, matrice de liens, TOTP, parsing de recherche.</p></div>
+  <div class="card"><h4>Intégration <code>*IT</code> (54+)</h4><p>Spring Boot complet + Postgres réel (Testcontainers <code>pgvector/pgvector:pg16</code>, Mailpit), MockMvc, principal posé par <code>spring-security-test</code>, assertions SQL. <strong>Jamais de mock de la base.</strong></p></div>
+  <div class="card"><h4>Architecture</h4><p><code>ModularityTests</code> (Modulith <code>verify()</code>) + <code>ArchitectureTests</code> (ArchUnit) ; chaque règle prouvée par un contre-exemple dans <code>psymatefixture</code>.</p></div>
+  <div class="card"><h4>Transverses</h4><p><code>FlywayMigrationIT</code> (schéma attendu, REVOKE), <code>ContractIT</code>, <code>ReservesConformanceIT</code> (réserves V2 et compagnon).</p></div>
+</div>
+<p>Trois habitudes à prendre : chaque endpoint a un cas « praticien B → 403 » ; chaque règle temporelle utilise un <code>Clock</code> injecté ; chaque événement attendu est vérifié dans <code>event_publication</code>.</p>
+
+<!-- ============================================================ -->
+<h2 id="s12">12. CI/CD et livraison</h2>
+<figure class="figure">
+<svg viewBox="0 0 780 300" width="100%" role="img" aria-label="Pipeline local et CI">
+  <defs><marker id="a12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>
+  <g font-size="12" text-anchor="middle">
+    <text x="40" y="30" fill="var(--fg)" font-weight="600" text-anchor="start">Local (make / mvnw)</text>
+    <rect x="40" y="45" width="110" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="95" y="69" fill="var(--fg)">make up</text>
+    <rect x="170" y="45" width="130" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="235" y="69" fill="var(--fg)">spotless:apply</text>
+    <rect x="320" y="45" width="130" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="385" y="69" fill="var(--fg)">make contract</text>
+    <rect x="470" y="45" width="130" height="40" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="535" y="69" fill="var(--fg)">./mvnw verify</text>
+    <rect x="620" y="45" width="130" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="685" y="69" fill="var(--fg)">gh pr create</text>
+
+    <text x="40" y="130" fill="var(--fg)" font-weight="600" text-anchor="start">GitHub Actions (.github/workflows/ci.yml) — sur pull_request et push main</text>
+    <rect x="40" y="145" width="330" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="205" y="168" fill="var(--fg)" font-weight="600">job verify</text><text x="205" y="188" fill="var(--muted)" font-size="11">temurin 21 · cache Maven · ./mvnw -B verify (Testcontainers sur le runner)</text>
+    <rect x="400" y="145" width="350" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="575" y="168" fill="var(--fg)" font-weight="600">job contract</text><text x="575" y="188" fill="var(--muted)" font-size="11">regénère openapi.yaml · git diff --exit-code · erreur lisible</text>
+
+    <text x="40" y="245" fill="var(--fg)" font-weight="600" text-anchor="start">Après fusion</text>
+    <rect x="40" y="258" width="150" height="36" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="115" y="281" fill="var(--fg)">make log … merged</text>
+    <rect x="210" y="258" width="190" height="36" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="305" y="281" fill="var(--fg)">tools/tag-contract.sh X.Y.Z</text>
+    <rect x="420" y="258" width="330" height="36" rx="6" fill="var(--warn-soft)" stroke="var(--warn)"/><text x="585" y="281" fill="var(--fg)">déploiement : pas encore (étude hébergement HDS, Q16)</text>
+  </g>
+  <g stroke="var(--muted)" stroke-width="1.3" fill="none" marker-end="url(#a12)">
+    <path d="M150,65 L170,65"/><path d="M300,65 L320,65"/><path d="M450,65 L470,65"/><path d="M600,65 L620,65"/>
+    <path d="M685,85 L685,110 L205,110 L205,145"/><path d="M685,110 L575,110 L575,145"/>
+    <path d="M205,205 L115,258"/><path d="M190,276 L210,276"/>
+  </g>
+</svg>
+<figcaption>La CI ne fait rien que le développeur ne puisse faire en local avec la même commande. Il n'y a pas encore de déploiement continu : l'hébergement (données de santé, HDS) est une décision à venir.</figcaption>
+</figure>
+
+<h3>Outillage local</h3>
+<div class="tbl"><table>
+<tr><th>Commande</th><th>Effet</th></tr>
+<tr><td><code>make up</code> / <code>make down</code></td><td>Postgres 16 (pgvector) + Mailpit via docker compose ; le rôle <code>psymate_app</code> est créé par <code>docker/postgres/init/01-app-role.sql</code></td></tr>
+<tr><td><code>make db-reset</code></td><td>recrée la base locale (volumes supprimés) : nécessaire quand une migration d'un numéro inférieur arrive après coup</td></tr>
+<tr><td><code>./mvnw spring-boot:run</code></td><td>API sur :8080, profil <code>local</code> (clé de chiffrement de dev, stockage dans tmp)</td></tr>
+<tr><td><code>make contract</code></td><td>regénère <code>contract/openapi.yaml</code> via ContractIT en mode écriture</td></tr>
+<tr><td><code>make admin EMAIL=…</code></td><td>crée le premier administrateur (profil <code>cli</code>, mot de passe affiché une fois, 2FA forcée)</td></tr>
+<tr><td><code>make log</code> / <code>make progress</code></td><td>journal d'avancement D9 et page générée</td></tr>
+</table></div>
+<p>Formatage : google-java-format via Spotless ; un hook <code>PostToolUse</code> l'applique après chaque édition faite par un agent, et <code>spotless:check</code> est la première phase de <code>verify</code>.</p>
+
+<!-- ============================================================ -->
+<h2 id="s13">13. Les décisions techniques et leurs raisons</h2>
+<div class="tbl"><table>
+<tr><th>Décision</th><th>Pourquoi</th><th>Où</th></tr>
+<tr><td>Monolithe modulaire (Spring Modulith) plutôt que microservices</td><td>une équipe réduite, une base, des transactions simples ; les frontières sont tout de même vérifiées par le build, donc extractibles plus tard</td><td>A5, A3</td></tr>
+<tr><td>Spring Boot 4.1 / Framework 7 / Jackson 3, versions figées</td><td>ligne la plus récente ; <code>com.fasterxml.jackson</code> (Jackson 2) interdit pour ne pas mélanger deux lignes</td><td>Q3, CLAUDE.md</td></tr>
+<tr><td>SQL explicite via JdbcClient, pas d'ORM</td><td>le modèle (versions, jsonb, tstzrange, triggers, index trigram) est trop « Postgres » pour JPA ; le SQL est relu en revue</td><td>E, A4</td></tr>
+<tr><td>Flyway avec numéros réservés par tâche</td><td>plusieurs agents en parallèle ne doivent jamais se disputer un numéro</td><td>E4</td></tr>
+<tr><td>Deux rôles Postgres et REVOKE sur l'append-only</td><td>l'immuabilité de l'historique est garantie par la base, pas par la discipline</td><td>Q9, O11</td></tr>
+<tr><td>Transactional outbox Modulith sur <code>event_publication</code></td><td>un événement ne peut pas être perdu ni publié sans sa donnée ; rejeu au redémarrage ; les projections (search, overview, V2 IA) s'y abonnent</td><td>A4.9, M4-01</td></tr>
+<tr><td>Session serveur + cookie, pas de JWT</td><td>révocation immédiate (suspension, 2FA), pas de secret côté client, « rester connecté » simple</td><td>Q6, fiche 11</td></tr>
+<tr><td>Règle de grâce 1 h 15</td><td>une correction pendant la séance n'est pas une nouvelle version (décision produit du 31 oct.)</td><td>Q31</td></tr>
+<tr><td><code>authorType</code> en lecture seule, tables compagnon vides</td><td>préparer la V2 (compagnon patient, IA) sans écrire une ligne de code V2 ni la casser</td><td>A11, M7-05</td></tr>
+<tr><td>Liste fermée de spécialités, pas de saisie libre</td><td>un annuaire se filtre ; l'admin fait évoluer la liste</td><td>Q15</td></tr>
+<tr><td>Bucket4j pour le débit, verrou de login en base</td><td>le débit est un filtre générique ; le verrou est une règle métier persistante</td><td>Q24, M7-02</td></tr>
+<tr><td>Français d'abord, i18n structurée</td><td>public francophone ; <code>messages_fr</code> obligatoire, <code>messages_en</code> quand possible</td><td>Q23</td></tr>
+<tr><td>Contrat OpenAPI généré et vérifié en CI, tagué par jalon</td><td>le frontend consomme un contrat stable sans attendre la fin du backend</td><td>M0-05, D6-A4</td></tr>
+</table></div>
+
+<!-- ============================================================ -->
+<h2 id="s14">14. L'arbre des connaissances</h2>
+<p>Ce qu'il faut maîtriser pour travailler ici, et dans quel ordre. Chaque branche s'appuie sur celle d'en dessous ; les feuilles sont ce que vous manipulez chaque jour.</p>
+
+<figure class="figure">
+<svg viewBox="0 0 800 640" width="100%" role="img" aria-label="Arbre des connaissances avec prérequis">
+  <g stroke="var(--line)" stroke-width="1.5" fill="none">
+    <!-- racine -> niveau 1 -->
+    <path d="M400,590 L400,560 L130,560 L130,520"/><path d="M400,560 L400,520"/><path d="M400,560 L670,560 L670,520"/>
+    <!-- niveau 1 -> niveau 2 -->
+    <path d="M130,460 L130,440 L80,440 L80,400"/><path d="M130,440 L200,440 L200,400"/>
+    <path d="M400,460 L400,440 L310,440 L310,400"/><path d="M400,440 L480,440 L480,400"/>
+    <path d="M670,460 L670,440 L600,440 L600,400"/><path d="M670,440 L740,440 L740,400"/>
+    <!-- niveau 2 -> niveau 3 -->
+    <path d="M80,340 L80,320 L60,320 L60,280"/><path d="M80,320 L130,320 L130,280"/>
+    <path d="M200,340 L200,280"/>
+    <path d="M310,340 L310,320 L270,320 L270,280"/><path d="M310,320 L350,320 L350,280"/>
+    <path d="M480,340 L480,320 L440,320 L440,280"/><path d="M480,320 L520,320 L520,280"/>
+    <path d="M600,340 L600,280"/>
+    <path d="M740,340 L740,320 L690,320 L690,280"/><path d="M740,320 L770,320 L770,280"/>
+    <!-- niveau 3 -> feuilles -->
+    <path d="M60,220 L60,160"/><path d="M130,220 L130,160"/><path d="M200,220 L200,160"/>
+    <path d="M270,220 L270,160"/><path d="M350,220 L350,160"/><path d="M440,220 L440,160"/>
+    <path d="M520,220 L520,160"/><path d="M600,220 L600,160"/><path d="M690,220 L690,160"/><path d="M770,220 L770,160"/>
+    <!-- feuilles -> sommet -->
+    <path d="M60,100 L60,70 L400,70 L400,40"/><path d="M130,100 L130,70"/><path d="M200,100 L200,70"/><path d="M270,100 L270,70"/><path d="M350,100 L350,70"/><path d="M440,100 L440,70"/><path d="M520,100 L520,70"/><path d="M600,100 L600,70"/><path d="M690,100 L690,70"/><path d="M770,100 L770,70 L400,70"/>
+  </g>
+  <g font-size="11.5" text-anchor="middle">
+    <!-- sommet -->
+    <rect x="300" y="8" width="200" height="32" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="400" y="29" fill="var(--fg)" font-weight="600">Livrer une tâche du plan C</text>
+    <!-- racine -->
+    <rect x="280" y="590" width="240" height="34" rx="6" fill="var(--info-soft)" stroke="var(--info)"/><text x="400" y="612" fill="var(--fg)" font-weight="600">Java 21 · Git · SQL · HTTP/REST</text>
+    <!-- niveau 1 -->
+    <rect x="50" y="460" width="160" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="130" y="484" fill="var(--fg)" font-weight="600">Spring</text><text x="130" y="502" fill="var(--muted)">Boot 4 · DI · @Transactional</text>
+    <rect x="320" y="460" width="160" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="400" y="484" fill="var(--fg)" font-weight="600">PostgreSQL</text><text x="400" y="502" fill="var(--muted)">types · index · rôles</text>
+    <rect x="590" y="460" width="160" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="670" y="484" fill="var(--fg)" font-weight="600">Le domaine PsyMate</text><text x="670" y="502" fill="var(--muted)">docs A, E, G, fiches design</text>
+    <!-- niveau 2 -->
+    <rect x="20" y="340" width="120" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="80" y="364" fill="var(--fg)" font-weight="600">Modulith</text><text x="80" y="382" fill="var(--muted)">modules · api · events</text>
+    <rect x="150" y="340" width="100" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="200" y="364" fill="var(--fg)" font-weight="600">Security</text><text x="200" y="382" fill="var(--muted)">filtres · session</text>
+    <rect x="260" y="340" width="100" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="310" y="364" fill="var(--fg)" font-weight="600">Flyway</text><text x="310" y="382" fill="var(--muted)">E4 · db-reset</text>
+    <rect x="420" y="340" width="120" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="480" y="364" fill="var(--fg)" font-weight="600">JdbcClient</text><text x="480" y="382" fill="var(--muted)">SQL · jsonb · ranges</text>
+    <rect x="550" y="340" width="100" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="600" y="364" fill="var(--fg)" font-weight="600">Versions</text><text x="600" y="382" fill="var(--muted)">grâce · append-only</text>
+    <rect x="690" y="340" width="100" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="740" y="364" fill="var(--fg)" font-weight="600">Isolation</text><text x="740" y="382" fill="var(--muted)">tenant · owner · 403</text>
+    <!-- niveau 3 -->
+    <rect x="20" y="220" width="80" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="60" y="244" fill="var(--fg)" font-weight="600">Façades</text><text x="60" y="262" fill="var(--muted)">:: api</text>
+    <rect x="100" y="220" width="70" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="135" y="244" fill="var(--fg)" font-weight="600">Outbox</text><text x="135" y="262" fill="var(--muted)">listeners</text>
+    <rect x="170" y="220" width="70" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="205" y="244" fill="var(--fg)" font-weight="600">2FA</text><text x="205" y="262" fill="var(--muted)">TOTP · AES</text>
+    <rect x="240" y="220" width="70" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="275" y="244" fill="var(--fg)" font-weight="600">Triggers</text><text x="275" y="262" fill="var(--muted)">REVOKE</text>
+    <rect x="310" y="220" width="80" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="350" y="244" fill="var(--fg)" font-weight="600">Full-text</text><text x="350" y="262" fill="var(--muted)">tsvector · trgm</text>
+    <rect x="400" y="220" width="80" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="440" y="244" fill="var(--fg)" font-weight="600">Keyset</text><text x="440" y="262" fill="var(--muted)">curseurs</text>
+    <rect x="480" y="220" width="80" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="520" y="244" fill="var(--fg)" font-weight="600">MapStruct</text><text x="520" y="262" fill="var(--muted)">DTO</text>
+    <rect x="560" y="220" width="80" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="600" y="244" fill="var(--fg)" font-weight="600">RFC 9457</text><text x="600" y="262" fill="var(--muted)">erreurs</text>
+    <rect x="650" y="220" width="80" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="690" y="244" fill="var(--fg)" font-weight="600">OpenAPI</text><text x="690" y="262" fill="var(--muted)">springdoc</text>
+    <rect x="730" y="220" width="70" height="60" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="765" y="244" fill="var(--fg)" font-weight="600">i18n</text><text x="765" y="262" fill="var(--muted)">FR / EN</text>
+    <!-- feuilles : pratiques -->
+    <rect x="20" y="100" width="80" height="60" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="60" y="124" fill="var(--fg)" font-weight="600">Tests IT</text><text x="60" y="142" fill="var(--muted)">Testcontainers</text>
+    <rect x="100" y="100" width="70" height="60" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="135" y="124" fill="var(--fg)" font-weight="600">ArchUnit</text><text x="135" y="142" fill="var(--muted)">règles</text>
+    <rect x="170" y="100" width="70" height="60" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="205" y="124" fill="var(--fg)" font-weight="600">MockMvc</text><text x="205" y="142" fill="var(--muted)">principal</text>
+    <rect x="240" y="100" width="70" height="60" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="275" y="124" fill="var(--fg)" font-weight="600">Clock</text><text x="275" y="142" fill="var(--muted)">injecté</text>
+    <rect x="310" y="100" width="80" height="60" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="350" y="124" fill="var(--fg)" font-weight="600">Maven</text><text x="350" y="142" fill="var(--muted)">verify · spotless</text>
+    <rect x="400" y="100" width="80" height="60" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="440" y="124" fill="var(--fg)" font-weight="600">Worktrees</text><text x="440" y="142" fill="var(--muted)">git parallèle</text>
+    <rect x="480" y="100" width="80" height="60" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="520" y="124" fill="var(--fg)" font-weight="600">PR + CI</text><text x="520" y="142" fill="var(--muted)">gh · Actions</text>
+    <rect x="560" y="100" width="80" height="60" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="600" y="124" fill="var(--fg)" font-weight="600">Revue</text><text x="600" y="142" fill="var(--muted)">bloquant / non</text>
+    <rect x="650" y="100" width="80" height="60" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="690" y="124" fill="var(--fg)" font-weight="600">Docker</text><text x="690" y="142" fill="var(--muted)">compose · images</text>
+    <rect x="730" y="100" width="70" height="60" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="765" y="124" fill="var(--fg)" font-weight="600">Agents</text><text x="765" y="142" fill="var(--muted)">briefs F</text>
+  </g>
+</svg>
+<figcaption>Lire de bas en haut. Les fondations (racine) sont supposées acquises ; le niveau 1 est ce qu'on apprend en lisant les docs ; les niveaux 2 et 3 sont ce que le code vous apprend ; les feuilles vertes sont les pratiques quotidiennes.</figcaption>
+</figure>
+
+<h3>Parcours conseillé (deux semaines)</h3>
+<ol class="steps">
+  <li><div><strong>Jour 1–2 : le domaine.</strong> Lire <code>docs/00-contexte.md</code>, A1 (langage), A2 (cas d'usage), B2–B4 (écrans), G (décisions). Objectif : savoir dire ce qu'est une entrée, une séance, un lien, une version, sans regarder le code.</div></li>
+  <li><div><strong>Jour 3 : le modèle de données.</strong> E3 table par table, E4 (migrations), E7 (options tranchées). Ouvrir <code>V01__init.sql</code> et <code>V05__clinical.sql</code> à côté : vous devez reconnaître chaque colonne.</div></li>
+  <li><div><strong>Jour 4 : lancer et toucher.</strong> <code>make up</code>, <code>./mvnw spring-boot:run</code>, <code>make admin</code>, puis s'inscrire, créer un patient et une entrée via <code>contract/openapi.yaml</code> et un client HTTP. Regarder les lignes apparaître dans <code>entry</code>, <code>entry_version</code>, <code>event_publication</code>.</div></li>
+  <li><div><strong>Jour 5 : Spring Modulith.</strong> Lire chaque <code>package-info.java</code>, puis faire volontairement une dépendance interdite et lancer <code>ModularityTests</code> : voir le message. Lire <code>ArchitectureTests</code> et ses fixtures.</div></li>
+  <li><div><strong>Jour 6–7 : un module de bout en bout.</strong> <code>patients</code> est le plus lisible : <code>PatientController</code> → <code>PatientService</code> → <code>PatientRepository</code> → <code>PatientIT</code>. Puis <code>clinical</code> pour les versions et la grâce (<code>GraceRule</code>, <code>GraceRuleAppRoleIT</code>, trigger V05).</div></li>
+  <li><div><strong>Jour 8 : événements.</strong> <code>events</code> (publisher, republication, <code>EventDeduplicator</code>), un abonné (<code>IntakeSessionListener</code>), un test qui lit <code>event_publication</code>.</div></li>
+  <li><div><strong>Jour 9 : sécurité.</strong> <code>SecurityConfig</code>, les trois filtres, <code>LoginService</code>, <code>LoginHardeningIT</code>, <code>TotpIT</code>. Comprendre pourquoi le statut du compte n'est révélé qu'après le mot de passe.</div></li>
+  <li><div><strong>Jour 10 : tests et CI.</strong> Lancer un seul IT (<code>./mvnw -Dit.test=PatientIT -Dtest=NONE -Dsurefire.failIfNoSpecifiedTests=false verify</code>), lire <code>ci.yml</code>, <code>ContractIT</code>, le Makefile.</div></li>
+  <li><div><strong>Semaine 2 : une vraie tâche.</strong> Prendre une tâche du runbook F (section 16), la faire comme un agent la ferait, demander la revue, obtenir un <code>verify</code> vert, ouvrir la PR.</div></li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="s15">15. Glossaire du domaine</h2>
+<div class="tbl"><table>
+<tr><th>Terme</th><th>Sens dans PsyMate</th><th>Dans le code / la base</th></tr>
+<tr><td>Tenant</td><td>un cabinet ; cloisonne toutes les données</td><td><code>tenant_id</code> partout, <code>CurrentPractitioner.tenantId()</code></td></tr>
+<tr><td>Praticien</td><td>l'utilisateur connecté ; psychologue, psychiatre ou coach ; parfois admin</td><td><code>practitioner</code>, <code>role</code>, <code>verification_status</code></td></tr>
+<tr><td>Patient</td><td>la personne suivie ; appartient à un seul praticien (<code>owner_id</code>)</td><td><code>patient</code>, <code>patient_version</code>, <code>patient_flag</code>, <code>patient_tag</code></td></tr>
+<tr><td>Entrée</td><td>toute information notée : note, événement, situation, ressenti, séance, médicament</td><td><code>entry</code> + <code>entry_version</code> + table de détail selon le type</td></tr>
+<tr><td>Séance</td><td>une entrée de type <code>session</code> (kind intake | session | contact) qui regroupe les autres entrées</td><td><code>entry_session</code>, <code>closed_at</code>, <code>summary_version_id</code></td></tr>
+<tr><td>Occurrence</td><td>quand la chose s'est passée (≠ quand elle a été notée) avec une précision</td><td><code>occurred_from</code>, <code>occurred_to</code>, <code>precision</code>, <code>occurred_range</code></td></tr>
+<tr><td>Version</td><td>un état figé d'une entrée ; une correction en crée une nouvelle</td><td><code>entry_version</code>, <code>current_version_id</code>, append-only</td></tr>
+<tr><td>Règle de grâce</td><td>1 h 15 pendant lesquelles une correction ne crée pas de version</td><td><code>GraceRule</code>, trigger <code>trg_entry_version_grace</code></td></tr>
+<tr><td>Lien</td><td>relation typée et orientée entre deux entrées du même patient</td><td><code>link</code>, <code>link_type</code> (matrice), <code>provenance</code>, <code>status</code></td></tr>
+<tr><td>Émotion</td><td>vocabulaire fermé de 29 émotions en 8 familles, plus les émotions custom du praticien</td><td><code>emotion</code>, <code>entry_feeling</code> (valence, arousal copiés)</td></tr>
+<tr><td>Visibilité</td><td><code>clinical</code> (dossier) ou <code>private</code> (notes personnelles exclues des exports)</td><td><code>entry.visibility</code></td></tr>
+<tr><td>Justificatif</td><td>document prouvant la qualification du praticien</td><td><code>verification_document</code>, chiffré, URL signée</td></tr>
+<tr><td>Profil public</td><td>la fiche du praticien dans l'annuaire, publiable seulement si vérifié</td><td><code>practitioner_profile</code>, <code>published</code>, <code>search_vector</code></td></tr>
+<tr><td>Compagnon</td><td>la future application patient (V2) : ses tables existent et restent vides</td><td><code>patient_device</code>, <code>patient_submission</code>, <code>author_type</code></td></tr>
+</table></div>
+
+<!-- ============================================================ -->
+<h2 id="s16">16. Votre première tâche : la checklist</h2>
+<ol class="steps">
+  <li><div>Lire CLAUDE.md en entier. C'est court, et chaque ligne est une règle vérifiée par le build ou par la revue.</div></li>
+  <li><div>Prendre le texte de la tâche dans <code>docs/F-runbook-agents-backend.md</code> et lire <em>tous</em> les documents qu'il cite, dans l'ordre.</div></li>
+  <li><div>Créer un worktree : <code>git worktree add .claude/worktrees/&lt;ID&gt; -b worktree-&lt;ID&gt; main</code>. Travailler uniquement dedans, uniquement dans le module indiqué.</div></li>
+  <li><div>Commencer par la migration si la tâche en a une (numéro réservé en E4), puis <code>expected-schema-v01.yaml</code>, puis le domaine, le service, le repository, le contrôleur, et les tests en même temps que le code.</div></li>
+  <li><div>Écrire les tests que la tâche nomme, plus le cas « praticien B → 403 », plus l'événement dans <code>event_publication</code> si la tâche en publie un.</div></li>
+  <li><div><code>./mvnw spotless:apply</code>, <code>make contract</code>, puis <code>./mvnw verify</code> : vert. Si un test d'architecture est rouge, la solution est une façade dans le package <code>api</code> du module qui possède la donnée, jamais une exception à la règle.</div></li>
+  <li><div>PR avec le template : ID de tâche, critères cochés un par un, tests ajoutés, dépendances Maven ajoutées (normalement aucune), écarts hors module signalés en tête. <code>make log TASK=… STATUS=done</code> et commiter l'événement.</div></li>
+  <li><div>Après fusion d'une PR voisine : rebaser, regénérer le contrat, relancer <code>verify</code>. Après la vôtre : <code>make log … STATUS=merged</code>, supprimer le worktree.</div></li>
+</ol>
+
+<div class="callout info">
+<strong>Si vous ne retenez que trois choses.</strong> (1) Le module ne parle aux autres que par leur package <code>api</code> et par des événements. (2) Rien n'est supprimé, tout est versionné, et c'est Postgres qui le garantit. (3) <code>./mvnw verify</code> vert avant toute PR, sans jamais désactiver un test ni une règle.
+</div>
+
+<p style="color:var(--muted);font-size:13.5px;margin-top:40px">Sources : CLAUDE.md, docs/A-architecture.md, docs/E-modele-donnees.md, docs/G-decisions.md, docs/D-orchestration-backend.md, docs/F-runbook-agents-backend.md, le code de <code>src/main/java/com/psymate/**</code> et <code>src/test/java/**</code> à la révision 71b4fcf. Les extraits Java sont simplifiés pour la lecture ; les noms de classes et de tables sont les vrais.</p>
+</main>
+
+</body>
+</html>

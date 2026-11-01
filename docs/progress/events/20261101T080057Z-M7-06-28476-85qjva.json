@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T08:00:57.644Z",
+  "task": "M7-06",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Document de passation hebergement docs/ops/hebergement-passation.md : 36 decisions (HDS, chiffrement et cles, sauvegardes, stockage fichiers, SMTP, retention, multi-instance, RGPD, menaces) avec point d'entree code et etat, secrets a provisionner, checklist de mise en production ; aucun code",
+  "notes": "Urgences pour l'etude : pas de version de cle dans les blobs chiffres (rotation impossible), aucun effacement/anonymisation (purge_after jamais execute), REVOKE append-only effectifs seulement avec le role psymate_app",
+  "next": "Relecture par le proprietaire du projet puis fusion ; etude hebergement separee (G Q16)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/34",
+  "branch": "worktree-M7-06",
+  "checkout": "M7-06"
+}

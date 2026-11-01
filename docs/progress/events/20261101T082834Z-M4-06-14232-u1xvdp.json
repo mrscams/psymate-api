@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T08:28:34.096Z",
+  "task": "M4-06",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "NarrativeComposer (fragments FR/EN overview.narrative.*, phrases resolues a la lecture dans la locale, donnees structurees NarrativeFacts projetees), payload enrichi narrative / feelings (un point par ressenti) / sinceLastSession / recentSessions ; contrat regenere (additif, 0.6.0) ; verify vert",
+  "notes": "Revue : 0 bloquant, 4 a corriger (2 corriges : interception large dans add, description du DTO ; contrat regenere ; lecture large de l'evenement non commente conservee = regle litterale de la tache, a arbitrer). Perf 2001 entrees : a froid 95-153 ms, p50 28-37 ms. Notes de passation M4-06-notes.md.",
+  "next": "Fusion PR 35 puis regeneration du contrat apres les PR voisines M7-01 / M7-06 ; M4-07 (web) consomme narrative, feelings, sinceLastSession, recentSessions",
+  "pr": "https://github.com/mrscams/psymate-api/pull/35",
+  "branch": "worktree-M4-06",
+  "checkout": "M4-06"
+}

@@ -1,22 +1,41 @@
 package com.psymate.identity.admin;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import com.psymate.identity.persistence.DocumentAccessLog;
+import com.psymate.identity.persistence.DocumentAccessLogJpaRepository;
+import com.psymate.identity.persistence.IpLiterals;
+import com.psymate.identity.persistence.Practitioner;
+import com.psymate.identity.persistence.PractitionerJpaRepository;
+import com.psymate.identity.persistence.PractitionerJpaRepository.AdminAccount;
+import com.psymate.identity.persistence.Rows;
+import com.psymate.identity.persistence.SecurityEvent;
+import com.psymate.identity.persistence.SecurityEventJpaRepository;
+import com.psymate.identity.persistence.Times;
+import com.psymate.identity.persistence.VerificationDecision;
+import com.psymate.identity.persistence.VerificationDecisionJpaRepository;
+import com.psymate.identity.persistence.VerificationDocument;
+import com.psymate.identity.persistence.VerificationDocumentJpaRepository;
+import jakarta.persistence.Tuple;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Accès JDBC de l'administration des dossiers. Ne lit que practitioner, verification_document,
- * verification_decision, document_access_log, security_event et spring_session : aucune table
- * patient, clinique ou de liens.
+ * Couture entre les services d'administration des dossiers et les entités du module. Ne touche que
+ * practitioner, verification_document, verification_decision, document_access_log, security_event
+ * et spring_session : aucune table patient, clinique ou de liens. Renvoie des records, jamais
+ * d'entité. La file et le rappel de retard sont des lectures natives (fragment {@code
+ * AdminVerificationNativeQueries}) ; les écritures d'entité s'exécutent dans la transaction du
+ * service.
  */
 @Repository
 class AdminVerificationRepository {
@@ -85,225 +104,201 @@ class AdminVerificationRepository {
   /** Dossier en attente, pour le rappel quotidien. */
   record PendingRow(String displayName, String profession, Instant submittedAt) {}
 
-  private static final String ACCOUNT_COLUMNS =
-      "id, tenant_id, email, first_name, last_name, display_name, profession, locale, role,"
-          + " verification_status, created_at, email_confirmed_at, verified_at, phone,"
-          + " professional_number, address_street, address_postal_code, address_city, remote_only";
+  private final PractitionerJpaRepository practitioners;
+  private final VerificationDocumentJpaRepository documents;
+  private final VerificationDecisionJpaRepository decisions;
+  private final SecurityEventJpaRepository events;
+  private final DocumentAccessLogJpaRepository accessLogs;
+  private final JsonMapper json;
 
-  private static final String DOC_COLUMNS =
-      "id, practitioner_id, type, title, issuer, year, storage_key, mime, size_bytes, uploaded_at,"
-          + " reviewed_status, reviewed_at, purged_at, deleted_at";
-
-  /** Date de soumission : journal de sécurité, il n'y a pas de colonne dédiée. */
-  private static final String SUBMITTED_AT =
-      "(select max(e.occurred_at) from security_event e where e.practitioner_id = p.id"
-          + " and e.kind = 'verification_submitted')";
-
-  private final JdbcClient jdbc;
-
-  AdminVerificationRepository(JdbcClient jdbc) {
-    this.jdbc = jdbc;
+  AdminVerificationRepository(
+      PractitionerJpaRepository practitioners,
+      VerificationDocumentJpaRepository documents,
+      VerificationDecisionJpaRepository decisions,
+      SecurityEventJpaRepository events,
+      DocumentAccessLogJpaRepository accessLogs,
+      JsonMapper json) {
+    this.practitioners = practitioners;
+    this.documents = documents;
+    this.decisions = decisions;
+    this.events = events;
+    this.accessLogs = accessLogs;
+    this.json = json;
   }
 
-  private static Instant instant(ResultSet rs, String column) throws SQLException {
-    Timestamp t = rs.getTimestamp(column);
-    return t == null ? null : t.toInstant();
-  }
-
-  private static AccountRow mapAccount(ResultSet rs, int i) throws SQLException {
+  private static AccountRow map(AdminAccount a) {
     return new AccountRow(
-        rs.getObject("id", UUID.class),
-        rs.getObject("tenant_id", UUID.class),
-        rs.getString("email"),
-        rs.getString("first_name"),
-        rs.getString("last_name"),
-        rs.getString("display_name"),
-        rs.getString("profession"),
-        rs.getString("locale"),
-        rs.getString("role"),
-        rs.getString("verification_status"),
-        instant(rs, "created_at"),
-        instant(rs, "email_confirmed_at"),
-        instant(rs, "verified_at"),
-        rs.getString("phone"),
-        rs.getString("professional_number"),
-        rs.getString("address_street"),
-        rs.getString("address_postal_code"),
-        rs.getString("address_city"),
-        rs.getBoolean("remote_only"));
+        a.id(),
+        a.tenantId(),
+        a.email(),
+        a.firstName(),
+        a.lastName(),
+        a.displayName(),
+        a.profession(),
+        a.locale(),
+        a.role(),
+        a.status(),
+        Times.instant(a.createdAt()),
+        Times.instant(a.emailConfirmedAt()),
+        Times.instant(a.verifiedAt()),
+        a.phone(),
+        a.professionalNumber(),
+        a.street(),
+        a.postalCode(),
+        a.city(),
+        a.remoteOnly());
   }
 
-  private static DocumentRow mapDoc(ResultSet rs, int i) throws SQLException {
-    int year = rs.getInt("year");
-    Integer yearValue = rs.wasNull() ? null : year;
+  private static AccountRow map(Practitioner p) {
+    return new AccountRow(
+        p.getId(),
+        p.getTenantId(),
+        p.getEmail(),
+        p.getFirstName(),
+        p.getLastName(),
+        p.getDisplayName(),
+        p.getProfession(),
+        p.getLocale(),
+        p.getRole(),
+        p.getVerificationStatus(),
+        Times.instant(p.getCreatedAt()),
+        Times.instant(p.getEmailConfirmedAt()),
+        Times.instant(p.getVerifiedAt()),
+        p.getPhone(),
+        p.getProfessionalNumber(),
+        p.getAddressStreet(),
+        p.getAddressPostalCode(),
+        p.getAddressCity(),
+        p.isRemoteOnly());
+  }
+
+  private static DocumentRow map(VerificationDocument d) {
     return new DocumentRow(
-        rs.getObject("id", UUID.class),
-        rs.getObject("practitioner_id", UUID.class),
-        rs.getString("type"),
-        rs.getString("title"),
-        rs.getString("issuer"),
-        yearValue,
-        rs.getString("storage_key"),
-        rs.getString("mime"),
-        rs.getInt("size_bytes"),
-        instant(rs, "uploaded_at"),
-        rs.getString("reviewed_status"),
-        instant(rs, "reviewed_at"),
-        instant(rs, "purged_at"),
-        instant(rs, "deleted_at"));
+        d.getId(),
+        d.getPractitionerId(),
+        d.getType(),
+        d.getTitle(),
+        d.getIssuer(),
+        d.getYear(),
+        d.getStorageKey(),
+        d.getMime(),
+        d.getSizeBytes(),
+        Times.instant(d.getUploadedAt()),
+        d.getReviewedStatus(),
+        Times.instant(d.getReviewedAt()),
+        Times.instant(d.getPurgedAt()),
+        Times.instant(d.getDeletedAt()));
+  }
+
+  private DecisionRow map(VerificationDecision d) {
+    return new DecisionRow(
+        d.getId(),
+        d.getKind(),
+        d.getMessageToPractitioner(),
+        d.getInternalNote(),
+        json.writeValueAsString(d.getChecklist()),
+        Times.instant(d.getDecidedAt()),
+        d.getAdminId());
+  }
+
+  private Map<String, Object> map(String jsonText) {
+    if (jsonText == null || jsonText.isBlank()) {
+      return new LinkedHashMap<>();
+    }
+    return json.readValue(jsonText, new TypeReference<LinkedHashMap<String, Object>>() {});
   }
 
   // ---- file d'attente
 
   /**
-   * Page de la file par curseur à clé composée (clé de tri tronquée à la milliseconde, id). La
-   * direction et l'opérateur viennent de constantes, jamais de l'entrée.
+   * Page de la file par curseur à clé composée (clé de tri tronquée à la milliseconde, id). Une
+   * seule requête native.
    *
    * @param cursorKey clé de tri du curseur en millisecondes, null pour la première page
    */
+  @Transactional(readOnly = true)
   List<QueueRow> queue(
       String status, boolean oldestFirst, Long cursorKey, UUID cursorId, int limit) {
-    String op = oldestFirst ? ">" : "<";
-    String dir = oldestFirst ? "asc" : "desc";
-    StringBuilder sql = new StringBuilder();
-    sql.append(
-        "select * from (select p.id, p.display_name, p.profession, p.address_city,"
-            + " (select count(*) from verification_document d where d.practitioner_id = p.id"
-            + " and d.purpose = 'verification' and d.deleted_at is null) as documents_count,"
-            + " coalesce((select string_agg(distinct d.type, ',') from verification_document d"
-            + " where d.practitioner_id = p.id and d.purpose = 'verification'"
-            + " and d.deleted_at is null and d.purged_at is null), '') as present_types, ");
-    sql.append(SUBMITTED_AT).append(" as submitted_at, ");
-    sql.append(
-        "date_trunc('milliseconds', coalesce("
-            + SUBMITTED_AT
-            + ", p.updated_at)) as sort_key from practitioner p"
-            + " where p.role <> 'admin' and p.verification_status = :status) t");
-    if (cursorKey != null) {
-      sql.append(
-          " where (t.sort_key, t.id) "
-              + op
-              + " (timestamptz 'epoch' + cast(:key as bigint) * interval '1 millisecond', :cid)");
-    }
-    sql.append(" order by t.sort_key ").append(dir).append(", t.id ").append(dir);
-    sql.append(" limit :limit");
-    JdbcClient.StatementSpec spec = jdbc.sql(sql.toString()).param("status", status);
-    if (cursorKey != null) {
-      spec = spec.param("key", cursorKey).param("cid", cursorId);
-    }
-    return spec.param("limit", limit)
-        .query(
-            (rs, i) ->
-                new QueueRow(
-                    rs.getObject("id", UUID.class),
-                    rs.getString("display_name"),
-                    rs.getString("profession"),
-                    rs.getString("address_city"),
-                    rs.getInt("documents_count"),
-                    instant(rs, "submitted_at"),
-                    instant(rs, "sort_key"),
-                    Arrays.stream(rs.getString("present_types").split(","))
-                        .filter(s -> !s.isEmpty())
-                        .collect(Collectors.toSet())))
-        .list();
+    return practitioners.adminQueue(status, oldestFirst, cursorKey, cursorId, limit).stream()
+        .map(AdminVerificationRepository::queueRow)
+        .toList();
+  }
+
+  private static QueueRow queueRow(Tuple t) {
+    String types = Rows.string(t, "present_types");
+    return new QueueRow(
+        Rows.uuid(t, "id"),
+        Rows.string(t, "display_name"),
+        Rows.string(t, "profession"),
+        Rows.string(t, "address_city"),
+        Rows.integer(t, "documents_count"),
+        Rows.instant(t, "submitted_at"),
+        Rows.instant(t, "sort_key"),
+        Arrays.stream(types == null ? new String[0] : types.split(","))
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.toSet()));
   }
 
   /** Dossiers under_review avec leur date de soumission, pour le rappel de retard. */
+  @Transactional(readOnly = true)
   List<PendingRow> underReview() {
-    return jdbc.sql(
-            "select p.display_name, p.profession, "
-                + SUBMITTED_AT
-                + " as submitted_at from practitioner p where p.role <> 'admin'"
-                + " and p.verification_status = 'under_review' order by submitted_at, p.id")
-        .query(
-            (rs, i) ->
+    return practitioners.adminUnderReview().stream()
+        .map(
+            t ->
                 new PendingRow(
-                    rs.getString("display_name"),
-                    rs.getString("profession"),
-                    instant(rs, "submitted_at")))
-        .list();
+                    Rows.string(t, "display_name"),
+                    Rows.string(t, "profession"),
+                    Rows.instant(t, "submitted_at")))
+        .toList();
   }
 
   // ---- dossier
 
+  /**
+   * Lecture du compte par projection : l'entité n'entre pas dans le contexte de persistance, un
+   * verrou pris ensuite sur la même ligne relit donc l'état courant.
+   */
+  @Transactional(readOnly = true)
   Optional<AccountRow> findAccount(UUID id) {
-    return jdbc.sql("select " + ACCOUNT_COLUMNS + " from practitioner where id = :id")
-        .param("id", id)
-        .query(AdminVerificationRepository::mapAccount)
-        .optional();
+    return practitioners.adminAccountView(id).map(AdminVerificationRepository::map);
   }
 
-  /** Verrouille la ligne du praticien pour sérialiser les décisions concurrentes. */
+  /**
+   * Verrouille la ligne du praticien pour sérialiser les décisions concurrentes. Ne pas charger
+   * l'entité avant dans la même transaction (hors verrou des administrateurs actifs, qui la relit).
+   */
   Optional<AccountRow> lockAccount(UUID id) {
-    return jdbc.sql("select " + ACCOUNT_COLUMNS + " from practitioner where id = :id for update")
-        .param("id", id)
-        .query(AdminVerificationRepository::mapAccount)
-        .optional();
+    return practitioners.findForUpdate(id).map(AdminVerificationRepository::map);
   }
 
   Optional<Instant> lastSubmittedAt(UUID practitionerId) {
-    return jdbc.sql(
-            "select max(occurred_at) as submitted_at from security_event"
-                + " where practitioner_id = :p and kind = 'verification_submitted'")
-        .param("p", practitionerId)
-        .query((rs, i) -> instant(rs, "submitted_at"))
-        .optional()
-        .filter(java.util.Objects::nonNull);
+    return events.lastOccurredAt(practitionerId, "verification_submitted").map(Times::instant);
   }
 
   /** Justificatifs de vérification non retirés par le praticien. */
   List<DocumentRow> activeDocuments(UUID practitionerId) {
-    return jdbc.sql(
-            "select "
-                + DOC_COLUMNS
-                + " from verification_document where practitioner_id = :p"
-                + " and purpose = 'verification' and deleted_at is null order by uploaded_at, id")
-        .param("p", practitionerId)
-        .query(AdminVerificationRepository::mapDoc)
-        .list();
+    return documents.activeDocuments(practitionerId).stream()
+        .map(AdminVerificationRepository::map)
+        .toList();
   }
 
   /** Justificatif d'un praticien donné, retiré ou non (l'appelant filtre deleted_at). */
   Optional<DocumentRow> findDocument(UUID practitionerId, UUID documentId) {
-    return jdbc.sql(
-            "select "
-                + DOC_COLUMNS
-                + " from verification_document where id = :id and practitioner_id = :p")
-        .param("id", documentId)
-        .param("p", practitionerId)
-        .query(AdminVerificationRepository::mapDoc)
-        .optional();
+    return documents
+        .findByIdAndPractitionerId(documentId, practitionerId)
+        .map(AdminVerificationRepository::map);
   }
 
+  @Transactional
   void reviewDocument(UUID documentId, String status, UUID adminId, Instant now) {
-    jdbc.sql(
-            "update verification_document set reviewed_status = :s, reviewed_at = :now,"
-                + " reviewed_by = :a where id = :id")
-        .param("s", status)
-        .param("now", Timestamp.from(now))
-        .param("a", adminId)
-        .param("id", documentId)
-        .update();
+    documents.findById(documentId).ifPresent(d -> d.review(status, adminId, now));
   }
 
   /** Décisions du plus récent au plus ancien. */
   List<DecisionRow> decisions(UUID practitionerId) {
-    return jdbc.sql(
-            "select id, kind, message_to_practitioner, internal_note, checklist::text as checklist,"
-                + " decided_at, admin_id from verification_decision where practitioner_id = :p"
-                + " order by decided_at desc, id")
-        .param("p", practitionerId)
-        .query(
-            (rs, i) ->
-                new DecisionRow(
-                    rs.getObject("id", UUID.class),
-                    rs.getString("kind"),
-                    rs.getString("message_to_practitioner"),
-                    rs.getString("internal_note"),
-                    rs.getString("checklist"),
-                    instant(rs, "decided_at"),
-                    rs.getObject("admin_id", UUID.class)))
-        .list();
+    return decisions.findByPractitionerIdOrderByDecidedAtDescIdAsc(practitionerId).stream()
+        .map(this::map)
+        .toList();
   }
 
   // ---- écritures de la décision
@@ -322,6 +317,7 @@ class AdminVerificationRepository {
   }
 
   /** related_id : recours concerné pour appeal_accepted et appeal_rejected (M1-14b). */
+  @Transactional
   void insertDecision(
       UUID id,
       UUID practitionerId,
@@ -332,105 +328,72 @@ class AdminVerificationRepository {
       String checklistJson,
       UUID relatedId,
       Instant now) {
-    jdbc.sql(
-            "insert into verification_decision (id, practitioner_id, admin_id, kind, internal_note,"
-                + " message_to_practitioner, checklist, related_id, decided_at) values (:id, :p, :a,"
-                + " :k, :note, :msg, cast(:checklist as jsonb), :related, :now)")
-        .param("id", id)
-        .param("p", practitionerId)
-        .param("a", adminId)
-        .param("k", kind)
-        .param("note", internalNote)
-        .param("msg", message)
-        .param("checklist", checklistJson)
-        .param("related", relatedId)
-        .param("now", Timestamp.from(now))
-        .update();
+    decisions.save(
+        new VerificationDecision(
+            id,
+            practitionerId,
+            adminId,
+            kind,
+            internalNote,
+            message,
+            map(checklistJson),
+            relatedId,
+            now));
   }
 
+  /** Le compte est déjà verrouillé par {@link #lockAccount} dans la même transaction. */
+  @Transactional
   void markApproved(UUID practitionerId, UUID adminId, Instant now) {
-    jdbc.sql(
-            "update practitioner set verification_status = 'approved', verified_at = :now,"
-                + " verified_by = :a, updated_at = :now where id = :id")
-        .param("now", Timestamp.from(now))
-        .param("a", adminId)
-        .param("id", practitionerId)
-        .update();
+    practitioners.findById(practitionerId).ifPresent(p -> p.markApproved(adminId, now));
   }
 
+  @Transactional
   void markNeedsMore(UUID practitionerId, Instant now) {
-    jdbc.sql(
-            "update practitioner set verification_status = 'needs_more', updated_at = :now"
-                + " where id = :id")
-        .param("now", Timestamp.from(now))
-        .param("id", practitionerId)
-        .update();
+    practitioners.findById(practitionerId).ifPresent(p -> p.markNeedsMore(now));
   }
 
+  @Transactional
   void markRejected(UUID practitionerId, Instant now, Instant purgeAfter) {
-    jdbc.sql(
-            "update practitioner set verification_status = 'rejected', suspended_at = :now,"
-                + " purge_after = :purge, updated_at = :now where id = :id")
-        .param("now", Timestamp.from(now))
-        .param("purge", Timestamp.from(purgeAfter))
-        .param("id", practitionerId)
-        .update();
+    practitioners.findById(practitionerId).ifPresent(p -> p.markRejected(now, purgeAfter));
   }
 
   /** Révoque toutes les sessions du praticien ; renvoie leur nombre. */
   int deleteSessions(UUID practitionerId) {
-    return jdbc.sql("delete from spring_session where principal_name = :p")
-        .param("p", practitionerId.toString())
-        .update();
+    return practitioners.deleteSessions(practitionerId);
   }
 
   /** Planifie la purge des fichiers du dossier (décision + 90 jours). */
   void schedulePurge(UUID practitionerId, Instant purgeAfter) {
-    jdbc.sql(
-            "update verification_document set purge_after = :purge where practitioner_id = :p"
-                + " and purpose = 'verification' and deleted_at is null and purged_at is null")
-        .param("purge", Timestamp.from(purgeAfter))
-        .param("p", practitionerId)
-        .update();
+    documents.schedulePurge(practitionerId, Times.utc(purgeAfter));
   }
 
   // ---- journal
 
+  @Transactional
   void insertAccessLog(UUID documentId, UUID adminId, String ip, Instant now) {
-    jdbc.sql(
-            "insert into document_access_log (id, document_id, admin_id, ip, accessed_at) values"
-                + " (:id, :d, :a, cast(:ip as inet), :now)")
-        .param("id", UUID.randomUUID())
-        .param("d", documentId)
-        .param("a", adminId)
-        .param("ip", ip)
-        .param("now", Timestamp.from(now))
-        .update();
+    accessLogs.save(
+        new DocumentAccessLog(UUID.randomUUID(), documentId, adminId, IpLiterals.parse(ip), now));
   }
 
   /** Journal d'administration (G Q29) : security_event avec l'administrateur comme acteur. */
+  @Transactional
   void insertAdminEvent(
       UUID practitionerId, UUID adminId, String kind, String ip, String detailsJson, Instant now) {
-    jdbc.sql(
-            "insert into security_event (id, practitioner_id, actor_id, kind, ip, details,"
-                + " occurred_at) values (:id, :p, :a, :k, cast(:ip as inet), cast(:details as"
-                + " jsonb), :now)")
-        .param("id", UUID.randomUUID())
-        .param("p", practitionerId)
-        .param("a", adminId)
-        .param("k", kind)
-        .param("ip", ip)
-        .param("details", detailsJson)
-        .param("now", Timestamp.from(now))
-        .update();
+    events.save(
+        new SecurityEvent(
+            UUID.randomUUID(),
+            practitionerId,
+            adminId,
+            kind,
+            IpLiterals.parse(ip),
+            detailsJson == null ? null : map(detailsJson),
+            now));
   }
 
+  @Transactional(readOnly = true)
   List<Recipient> adminRecipients() {
-    return jdbc.sql(
-            "select email, locale from practitioner where role = 'admin'"
-                + " and verification_status not in ('rejected','suspended','closed','email_pending')"
-                + " order by email")
-        .query((rs, i) -> new Recipient(rs.getString("email"), rs.getString("locale")))
-        .list();
+    return practitioners.adminRecipientsByEmail().stream()
+        .map(r -> new Recipient(r.email(), r.locale()))
+        .toList();
   }
 }

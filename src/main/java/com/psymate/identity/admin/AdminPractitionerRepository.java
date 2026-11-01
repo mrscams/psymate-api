@@ -1,24 +1,28 @@
 package com.psymate.identity.admin;
 
 import com.psymate.identity.admin.AdminCursors.Position;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import com.psymate.identity.persistence.Practitioner;
+import com.psymate.identity.persistence.PractitionerAppealJpaRepository;
+import com.psymate.identity.persistence.PractitionerJpaRepository;
+import com.psymate.identity.persistence.Rows;
+import com.psymate.identity.persistence.Times;
+import jakarta.persistence.Tuple;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Accès JDBC à la liste et au détail des comptes, aux suspensions et aux recours d'un compte
- * (M1-14b). Ne lit que practitioner, verification_decision, practitioner_appeal et security_event :
- * aucune table patient, clinique, de liens ni d'annuaire.
+ * Couture entre les services de gestion des comptes (liste, détail, suspension, réactivation,
+ * M1-14b) et les entités du module. Ne lit que practitioner, verification_decision,
+ * practitioner_appeal et security_event : aucune table patient, clinique, de liens ni d'annuaire.
+ * La liste, les compteurs et le détail sont des lectures natives (fragment {@code
+ * AdminPractitionerNativeQueries}, une requête chacun) ; les écritures passent par les méthodes
+ * métier de l'entité.
  */
 @Repository
 class AdminPractitionerRepository {
@@ -58,119 +62,56 @@ class AdminPractitionerRepository {
   static final List<String> COUNTED =
       List.of("approved", "under_review", "needs_more", "suspended", "rejected");
 
-  /** Statuts d'un compte qui ne peut plus se connecter. */
-  private static final String INACTIVE = "('suspended','rejected','closed')";
+  private final PractitionerJpaRepository practitioners;
+  private final PractitionerAppealJpaRepository appeals;
 
-  private static final String SUBMITTED_AT =
-      "(select max(e.occurred_at) from security_event e where e.practitioner_id = p.id"
-          + " and e.kind = 'verification_submitted')";
-
-  private static final String COLUMNS =
-      "p.id, p.display_name, p.email, p.profession, p.address_city, p.role,"
-          + " p.verification_status, p.verified_at, "
-          + SUBMITTED_AT
-          + " as submitted_at, p.updated_at, (p.totp_enabled_at is not null) as totp,"
-          + " p.created_at, p.last_login_at, p.suspended_at, p.purge_after,"
-          + " date_trunc('milliseconds', p.created_at) as sort_key";
-
-  private final JdbcClient jdbc;
-
-  AdminPractitionerRepository(JdbcClient jdbc) {
-    this.jdbc = jdbc;
+  AdminPractitionerRepository(
+      PractitionerJpaRepository practitioners, PractitionerAppealJpaRepository appeals) {
+    this.practitioners = practitioners;
+    this.appeals = appeals;
   }
 
-  private static Instant instant(ResultSet rs, String column) throws SQLException {
-    Timestamp t = rs.getTimestamp(column);
-    return t == null ? null : t.toInstant();
-  }
-
-  private static AccountRow map(ResultSet rs, int i) throws SQLException {
+  private static AccountRow map(Tuple t) {
     return new AccountRow(
-        rs.getObject("id", UUID.class),
-        rs.getString("display_name"),
-        rs.getString("email"),
-        rs.getString("profession"),
-        rs.getString("address_city"),
-        rs.getString("role"),
-        rs.getString("verification_status"),
-        instant(rs, "verified_at"),
-        instant(rs, "submitted_at"),
-        instant(rs, "updated_at"),
-        rs.getBoolean("totp"),
-        instant(rs, "created_at"),
-        instant(rs, "last_login_at"),
-        instant(rs, "suspended_at"),
-        instant(rs, "purge_after"),
-        instant(rs, "sort_key"));
+        Rows.uuid(t, "id"),
+        Rows.string(t, "display_name"),
+        Rows.string(t, "email"),
+        Rows.string(t, "profession"),
+        Rows.string(t, "address_city"),
+        Rows.string(t, "role"),
+        Rows.string(t, "verification_status"),
+        Rows.instant(t, "verified_at"),
+        Rows.instant(t, "submitted_at"),
+        Rows.instant(t, "updated_at"),
+        Rows.bool(t, "totp"),
+        Rows.instant(t, "created_at"),
+        Rows.instant(t, "last_login_at"),
+        Rows.instant(t, "suspended_at"),
+        Rows.instant(t, "purge_after"),
+        Rows.instant(t, "sort_key"));
   }
 
-  /** Caractère d'échappement des ILIKE de la recherche. */
-  private static final String ESC = "!";
-
-  /** Échappe le caractère d'échappement, % et _ pour un ILIKE. */
-  private static String like(String q) {
-    return "%" + q.replace(ESC, ESC + ESC).replace("%", ESC + "%").replace("_", ESC + "_") + "%";
-  }
-
-  private static String where(Filter f, boolean withStatus, Map<String, Object> params) {
-    StringBuilder sql = new StringBuilder(" where true");
-    if (f.q() != null) {
-      sql.append(
-          " and (p.display_name ilike :q escape '"
-              + ESC
-              + "' or p.email ilike :q escape '"
-              + ESC
-              + "')");
-      params.put("q", like(f.q()));
-    }
-    if (withStatus && f.status() != null) {
-      sql.append(" and p.verification_status = :status");
-      params.put("status", f.status());
-    }
-    if (f.role() != null) {
-      sql.append(" and p.role = :role");
-      params.put("role", f.role());
-    }
-    if (f.profession() != null) {
-      sql.append(" and p.profession = :profession");
-      params.put("profession", f.profession());
-    }
-    return sql.toString();
-  }
-
-  /** Page triée par création décroissante, puis identifiant décroissant. */
+  /** Page triée par création décroissante, puis identifiant décroissant. Une seule requête. */
+  @Transactional(readOnly = true)
   List<AccountRow> list(Filter f, Position cursor, int limit) {
-    Map<String, Object> params = new HashMap<>();
-    StringBuilder sql =
-        new StringBuilder("select " + COLUMNS + " from practitioner p" + where(f, true, params));
-    if (cursor != null) {
-      sql.append(
-          " and (date_trunc('milliseconds', p.created_at), p.id) <"
-              + " (timestamptz 'epoch' + cast(:key as bigint) * interval '1 millisecond', :cid)");
-      params.put("key", cursor.key());
-      params.put("cid", cursor.id());
-    }
-    sql.append(" order by date_trunc('milliseconds', p.created_at) desc, p.id desc limit :limit");
-    params.put("limit", limit);
-    return jdbc.sql(sql.toString()).params(params).query(AdminPractitionerRepository::map).list();
+    return practitioners
+        .adminAccounts(
+            f.q(),
+            f.status(),
+            f.role(),
+            f.profession(),
+            cursor == null ? null : cursor.key(),
+            cursor == null ? null : cursor.id(),
+            limit)
+        .stream()
+        .map(AdminPractitionerRepository::map)
+        .toList();
   }
 
   /** Nombre de comptes par statut suivi, hors filtre de statut. */
+  @Transactional(readOnly = true)
   Map<String, Integer> counts(Filter f) {
-    Map<String, Object> params = new HashMap<>();
-    String sql =
-        "select p.verification_status as s, count(*) as n from practitioner p"
-            + where(f, false, params)
-            + " group by p.verification_status";
-    Map<String, Integer> found = new HashMap<>();
-    jdbc.sql(sql)
-        .params(params)
-        .query(
-            (rs, i) -> {
-              found.put(rs.getString("s"), rs.getInt("n"));
-              return null;
-            })
-        .list();
+    Map<String, Integer> found = practitioners.adminStatusCounts(f.q(), f.role(), f.profession());
     Map<String, Integer> counts = new LinkedHashMap<>();
     for (String s : COUNTED) {
       counts.put(s, found.getOrDefault(s, 0));
@@ -178,30 +119,25 @@ class AdminPractitionerRepository {
     return counts;
   }
 
+  @Transactional(readOnly = true)
   Optional<AccountRow> find(UUID id) {
-    return jdbc.sql("select " + COLUMNS + " from practitioner p where p.id = :id")
-        .param("id", id)
-        .query(AdminPractitionerRepository::map)
-        .optional();
+    return practitioners.adminAccount(id).map(AdminPractitionerRepository::map);
   }
 
+  @Transactional(readOnly = true)
   List<AppealRow> appeals(UUID practitionerId) {
-    return jdbc.sql(
-            "select id, decision_id, submitted_at, reviewed_at, outcome, message, response_message"
-                + " from practitioner_appeal where practitioner_id = :p"
-                + " order by submitted_at desc, id")
-        .param("p", practitionerId)
-        .query(
-            (rs, i) ->
+    return appeals.summaries(practitionerId).stream()
+        .map(
+            a ->
                 new AppealRow(
-                    rs.getObject("id", UUID.class),
-                    rs.getObject("decision_id", UUID.class),
-                    instant(rs, "submitted_at"),
-                    instant(rs, "reviewed_at"),
-                    rs.getString("outcome"),
-                    rs.getString("message"),
-                    rs.getString("response_message")))
-        .list();
+                    a.id(),
+                    a.decisionId(),
+                    Times.instant(a.submittedAt()),
+                    Times.instant(a.reviewedAt()),
+                    a.outcome(),
+                    a.message(),
+                    a.responseMessage()))
+        .toList();
   }
 
   // ---- suspension et réactivation
@@ -211,44 +147,26 @@ class AdminPractitionerRepository {
    * L'ordre unique de verrouillage sérialise deux suspensions croisées d'administrateurs ; la cible
    * exclue, une liste vide signifie qu'elle est le dernier administrateur.
    */
+  @Transactional
   List<UUID> lockActiveAdmins() {
-    return jdbc.sql(
-            "select id from practitioner where role = 'admin'"
-                + " and verification_status not in "
-                + INACTIVE
-                + " order by id for update")
-        .query((rs, i) -> rs.getObject("id", UUID.class))
-        .list();
+    return practitioners.lockActiveAdmins().stream().map(Practitioner::getId).toList();
   }
 
+  /** Le compte est déjà verrouillé par l'appelant (lockAccount) dans la même transaction. */
+  @Transactional
   void markSuspended(UUID practitionerId, Instant now) {
-    jdbc.sql(
-            "update practitioner set verification_status = 'suspended', suspended_at = :now,"
-                + " updated_at = :now where id = :id")
-        .param("now", Timestamp.from(now))
-        .param("id", practitionerId)
-        .update();
+    practitioners.findById(practitionerId).ifPresent(p -> p.markSuspended(now));
   }
 
+  /** Le compte est déjà verrouillé par l'appelant (lockAccount) dans la même transaction. */
+  @Transactional
   void markReactivated(UUID practitionerId, String status, Instant now) {
-    jdbc.sql(
-            "update practitioner set verification_status = :s, suspended_at = null,"
-                + " purge_after = null, updated_at = :now where id = :id")
-        .param("s", status)
-        .param("now", Timestamp.from(now))
-        .param("id", practitionerId)
-        .update();
+    practitioners.findById(practitionerId).ifPresent(p -> p.markReactivated(status, now));
   }
 
   /** Statut que le compte avait avant sa dernière suspension manuelle, lu dans la checklist. */
+  @Transactional(readOnly = true)
   Optional<String> previousStatusBeforeSuspension(UUID practitionerId) {
-    return jdbc.sql(
-            "select checklist->>'previousStatus' from verification_decision"
-                + " where practitioner_id = :p and kind = 'suspended'"
-                + " order by decided_at desc, id desc limit 1")
-        .param("p", practitionerId)
-        .query((rs, i) -> rs.getString(1))
-        .optional()
-        .filter(Objects::nonNull);
+    return practitioners.previousStatusBeforeSuspension(practitionerId);
   }
 }

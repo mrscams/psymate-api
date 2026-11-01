@@ -1,51 +1,46 @@
 package com.psymate.identity.preferences;
 
+import com.psymate.identity.persistence.Practitioner;
+import com.psymate.identity.persistence.PractitionerJpaRepository;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 class PreferencesRepository {
 
-  /** Cabinet, profession et préférences stockées (JSON brut) d'un praticien. */
-  record Row(UUID tenantId, String profession, String preferencesJson) {}
+  /** Cabinet, profession et préférences stockées d'un praticien (copie, jamais l'entité). */
+  record Row(UUID tenantId, String profession, Map<String, Object> preferences) {}
 
-  private static final String SELECT =
-      "select tenant_id, profession, preferences::text as preferences from practitioner"
-          + " where id = :id";
+  private final PractitionerJpaRepository practitioners;
 
-  private final JdbcClient jdbc;
-
-  PreferencesRepository(JdbcClient jdbc) {
-    this.jdbc = jdbc;
+  PreferencesRepository(PractitionerJpaRepository practitioners) {
+    this.practitioners = practitioners;
   }
 
-  /** Lecture avec verrou de ligne : sérialise les PATCH concurrents d'un même compte. */
+  /**
+   * Lecture avec verrou de ligne : sérialise les PATCH concurrents d'un même compte. À appeler dans
+   * une transaction, avant toute autre lecture du compte.
+   */
+  @Transactional
   Optional<Row> lockById(UUID id) {
-    return select(SELECT + " for update", id);
+    return practitioners.findForUpdate(id).map(PreferencesRepository::row);
   }
 
   Optional<Row> findById(UUID id) {
-    return select(SELECT, id);
+    return practitioners.findById(id).map(PreferencesRepository::row);
   }
 
-  private Optional<Row> select(String sql, UUID id) {
-    return jdbc.sql(sql)
-        .param("id", id)
-        .query(
-            (rs, i) ->
-                new Row(
-                    rs.getObject("tenant_id", UUID.class),
-                    rs.getString("profession"),
-                    rs.getString("preferences")))
-        .optional();
+  /** Remplace les préférences ; le compte est verrouillé par lockById dans la même transaction. */
+  @Transactional
+  void update(UUID id, Map<String, Object> preferences) {
+    practitioners.findById(id).ifPresent(p -> p.replacePreferences(preferences));
   }
 
-  void update(UUID id, String json) {
-    jdbc.sql("update practitioner set preferences = cast(:p as jsonb) where id = :id")
-        .param("p", json)
-        .param("id", id)
-        .update();
+  private static Row row(Practitioner p) {
+    return new Row(p.getTenantId(), p.getProfession(), new LinkedHashMap<>(p.getPreferences()));
   }
 }

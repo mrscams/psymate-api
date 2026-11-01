@@ -10,6 +10,7 @@ import com.psymate.identity.auth.AuthExceptions.InvalidTokenException;
 import com.psymate.identity.auth.AuthExceptions.PasswordPolicyException;
 import com.psymate.identity.auth.AuthExceptions.PasswordUnchangedException;
 import com.psymate.identity.auth.PractitionerRepository.Contact;
+import com.psymate.identity.persistence.UniqueViolations;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -22,12 +23,13 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -35,6 +37,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 @Service
 class AuthService {
@@ -47,6 +51,8 @@ class AuthService {
   static final Duration RESEND_MIN_INTERVAL = Duration.ofMinutes(1);
   static final int RESEND_MAX_PER_DAY = 5;
 
+  private static final JsonMapper JSON = JsonMapper.builder().build();
+  private static final TypeReference<Map<String, Object>> PREFS_TYPE = new TypeReference<>() {};
   private static final String PREFS_COACH =
       "{\"vocabulary.subjectLabel\":\"client\",\"entryTypes.medicationVisible\":false}";
   private static final String PREFS_PSYCHIATRIST = "{\"entryTypes.medicationVisible\":true}";
@@ -140,7 +146,7 @@ class AuthService {
             r.profession(),
             "practitioner",
             "email_pending",
-            defaultPreferences(r.profession()));
+            JSON.readValue(defaultPreferences(r.profession()), PREFS_TYPE));
     String token = newToken();
     try {
       tx.executeWithoutResult(
@@ -153,7 +159,10 @@ class AuthService {
                 row.id(), "consent_given", ip, consentDetails(now), now);
             events.publish(new PractitionerRegistered(tenantId, row.id(), row.profession()));
           });
-    } catch (DuplicateKeyException e) {
+    } catch (DataIntegrityViolationException e) {
+      if (!UniqueViolations.isUniqueViolation(e)) {
+        throw e;
+      }
       // Inscription concurrente avec la même adresse : même issue silencieuse.
       sendAsync("account-exists e-mail", () -> mailer.sendAccountExists(row.email(), mailLocale));
       return;
@@ -314,7 +323,10 @@ class AuthService {
     }
     try {
       tx.executeWithoutResult(status -> doChangeEmail(p, newEmail));
-    } catch (DuplicateKeyException e) {
+    } catch (DataIntegrityViolationException e) {
+      if (!UniqueViolations.isUniqueViolation(e)) {
+        throw e;
+      }
       // Course : l'adresse a été prise entre la lecture et l'écriture (transaction annulée).
       Locale locale = Locale.forLanguageTag(p.locale());
       sendAsync("account-exists e-mail", () -> mailer.sendAccountExists(newEmail.trim(), locale));

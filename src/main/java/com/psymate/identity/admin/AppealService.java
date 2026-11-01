@@ -11,6 +11,7 @@ import com.psymate.identity.admin.AppealRepository.DecisionRef;
 import com.psymate.identity.admin.AppealRepository.ExistingAppeal;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.SuspendedAccount;
+import com.psymate.identity.persistence.UniqueViolations;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -18,10 +19,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -45,6 +49,7 @@ class AppealService {
   private final AdminAsyncMail asyncMail;
   private final JsonMapper json;
   private final Clock clock;
+  private final TransactionTemplate tx;
 
   AppealService(
       AppealRepository repo,
@@ -53,7 +58,9 @@ class AppealService {
       AdminMailer mailer,
       AdminAsyncMail asyncMail,
       JsonMapper json,
-      Clock clock) {
+      Clock clock,
+      PlatformTransactionManager txManager) {
+    this.tx = new TransactionTemplate(txManager);
     this.repo = repo;
     this.shared = shared;
     this.accounts = accounts;
@@ -87,8 +94,26 @@ class AppealService {
 
   // ---- dépôt par le praticien
 
-  /** Dépose le recours d'un compte déjà identifié par AppealAuthenticator. */
+  /**
+   * Dépose le recours d'un compte déjà identifié par AppealAuthenticator. La transaction est celle
+   * du TransactionTemplate et non celle de la classe : la violation de ux_appeal_decision (un seul
+   * recours par décision) est levée par Hibernate au flush, donc au commit, et doit être traduite
+   * en 409 après lui.
+   */
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   AppealCreatedDto submit(SuspendedAccount who, String message) {
+    try {
+      return tx.execute(status -> doSubmit(who, message));
+    } catch (DataIntegrityViolationException e) {
+      if (!UniqueViolations.isUniqueViolation(e)) {
+        throw e;
+      }
+      throw AdminException.of(
+          HttpStatus.CONFLICT, "APPEAL_ALREADY_OPEN", "admin.error.appeal.open");
+    }
+  }
+
+  private AppealCreatedDto doSubmit(SuspendedAccount who, String message) {
     // Verrou du praticien : sérialise deux dépôts, et un dépôt avec une décision d'administrateur.
     AdminVerificationRepository.AccountRow account =
         shared
@@ -127,12 +152,7 @@ class AppealService {
     }
     Instant now = clock.instant();
     UUID id = UUID.randomUUID();
-    try {
-      repo.insert(id, who.id(), decision.id(), message, now);
-    } catch (DuplicateKeyException e) {
-      throw AdminException.of(
-          HttpStatus.CONFLICT, "APPEAL_ALREADY_OPEN", "admin.error.appeal.open");
-    }
+    repo.insert(id, who.id(), decision.id(), message, now);
     // actor_id NULL : c'est le praticien lui-même qui agit.
     shared.insertAdminEvent(
         who.id(),

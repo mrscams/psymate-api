@@ -8,30 +8,23 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.json.JsonMapper;
 
 @Service
 class PreferencesService {
 
-  private static final TypeReference<Map<String, Object>> MAP = new TypeReference<>() {};
-
   private final PreferencesRepository repository;
   private final DomainEventPublisher events;
-  private final JsonMapper json;
 
-  PreferencesService(
-      PreferencesRepository repository, DomainEventPublisher events, JsonMapper json) {
+  PreferencesService(PreferencesRepository repository, DomainEventPublisher events) {
     this.repository = repository;
     this.events = events;
-    this.json = json;
   }
 
   @Transactional(readOnly = true)
   Map<String, Object> get(UUID practitionerId) {
     PreferencesRepository.Row row =
         repository.findById(practitionerId).orElseThrow(NoSuchElementException::new);
-    return Preferences.effective(row.profession(), parse(row.preferencesJson()));
+    return Preferences.effective(row.profession(), row.preferences());
   }
 
   @Transactional
@@ -39,19 +32,15 @@ class PreferencesService {
     PreferencesRepository.Row row =
         repository.lockById(practitionerId).orElseThrow(NoSuchElementException::new);
     Preferences.MergeResult result =
-        Preferences.merge(parse(row.preferencesJson()), patch == null ? Map.of() : patch);
+        Preferences.merge(row.preferences(), patch == null ? Map.of() : patch);
     if (!result.violations().isEmpty()) {
       throw new InvalidPreferencesException(result.violations());
     }
     if (!result.changedKeys().isEmpty()) {
-      repository.update(practitionerId, json.writeValueAsString(result.stored()));
+      repository.update(practitionerId, result.stored());
       events.publish(new PreferencesChanged(row.tenantId(), practitionerId, result.changedKeys()));
     }
     return Preferences.effective(row.profession(), result.stored());
-  }
-
-  private Map<String, Object> parse(String raw) {
-    return raw == null ? Map.of() : json.readValue(raw, MAP);
   }
 
   /** Valeurs hors domaine : rendu en 422 par PreferencesExceptionHandler. */

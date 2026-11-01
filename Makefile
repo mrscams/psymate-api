@@ -1,4 +1,4 @@
-.PHONY: up down seed test run contract db-reset progress log admin
+.PHONY: up down seed perf test run contract db-reset progress log admin
 
 up:
 	docker compose up -d --wait
@@ -6,11 +6,19 @@ up:
 down:
 	docker compose down
 
+# Donnees fictives (M7-01, tools/seed) : make seed SIZE=small|medium|demo ; l API doit tourner en profil local.
+SIZE ?= small
+
 seed:
-	@echo "seed : le generateur arrive avec M7-01 (tools/seed), rien a faire pour l'instant."
+	./mvnw -q -f tools/seed/pom.xml -DskipTests -Dspotless.check.skip=true package
+	java -cp tools/seed/target/classes com.psymate.seed.Seed --size $(SIZE)
 
 test:
 	./mvnw verify
+
+# Tests de charge (M7-01) : dossier de 2 000 entrees / 1 500 liens, rapport dans target/perf-report.md. Docker requis, 5 a 10 min.
+perf:
+	./mvnw -B -Pperf verify
 
 run:
 	./mvnw spring-boot:run

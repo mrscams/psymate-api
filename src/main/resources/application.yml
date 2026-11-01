@@ -96,6 +96,15 @@ spring:
     username: psymate
     password: psymate
 
+# Indicateur de profil (M7-01) : GET /actuator/info renvoie {"profile":"local"} sous ce profil
+# seulement ; tools/seed refuse d'ecrire sur une API qui ne le declare pas.
+management:
+  info:
+    env:
+      enabled: true
+info:
+  profile: local
+
 app:
   mail:
     from: test@gmail.com

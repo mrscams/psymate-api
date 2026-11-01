@@ -10,5 +10,5 @@ make db-reset    # recrée la base locale depuis zéro (supprime le volume)
 make down        # arrête les conteneurs
 ```
 
-Santé : http://localhost:8080/actuator/health. `make seed` et `make contract` sont des
-emplacements réservés (M7-01 et M0-05).
+Santé : http://localhost:8080/actuator/health. Données fictives : `make seed SIZE=small|medium|demo` (API lancée,
+voir `tools/seed/README.md`). Tests de charge (cibles de latence A6) : `make perf`. Contrat : `make contract`.

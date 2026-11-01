@@ -11,7 +11,8 @@ public enum LinkError {
   LINK_TYPE_NOT_ALLOWED(422),
   LINK_EXISTS(409),
   LINK_NOT_ACTIVE(409),
-  ENTRY_ARCHIVED(409);
+  ENTRY_ARCHIVED(409),
+  SUPER_NODE_NOT_FOUND(404);
 
   private final int status;
 

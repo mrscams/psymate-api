@@ -1,6 +1,7 @@
 package com.psymate.clinical.application;
 
 import com.psymate.clinical.api.EntryFacade;
+import com.psymate.clinical.api.EntrySummary;
 import com.psymate.clinical.api.EntryVersionView;
 import com.psymate.clinical.api.SessionView;
 import com.psymate.clinical.domain.Entry;
@@ -8,6 +9,10 @@ import com.psymate.clinical.domain.EntryType;
 import com.psymate.clinical.persistence.EntryRepository;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.patients.api.PatientFacade;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -98,5 +103,24 @@ class EntryFacadeService implements EntryFacade {
   @Override
   public boolean isArchived(UUID entryId) {
     return repo.find(entryId).map(Entry::archived).orElse(false);
+  }
+
+  /** Une seule vérification de propriété par patient distinct du lot (ADR-09). */
+  @Override
+  public Map<UUID, EntrySummary> summariesOf(Collection<UUID> entryIds) {
+    Optional<CurrentPractitioner> me = CurrentPractitioner.get();
+    if (me.isEmpty() || entryIds.isEmpty()) {
+      return Map.of();
+    }
+    Map<UUID, EntrySummary> all = repo.summaries(entryIds);
+    Map<UUID, Boolean> owned = new HashMap<>();
+    Map<UUID, EntrySummary> out = new LinkedHashMap<>();
+    all.forEach(
+        (id, s) -> {
+          if (owned.computeIfAbsent(s.patientId(), p -> patients.ownedBy(p, me.get().id()))) {
+            out.put(id, s);
+          }
+        });
+    return out;
   }
 }

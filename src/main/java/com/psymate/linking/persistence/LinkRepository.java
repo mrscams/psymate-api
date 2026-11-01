@@ -18,7 +18,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class LinkRepository {
 
-  private static final String COLS =
+  static final String COLS =
       "id, tenant_id, patient_id, source_id, target_id, link_type, directed, provenance, status,"
           + " rationale, author_id, decided_by, decided_at, superseded_by, version, created_at,"
           + " updated_at";
@@ -42,7 +42,7 @@ public class LinkRepository {
     return rs.getObject(col, UUID.class);
   }
 
-  private static Link link(ResultSet rs, int i) throws SQLException {
+  static Link link(ResultSet rs, int i) throws SQLException {
     return new Link(
         uuid(rs, "id"),
         uuid(rs, "tenant_id"),

@@ -27,6 +27,9 @@ jobs:
           cache: maven
       - name: Build, unit tests, verifications
         run: ./mvnw -B verify -DskipITs
+      # Les tranches d'IT (tools/it-slices.txt) couvrent chaque *IT une fois et ci.yml les liste toutes.
+      - name: Tranches d'IT - coherence
+        run: tools/verify-fast.sh --check
       # M7-01 : compile l outil de seed et lance ses tests unitaires (generateur pur, sans reseau).
       - name: Seed - compilation
         run: ./mvnw -B -q -f tools/seed/pom.xml verify
@@ -34,22 +37,18 @@ jobs:
   # Tests d'integration (failsafe, *IT, Testcontainers) seuls : surefire ne lance rien.
   # Trois tranches par paquets de modules, chacune sur son runner et en serie dans une JVM :
   # les IT sont lourds et deviennent flaky si on les parallelise sur une machine.
-  # Les motifs couvrent chaque *IT une fois (hors perf, profil -Pperf) ; `-Dit.test` remplace les
-  # excludes du pom, d'ou `!**/perf/**` sur chaque tranche. fail-fast: false : une tranche rouge
-  # n'annule pas les autres.
+  # Les motifs de chaque tranche vivent dans tools/it-slices.txt (source unique, partagee avec
+  # `make verify-fast`) : la matrice ne porte que les noms, et `tools/verify-fast.sh --check`
+  # (job unit) verifie que les noms concordent et que chaque *IT hors perf est dans exactement une
+  # tranche. `-Dit.test` remplace les excludes du pom, d'ou `!**/perf/**` sur chaque tranche.
+  # fail-fast: false : une tranche rouge n'annule pas les autres.
   integration:
     runs-on: ubuntu-latest
     name: integration (${{ matrix.slice }})
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - slice: clinical
-            tests: "com/psymate/clinical/**/*IT.java,com/psymate/vocabulary/*IT.java,com/psymate/patients/*IT.java,com/psymate/events/*IT.java,!**/perf/**"
-          - slice: identity
-            tests: "com/psymate/identity/**/*IT.java,com/psymate/directory/*IT.java,!**/perf/**"
-          - slice: core
-            tests: "com/psymate/linking/**/*IT.java,com/psymate/overview/*IT.java,com/psymate/search/*IT.java,com/psymate/shared/*IT.java,com/psymate/*IT.java,!**/perf/**"
+        slice: [clinical, identity, core]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -58,7 +57,7 @@ jobs:
           java-version: "21"
           cache: maven
       - name: Integration tests
-        run: ./mvnw -B verify -Dtest=NONE -Dsurefire.failIfNoSpecifiedTests=false -Dit.test='${{ matrix.tests }}'
+        run: ./mvnw -B verify -Dtest=NONE -Dsurefire.failIfNoSpecifiedTests=false -Dit.test="$(tools/verify-fast.sh --patterns ${{ matrix.slice }})"
 
   # Le contrat commite doit etre exactement celui que l'application genere (M0-05).
   # Job separe : echec lisible (diff affiche) et sans relancer toute la suite.

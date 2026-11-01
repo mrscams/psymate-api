@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T14:03:52.480Z",
+  "task": "M7-10",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Outillage : make verify-fast (build unique puis unitaires + 3 tranches d'IT en parallèle, tranches dans tools/it-slices.txt lues par ci.yml et vérifiées par --check). 8 min 40 à 9 min contre 10 min 22 en séquentiel, 3 runs verts ; variante 4 tranches plus rapide mais fragile en mémoire avec un autre build concurrent, documentée dans la PR.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/42",
+  "branch": "worktree-M7-10",
+  "checkout": "M7-10"
+}

@@ -1,8 +1,7 @@
 package com.psymate.directory;
 
 import com.psymate.directory.ContactMailer.ContactMessage;
-import com.psymate.directory.ContactRequestRepository.NewRequest;
-import com.psymate.directory.ContactRequestRepository.Recipient;
+import com.psymate.directory.PractitionerProfileRepository.Recipient;
 import com.psymate.identity.api.PractitionerFacade;
 import com.psymate.shared.ratelimit.RateLimiter;
 import jakarta.annotation.PreDestroy;
@@ -11,6 +10,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,6 +40,7 @@ class ContactRequestService {
   private static final Logger LOG = LoggerFactory.getLogger(ContactRequestService.class);
 
   private final ContactRequestRepository repository;
+  private final PractitionerProfileRepository profiles;
   private final PractitionerFacade practitioners;
   private final ContactMailer mailer;
   private final IpHasher ipHasher;
@@ -61,12 +62,14 @@ class ContactRequestService {
 
   ContactRequestService(
       ContactRequestRepository repository,
+      PractitionerProfileRepository profiles,
       PractitionerFacade practitioners,
       ContactMailer mailer,
       IpHasher ipHasher,
       TransactionTemplate tx,
       Clock clock) {
     this.repository = repository;
+    this.profiles = profiles;
     this.practitioners = practitioners;
     this.mailer = mailer;
     this.ipHasher = ipHasher;
@@ -94,7 +97,7 @@ class ContactRequestService {
       LOG.debug("contact request ignored (anti-spam)");
       return;
     }
-    Optional<Recipient> recipient = repository.findPublishedRecipient(slug);
+    Optional<Recipient> recipient = profiles.findPublishedRecipient(slug);
     if (recipient.isEmpty()) {
       LOG.debug("contact request ignored (unknown or unpublished profile)");
       return;
@@ -113,8 +116,8 @@ class ContactRequestService {
     String name = r.name().trim();
     String email = r.email().trim();
     String subject = r.subject() == null || r.subject().isBlank() ? null : r.subject().trim();
-    NewRequest row =
-        new NewRequest(
+    ContactRequest row =
+        new ContactRequest(
             id,
             practitionerId,
             name,
@@ -125,7 +128,7 @@ class ContactRequestService {
             ipHasher.hash(RateLimiter.ipKey(remoteAddr), createdAt.toLocalDate()),
             createdAt,
             createdAt.plus(RETENTION));
-    tx.executeWithoutResult(status -> repository.insert(row));
+    tx.executeWithoutResult(status -> repository.save(row));
     // Après commit : la ligne existe, l'envoi n'est jamais rattaché à la transaction.
     ContactMessage message = new ContactMessage(to, name, email, subject, r.message());
     try {
@@ -133,7 +136,7 @@ class ContactRequestService {
     } catch (RejectedExecutionException e) {
       // La ligne existe et le visiteur a sa réponse : rien ne doit plus remonter vers lui.
       try {
-        repository.markRelayFailed(id, "relay queue full");
+        markRelayFailed(id, "relay queue full");
       } catch (RuntimeException inner) {
         LOG.error("contact relay error could not be recorded for request {}", id, inner);
       }
@@ -143,15 +146,26 @@ class ContactRequestService {
   private void relay(UUID id, UUID practitionerId, ContactMessage message) {
     try {
       mailer.send(message, localeOf(practitionerId));
-      repository.markRelayed(id, OffsetDateTime.now(clock));
+      markRelayed(id, OffsetDateTime.now(clock).truncatedTo(ChronoUnit.MICROS));
     } catch (RuntimeException e) {
       LOG.warn("contact relay failed for request {}", id);
       try {
-        repository.markRelayFailed(id, truncate(e.toString()));
+        markRelayFailed(id, truncate(e.toString()));
       } catch (RuntimeException inner) {
         LOG.error("contact relay error could not be recorded for request {}", id, inner);
       }
     }
+  }
+
+  // Le thread de relais n'a pas de transaction en cours : chaque marquage ouvre la sienne.
+  private void markRelayed(UUID id, OffsetDateTime at) {
+    tx.executeWithoutResult(
+        status -> repository.findById(id).ifPresent(request -> request.markRelayed(at)));
+  }
+
+  private void markRelayFailed(UUID id, String error) {
+    tx.executeWithoutResult(
+        status -> repository.findById(id).ifPresent(request -> request.markRelayFailed(error)));
   }
 
   private Locale localeOf(UUID practitionerId) {

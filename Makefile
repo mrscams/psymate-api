@@ -1,4 +1,4 @@
-.PHONY: up down seed perf test run contract db-reset progress log admin
+.PHONY: up down seed perf test verify-fast run contract db-reset progress log admin
 
 up:
 	docker compose up -d --wait
@@ -15,6 +15,12 @@ seed:
 
 test:
 	./mvnw verify
+
+# Meme verification que ./mvnw verify, en parallele comme la CI : build une fois, puis unitaires + tranches
+# d'IT (tools/it-slices.txt) chacune dans son processus Maven ; resume par voie. Docker requis.
+# Sous Windows : bash tools/verify-fast.sh (Git Bash). ./mvnw verify reste la reference avant une PR.
+verify-fast:
+	bash tools/verify-fast.sh
 
 # Tests de charge (M7-01) : dossier de 2 000 entrees / 1 500 liens, rapport dans target/perf-report.md. Docker requis, 5 a 10 min.
 perf:

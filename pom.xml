@@ -25,6 +25,9 @@
 		<openhtmltopdf.version>1.1.105</openhtmltopdf.version>
 		<!-- M7-01 : le package com.psymate.perf (tests de charge) n'est compile que sous le profil perf -->
 		<perf.testExclude>**/perf/**</perf.testExclude>
+		<!-- Rapports failsafe : tools/verify-fast.sh donne un dossier par tranche d IT lancee en parallele (-Dfailsafe.reportsDirectory) ;
+		     la valeur par defaut est celle du plugin, ./mvnw verify ne change pas -->
+		<failsafe.reportsDirectory>${project.build.directory}/failsafe-reports</failsafe.reportsDirectory>
 	</properties>
 
 	<dependencyManagement>
@@ -202,6 +205,8 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<configuration>
+					<reportsDirectory>${failsafe.reportsDirectory}</reportsDirectory>
+					<summaryFile>${failsafe.reportsDirectory}/failsafe-summary.xml</summaryFile>
 					<!-- les tests de charge (M7-01) ne tournent que sous `-Pperf` (make perf) -->
 					<excludes>
 						<exclude>**/perf/**</exclude>

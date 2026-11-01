@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T16:37:46.725Z",
+  "task": "M8-05",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Module identity converti en JPA (package identity.persistence : 9 entites, 3 @Immutable, Practitioner @DynamicUpdate ; natif conserve : spring_session, auth_token RETURNING, jsonb -, keyset admin, vue admin_journal_v). ./mvnw verify vert : 359 unitaires, 895 IT, contrat 0.9.0 inchange, aucune migration ni dependance. Revue : 0 bloquant, 3 corriges. Tests ajoutes : IdentityPersistenceIT, VerificationPersistenceIT, AdminPersistenceIT, IdentityAppRoleIT.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/46",
+  "branch": "worktree-M8-05",
+  "checkout": "M8-05"
+}

@@ -589,6 +589,7 @@ class OverviewNarrativeIT extends OverviewSupport {
     seedAnxiety(new int[] {3, 4}, new int[] {7, 8});
     overview();
     assertThat(storedPayload(patient)).contains("recentSessions").contains("narrativeFacts");
+    awaitOverviewQuiet();
 
     // ligne M4-03 : même révision, même jour, mais sans les champs ajoutés par M4-06
     int updated =
@@ -613,6 +614,7 @@ class OverviewNarrativeIT extends OverviewSupport {
   void aRowMissingOnlyRecentSessionsIsAlsoRecomputed() throws Exception {
     feeling("anxiety", 5, daysAgo(3));
     overview();
+    awaitOverviewQuiet();
     jdbc.update(
         "update patient_overview set payload = payload - 'recentSessions' where patient_id = ?",
         patient);

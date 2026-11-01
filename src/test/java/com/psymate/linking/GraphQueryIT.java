@@ -343,6 +343,9 @@ class GraphQueryIT {
 
   @Test
   void anArchivedEntryIsExcludedWithItsEdges() {
+    // L'abonné d'EntryArchived passe derrière l'arriéré du registre : on l'écoule d'abord, pour
+    // que le délai ci-dessous ne mesure que lui.
+    fx.awaitPublicationsSettled(patient);
     entries.archive(c);
 
     GraphView immediate = hood(a, 3);

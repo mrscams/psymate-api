@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T10:27:20.066Z",
+  "task": "PROJET",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "CI-flaky : PR 37 fusionnee dans main (durcissement des IT asynchrones, 4 causes)",
+  "next": "Resynchroniser la branche de la PR 38 (CI parallele) sur main",
+  "pr": "https://github.com/mrscams/psymate-api/pull/37",
+  "checkout": "suivi-ci-flaky"
+}

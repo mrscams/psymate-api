@@ -1,5 +1,7 @@
 package com.psymate.linking;
 
+import static org.awaitility.Awaitility.await;
+
 import com.psymate.clinical.application.CreateEntryCommand;
 import com.psymate.clinical.application.EntryService;
 import com.psymate.clinical.domain.EntryType;
@@ -7,6 +9,7 @@ import com.psymate.clinical.domain.FeelingDetail;
 import com.psymate.clinical.domain.MedicationDetail;
 import com.psymate.clinical.domain.SessionDetail;
 import com.psymate.identity.api.CurrentPractitioner;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -137,6 +140,27 @@ public class LinkingFixtures {
 
   public int count(String sql, Object... args) {
     return jdbc.queryForObject(sql, Integer.class, args);
+  }
+
+  /**
+   * Attend que toutes les publications d'événements qui concernent ce patient soient complétées.
+   * Les abonnés asynchrones (recalcul de la vue d'ensemble, indexation de recherche, liens) sont
+   * servis dans l'ordre d'arrivée par le même exécuteur : quand les publications du jeu de données
+   * du test sont complétées, l'arriéré laissé par les tests précédents l'est aussi, et l'attente
+   * qui suit un événement du test ne mesure plus que l'abonné testé. Sur la CI à 2 CPU, cet arriéré
+   * a dépassé 15 s (centaines de recalculs d'un même patient, sérialisés sur sa ligne).
+   */
+  public void awaitPublicationsSettled(UUID patientId) {
+    await()
+        .atMost(Duration.ofSeconds(90))
+        .pollInterval(Duration.ofMillis(200))
+        .until(
+            () ->
+                count(
+                        "select count(*) from event_publication where completion_date is null"
+                            + " and serialized_event like ?",
+                        "%" + patientId + "%")
+                    == 0);
   }
 
   public int linkCount(UUID entryId) {

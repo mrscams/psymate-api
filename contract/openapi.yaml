@@ -4713,7 +4713,7 @@ info:
 
     **Version du contrat** : `info.version` est incrémentée à chaque changement du contrat et un tag `contract-vX.Y.Z` est posé. Les tags regroupent les opérations par contrôleur, dans l'ordre d'usage : identité, dossier clinique, exploration, annuaire, administration.
   title: PsyMate API
-  version: 0.6.0
+  version: 0.9.0
 openapi: 3.1.0
 paths:
   /api/admin/appeals:

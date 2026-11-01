@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T12:45:35.542Z",
+  "task": "M8-01",
+  "agent": "backend-module-dev",
+  "status": "merged",
+  "summary": "PR #40 fusionnée dans main (6c6c70b), CI verte (unit, 3 tranches IT, contract). Fondation JPA en place : la vague M8 peut commencer.",
+  "next": "M8-02 patients (première conversion, checklist docs/etudes/jpa-conversion-checklist.md)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/40",
+  "checkout": "M8-01"
+}

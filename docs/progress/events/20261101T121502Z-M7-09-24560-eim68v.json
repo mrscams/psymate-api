@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-01T12:15:02.984Z",
+  "task": "M7-09",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 39 fusionnee dans main (documentation complete du contrat OpenAPI, garde-fou ContractDocumentationIT, collisions de schemas admin corrigees)",
+  "next": "Tag contract-v0.9.0 ; copie dans psymate-web",
+  "pr": "https://github.com/mrscams/psymate-api/pull/39",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

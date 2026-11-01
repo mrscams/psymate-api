@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-01T01:38:36.523Z",
+  "task": "M2-03",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 31 fusionnee dans main (graphe : CTE de voisinage, super-noeuds, expand)",
+  "next": "Tag contract-v0.4.0 ; M2-04/M2-06 web debloquees ; M4-03 a rebaser",
+  "pr": "https://github.com/mrscams/psymate-api/pull/31",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

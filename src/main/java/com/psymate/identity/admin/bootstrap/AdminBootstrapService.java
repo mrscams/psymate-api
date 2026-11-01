@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 class AdminBootstrapService {
 
   static final String EVENT_KIND = "admin_bootstrap";
-  static final String PREFERENCES = "{\"security.mustChangePassword\": true}";
   private static final int LAST_NAME_MAX = 100;
 
   enum Status {
@@ -68,8 +67,7 @@ class AdminBootstrapService {
     String lastName = local.length() > LAST_NAME_MAX ? local.substring(0, LAST_NAME_MAX) : local;
 
     repository.insertTenant(tenantId, normalized, now);
-    repository.insertAdmin(
-        id, tenantId, normalized, encoder.encode(password), lastName, PREFERENCES, now);
+    repository.insertAdmin(id, tenantId, normalized, encoder.encode(password), lastName, now);
     repository.insertSecurityEvent(id, EVENT_KIND, now);
     return new Result(Status.CREATED, normalized, password);
   }

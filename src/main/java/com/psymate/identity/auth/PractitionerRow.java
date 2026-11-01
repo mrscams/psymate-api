@@ -1,5 +1,6 @@
 package com.psymate.identity.auth;
 
+import java.util.Map;
 import java.util.UUID;
 
 record PractitionerRow(
@@ -14,4 +15,4 @@ record PractitionerRow(
     String profession,
     String role,
     String verificationStatus,
-    String preferencesJson) {}
+    Map<String, Object> preferences) {}

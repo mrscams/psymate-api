@@ -1,29 +1,24 @@
 package com.psymate.identity.auth;
 
 import com.psymate.identity.api.PractitionerFacade;
+import com.psymate.identity.persistence.PractitionerJpaRepository;
 import com.psymate.identity.preferences.Preferences;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.json.JsonMapper;
 
 @Service
 class PractitionerFacadeImpl implements PractitionerFacade {
 
   private final PractitionerRepository practitioners;
-  private final JsonMapper json;
+  private final PractitionerJpaRepository jpa;
 
-  private final JdbcClient jdbc;
-
-  PractitionerFacadeImpl(PractitionerRepository practitioners, JsonMapper json, JdbcClient jdbc) {
+  PractitionerFacadeImpl(PractitionerRepository practitioners, PractitionerJpaRepository jpa) {
     this.practitioners = practitioners;
-    this.json = json;
-    this.jdbc = jdbc;
+    this.jpa = jpa;
   }
 
   @Override
@@ -32,37 +27,24 @@ class PractitionerFacadeImpl implements PractitionerFacade {
       return Map.of();
     }
     Map<UUID, PractitionerView> out = new HashMap<>();
-    jdbc.sql(
-            "select id, tenant_id, profession, verification_status from practitioner"
-                + " where id = any(?)")
-        .param(ids.toArray(UUID[]::new))
-        .query(
-            (rs, i) ->
-                new PractitionerView(
-                    rs.getObject("id", UUID.class),
-                    rs.getObject("tenant_id", UUID.class),
-                    rs.getString("profession"),
-                    rs.getString("verification_status"),
-                    Map.of()))
-        .list()
-        .forEach(v -> out.put(v.id(), v));
+    jpa.findAll(ids)
+        .forEach(
+            s ->
+                out.put(
+                    s.id(),
+                    new PractitionerView(
+                        s.id(), s.tenantId(), s.profession(), s.verificationStatus(), Map.of())));
     return out;
   }
 
   @Override
   public Optional<String> professionalNumber(UUID id) {
-    return jdbc.sql("select professional_number from practitioner where id = ?")
-        .param(id)
-        .query(String.class)
-        .optional();
+    return jpa.professionalNumber(id);
   }
 
   @Override
   public Optional<String> emailOf(UUID id) {
-    return jdbc.sql("select email from practitioner where id = ?")
-        .param(id)
-        .query(String.class)
-        .optional();
+    return jpa.emailOf(id);
   }
 
   @Override
@@ -72,26 +54,14 @@ class PractitionerFacadeImpl implements PractitionerFacade {
         .map(
             r ->
                 new PractitionerView(
-                    r.id(),
-                    r.tenantId(),
-                    r.profession(),
-                    r.verificationStatus(),
-                    json.readValue(
-                        r.preferencesJson(), new TypeReference<Map<String, Object>>() {})));
+                    r.id(), r.tenantId(), r.profession(), r.verificationStatus(), r.preferences()));
   }
 
   @Override
   public Map<String, Object> preferencesOf(UUID id) {
     return practitioners
         .findById(id)
-        .map(
-            r ->
-                Preferences.effective(
-                    r.profession(),
-                    r.preferencesJson() == null
-                        ? Map.<String, Object>of()
-                        : json.readValue(
-                            r.preferencesJson(), new TypeReference<Map<String, Object>>() {})))
+        .map(r -> Preferences.effective(r.profession(), r.preferences()))
         .orElse(Map.of());
   }
 }

@@ -16,8 +16,6 @@ import java.util.Optional;
 import java.util.Set;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Connexion durcie (F33, fiche 11). Le mot de passe est toujours vérifié (hachage factice si le
@@ -34,8 +32,6 @@ class LoginService {
 
   /** Préférence posée par le compte admin de bootstrap (M7-08) : mot de passe à changer. */
   static final String MUST_CHANGE_PASSWORD = "security.mustChangePassword";
-
-  private static final JsonMapper JSON = JsonMapper.builder().build();
 
   /** Résultat d'une tentative qui n'a pas échoué. */
   sealed interface Outcome {
@@ -170,12 +166,9 @@ class LoginService {
   }
 
   private static boolean mustChangePassword(PractitionerRow row) {
-    String raw = row.preferencesJson();
-    if (raw == null || raw.isBlank()) {
-      return false;
-    }
-    JsonNode node = JSON.readTree(raw).path(MUST_CHANGE_PASSWORD);
-    return node.isBoolean() && node.asBoolean();
+    return row.preferences() != null
+        && row.preferences().get(MUST_CHANGE_PASSWORD) instanceof Boolean flag
+        && flag;
   }
 
   /** Échec : compteur par clé, reflet en base, événements ; 423 si le seuil est atteint. */

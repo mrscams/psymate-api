@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-01T01:49:48.468Z",
+  "task": "M4-03",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 32 fusionnee dans main (projection vue d'ensemble, V09, recalcul a la volee)",
+  "next": "Tag contract-v0.6.0 ; M4-06 et M4-05/M4-07 web debloquees ; M6-05 a rebaser",
+  "pr": "https://github.com/mrscams/psymate-api/pull/32",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

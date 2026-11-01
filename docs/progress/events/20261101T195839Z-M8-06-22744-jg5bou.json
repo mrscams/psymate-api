@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T19:58:39.241Z",
+  "task": "M8-06",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant(s), 1 à corriger, 4 remarque(s)",
+  "notes": "aucun bloquant; à corriger: description de PR (liste converti/natif/pourquoi, aucune dépendance) à fournir; remarques: markDone sans verrou de ligne et UPDATE complet de la ligne, make perf non démontré, plan C sans ligne M8-06 (critères pris dans la checklist JPA), PESSIMISTIC_WRITE rendu par le dialecte (FOR NO KEY UPDATE possible) sans incidence",
+  "branch": "worktree-M8-06",
+  "checkout": "M8-06"
+}

@@ -462,6 +462,7 @@ class LinkServiceIT {
   @Test
   void changingTheTypeAfterTheSubscriberRanIsRefusedAsNotActive() {
     Link link = links.create(event, feeling, "triggers", null);
+    fx.awaitPublicationsSettled(patient);
     entries.archive(feeling);
     await().atMost(Duration.ofSeconds(15)).until(() -> activeLinksOf(feeling) == 0);
 
@@ -531,6 +532,7 @@ class LinkServiceIT {
     assertThat(fx.linkCount(feeling)).isEqualTo(2);
     assertThat(fx.linkCount(other)).isEqualTo(2);
 
+    fx.awaitPublicationsSettled(patient);
     entries.archive(event);
 
     await().atMost(Duration.ofSeconds(15)).until(() -> activeLinksOf(event) == 0);
@@ -549,6 +551,7 @@ class LinkServiceIT {
     UUID other = fx.entry(patient, session, EntryType.EVENT);
     links.create(event, feeling, "triggers", null);
     links.create(other, feeling, "triggers", null);
+    fx.awaitPublicationsSettled(patient);
     entries.archive(event);
     await().atMost(Duration.ofSeconds(15)).until(() -> activeLinksOf(event) == 0);
     assertThat(fx.linkCount(feeling)).isEqualTo(1);

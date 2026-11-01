@@ -143,34 +143,37 @@ class OverviewListenerIT extends OverviewSupport {
     awaitQuiet();
     deleteRow();
     EntryCreated event = new EntryCreated(tenant, id, patient, "feeling", 1);
-    int before = completed("overview.entry-created", patient);
 
-    publish(event, event);
-
-    await()
-        .atMost(WAIT)
-        .untilAsserted(
-            () -> {
-              assertThat(completed("overview.entry-created", patient))
-                  .isGreaterThanOrEqualTo(before + 2);
-              assertThat(storedPayload(patient)).isNotNull();
-            });
+    deliver(event);
+    deliver(event);
     String first = storedPayload(patient);
-    int afterFirst = completed("overview.entry-created", patient);
+    assertThat(first).isNotNull();
 
-    publish(event, event);
+    deliver(event);
+    deliver(event);
 
-    await()
-        .atMost(WAIT)
-        .untilAsserted(
-            () ->
-                assertThat(completed("overview.entry-created", patient))
-                    .isGreaterThanOrEqualTo(afterFirst + 2));
     assertThat(count("select count(*) from patient_overview where patient_id = ?", patient))
         .isEqualTo(1);
     assertThat(storedPayload(patient)).isEqualTo(first);
     assertThat((Integer) JsonPath.read(first, "$.windows['30d'].emotions.top[0].count"))
         .isEqualTo(1);
+  }
+
+  /**
+   * Publie l'événement et attend que l'abonné entry-created l'ait traité, puis seulement rend la
+   * main : une livraison après l'autre, comme un rejeu (EventRepublisher). Jamais deux copies du
+   * même événement en vol en même temps : le registre de Spring Modulith suit les publications en
+   * cours dans une table indexée par (événement, abonné), deux copies identiques y partagent la
+   * même clé, et deux complétions quasi simultanées marquent alors la même ligne de {@code
+   * event_publication}, l'autre restant incomplète (course observée sur la CI à 2 CPU).
+   */
+  private void deliver(EntryCreated event) {
+    int before = completed("overview.entry-created", patient);
+    publish(event);
+    await()
+        .atMost(WAIT)
+        .untilAsserted(
+            () -> assertThat(completed("overview.entry-created", patient)).isEqualTo(before + 1));
   }
 
   @Test

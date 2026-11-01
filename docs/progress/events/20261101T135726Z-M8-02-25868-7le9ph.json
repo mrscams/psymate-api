@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-01T13:57:26.944Z",
+  "task": "M8-02",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 41 fusionnee dans main (module patients en JPA, PatientVersion immuable, lectures f_unaccent natives)",
+  "next": "M8-03 vocabulary, M8-04 directory",
+  "pr": "https://github.com/mrscams/psymate-api/pull/41",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

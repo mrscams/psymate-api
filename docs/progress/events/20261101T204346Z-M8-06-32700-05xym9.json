@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T20:43:46.545Z",
+  "task": "M8-06",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "CI de la PR #47 corrigée : AdminPersistenceIT attend les abonnés asynchrones avant de compter les requêtes Hibernate ; ExportPersistenceIT marque purgés ses jobs échus (base partagée avec AccountExportJobIT). Vérifié en ordre CI et par un verify complet vert",
+  "pr": "https://github.com/mrscams/psymate-api/pull/47",
+  "branch": "worktree-M8-06",
+  "checkout": "M8-06"
+}

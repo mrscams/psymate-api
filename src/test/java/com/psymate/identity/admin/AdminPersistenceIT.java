@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManagerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
+import org.awaitility.Awaitility;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
@@ -58,6 +60,28 @@ class AdminPersistenceIT extends AbstractAccountsIT {
             .andReturn();
     assertThat(status(r)).isEqualTo(200);
     return UUID.fromString(body(r).path("decisionId").asString());
+  }
+
+  /**
+   * Attend que les abonnés asynchrones des événements qui concernent ces praticiens aient terminé
+   * (plus de ligne event_publication sans completion_date) : la suspension publie
+   * PractitionerSuspended, que directory.PractitionerStatusListener consomme hors requete en
+   * écrivant par Hibernate dans la même SessionFactory. Sans cette attente, un compteur de
+   * statistiques Hibernate lu pendant ce travail compte aussi ses requêtes.
+   */
+  private void awaitPublicationsSettled(List<UUID> practitioners) {
+    for (UUID id : practitioners) {
+      Awaitility.await()
+          .atMost(Duration.ofSeconds(60))
+          .pollInterval(Duration.ofMillis(100))
+          .until(
+              () ->
+                  count(
+                          "select count(*) from event_publication where completion_date is null"
+                              + " and serialized_event like ?",
+                          "%" + id + "%")
+                      == 0);
+    }
   }
 
   private CurrentPractitioner actor(UUID id) {
@@ -284,8 +308,10 @@ class AdminPersistenceIT extends AbstractAccountsIT {
     }
     // Quatre recours (une suspension chacun) pour la liste des recours et le détail d'un compte.
     UUID withAppeals = null;
+    List<UUID> suspended = new ArrayList<>();
     for (int i = 0; i < 4; i++) {
       UUID p = practitioner(marker + " appel " + i, "approved");
+      suspended.add(p);
       UUID decision = suspendOverHttp(admin, p);
       jdbc.update(
           "insert into practitioner_appeal (id, practitioner_id, decision_id, message,"
@@ -295,6 +321,10 @@ class AdminPersistenceIT extends AbstractAccountsIT {
           decision);
       withAppeals = p;
     }
+
+    // Les dépublications de fiches déclenchées par les suspensions écrivent encore en arrière-plan
+    // par la même SessionFactory : attendre leur fin avant de compter les requêtes.
+    awaitPublicationsSettled(suspended);
 
     Statistics stats = emf.unwrap(SessionFactory.class).getStatistics();
     stats.setStatisticsEnabled(true);

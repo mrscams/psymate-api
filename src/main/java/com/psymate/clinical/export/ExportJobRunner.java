@@ -1,6 +1,6 @@
 package com.psymate.clinical.export;
 
-import com.psymate.clinical.export.ExportJobRepository.ExportJob;
+import com.psymate.clinical.export.ExportJobRepository.ExportJobView;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.EncryptedStorageFacade;
 import com.psymate.identity.api.PractitionerFacade;
@@ -70,7 +70,7 @@ class ExportJobRunner {
 
   /** Exécute le job : queued, running, puis done ou failed. Ne lève jamais. */
   void run(UUID jobId) {
-    ExportJob job = jobs.find(jobId).orElse(null);
+    ExportJobView job = jobs.find(jobId).orElse(null);
     if (job == null || !jobs.markRunning(jobId)) {
       return;
     }

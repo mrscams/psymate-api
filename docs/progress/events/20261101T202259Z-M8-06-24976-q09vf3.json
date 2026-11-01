@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T20:22:59.106Z",
+  "task": "M8-06",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "clinical.export en JPA : entité ExportJob + ExportJobJpaRepository, adaptateur ExportJobRepository en records, lockPractitioner et ExportRepository natifs ; ExportPersistenceIT (11) ; verify vert (359 unitaires, 906 IT) ; fin de la vague Q32",
+  "pr": "https://github.com/mrscams/psymate-api/pull/47",
+  "branch": "worktree-M8-06",
+  "checkout": "M8-06"
+}

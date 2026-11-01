@@ -1,6 +1,6 @@
 package com.psymate.clinical.export;
 
-import com.psymate.clinical.export.ExportJobRepository.ExportJob;
+import com.psymate.clinical.export.ExportJobRepository.ExportJobView;
 import com.psymate.identity.api.EncryptedStorageFacade;
 import com.psymate.shared.problem.ProblemException;
 import jakarta.annotation.PreDestroy;
@@ -142,7 +142,7 @@ class ExportJobService {
    *     ou si le jeton ne correspond pas : l'existence d'un job n'est jamais révélée.
    */
   JobStatus status(UUID jobId, Optional<UUID> principalId, String token, ExportTexts texts) {
-    ExportJob job = jobs.find(jobId).orElseThrow(() -> notFound(texts));
+    ExportJobView job = jobs.find(jobId).orElseThrow(() -> notFound(texts));
     boolean owner = principalId.filter(job.practitionerId()::equals).isPresent();
     if (!owner && !validToken(job, token)) {
       throw notFound(texts);
@@ -171,7 +171,7 @@ class ExportJobService {
    *     410 EXPORT_EXPIRED (échéance passée ou fichier purgé)
    */
   ZipFile file(UUID jobId, String exp, String sig, ExportTexts texts) {
-    ExportJob job = jobs.find(jobId).orElseThrow(() -> signedUrlInvalid(texts));
+    ExportJobView job = jobs.find(jobId).orElseThrow(() -> signedUrlInvalid(texts));
     long expEpoch = parseEpoch(exp, texts);
     if (sig == null
         || !constantTimeEquals(fileSignature(job.id(), job.practitionerId(), expEpoch), sig)
@@ -209,9 +209,9 @@ class ExportJobService {
    */
   int purgeDue() {
     Instant now = clock.instant();
-    List<ExportJob> due = jobs.dueForPurge(now);
+    List<ExportJobView> due = jobs.dueForPurge(now);
     int purged = 0;
-    for (ExportJob job : due) {
+    for (ExportJobView job : due) {
       try {
         if (job.storageKey() != null) {
           storage.delete(job.storageKey());
@@ -248,7 +248,7 @@ class ExportJobService {
         + fileSignature(jobId, practitionerId, expEpoch);
   }
 
-  private boolean validToken(ExportJob job, String token) {
+  private boolean validToken(ExportJobView job, String token) {
     return token != null && constantTimeEquals(statusToken(job.id(), job.practitionerId()), token);
   }
 

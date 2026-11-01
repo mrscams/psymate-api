@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T10:35:54.866Z",
+  "task": "PROJET",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 37 (durcissement des IT asynchrones) et PR 38 (CI : jobs unit / integration en parallele, annulation des runs obsoletes) fusionnees",
+  "pr": "https://github.com/mrscams/psymate-api/pull/38",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

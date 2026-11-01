@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T20:51:59.944Z",
+  "task": "M8-06",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "M8-06 fusionnée dans main (PR #47, f6b5aeb) : clinical.export en JPA, dernier module de la vague Q32 ; deux IT stabilisés (AdminPersistenceIT, ExportPersistenceIT)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/47",
+  "branch": "suivi-m8-06-merged",
+  "checkout": "M8-06"
+}

@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T19:46:44.348Z",
+  "task": "M8-05",
+  "agent": "orchestrateur",
+  "status": "merged",
+  "summary": "PR #46 fusionnée dans main (identity en JPA : auth, préférences, bootstrap, vérification, admin ; keyset admin et sessions restent natifs).",
+  "pr": "46",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T10:34:41.883Z",
+  "task": "PROJET",
+  "agent": "claude",
+  "status": "done",
+  "summary": "CI parallèle : jobs unit, integration (3 tranches) et contract sur runners distincts ; retour CI de 6-8 min à 3 min 37 s, 5 jobs verts (PR 38)",
+  "notes": "Run 41297750078 après fusion de main (PR 37) : unit 1 min 44 s, clinical 2 min 04 s (267 IT), identity 2 min 59 s (267), core 3 min 17 s (288), contract 56 s. ci.yml seul modifié : -DskipITs, matrice -Dit.test avec fail-fast false et !**/perf/**, concurrency cancel-in-progress.",
+  "next": "Fusionner la PR 38.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/38",
+  "branch": "claude/dazzling-thompson-0f4d46",
+  "checkout": "dazzling-thompson-0f4d46"
+}

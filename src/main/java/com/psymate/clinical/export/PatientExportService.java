@@ -105,7 +105,7 @@ public class PatientExportService {
     byte[] content =
         switch (format) {
           case MD -> markdown.render(document, texts).getBytes(StandardCharsets.UTF_8);
-          case PDF -> pdf.render(html.render(document, texts));
+          case PDF -> pdf.render(html.render(document, texts), texts);
         };
     return new ExportedFile(filename(document, format), format.contentType(), content);
   }

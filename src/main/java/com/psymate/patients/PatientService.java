@@ -94,7 +94,7 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Override
   @Transactional(readOnly = true)
   public List<PatientRef> ownedBy(UUID practitionerId) {
-    return repo.activeRefsOwnedBy(practitionerId);
+    return repo.refsOwnedBy(practitionerId);
   }
 
   @Override

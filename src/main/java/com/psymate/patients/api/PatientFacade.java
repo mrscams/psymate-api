@@ -15,9 +15,10 @@ public interface PatientFacade {
   boolean ownedBy(UUID patientId, UUID practitionerId);
 
   /**
-   * Patients non archivés de ce praticien, triés par nom affiché (export du compte, M6-05). Sans
-   * session requise : l'appelant a déjà authentifié le praticien (compte suspendu par
-   * identifiants).
+   * Tous les patients de ce praticien, archivés compris (G Q18 : l'export du compte est la seule
+   * sortie des données d'un compte refusé ; l'archivage n'est qu'une désactivation douce), triés
+   * par nom affiché. Sans session requise : l'appelant a déjà authentifié le praticien (compte
+   * suspendu par identifiants).
    */
   List<PatientRef> ownedBy(UUID practitionerId);
 

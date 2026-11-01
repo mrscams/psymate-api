@@ -63,11 +63,13 @@ class PatientRepository {
         .optional();
   }
 
-  /** Patients non archivés du praticien, par nom affiché (export du compte, M6-05). */
-  List<PatientRef> activeRefsOwnedBy(UUID ownerId) {
+  /**
+   * Tous les patients du praticien, archivés compris, par nom affiché (export du compte, M6-05).
+   */
+  List<PatientRef> refsOwnedBy(UUID ownerId) {
     return jdbc.sql(
-            "select id, display_name, birth_date from patient"
-                + " where owner_id = :owner and archived_at is null"
+            "select id, display_name, birth_date, archived_at is not null as archived from patient"
+                + " where owner_id = :owner"
                 + " order by f_unaccent(lower(display_name)), id")
         .param("owner", ownerId)
         .query(
@@ -75,7 +77,8 @@ class PatientRepository {
                 new PatientRef(
                     rs.getObject("id", UUID.class),
                     rs.getString("display_name"),
-                    rs.getObject("birth_date", LocalDate.class)))
+                    rs.getObject("birth_date", LocalDate.class),
+                    rs.getBoolean("archived")))
         .list();
   }
 

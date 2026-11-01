@@ -74,17 +74,35 @@ class ExportJobRunner {
     if (job == null || !jobs.markRunning(jobId)) {
       return;
     }
+    String key = "exports/" + jobId + ".zip";
+    boolean stored = false;
     try {
       authenticateAs(job.practitionerId());
       byte[] zip = buildZip(job.practitionerId());
-      String key = "exports/" + jobId + ".zip";
       storage.put(key, zip);
+      stored = true;
       Instant now = clock.instant();
       jobs.markDone(jobId, key, now, now.plus(ExportJobService.RETENTION));
     } catch (Exception e) {
       LOG.error("account export {} failed", jobId, e);
-      jobs.markFailed(
-          jobId, truncate(e.getMessage() == null ? e.toString() : e.getMessage()), clock.instant());
+      // Pas de fichier orphelin : un zip stocké dont la ligne n'a pas pu passer en done ne serait
+      // jamais purgé (storage_key nul). Puis la ligne passe en failed ; si cette écriture échoue
+      // aussi, on journalise : le job sera requalifié « interrupted » au bout d'une heure.
+      if (stored) {
+        try {
+          storage.delete(key);
+        } catch (RuntimeException cleanup) {
+          LOG.error("account export {} : orphan file {} could not be deleted", jobId, key, cleanup);
+        }
+      }
+      try {
+        jobs.markFailed(
+            jobId,
+            truncate(e.getMessage() == null ? e.toString() : e.getMessage()),
+            clock.instant());
+      } catch (RuntimeException update) {
+        LOG.error("account export {} could not be marked failed", jobId, update);
+      }
     } finally {
       SecurityContextHolder.clearContext();
     }
@@ -130,7 +148,8 @@ class ExportJobRunner {
       lines.add(
           texts.get(
               "account.line",
-              markdownEscape(patient.displayName()),
+              markdownEscape(patient.displayName())
+                  + (patient.archived() ? " " + texts.get("account.archived") : ""),
               patient.birthDate() == null
                   ? texts.get("account.birth.unknown")
                   : ExportDates.day(patient.birthDate()),

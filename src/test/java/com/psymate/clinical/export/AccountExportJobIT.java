@@ -230,14 +230,15 @@ class AccountExportJobIT extends ExportTestSupport {
     String aliceBase = "patients/alice-martin-" + shortId(alice);
     assertThat(files.keySet()).contains("patients.md", aliceBase + ".md", aliceBase + ".pdf");
     assertThat(files.keySet().stream().filter(n -> n.endsWith(".md") && n.startsWith("patients/")))
-        .hasSize(2);
-    assertThat(files.keySet().stream().filter(n -> n.endsWith(".pdf"))).hasSize(2);
+        .hasSize(3);
+    assertThat(files.keySet().stream().filter(n -> n.endsWith(".pdf"))).hasSize(3);
     assertThat(new String(files.get(aliceBase + ".pdf"), 0, 5, StandardCharsets.US_ASCII))
         .isEqualTo("%PDF-");
 
     String index = text(files, "patients.md");
     assertThat(index).contains("Alice Martin").contains("Bob Durand").contains(aliceBase + ".md");
-    assertThat(index).doesNotContain("Zoé Archivée");
+    // G Q18 : tous les patients, archivés compris (seule sortie des données d'un compte refusé).
+    assertThat(index).contains("Zoé Archivée (archivé)");
     assertThat(index).contains("12/06/1985");
 
     String md = text(files, aliceBase + ".md");

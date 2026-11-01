@@ -69,7 +69,11 @@ class PdfRenderer {
     this.unicodeFonts = !fonts.isEmpty();
   }
 
-  byte[] render(String html) {
+  /**
+   * Rend le PDF ; en cas d'échec de la bibliothèque, 500 EXPORT_FAILED avec un détail générique
+   * localisé (clés clinical.export.error.pdf.*), jamais le message brut.
+   */
+  byte[] render(String html, ExportTexts texts) {
     try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
       PdfRendererBuilder builder = new PdfRendererBuilder();
       builder.useFastMode();
@@ -85,8 +89,8 @@ class PdfRenderer {
       throw new ProblemException(
           HttpStatus.INTERNAL_SERVER_ERROR,
           "EXPORT_FAILED",
-          "Export impossible",
-          "La génération du PDF a échoué. Réessayez, ou exportez en Markdown.");
+          texts.get("error.pdf.title"),
+          texts.get("error.pdf.detail"));
     }
   }
 

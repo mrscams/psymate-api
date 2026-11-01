@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T09:04:33.910Z",
+  "task": "M7-01",
+  "agent": "seed-perf",
+  "status": "done",
+  "summary": "Seed realiste tools/seed (small/medium/demo, API HTTP seule, garde-fous localhost et profil local, idempotent, patient DEMO) et tests de charge HeavyDossierPerfIT sous le profil Maven perf (make perf) ; toutes les cibles A6 tenues",
+  "notes": "p95 sur dossier lourd 2000 entrees / 1546 liens (MockMvc) : timeline 79,9 ms (< 150), recherche 14,4 / 26,0 / 12,1 ms (< 300), vue d'ensemble 13,5 ms et 118 ms a froid (< 200), graphe 14,7 ms avec racine et 15,7 ms racine patient (< 300) ; aussi tenues a 5000 entrees. make seed SIZE=small : 27 s sur base vierge. verify vert 822 IT.",
+  "next": "Relecture du patient DEMO par le proprietaire (G Q22) ; CI nocturne make perf a creer si voulue ; fusion de la PR 36",
+  "pr": "https://github.com/mrscams/psymate-api/pull/36",
+  "branch": "worktree-M7-01",
+  "checkout": "M7-01"
+}

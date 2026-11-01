@@ -124,6 +124,7 @@ class OverviewRaceIT extends OverviewSupport {
   @Test
   void aProjectionBehindTheRevisionIsRecomputedNotServed() throws Exception {
     overview();
+    awaitOverviewQuiet();
     // Ligne volontairement fausse et en retard d'une révision.
     jdbc.update(
         "update patient_overview set source_rev = source_rev - 1,"
@@ -141,6 +142,7 @@ class OverviewRaceIT extends OverviewSupport {
   @Test
   void aProjectionComputedOnAnotherDayIsRecomputed() throws Exception {
     overview();
+    awaitOverviewQuiet();
     jdbc.update(
         "update patient_overview set computed_at = ?,"
             + " payload = jsonb_set(payload, '{facts,sessionCount}', '99') where patient_id = ?",

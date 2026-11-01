@@ -38,21 +38,6 @@ class OverviewListenerIT extends OverviewSupport {
         "%" + patientId + "%");
   }
 
-  /** Attend que toutes les publications du patient destinées à overview soient terminées. */
-  private void awaitQuiet() {
-    await()
-        .atMost(WAIT)
-        .untilAsserted(
-            () ->
-                assertThat(
-                        count(
-                            "select count(*) from event_publication where listener_id like"
-                                + " 'overview.%' and serialized_event like ?"
-                                + " and completion_date is null",
-                            "%" + patient + "%"))
-                    .isZero());
-  }
-
   private void publish(DomainEvent... events) {
     tx.executeWithoutResult(
         s -> {
@@ -91,7 +76,7 @@ class OverviewListenerIT extends OverviewSupport {
   @Test
   void eachSubscribedEventRecomputesTheProjection() throws Exception {
     note("Une note", daysAgo(1));
-    awaitQuiet();
+    awaitOverviewQuiet();
     UUID someEntry = UUID.randomUUID();
 
     record Case(String listenerId, Supplier<DomainEvent> event) {}
@@ -133,14 +118,14 @@ class OverviewListenerIT extends OverviewSupport {
                 assertThat(storedPayload(patient)).isNotNull();
                 assertThat(completed(c.listenerId(), patient)).isGreaterThan(before);
               });
-      awaitQuiet();
+      awaitOverviewQuiet();
     }
   }
 
   @Test
   void theSameEventDeliveredTwiceLeavesOneRowWithTheSamePayload() throws Exception {
     UUID id = feeling("sadness", 6, daysAgo(2));
-    awaitQuiet();
+    awaitOverviewQuiet();
     deleteRow();
     EntryCreated event = new EntryCreated(tenant, id, patient, "feeling", 1);
 
@@ -179,7 +164,7 @@ class OverviewListenerIT extends OverviewSupport {
   @Test
   void aPatientUpdatedEventRefreshesTheFlagsOfTheProjection() throws Exception {
     note("Une note", daysAgo(1));
-    awaitQuiet();
+    awaitOverviewQuiet();
     jdbc.update(
         "insert into patient_flag (id, patient_id, kind, reason, set_by)"
             + " values (?, ?, 'risk', 'Risque évalué', ?)",

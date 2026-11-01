@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T10:23:17.651Z",
+  "task": "PROJET",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Backend V1 complet : 35 taches API fusionnees, tags contract-v0.1.0 a 0.8.1",
+  "notes": "Reste : 28 taches web (psymate-web), relecture DEMO, PR 37 (tests asynchrones) et PR 38 (CI parallele) ouvertes",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

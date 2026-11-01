@@ -5,8 +5,18 @@ on:
   push:
     branches: [main]
 
+# Un nouveau push sur la meme branche/PR annule l'execution devenue obsolete.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Trois jobs independants sur des runners distincts : un echec de l'un n'arrete pas les autres
+# (GitHub ne les annule qu'avec `fail-fast`, qui ne concerne que les matrices).
+# `./mvnw verify` reste la commande locale complete ; ici seule la selection des tests change.
 jobs:
-  verify:
+  # Compilation complete, spotless, tests unitaires (surefire : ModularityTests, ArchitectureTests...).
+  # -DskipITs ne retire que failsafe.
+  unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,14 +25,28 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - name: Build, tests, verifications
-        run: ./mvnw -B verify
+      - name: Build, unit tests, verifications
+        run: ./mvnw -B verify -DskipITs
       # M7-01 : compile l outil de seed et lance ses tests unitaires (generateur pur, sans reseau).
       - name: Seed - compilation
         run: ./mvnw -B -q -f tools/seed/pom.xml verify
 
+  # Tests d'integration (failsafe, *IT, Testcontainers) seuls : surefire ne lance rien.
+  # Une seule JVM, en serie : les IT sont lourds et deviennent flaky si on les parallelise sur une machine.
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Integration tests
+        run: ./mvnw -B verify -Dtest=NONE -Dsurefire.failIfNoSpecifiedTests=false
+
   # Le contrat commite doit etre exactement celui que l'application genere (M0-05).
-  # Job separe de `verify` : echec lisible (diff affiche) et sans relancer toute la suite.
+  # Job separe : echec lisible (diff affiche) et sans relancer toute la suite.
   contract:
     runs-on: ubuntu-latest
     steps:

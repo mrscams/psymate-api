@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T14:44:23.146Z",
+  "task": "M8-04",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Module directory en JPA (profil, vocabulaire de l annuaire, demandes de contact) ; recherche publique, insert on conflict et sous-requete USED restes natifs ; verify vert (856 IT, 0 echec)",
+  "notes": "Entites package-private, search_vector et geo non mappes, ecritures du profil sous PESSIMISTIC_WRITE, 409 VOCABULARY_EXISTS attrape apres commit (SQLSTATE 23505), DirectoryAppRoleIT et DirectoryPersistenceIT ajoutes ; revue : 0 bloquant, 2 corriges ; make perf non relance (recherche publique inchangee)",
+  "next": "Fusion de la PR 43 ; M8-05 identity",
+  "pr": "https://github.com/mrscams/psymate-api/pull/43",
+  "branch": "worktree-M8-04",
+  "checkout": "M8-04"
+}

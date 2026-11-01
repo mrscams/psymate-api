@@ -193,7 +193,7 @@ class VerificationRepository {
 
   @Transactional
   void setStatus(UUID practitionerId, String status, Instant now) {
-    practitioners.findById(practitionerId).ifPresent(p -> p.setVerificationStatus(status, now));
+    practitioners.findById(practitionerId).ifPresent(p -> p.moveVerificationTo(status, now));
   }
 
   @Transactional

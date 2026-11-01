@@ -46,7 +46,7 @@ public class VerificationDocument implements Persistable<UUID> {
   private String issuer;
 
   @JdbcTypeCode(SqlTypes.SMALLINT)
-  @Column(name = "year", updatable = false)
+  @Column(updatable = false)
   private Integer year;
 
   @Column(nullable = false, updatable = false)

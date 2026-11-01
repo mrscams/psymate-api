@@ -269,6 +269,83 @@ class IdentityPersistenceIT {
     return n == null ? 0 : n;
   }
 
+  // ---- (a bis) changement d'adresse concurrent : conflit d'unicité au flush
+
+  /**
+   * Le pré-contrôle de changeEmail ne voit pas une adresse prise par une transaction non validée :
+   * c'est l'index ux_practitioner_email qui refuse, au commit du TransactionTemplate. Même issue
+   * silencieuse que pour l'inscription : 202, adresse inchangée, e-mail « compte existant ».
+   */
+  @Test
+  void concurrentEmailChangeToAnAddressTakenAtFlushIsHandledSilently() throws Exception {
+    String email = newEmail();
+    String wanted = newEmail();
+    assertThat(register(email).getResponse().getStatus()).isEqualTo(201);
+    // Le jeton d'inscription doit dater de plus d'une minute (RESEND_MIN_INTERVAL).
+    jdbc.update(
+        "update auth_token set created_at = created_at - interval '2 minutes'"
+            + " where practitioner_id = (select id from practitioner where email_normalized = ?)",
+        email);
+    UUID otherTenant = newTenant();
+    UUID otherId = UUID.randomUUID();
+
+    int status;
+    try (Connection pending = dataSource.getConnection()) {
+      pending.setAutoCommit(false);
+      try (PreparedStatement ps = pending.prepareStatement(PENDING_PRACTITIONER)) {
+        ps.setObject(1, otherId);
+        ps.setObject(2, otherTenant);
+        ps.setString(3, wanted);
+        ps.setString(4, wanted);
+        ps.executeUpdate();
+      }
+      ExecutorService pool = Executors.newSingleThreadExecutor();
+      try {
+        Future<Integer> call = pool.submit(() -> changeEmail(email, wanted));
+        awaitOneBackendWaitingOnALock();
+        pending.commit();
+        status = call.get(30, TimeUnit.SECONDS);
+      } finally {
+        pool.shutdownNow();
+      }
+    }
+
+    assertThat(status).isEqualTo(202);
+    // Le compte garde son adresse ; l'adresse convoitée appartient au compte annexe.
+    assertThat(count("select count(*) from practitioner where email_normalized = '" + email + "'"))
+        .isEqualTo(1);
+    assertThat(
+            jdbc.queryForObject(
+                "select id from practitioner where email_normalized = ?", UUID.class, wanted))
+        .isEqualTo(otherId);
+    // Aucun jeton de confirmation vers la nouvelle adresse n'a survécu au rollback.
+    assertThat(
+            count(
+                "select count(*) from auth_token t join practitioner p on p.id = t.practitioner_id"
+                    + " where p.email_normalized = '"
+                    + email
+                    + "' and t.consumed_at is null"))
+        .isEqualTo(1);
+    List<String> subjects = subjectsReceivedBy(wanted);
+    assertThat(subjects).hasSize(1);
+    assertThat(subjects.get(0)).contains("déjà un compte");
+  }
+
+  private int changeEmail(String email, String newAddress) throws Exception {
+    return mvc.perform(
+            post("/api/auth/email/change")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(
+                        Map.of(
+                            "email", email,
+                            "password", "Zebre-Tournesol-42",
+                            "newEmail", newAddress))))
+        .andReturn()
+        .getResponse()
+        .getStatus();
+  }
+
   // ---- (b) security_event : inet et jsonb par l'entité
 
   @Test

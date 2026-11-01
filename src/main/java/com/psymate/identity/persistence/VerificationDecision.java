@@ -41,7 +41,6 @@ public class VerificationDecision implements Persistable<UUID> {
 
   private String internalNote;
 
-  @Column(name = "message_to_practitioner")
   private String messageToPractitioner;
 
   @JdbcTypeCode(SqlTypes.JSON)

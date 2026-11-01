@@ -45,7 +45,7 @@ class TotpRepository {
 
   @Transactional
   void setPendingSecret(UUID id, byte[] encrypted, Instant now) {
-    practitioners.findById(id).ifPresent(p -> p.setPendingTotpSecret(encrypted, now));
+    practitioners.findById(id).ifPresent(p -> p.startTotpEnrollment(encrypted, now));
   }
 
   @Transactional

@@ -217,8 +217,10 @@ public class Practitioner implements Persistable<UUID> {
     this.updatedAt = Times.utc(now);
   }
 
-  /** Secret TOTP chiffré, en attente de vérification (activation remise à null). */
-  public void setPendingTotpSecret(byte[] encrypted, Instant now) {
+  /**
+   * Début d'enrôlement 2FA : secret chiffré posé, activation remise à null jusqu'au premier code.
+   */
+  public void startTotpEnrollment(byte[] encrypted, Instant now) {
     this.totpSecretEnc = encrypted;
     this.totpEnabledAt = null;
     this.updatedAt = Times.utc(now);
@@ -244,7 +246,11 @@ public class Practitioner implements Persistable<UUID> {
     this.preferences = copy(preferences);
   }
 
-  public void setVerificationStatus(String status, Instant now) {
+  /**
+   * Transition de la machine d'états de vérification (A10.3) ; la cible est contrôlée par
+   * l'appelant.
+   */
+  public void moveVerificationTo(String status, Instant now) {
     this.verificationStatus = Objects.requireNonNull(status);
     this.updatedAt = Times.utc(now);
   }

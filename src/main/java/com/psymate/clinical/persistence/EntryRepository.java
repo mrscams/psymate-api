@@ -1,5 +1,6 @@
 package com.psymate.clinical.persistence;
 
+import com.psymate.clinical.api.EntrySummary;
 import com.psymate.clinical.api.SessionView;
 import com.psymate.clinical.domain.Entry;
 import com.psymate.clinical.domain.EntryStatus;
@@ -17,7 +18,10 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -576,5 +580,39 @@ public class EntryRepository {
         .param("id", entryId)
         .param("delta", delta)
         .update();
+  }
+
+  /**
+   * Lecture allégée par lot (graphe) : entrée, titre de la version courante et, pour un ressenti,
+   * émotion et intensité. Une seule requête ; les identifiants inconnus sont absents.
+   */
+  public Map<UUID, EntrySummary> summaries(Collection<UUID> ids) {
+    Map<UUID, EntrySummary> out = new LinkedHashMap<>();
+    if (ids.isEmpty()) {
+      return out;
+    }
+    jdbc.sql(
+            "select e.id, e.patient_id, e.type, v.title, e.occurred_from, e.occurred_to,"
+                + " f.intensity, f.emotion_code, e.author_type, e.archived_at"
+                + " from entry e join entry_version v on v.entry_id = e.id"
+                + " and v.version = e.current_version"
+                + " left join entry_feeling f on f.entry_id = e.id where e.id = any(:ids)")
+        .param("ids", ids.toArray(new UUID[0]))
+        .query(
+            (rs, i) ->
+                new EntrySummary(
+                    uuid(rs, "id"),
+                    uuid(rs, "patient_id"),
+                    rs.getString("type"),
+                    rs.getString("title"),
+                    instant(rs, "occurred_from"),
+                    instant(rs, "occurred_to"),
+                    nullableInt(rs, "intensity"),
+                    rs.getString("emotion_code"),
+                    rs.getString("author_type"),
+                    instant(rs, "archived_at") != null))
+        .list()
+        .forEach(s -> out.put(s.id(), s));
+    return out;
   }
 }

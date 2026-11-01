@@ -429,6 +429,13 @@ ai_feedback:
   - pipeline_version
   - latency_to_decision
   - decided_at
+# V09 overview (M4-03)
+patient_overview:
+  - patient_id
+  - payload
+  - source_rev
+  - computed_at
+  - compute_ms
 # V11 export_job (M6-05)
 export_job:
   - id

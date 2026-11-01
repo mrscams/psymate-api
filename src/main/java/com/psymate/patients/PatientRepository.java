@@ -4,6 +4,7 @@ import com.psymate.patients.PatientDtos.FlagDto;
 import com.psymate.patients.PatientDtos.PatientDto;
 import com.psymate.patients.PatientDtos.TagDto;
 import com.psymate.patients.PatientDtos.VersionDto;
+import com.psymate.patients.api.PatientRef;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -60,6 +61,25 @@ class PatientRepository {
                 new Ownership(
                     rs.getObject(1, UUID.class), rs.getObject(2, UUID.class), rs.getBoolean(3)))
         .optional();
+  }
+
+  /**
+   * Tous les patients du praticien, archivés compris, par nom affiché (export du compte, M6-05).
+   */
+  List<PatientRef> refsOwnedBy(UUID ownerId) {
+    return jdbc.sql(
+            "select id, display_name, birth_date, archived_at is not null as archived from patient"
+                + " where owner_id = :owner"
+                + " order by f_unaccent(lower(display_name)), id")
+        .param("owner", ownerId)
+        .query(
+            (rs, i) ->
+                new PatientRef(
+                    rs.getObject("id", UUID.class),
+                    rs.getString("display_name"),
+                    rs.getObject("birth_date", LocalDate.class),
+                    rs.getBoolean("archived")))
+        .list();
   }
 
   Optional<String> displayName(UUID id) {

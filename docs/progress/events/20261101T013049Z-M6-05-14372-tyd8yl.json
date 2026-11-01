@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T01:30:49.846Z",
+  "task": "M6-05",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Export Markdown/PDF d'un dossier patient (GET /api/patients/{id}/export, openhtmltopdf 1.1.105, private exclu, ordre chronologique) et export asynchrone du compte refusé/suspendu : V11 export_job, POST/GET /api/me/export authentifiés par identifiants comme le recours, zip chiffré (patients.md + md/pdf par patient), lien signé 7 jours, 410 puis purge quotidienne",
+  "notes": "verify vert (249 unit + 685 IT, 0 échec, 2 skipped préexistants). Revue : 0 bloquant, 2 à corriger traités (patients archivés inclus dans l'export du compte, textes EXPORT_FAILED localisés). Dépendance Maven : io.github.openhtmltopdf:openhtmltopdf-pdfbox 1.1.105 (LGPL 2.1+, PDFBox 3.0.8, aucun Jackson 2). Hors clinical.export : identity.api EncryptedStorageFacade + SuspendedAccountAuthenticator + AuthErrorScope déplacé depuis identity.auth ; patients.api PatientFacade.ownedBy(practitionerId) ; clinical.api EntryLinksReadPort implémenté par linking.application.EntryLinksReadAdapter ; SecurityConfig permitAll /api/me/export/**. ReservesConformanceIT.privateEntriesAreExcludedFromExport réactivé. Contrat +217 additif, version 0.5.0 inchangée.",
+  "next": "Fusion PR 33 puis make db-reset (V11) ; regénérer le contrat après M2-03/M4-03 ; à trancher : e-mail de fin d'export, export d'un compte closed (A10), audit et débit de /api/me/export",
+  "pr": "https://github.com/mrscams/psymate-api/pull/33",
+  "branch": "worktree-M6-05",
+  "checkout": "M6-05"
+}

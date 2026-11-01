@@ -40,6 +40,15 @@ components:
         verification:
           $ref: '#/components/schemas/VerificationDto'
       type: object
+    AccountExportRequest:
+      properties:
+        email:
+          type: string
+        otp:
+          type: string
+        password:
+          type: string
+      type: object
     AccountItemDto:
       properties:
         city:
@@ -1046,6 +1055,35 @@ components:
             type: string
           type: array
         superNodeId:
+          type: string
+      type: object
+    ExportRequestedDto:
+      properties:
+        jobId:
+          format: uuid
+          type: string
+        statusUrl:
+          type: string
+      type: object
+    ExportStatusDto:
+      properties:
+        downloadUrl:
+          type: string
+        error:
+          type: string
+        expiresAt:
+          format: date-time
+          type: string
+        finishedAt:
+          format: date-time
+          type: string
+        jobId:
+          format: uuid
+          type: string
+        requestedAt:
+          format: date-time
+          type: string
+        status:
           type: string
       type: object
     FacetCount:
@@ -3626,6 +3664,132 @@ paths:
           description: OK
       tags:
       - my-emotion-controller
+  /api/me/export:
+    post:
+      operationId: requestAccountExport
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountExportRequest'
+      responses:
+        '202':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ExportRequestedDto'
+          description: Job créé (jobId, statusUrl), ou code 2FA requis (otpRequired)
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'INVALID_CREDENTIALS : identifiants incorrects ou code 2FA faux'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: EMAIL_NOT_CONFIRMED
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: EXPORT_IN_PROGRESS (un seul export en cours) ou ACCOUNT_NOT_SUSPENDED (compte approuvé ou clos sans session)
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'VALIDATION_FAILED : e-mail ou mot de passe manquants sans session'
+        '423':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Verrouillage après 5 échecs (15 min)
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai
+              style: simple
+      summary: 'Lance l''export asynchrone de tous les patients du compte (zip chiffré, lien 7 jours) : 202 jobId et statusUrl, ou 202 otpRequired. Compte connecté (corps ignoré) ou compte refusé/suspendu par e-mail + mot de passe (+ code 2FA) dans le corps.'
+      tags:
+      - account-export-controller
+  /api/me/export/{jobId}:
+    get:
+      operationId: getAccountExport
+      parameters:
+      - in: path
+        name: jobId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: query
+        name: token
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ExportStatusDto'
+          description: OK
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EXPORT_NOT_FOUND : job inconnu, d''un autre praticien, ou jeton invalide'
+      summary: 'Statut d''un export du compte : praticien connecté propriétaire du job, ou paramètre token du statusUrl. downloadUrl seulement quand le job est terminé et non expiré.'
+      tags:
+      - account-export-controller
+  /api/me/export/{jobId}/file:
+    get:
+      operationId: downloadAccountExport
+      parameters:
+      - in: path
+        name: jobId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: query
+        name: exp
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: sig
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/zip:
+              schema:
+                format: binary
+                type: string
+          description: 'Zip en pièce jointe : patients.md, puis un .md et un .pdf par patient'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: SIGNED_URL_INVALID
+        '410':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EXPORT_EXPIRED : échéance passée ou fichier purgé'
+      summary: 'Télécharge le zip de l''export (URL signée valable 7 jours) : 200 application/zip, 403 signature invalide, 410 expiré ou purgé.'
+      tags:
+      - account-export-controller
   /api/me/preferences:
     get:
       operationId: getPreferences
@@ -4063,6 +4227,59 @@ paths:
           description: OK
       tags:
       - entry-controller
+  /api/patients/{id}/export:
+    get:
+      operationId: exportPatient
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - in: query
+        name: format
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                format: binary
+                type: string
+            text/markdown:
+              schema:
+                type: string
+          description: Fichier en pièce jointe (text/markdown ou application/pdf)
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PATIENT_FORBIDDEN : patient d''un autre praticien'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: PATIENT_NOT_FOUND
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'VALIDATION_FAILED : format absent ou différent de md et pdf'
+        '500':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EXPORT_FAILED : génération du PDF impossible'
+      summary: Exporte le dossier du patient en Markdown (md) ou en PDF thème clair (pdf), séances et entrées en ordre chronologique ; entrées privées et archivées exclues.
+      tags:
+      - patient-export-controller
   /api/patients/{id}/flags:
     post:
       operationId: addPatientFlag

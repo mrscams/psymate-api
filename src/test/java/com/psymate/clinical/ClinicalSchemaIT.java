@@ -48,13 +48,18 @@ class ClinicalSchemaIT {
                     + " and table_name <> 'entry_type'",
                 String.class))
         .containsExactlyInAnyOrderElementsOf(V05_TABLES);
-    // export_job (V11) n'est pas créée par V05 ; link et ai_feedback le sont par V07 (M2-01).
+    // export_job n'est pas créée par V05 mais par V11 (M6-05) ; link et ai_feedback par V07
+    // (M2-01).
+    assertThat(
+            jdbc.queryForList(
+                "select version from flyway_schema_history where success", String.class))
+        .contains("11");
     assertThat(
             jdbc.queryForList(
                 "select table_name from information_schema.tables where table_schema = 'public'"
                     + " and table_name in ('export_job')",
                 String.class))
-        .isEmpty();
+        .containsExactly("export_job");
     assertThat(
             jdbc.queryForList(
                 "select version from flyway_schema_history where success", String.class))

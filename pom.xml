@@ -22,6 +22,7 @@
 		<archunit.version>1.5.1</archunit.version>
 		<bouncycastle.version>1.83</bouncycastle.version>
 		<mapstruct.version>1.6.3</mapstruct.version>
+		<openhtmltopdf.version>1.1.105</openhtmltopdf.version>
 	</properties>
 
 	<dependencyManagement>
@@ -101,6 +102,12 @@
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct</artifactId>
 			<version>${mapstruct.version}</version>
+		</dependency>
+		<dependency>
+			<!-- export PDF du dossier (M6-05) : HTML -> PDF ; LGPL 2.1+, tire PDFBox 3.0.8, aucun Jackson 2 -->
+			<groupId>io.github.openhtmltopdf</groupId>
+			<artifactId>openhtmltopdf-pdfbox</artifactId>
+			<version>${openhtmltopdf.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springdoc</groupId>

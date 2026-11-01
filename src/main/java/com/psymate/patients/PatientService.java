@@ -12,6 +12,7 @@ import com.psymate.patients.api.PatientArchived;
 import com.psymate.patients.api.PatientCreated;
 import com.psymate.patients.api.PatientFacade;
 import com.psymate.patients.api.PatientOwnershipGuard;
+import com.psymate.patients.api.PatientRef;
 import com.psymate.patients.api.PatientUpdated;
 import com.psymate.vocabulary.api.EmotionCatalog;
 import com.psymate.vocabulary.api.TagFacade;
@@ -88,6 +89,12 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
                     .map(me -> me.tenantId().equals(o.tenantId()))
                     .orElse(true))
         .isPresent();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<PatientRef> ownedBy(UUID practitionerId) {
+    return repo.refsOwnedBy(practitionerId);
   }
 
   @Override

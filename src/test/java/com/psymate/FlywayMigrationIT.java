@@ -98,7 +98,9 @@ class FlywayMigrationIT {
             "ix_patient_device_patient",
             "ix_submission_patient_pending",
             "ux_tag_practitioner_label",
-            "ix_patient_tag_tag");
+            "ix_patient_tag_tag",
+            "ix_export_job_practitioner",
+            "ix_export_job_purge");
   }
 
   @Test

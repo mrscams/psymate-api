@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T01:25:38.161Z",
+  "task": "M4-03",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Projection vue d'ensemble : V09 patient_overview, OverviewListener (5 abonnes), GET /api/patients/{id}/overview?window=30d|90d|12m avec recalcul a la volee (source_rev), recentActivity live ; verify vert (251 unit, 704 IT)",
+  "notes": "Perf 2 001 entrees : 88 ms a froid, p50 14 ms. Regle medicament actif fondee sur entry_medication.period_to (a reporter dans A6/G). Retouche test linking/LinkServiceIT (compte des evenements distincts). Gap clinical : timeSpec ne pose ongoing que pour situation. Contrat additif, version 0.5.0 inchangee ; make db-reset en local (V09 apres V10).",
+  "next": "Fusion puis tag contract-v0.6.0 et regeneration du contrat apres M2-03/M6-05 ; M4-05 (ecran), M4-06 (Recit) ; arbitrer sessionCount (intake/contact) et plafond 6 situations",
+  "pr": "https://github.com/mrscams/psymate-api/pull/32",
+  "branch": "worktree-M4-03",
+  "checkout": "M4-03"
+}

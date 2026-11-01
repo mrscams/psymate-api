@@ -1,5 +1,6 @@
 package com.psymate.identity.auth;
 
+import com.psymate.identity.api.AuthErrorScope;
 import com.psymate.identity.auth.AuthExceptions.AccountLockedException;
 import com.psymate.identity.auth.AuthExceptions.AccountNotSuspendedException;
 import com.psymate.identity.auth.AuthExceptions.AccountSuspendedException;

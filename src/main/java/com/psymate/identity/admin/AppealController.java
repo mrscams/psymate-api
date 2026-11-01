@@ -7,10 +7,10 @@ import com.psymate.identity.admin.AdminAccountDtos.AppealListDto;
 import com.psymate.identity.admin.AdminAccountDtos.AppealRequest;
 import com.psymate.identity.admin.AdminAccountDtos.OtpRequiredDto;
 import com.psymate.identity.admin.AdminException.FieldError;
+import com.psymate.identity.api.AuthErrorScope;
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.identity.api.SuspendedAccount;
 import com.psymate.identity.auth.AppealAuthenticator;
-import com.psymate.identity.auth.AppealAuthenticator.AppealIdentity;
-import com.psymate.identity.auth.AuthErrorScope;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -107,7 +107,7 @@ class AppealController implements AuthErrorScope {
     if (!errors.isEmpty()) {
       throw AdminException.fields(errors.toArray(FieldError[]::new));
     }
-    Optional<AppealIdentity> who =
+    Optional<SuspendedAccount> who =
         authenticator.verify(body.email(), body.password(), body.otp(), request.getRemoteAddr());
     if (who.isEmpty()) {
       return ResponseEntity.accepted().body(new OtpRequiredDto(true));

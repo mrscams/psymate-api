@@ -10,7 +10,7 @@ import com.psymate.identity.admin.AppealRepository.AppealRow;
 import com.psymate.identity.admin.AppealRepository.DecisionRef;
 import com.psymate.identity.admin.AppealRepository.ExistingAppeal;
 import com.psymate.identity.api.CurrentPractitioner;
-import com.psymate.identity.auth.AppealAuthenticator.AppealIdentity;
+import com.psymate.identity.api.SuspendedAccount;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -88,7 +88,7 @@ class AppealService {
   // ---- dépôt par le praticien
 
   /** Dépose le recours d'un compte déjà identifié par AppealAuthenticator. */
-  AppealCreatedDto submit(AppealIdentity who, String message) {
+  AppealCreatedDto submit(SuspendedAccount who, String message) {
     // Verrou du praticien : sérialise deux dépôts, et un dépôt avec une décision d'administrateur.
     AdminVerificationRepository.AccountRow account =
         shared

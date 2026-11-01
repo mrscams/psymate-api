@@ -1,7 +1,6 @@
 package com.psymate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 
 import com.psymate.clinical.api.EntryArchived;
 import com.psymate.clinical.api.EntryCorrected;
@@ -12,6 +11,7 @@ import com.psymate.clinical.application.EntryService;
 import com.psymate.clinical.domain.EntryType;
 import com.psymate.clinical.domain.SessionDetail;
 import com.psymate.clinical.domain.Visibility;
+import com.psymate.clinical.export.PatientExportService;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.linking.api.LinkAccepted;
@@ -40,7 +40,6 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -112,6 +111,7 @@ class ReservesConformanceIT {
   @Autowired private JdbcTemplate jdbc;
   @Autowired private ApplicationContext context;
   @Autowired private EntryService entries;
+  @Autowired private PatientExportService exports;
   @Autowired private LinkService linkService;
   @Autowired private DomainEventPublisher publisher;
   @Autowired private TransactionTemplate tx;
@@ -403,15 +403,13 @@ class ReservesConformanceIT {
 
   // ---- 7. export (A4.9 : visibility = private exclu des exports)
 
-  // À réactiver au lot M6-05 (export du dossier).
-  @Disabled("M6-05 : export pas encore implémenté")
+  /**
+   * M6-05 (A4.9) : l'export Markdown du patient contient les entrées cliniques (dernière version)
+   * et NI l'entrée privée, NI son titre ou son corps, NI aucune version antérieure d'une entrée
+   * passée de clinical à private par correction.
+   */
   @Test
   void privateEntriesAreExcludedFromExport() {
-    // Données prêtes dès maintenant : une entrée private sur le patient de test.
-    // Corps à écrire au lot M6-05 : appeler le service d'export sur ce patient, puis vérifier que
-    // le résultat contient les entrées clinical et ne contient NI l'entrée private, NI son
-    // titre/corps, NI aucune de ses versions antérieures (entry_version). Une entrée passée de
-    // clinical à private par correction doit aussi disparaître de l'export.
     UUID privateNote =
         entries.create(
             patient,
@@ -430,7 +428,57 @@ class ReservesConformanceIT {
             count(
                 "select count(*) from entry where id = ? and visibility = 'private'", privateNote))
         .isEqualTo(1);
-    fail("À écrire au lot M6-05 : l'export n'existe pas encore");
+    UUID clinical =
+        entries.create(
+            patient,
+            new CreateEntryCommand(
+                EntryType.NOTE,
+                session,
+                "Titre clinique export",
+                "Corps clinique export",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null));
+    UUID flipped =
+        entries.create(
+            patient,
+            new CreateEntryCommand(
+                EntryType.NOTE,
+                session,
+                "Titre bascule v1",
+                "Corps bascule v1",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null));
+
+    String before = exports.markdown(patient);
+    assertThat(before).contains("Titre clinique export").contains("Corps clinique export");
+    assertThat(before).contains("Seconde version").doesNotContain("Première version");
+    assertThat(before).contains("Titre bascule v1");
+    assertThat(before).doesNotContain("Note privée").doesNotContain("À archiver");
+
+    // Passée à private par correction : la version 1 (grâce neutralisée) disparaît aussi.
+    entries.correct(
+        flipped,
+        new CorrectEntryCommand(
+            "Titre bascule v2", null, Visibility.PRIVATE, null, null, null, null, null, "bascule"));
+    assertThat(count("select count(*) from entry_version where entry_id = ?", flipped))
+        .isEqualTo(2);
+
+    String after = exports.markdown(patient);
+    assertThat(after).contains("Titre clinique export");
+    assertThat(after)
+        .doesNotContain("Note privée")
+        .doesNotContain("Titre bascule v1")
+        .doesNotContain("Titre bascule v2")
+        .doesNotContain("Corps bascule v1");
+    assertThat(clinical).isNotNull();
   }
 
   // ---- rapport de conformité

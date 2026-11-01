@@ -429,3 +429,14 @@ ai_feedback:
   - pipeline_version
   - latency_to_decision
   - decided_at
+# V11 export_job (M6-05)
+export_job:
+  - id
+  - practitioner_id
+  - status
+  - requested_at
+  - finished_at
+  - storage_key
+  - expires_at
+  - purged_at
+  - error

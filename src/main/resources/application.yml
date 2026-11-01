@@ -13,6 +13,25 @@ spring:
           enabled: false
   flyway:
     locations: classpath:db/migration
+  # M8-01 (G Q32) : JPA pour les modules CRUD, JdbcClient ailleurs. Flyway reste seul maitre du DDL.
+  jpa:
+    # Jamais de session Hibernate ouverte pendant la serialisation (etude-jpa 6.6).
+    open-in-view: false
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+      naming:
+        # Valeurs par defaut de Boot 4.1, ecrites pour etre explicites : camelCase -> snake_case.
+        # (PhysicalNamingStrategySnakeCaseImpl remplace CamelCaseToUnderscoresNamingStrategy, depreciee.)
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
+        implicit-strategy: org.springframework.boot.hibernate.SpringImplicitNamingStrategy
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        cache:
+          use_second_level_cache: false
+          use_query_cache: false
   servlet:
     multipart:
       max-file-size: 25MB
@@ -122,6 +141,10 @@ spring:
   config:
     activate:
       on-profile: test
+  jpa:
+    hibernate:
+      # Un mapping qui ne colle pas au schema Flyway fait echouer le demarrage des tests.
+      ddl-auto: validate
 
 app:
   events:

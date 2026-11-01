@@ -1,6 +1,6 @@
 # Document G – Décisions prises sur les questions ouvertes
 
-29 octobre 2026 · Version 1.0 · Ce document tranche les 30 questions de la Partie 1 du runbook F (Q1–Q28) et de E7 (Q29, Q30). Chaque agent applique ces décisions ; quand un autre document dit autre chose, **G l'emporte**. Les documents A, B, C, D, E et F ont été écrits avant ces décisions : les écarts connus sont listés en G5.
+29 octobre 2026 · Version 1.0 · Ce document tranche les 30 questions de la Partie 1 du runbook F (Q1–Q28) et de E7 (Q29, Q30), complétées ensuite par Q31 (G3) et Q32 (G6). Chaque agent applique ces décisions ; quand un autre document dit autre chose, **G l'emporte**. Les documents A, B, C, D, E et F ont été écrits avant ces décisions : les écarts connus sont listés en G5.
 
 ## G1. Identité du produit et des dépôts
 
@@ -64,3 +64,10 @@
 | C, D | Jalon M8 / module `scheduling` retirés (Q25). Tâche M1-14b ajoutée (Q27, Q28). M6-05 étendue avec `export_job` (Q18). |
 | E5.2 | Aucun changement (Q11) : le seed est livré tel quel. |
 | F | Mis à jour le 29 octobre : noms, package, rôle, et renvoi à ce document. Le runbook frontend s'appellera **document H**. |
+| A (structure d'un module) | `persistence/` : JPA (Spring Data) pour le CRUD, `JdbcClient` pour les projections et requêtes natives (Q32). |
+
+## G6. Décisions techniques
+
+| # | Décision |
+| --- | --- |
+| Q32 | 2026-11-01 : Accès aux données : **JPA** (Spring Data JPA / Hibernate 7.4.13.Final) pour les modules CRUD (patients, vocabulary, directory, identity, clinical.export), **`JdbcClient`** pour les projections et requêtes (search, overview, graphe, timeline, keyset admin). Gardes : `@Immutable` sur les tables append-only (`security_event`, `patient_version`, `verification_decision`, `document_access_log`), `@DynamicUpdate` ou `@Immutable` sur `entry_version`, aucune association JPA inter-modules (UUID nus), jamais d'entité dans un DTO ni dans `web`, `open-in-view=false`, `ddl-auto=none` (`validate` en test), Flyway seul maître du DDL, colonnes trigger/générées non modifiables. Migration module par module (M8-02..06), une PR par module. Référence : `docs/etudes/etude-jpa.md`, liste de contrôle `docs/etudes/jpa-conversion-checklist.md`. |

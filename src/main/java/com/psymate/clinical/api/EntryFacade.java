@@ -1,5 +1,7 @@
 package com.psymate.clinical.api;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,4 +60,12 @@ public interface EntryFacade {
    * déjà passé PatientOwnershipGuard.requireOwned ; faux si l'entrée n'existe pas.
    */
   boolean isArchived(UUID entryId);
+
+  /**
+   * Lecture par lot, en une requête, des entrées demandées (graphe de linking). Sans garde de
+   * propriété : l'appelant (linking) a déjà passé PatientOwnershipGuard.requireOwned et filtre sur
+   * {@link EntrySummary#patientId()}. Les identifiants inconnus sont absents de la map ; les
+   * entrées archivées sont incluses avec {@code archived = true}.
+   */
+  Map<UUID, EntrySummary> summariesOf(Collection<UUID> entryIds);
 }

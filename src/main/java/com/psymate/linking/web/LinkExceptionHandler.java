@@ -1,5 +1,6 @@
 package com.psymate.linking.web;
 
+import com.psymate.linking.domain.GraphRequestException;
 import com.psymate.linking.domain.LinkError;
 import com.psymate.linking.domain.LinkException;
 import com.psymate.shared.problem.AdviceOrder;
@@ -24,10 +25,11 @@ import tools.jackson.databind.exc.MismatchedInputException;
  * Erreurs RFC 9457 (application/problem+json) du contrôleur de liens : errors[] = [{field, code,
  * message}] pour les 422, statut du domaine pour les erreurs métier, 403 / 404 de la garde de
  * propriété des patients. Un 409 LINK_EXISTS porte {@code existingLinkId}, un 422
- * LINK_TYPE_NOT_ALLOWED porte {@code allowedLinkTypes} (types possibles pour cette paire).
+ * LINK_TYPE_NOT_ALLOWED porte {@code allowedLinkTypes} (types possibles pour cette paire). Sert
+ * aussi le contrôleur de graphe (M2-03).
  */
 @Order(AdviceOrder.MODULE)
-@RestControllerAdvice(assignableTypes = LinkController.class)
+@RestControllerAdvice(assignableTypes = {LinkController.class, GraphController.class})
 class LinkExceptionHandler {
 
   /** Entrée de errors[] telle que le client la reçoit. */
@@ -59,7 +61,8 @@ class LinkExceptionHandler {
       pd.setProperty("errors", List.of(new ApiFieldError(ex.field(), error.name(), detail)));
     }
     if (status == HttpStatus.UNPROCESSABLE_CONTENT) {
-      pd.setProperty("errors", List.of(new ApiFieldError(fieldOf(error), error.name(), detail)));
+      String field = ex.field() != null ? ex.field() : fieldOf(error);
+      pd.setProperty("errors", List.of(new ApiFieldError(field, error.name(), detail)));
     }
     if (error == LinkError.LINK_EXISTS) {
       pd.setProperty("existingLinkId", ex.existingLinkId());
@@ -79,7 +82,8 @@ class LinkExceptionHandler {
       String labels = String.join(", ", allowed.stream().map(AllowedLinkType::label).toList());
       return messages.get(key, locale, ex.getMessage(), labels);
     }
-    return messages.get(key, locale, ex.getMessage());
+    String generic = messages.get(key, locale, ex.getMessage());
+    return ex.field() == null ? generic : messages.get(key + "." + ex.field(), locale, generic);
   }
 
   private static String labelOf(LinkTypeView type, Locale locale) {
@@ -114,6 +118,14 @@ class LinkExceptionHandler {
     pd.setProperty("code", "VALIDATION_FAILED");
     pd.setProperty("errors", errors);
     return pd;
+  }
+
+  /** Paramètres de graphe refusés (profondeur, période, types, groupe à développer). */
+  @ExceptionHandler(GraphRequestException.class)
+  ProblemDetail graphRequest(GraphRequestException ex, HttpServletRequest request) {
+    return validation(
+        ex.problems().stream().map(p -> new FieldProblem(p.field(), p.code())).toList(),
+        messages.localeOf(request));
   }
 
   /** Contraintes Jakarta des corps de requête. */

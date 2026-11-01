@@ -1,6 +1,7 @@
 package com.psymate.clinical.application;
 
 import com.psymate.clinical.api.EntryFacade;
+import com.psymate.clinical.api.EntrySummary;
 import com.psymate.clinical.api.EntryVersionView;
 import com.psymate.clinical.api.SessionView;
 import com.psymate.clinical.domain.Entry;
@@ -8,6 +9,8 @@ import com.psymate.clinical.domain.EntryType;
 import com.psymate.clinical.persistence.EntryRepository;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.patients.api.PatientFacade;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -98,5 +101,10 @@ class EntryFacadeService implements EntryFacade {
   @Override
   public boolean isArchived(UUID entryId) {
     return repo.find(entryId).map(Entry::archived).orElse(false);
+  }
+
+  @Override
+  public Map<UUID, EntrySummary> summariesOf(Collection<UUID> entryIds) {
+    return repo.summaries(entryIds);
   }
 }

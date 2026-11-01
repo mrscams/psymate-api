@@ -77,7 +77,15 @@ public class LinkException extends RuntimeException {
     return new LinkException(LinkError.ENTRY_ARCHIVED, "Entrée archivée", null, List.of(), field);
   }
 
-  /** Champ fautif pour errors[] (ENTRY_ARCHIVED), nul sinon. */
+  /**
+   * Erreur portée par un champ de la requête (errors[] d'un 422, ex. DIFFERENT_PATIENT sur {@code
+   * root}).
+   */
+  public static LinkException atField(LinkError error, String field, String message) {
+    return new LinkException(error, message, null, List.of(), field);
+  }
+
+  /** Champ fautif pour errors[] (ENTRY_ARCHIVED, ou erreur portée par un champ), nul sinon. */
   public String field() {
     return field;
   }

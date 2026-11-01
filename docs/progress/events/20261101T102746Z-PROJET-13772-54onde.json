@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T10:27:46.129Z",
+  "task": "PROJET",
+  "agent": "claude",
+  "status": "blocked",
+  "summary": "CI parallèle : jobs unit, integration (3 tranches) et contract sur runners distincts ; retour CI de 6-8 min à 3 min 51 s (PR 38)",
+  "notes": "ci.yml seul : unit (-DskipITs, 1 min 38 s), integration en matrice clinical/identity/core (-Dit.test, 2 min 23 s / 3 min 37 s / 3 min 48 s, 267+267+288 = 822 IT, fail-fast false), contract inchangé, concurrency cancel-in-progress. Tranche core rouge deux fois sur GraphQueryIT.anArchivedEntryIsExcludedWithItsEdges (flaky asynchrone connu, corrigé dans la PR 37 non fusionnée) ; aucun test modifié ici.",
+  "next": "Fusionner la PR 37 puis merger main dans claude/dazzling-thompson-0f4d46 et relancer la CI ; vert attendu sur les 5 jobs.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/38",
+  "branch": "claude/dazzling-thompson-0f4d46",
+  "checkout": "dazzling-thompson-0f4d46"
+}

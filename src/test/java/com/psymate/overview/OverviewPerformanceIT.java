@@ -85,7 +85,7 @@ class OverviewPerformanceIT extends OverviewSupport {
   private void seedEntries() {
     Random random = new Random(7);
     String[] emotions = {"anxiety", "joy", "sadness", "anger"};
-    Instant start = Instant.now().minus(365, ChronoUnit.DAYS);
+    Instant start = daysAgo(365);
     List<Object[]> entries = new ArrayList<>();
     List<Object[]> versions = new ArrayList<>();
     List<Object[]> feelings = new ArrayList<>();

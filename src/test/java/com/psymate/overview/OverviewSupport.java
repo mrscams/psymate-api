@@ -38,20 +38,25 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * Socle des tests de la vue d'ensemble : Postgres pgvector (Testcontainers), un cabinet, un
  * praticien, un patient et une séance ouverte par test ; les entrées sont créées par l'API de
- * clinical (comme en production) ou, pour les cas que l'API ne sait pas exprimer (médicament sans
- * fin, volumétrie), par SQL. Jamais de mock de la base.
+ * clinical (comme en production) ou, pour les cas que l'API ne sait pas exprimer (écriture sans
+ * événement, volumétrie), par SQL. L'horloge est fixée ({@link OverviewTestConfig}). Jamais de mock
+ * de la base.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import({PostgresTestConfig.class, OverviewTestConfig.class})
 abstract class OverviewSupport {
+
+  /** Instant courant fixé par {@link OverviewTestConfig}. */
+  protected static final Instant NOW = OverviewTestConfig.NOW;
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
   @Autowired protected MockMvc mvc;
   @Autowired protected JdbcTemplate jdbc;
   @Autowired protected TransactionTemplate tx;
+  @Autowired protected OverviewTestConfig.MutableClock clock;
 
   protected UUID tenant;
   protected UUID me;
@@ -62,6 +67,7 @@ abstract class OverviewSupport {
   @BeforeEach
   void baseSetUp() throws Exception {
     SecurityContextHolder.clearContext();
+    clock.set(NOW);
     tenant = UUID.randomUUID();
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
     me = newPractitioner();
@@ -155,13 +161,14 @@ abstract class OverviewSupport {
 
   // ---- entrées
 
-  /** Instant situé à {@code days} jours avant maintenant (même heure du jour). */
+  /** Instant situé à {@code days} jours avant l'instant fixé des tests (même heure du jour). */
   protected static Instant daysAgo(int days) {
-    return Instant.now().minus(days, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS);
+    return NOW.minus(days, ChronoUnit.DAYS);
   }
 
+  /** Jour UTC de l'instant fixé des tests. */
   protected static LocalDate today() {
-    return LocalDate.now(ZoneOffset.UTC);
+    return LocalDate.ofInstant(NOW, ZoneOffset.UTC);
   }
 
   protected static Map<String, Object> exact(Instant from) {

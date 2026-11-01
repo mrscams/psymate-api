@@ -7,7 +7,6 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -145,14 +144,13 @@ class OverviewRaceIT extends OverviewSupport {
     jdbc.update(
         "update patient_overview set computed_at = ?,"
             + " payload = jsonb_set(payload, '{facts,sessionCount}', '99') where patient_id = ?",
-        Timestamp.from(Instant.now().minus(2, ChronoUnit.DAYS)),
+        Timestamp.from(daysAgo(2)),
         patient);
 
     DocumentContext doc = overview();
 
     assertThat(doc.read("$.facts.sessionCount", Integer.class)).isEqualTo(1);
-    assertThat(Instant.parse(doc.read("$.computedAt", String.class)))
-        .isAfter(Instant.now().minus(1, ChronoUnit.HOURS));
+    assertThat(Instant.parse(doc.read("$.computedAt", String.class))).isEqualTo(NOW);
   }
 
   @Test

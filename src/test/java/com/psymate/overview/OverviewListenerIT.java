@@ -208,7 +208,7 @@ class OverviewListenerIT extends OverviewSupport {
 
   @Test
   void upsertNeverOverwritesARowComputedAtANewerRevision() {
-    Instant now = Instant.now();
+    Instant now = NOW;
 
     assertThat(repository.upsert(patient, "{\"v\":\"new\"}", 10, now, 5)).isEqualTo(1);
     assertThat(repository.upsert(patient, "{\"v\":\"old\"}", 9, now, 5)).isZero();

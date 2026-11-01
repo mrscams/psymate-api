@@ -36,16 +36,23 @@ import org.springframework.stereotype.Component;
  * est le propriétaire), les brouillons comptés dans {@code drafts} et aussi dans les autres blocs
  * (seul {@code archived_at} exclut). Les entrées {@code life_phase} sont exclues des courbes ; un
  * ressenti de précision {@code month}, {@code year} ou {@code period} ayant une fin est placé au
- * milieu de sa période (écran 2). Tous les jours sont des jours UTC.
+ * milieu de sa période (écran 2), jamais après aujourd'hui. Tous les jours sont des jours UTC.
+ *
+ * <p>Médicament actif (A6 « Vue d'ensemble », faits clés ; précision à reporter dans A6/G, la
+ * documentation étant muette) : entrée {@code medication} non archivée dont la fin n'est ni connue
+ * ni passée. La fin vient de {@code entry_medication.period_to} ; une période ouverte ({@code
+ * period_from} sans {@code period_to}) est en cours ; sans aucune période, repli sur {@code
+ * entry.occurred_to}, qui ne vaut comme fin que si le praticien l'a saisie (précision {@code exact}
+ * ou {@code period} et {@code occurred_to} après {@code occurred_from}) : pour {@code day}, {@code
+ * month} et {@code year}, clinical y pose la borne de la précision, pas une fin de traitement. Tri
+ * par {@code period_from} décroissant (sinon {@code occurred_from}), une ligne par molécule (la
+ * plus récente gagne). La même notion de fin sert aux marqueurs « end » de la tendance.
  */
 @Component
 class OverviewProjector {
 
   /** Résultat du calcul. */
   record Computed(OverviewPayload payload, long sourceRev) {}
-
-  private static final Map<String, String> SESSION_LABELS =
-      Map.of("session", "Séance", "intake", "Accueil", "contact", "Contact");
 
   private final JdbcClient jdbc;
   private final OverviewRepository repository;
@@ -59,11 +66,34 @@ class OverviewProjector {
       UUID entryId,
       Instant from,
       Instant to,
+      String precision,
       String molecule,
       String dosage,
       String frequency,
       String prescriber,
-      LocalDate periodTo) {}
+      LocalDate periodFrom,
+      LocalDate periodTo) {
+
+    /** Jour de début : la période si elle est saisie, sinon le jour de l'entrée. */
+    LocalDate startDay() {
+      return periodFrom != null ? periodFrom : dayOf(from);
+    }
+
+    /**
+     * Jour de fin connu, ou nul si le traitement est en cours ou sans fin saisie (règle de classe).
+     */
+    LocalDate endDay() {
+      if (periodTo != null) {
+        return periodTo;
+      }
+      if (periodFrom != null || to == null) {
+        return null;
+      }
+      boolean explicit =
+          ("exact".equals(precision) || "period".equals(precision)) && to.isAfter(from);
+      return explicit ? dayOf(to) : null;
+    }
+  }
 
   private record SessionRow(UUID entryId, Instant from, String title, String kind) {}
 
@@ -156,8 +186,8 @@ class OverviewProjector {
 
   private List<MedicationRow> medications(UUID patientId, OffsetDateTime endExclusive) {
     return jdbc.sql(
-            "select e.id, e.occurred_from, e.occurred_to, m.molecule, m.dosage, m.frequency,"
-                + " m.prescriber, m.period_to"
+            "select e.id, e.occurred_from, e.occurred_to, e.occurred_precision, m.molecule,"
+                + " m.dosage, m.frequency, m.prescriber, m.period_from, m.period_to"
                 + " from entry e join entry_medication m on m.entry_id = e.id"
                 + " where e.patient_id = :p and e.archived_at is null"
                 + " and e.occurred_from < :end order by e.occurred_from, e.id")
@@ -169,25 +199,47 @@ class OverviewProjector {
                     rs.getObject("id", UUID.class),
                     OverviewRepository.instant(rs, "occurred_from"),
                     OverviewRepository.instant(rs, "occurred_to"),
+                    rs.getString("occurred_precision"),
                     rs.getString("molecule"),
                     rs.getString("dosage"),
                     rs.getString("frequency"),
                     rs.getString("prescriber"),
+                    rs.getObject("period_from", LocalDate.class),
                     rs.getObject("period_to", LocalDate.class)))
         .list();
   }
 
-  /** Médicaments sans fin (occurred_to nul) dont period_to, s'il existe, n'est pas passé. */
+  /**
+   * Médicaments dont la fin n'est ni connue ni passée (règle de classe), du plus récent au plus
+   * ancien, une ligne par molécule.
+   */
   private static List<ActiveMedicationDto> activeMedications(
       List<MedicationRow> rows, LocalDate today) {
-    return rows.stream()
-        .filter(m -> m.to() == null && (m.periodTo() == null || !m.periodTo().isBefore(today)))
-        .sorted(Comparator.comparing(MedicationRow::from).reversed())
+    Map<String, MedicationRow> byMolecule = new LinkedHashMap<>();
+    rows.stream()
+        .filter(m -> m.endDay() == null || !m.endDay().isBefore(today))
+        .sorted(
+            Comparator.comparing(MedicationRow::startDay)
+                .thenComparing(MedicationRow::from)
+                .reversed())
+        .forEach(m -> byMolecule.putIfAbsent(moleculeKey(m.molecule()), m));
+    return byMolecule.values().stream()
         .map(
             m ->
                 new ActiveMedicationDto(
-                    m.entryId(), m.molecule(), m.dosage(), m.frequency(), m.prescriber(), m.from()))
+                    m.entryId(),
+                    m.molecule(),
+                    m.dosage(),
+                    m.frequency(),
+                    m.prescriber(),
+                    m.from(),
+                    m.periodFrom(),
+                    m.periodTo()))
         .toList();
+  }
+
+  private static String moleculeKey(String molecule) {
+    return molecule == null ? "" : molecule.trim().toLowerCase(java.util.Locale.ROOT);
   }
 
   // ---- situations actives
@@ -275,8 +327,11 @@ class OverviewProjector {
         .query(
             (rs, i) -> {
               Object valence = rs.getObject("valence");
+              // Le milieu d'une période en cours (mois courant) peut dépasser aujourd'hui :
+              // l'échantillon est alors plafonné au jour courant pour rester dans la fenêtre.
+              LocalDate day = dayOf(OverviewRepository.instant(rs, "at"));
               return new FeelingSample(
-                  dayOf(OverviewRepository.instant(rs, "at")),
+                  day.isAfter(today) ? today : day,
                   rs.getString("emotion_code"),
                   rs.getString("label_fr"),
                   rs.getInt("intensity"),
@@ -313,8 +368,9 @@ class OverviewProjector {
   }
 
   /**
-   * Toutes les séances et tous les changements de médicament (début, et fin si elle existe) dont le
-   * jour tombe dans {@code [start, today]}.
+   * Toutes les séances et tous les changements de médicament (début, et fin si elle est connue et
+   * distincte du début) dont le jour tombe dans {@code [start, today]}. Le libellé d'une séance est
+   * son titre, nul sinon : le client traduit {@code sessionKind} (pas de texte figé en base).
    */
   private static List<TrendMarkerDto> markers(
       LocalDate start, LocalDate today, List<SessionRow> sessions, List<MedicationRow> meds) {
@@ -322,11 +378,8 @@ class OverviewProjector {
     for (SessionRow s : sessions) {
       LocalDate day = dayOf(s.from());
       if (inRange(day, start, today)) {
-        String label =
-            s.title() != null && !s.title().isBlank()
-                ? s.title()
-                : SESSION_LABELS.getOrDefault(s.kind(), "Séance");
-        markers.add(new TrendMarkerDto(day, "session", s.entryId(), label, null));
+        String label = s.title() != null && !s.title().isBlank() ? s.title() : null;
+        markers.add(new TrendMarkerDto(day, "session", s.entryId(), label, s.kind(), null));
       }
     }
     for (MedicationRow m : meds) {
@@ -334,13 +387,13 @@ class OverviewProjector {
           m.dosage() == null || m.dosage().isBlank()
               ? m.molecule()
               : m.molecule() + " " + m.dosage();
-      LocalDate from = dayOf(m.from());
+      LocalDate from = m.startDay();
       if (inRange(from, start, today)) {
-        markers.add(new TrendMarkerDto(from, "medication", m.entryId(), label, "start"));
+        markers.add(new TrendMarkerDto(from, "medication", m.entryId(), label, null, "start"));
       }
-      LocalDate end = m.to() != null ? dayOf(m.to()) : m.periodTo();
-      if (end != null && inRange(end, start, today)) {
-        markers.add(new TrendMarkerDto(end, "medication", m.entryId(), label, "end"));
+      LocalDate end = m.endDay();
+      if (end != null && !end.equals(from) && inRange(end, start, today)) {
+        markers.add(new TrendMarkerDto(end, "medication", m.entryId(), label, null, "end"));
       }
     }
     markers.sort(

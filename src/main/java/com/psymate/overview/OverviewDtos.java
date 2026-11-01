@@ -47,7 +47,10 @@ final class OverviewDtos {
       String dosage,
       String frequency,
       String prescriber,
-      @Schema(description = "Début (occurred_from)") Instant since) {}
+      @Schema(description = "Début de l'entrée (occurred_from)") Instant since,
+      @Schema(description = "Début de la période de prise, si saisi") LocalDate periodFrom,
+      @Schema(description = "Fin de la période de prise, si saisie (nulle = en cours)")
+          LocalDate periodTo) {}
 
   @Schema(description = "Drapeau actif posé à la main sur le dossier")
   record OverviewFlagDto(
@@ -86,7 +89,10 @@ final class OverviewDtos {
       LocalDate date,
       @Schema(description = "session ou medication") String kind,
       UUID entryId,
-      String label,
+      @Schema(description = "Titre de la séance (null sans titre) ou « molécule dosage »")
+          String label,
+      @Schema(description = "intake, session ou contact pour une séance, null pour un médicament")
+          String sessionKind,
       @Schema(description = "start ou end pour un médicament, null pour une séance")
           String change) {}
 

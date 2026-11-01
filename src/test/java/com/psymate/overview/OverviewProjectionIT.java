@@ -84,16 +84,14 @@ class OverviewProjectionIT extends OverviewSupport {
     UUID lifePhase = feeling("anger", 9, daysAgo(5));
     jdbc.update("update entry set occurred_precision = 'life_phase' where id = ?", lifePhase);
 
+    // Tous créés par l'API : sertraline sans fin saisie (en cours), lorazepam avec une fin
+    // (occurred.to), zopiclone avec une période de prise terminée (period_to).
     sertraline = medication("sertraline", "50 mg", daysAgo(60));
     lorazepam = post(withTo(medicationPayload("lorazepam", daysAgo(80)), daysAgo(35)));
-    zopiclone = medication("zopiclone", "7,5 mg", daysAgo(50));
-    // L'API ne sait pas poser un médicament « en cours » (occurred_to nul) : ce sont des
-    // écritures SQL, suivies de la révision que posent les services d'écriture.
-    jdbc.update("update entry set occurred_to = null where id in (?, ?)", sertraline, zopiclone);
-    jdbc.update(
-        "update entry_medication set period_to = ? where entry_id = ?",
-        java.sql.Date.valueOf(today().minusDays(20)),
-        zopiclone);
+    zopiclone =
+        post(
+            medicationPayload(
+                "zopiclone", daysAgo(50), today().minusDays(50), today().minusDays(20)));
 
     Map<String, Object> draft = base("note", daysAgo(1));
     draft.put("status", "draft");
@@ -125,8 +123,22 @@ class OverviewProjectionIT extends OverviewSupport {
   }
 
   private Map<String, Object> medicationPayload(String molecule, Instant from) {
+    return medicationPayload(molecule, from, null, null);
+  }
+
+  private Map<String, Object> medicationPayload(
+      String molecule, Instant from, LocalDate periodFrom, LocalDate periodTo) {
     Map<String, Object> payload = base("medication", from);
-    payload.put("medication", Map.of("molecule", molecule, "dosage", "1 mg"));
+    Map<String, Object> medication = new java.util.LinkedHashMap<>();
+    medication.put("molecule", molecule);
+    medication.put("dosage", "1 mg");
+    if (periodFrom != null) {
+      medication.put("periodFrom", periodFrom.toString());
+    }
+    if (periodTo != null) {
+      medication.put("periodTo", periodTo.toString());
+    }
+    payload.put("medication", medication);
     return payload;
   }
 
@@ -140,7 +152,14 @@ class OverviewProjectionIT extends OverviewSupport {
 
     assertThat(doc.read("$.facts.age", Integer.class))
         .isEqualTo(Period.between(LocalDate.of(1990, 4, 2), today()).getYears());
-    assertThat(doc.read("$.facts.followedSince", String.class)).isEqualTo(today().toString());
+    // Sans follow_up.since : le jour de création du dossier (horloge de la base).
+    assertThat(doc.read("$.facts.followedSince", String.class))
+        .isEqualTo(
+            jdbc.queryForObject(
+                "select to_char(created_at at time zone 'UTC', 'YYYY-MM-DD') from patient"
+                    + " where id = ?",
+                String.class,
+                patient));
     assertThat(doc.read("$.facts.sessionCount", Integer.class)).isEqualTo(2);
     assertThat(doc.read("$.facts.activeMedications", List.class)).hasSize(1);
     assertThat(doc.read("$.facts.activeMedications[0].entryId", String.class))
@@ -180,6 +199,42 @@ class OverviewProjectionIT extends OverviewSupport {
     List<String> ids = doc.read("$.facts.activeMedications[*].entryId");
     assertThat(ids).containsExactly(sertraline.toString());
     assertThat(ids).doesNotContain(lorazepam.toString(), zopiclone.toString());
+  }
+
+  @Test
+  void aMedicationWithAnOpenPeriodOrAPrecisionBoundIsActiveWithoutAnEndMarker() throws Exception {
+    // Période ouverte (period_from sans period_to) : en cours.
+    UUID open = post(medicationPayload("escitalopram", daysAgo(10), today().minusDays(10), null));
+    // Précision « mois » sans fin saisie : clinical pose occurred_to en fin de mois, ce n'est pas
+    // une fin de traitement.
+    Map<String, Object> monthly = medicationPayload("quetiapine", daysAgo(40));
+    monthly.put("occurred", Map.of("from", daysAgo(40).toString(), "precision", "month"));
+    UUID month = post(monthly);
+
+    DocumentContext doc = overview("window", "12m");
+
+    assertThat(doc.read("$.facts.activeMedications[*].entryId", List.class))
+        .containsExactly(open.toString(), month.toString());
+    assertThat(doc.read("$.facts.activeMedications[0].periodFrom", String.class))
+        .isEqualTo(today().minusDays(10).toString());
+    assertThat(doc.read("$.facts.activeMedications[0].periodTo", Object.class)).isNull();
+    assertThat(doc.read("$.trend.markers[?(@.change=='start')].entryId", List.class))
+        .containsExactlyInAnyOrder(open.toString(), month.toString());
+    assertThat(doc.read("$.trend.markers[?(@.change=='end')]", List.class)).isEmpty();
+  }
+
+  @Test
+  void activeMedicationsKeepOneLinePerMoleculeTheMostRecentFirst() throws Exception {
+    UUID older = medication("Sertraline", "25 mg", daysAgo(90));
+    UUID newer = medication("sertraline", "50 mg", daysAgo(15));
+    UUID other = medication("zopiclone", "3,75 mg", daysAgo(30));
+
+    DocumentContext doc = overview();
+
+    assertThat(doc.read("$.facts.activeMedications[*].entryId", List.class))
+        .containsExactly(newer.toString(), other.toString())
+        .doesNotContain(older.toString());
+    assertThat(doc.read("$.facts.activeMedications[0].dosage", String.class)).isEqualTo("50 mg");
   }
 
   // ---- situations actives
@@ -290,6 +345,35 @@ class OverviewProjectionIT extends OverviewSupport {
         .containsExactly("sertraline 50 mg");
     List<String> dates = doc.read("$.trend.markers[*].date");
     assertThat(dates).isSorted();
+    // Une séance sans titre n'a pas de libellé figé en base : le client traduit sessionKind.
+    assertThat(doc.read("$.trend.markers[?(@.kind=='session')].sessionKind", List.class))
+        .containsOnly("session");
+    assertThat(doc.read("$.trend.markers[?(@.kind=='session')].label", List.class))
+        .containsOnlyNulls();
+  }
+
+  @Test
+  void aFeelingWhosePeriodMiddleIsInTheFutureCountsAsToday() throws Exception {
+    Map<String, Object> payload = base("feeling", daysAgo(2));
+    payload.put(
+        "occurred",
+        Map.of(
+            "from",
+            daysAgo(2).toString(),
+            "to",
+            NOW.plus(30, ChronoUnit.DAYS).toString(),
+            "precision",
+            "period",
+            "label",
+            "ces semaines-ci"));
+    payload.put("feeling", Map.of("emotionCode", "fear", "intensity", 7));
+    post(payload);
+
+    DocumentContext doc = overview("window", "30d");
+
+    assertThat(doc.read("$.emotions.top[*].code", List.class)).containsExactly("fear");
+    assertThat(doc.read("$.trend.points[29].averageIntensity", Double.class)).isEqualTo(7.0);
+    assertThat(doc.read("$.trend.points[28].averageIntensity", Object.class)).isNull();
   }
 
   @Test
@@ -496,6 +580,8 @@ class OverviewProjectionIT extends OverviewSupport {
     for (int i = 0; i < 12; i++) {
       note("Note numéro " + i, daysAgo(30 - i));
     }
+    // Saisie une minute plus tard, mais datée d'il y a 200 jours : l'ordre est celui de la saisie.
+    clock.advance(java.time.Duration.ofMinutes(1));
     UUID fresh = note("Tout juste saisie", daysAgo(200));
 
     DocumentContext doc = overview();
@@ -532,8 +618,7 @@ class OverviewProjectionIT extends OverviewSupport {
     DocumentContext doc = overview();
 
     assertThat(doc.read("$.computedAt", String.class)).isNotBlank();
-    assertThat(Instant.parse(doc.read("$.computedAt", String.class)))
-        .isAfter(Instant.now().minus(1, ChronoUnit.MINUTES));
+    assertThat(Instant.parse(doc.read("$.computedAt", String.class))).isEqualTo(NOW);
     assertThat(doc.read("$.sourceRev", Long.class)).isEqualTo(clinicalRev());
   }
 }

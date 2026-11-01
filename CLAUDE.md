@@ -8,7 +8,7 @@ Pour la base de données, docs/E-modele-donnees.md fait autorité sur A et C. Po
 ## Commandes (utilise uniquement celles-ci)
 - make up / make down : Postgres + Mailpit
 - ./mvnw verify : build + tests + vérification des modules (doit être vert avant toute PR)
-- make verify-fast (Windows : `bash tools/verify-fast.sh`) : même vérification en parallèle comme la CI (build une fois, puis unitaires + tranches d'IT de tools/it-slices.txt, chacune dans son processus Maven) ; 8 min 40 à 9 min mesurés contre 10 min 22 en séquentiel sur le poste ; ./mvnw verify reste la référence avant une PR
+- make verify-fast (Windows : `bash tools/verify-fast.sh`) : même vérification en parallèle comme la CI (build une fois, puis unitaires + tranches d'IT de tools/it-slices.txt, chacune dans son processus Maven) ; 5 à 7 min sur un poste libre (jusqu'à 9 min si un autre build tourne) contre 10 min 22 en séquentiel ; un seul verify à la fois sur le poste ; ./mvnw verify reste la référence avant une PR
 - ./mvnw test -Dtest=NomDuTest : un test
 - ./mvnw spring-boot:run : API sur :8080
 - make seed : données fictives

@@ -50,7 +50,13 @@ class ExportRepository {
       LocalDate periodFrom,
       LocalDate periodTo) {}
 
-  private static final String ORDER = " order by e.occurred_from, e.created_at, e.id";
+  /**
+   * Chronologique ; à début égal (une précision jour et une précision mois commencent toutes deux
+   * au 1er à 00:00), la période la plus courte d'abord (une période en cours, occurred_to nul, en
+   * dernier), puis l'ordre de saisie.
+   */
+  private static final String ORDER =
+      " order by e.occurred_from, e.occurred_to nulls last, e.created_at, e.id";
 
   private final JdbcClient jdbc;
 

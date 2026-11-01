@@ -116,7 +116,7 @@ class ExportIT extends ExportTestSupport {
         b,
         """
         {"type":"medication","title":"Traitement",
-         "occurred":{"from":"2026-09-01T09:30:00Z","precision":"month"},
+         "occurred":{"from":"2026-10-15T09:30:00Z","precision":"month"},
          "medication":{"molecule":"sertraline","dosage":"50 mg","frequency":"matin",
                        "periodFrom":"2026-08-05"}}
         """);
@@ -180,7 +180,9 @@ class ExportIT extends ExportTestSupport {
     assertThat(md).contains("Note · 11/09/2026 09:10");
     assertThat(md).contains("Événement · 01/09/2026");
     assertThat(md).doesNotContain("Événement · 01/09/2026 09");
-    assertThat(md).contains("Médicament · septembre 2026");
+    // Précision mois : occurred_from est ramené au 1er du mois à 00:00 (TimeSpan.resolve), d'où
+    // un mois postérieur ici, sinon l'entrée serait à égalité avec l'événement du 1er septembre.
+    assertThat(md).contains("Médicament · octobre 2026");
 
     // Émotion et intensité (libellé du catalogue), médicament, tag.
     assertThat(md).contains("Émotion : Anxiété, intensité 8/10");

@@ -63,6 +63,7 @@ Rel(App.App.Search, App.App.Clinical, "listens to", $techn="", $tags="", $link="
 Rel(App.App.Search, App.App.Identity, "depends on", $techn="", $tags="", $link="")
 Rel(App.App.Search, App.App.Patients, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Search, App.App.Shared, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Vocabulary, App.App.Events, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Vocabulary, App.App.Identity, "depends on", $techn="", $tags="", $link="")
 
 SHOW_LEGEND(true)

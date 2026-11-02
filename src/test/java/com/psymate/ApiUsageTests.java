@@ -58,6 +58,12 @@ class ApiUsageTests {
           "M9-18 : événement sans abonné, à annoter @Reserved (G Q40)",
           "com.psymate.patients.api.PatientArchived",
           "M9-09 : événement sans abonné, à annoter @Reserved (G Q40)",
+          "com.psymate.vocabulary.api.EmotionMergeReverted",
+          "M9-03 : abonnés de clinical et patients à la partie 3",
+          "com.psymate.vocabulary.api.EmotionsMerged",
+          "M9-03 : abonnés de clinical et patients à la partie 3",
+          "com.psymate.vocabulary.api.TagsMerged",
+          "M9-03 : abonnés de clinical et patients à la partie 3",
           "com.psymate.vocabulary.api.EntryTypeView",
           "M9-10 : lu par aucun autre module, à sortir d'api");
 

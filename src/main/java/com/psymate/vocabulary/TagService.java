@@ -1,7 +1,9 @@
 package com.psymate.vocabulary;
 
+import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.vocabulary.api.TagFacade;
 import com.psymate.vocabulary.api.TagView;
+import com.psymate.vocabulary.api.TagsMerged;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -21,16 +23,19 @@ class TagService implements TagFacade {
   private final EmotionRepository emotions;
   private final CurrentPractitioner current;
   private final TransactionTemplate tx;
+  private final DomainEventPublisher events;
 
   TagService(
       TagRepository tags,
       EmotionRepository emotions,
       CurrentPractitioner current,
-      TransactionTemplate tx) {
+      TransactionTemplate tx,
+      DomainEventPublisher events) {
     this.tags = tags;
     this.emotions = emotions;
     this.current = current;
     this.tx = tx;
+    this.events = events;
   }
 
   @Override
@@ -125,6 +130,7 @@ class TagService implements TagFacade {
     // Natif : entry_tag, patient_tag et usage_count (la cible est rafraîchie dans le fragment).
     tags.moveTagUsages(sourceId, targetId);
     source.archiveInto(targetId, Timestamps.now());
+    events.publish(new TagsMerged(current.tenantId(), practitioner, sourceId, targetId));
     return VocabularyViews.tag(target);
   }
 

@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T21:47:45.683Z",
+  "task": "M9-13",
+  "agent": "claude",
+  "status": "done",
+  "summary": "clinical rangé par rôle (controller, dto, service, repository, model), DTO éclatés, contrat inchangé ; 403 unitaires et 930 IT verts",
+  "notes": "Écarts imposés par la règle 3 : EntryCommandFactory (avec EntryRequestException et FieldProblems) dans controller au lieu de dto ; records lus par les mappers (EntryDetails, EntryHistory, Timeline*) dans model, comme linking. Revue : 0 bloquant.",
+  "next": "Relecture et fusion par l'utilisateur ; consigner l'écart en G ou au §4.3 si voulu",
+  "pr": "https://github.com/mrscams/psymate-api/pull/68",
+  "branch": "claude/m9-13-138b85",
+  "checkout": "m9-13-138b85"
+}

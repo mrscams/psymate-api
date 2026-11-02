@@ -46,6 +46,13 @@ import tools.jackson.databind.json.JsonMapper;
  * mais sans événement ni décalage de {@code clinical_rev} ; la recherche et la vue d'ensemble
  * restent périmées. Les assertions attendues sont en commentaire « ATTENDU », remplacées par une
  * assertion « ÉTAT ACTUEL » qui sera inversée à la partie 3 (abonnés des modules propriétaires).
+ * Elles sont regroupées dans {@code assertFollowsMerge} et {@code assertEmotionServed}, déjà
+ * exécutées une fois après {@code simulateOwnerSubscribers} pour prouver qu'elles sont
+ * atteignables.
+ *
+ * <p>La vue d'ensemble suit l'horloge réelle : si minuit UTC tombait entre deux lectures, la
+ * projection serait recalculée et une assertion « ÉTAT ACTUEL » échouerait (risque accepté,
+ * quelques secondes par jour ; l'horloge fixe d'overview est privée à son package).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -105,7 +112,7 @@ class VocabularyMergeIT {
     UUID noteBoth = entry("note", "Retour sur les vacances", 4, List.of("boulot", "travail"), null);
     send(
             MockMvcRequestBuilders.put("/api/patients/{id}/tags", patient),
-            Map.of("tags", List.of("boulot")))
+            Map.of("tags", List.of("boulot", "travail")))
         .andExpect(status().isOk());
     awaitPatientEventsSettled();
 
@@ -124,12 +131,16 @@ class VocabularyMergeIT {
                     Map.of("targetCode", "sadness"))
                 .andExpect(status().isOk()));
     assertThat((Integer) JsonPath.read(merge, "$.affectedCount")).isEqualTo(2);
-    send(
-            MockMvcRequestBuilders.post("/api/tags/{id}/merge", boulot),
-            Map.of("targetId", travail.toString()))
-        .andExpect(status().isOk());
+    String tagMerge =
+        body(
+            send(
+                    MockMvcRequestBuilders.post("/api/tags/{id}/merge", boulot),
+                    Map.of("targetId", travail.toString()))
+                .andExpect(status().isOk()));
+    assertThat((String) JsonPath.read(tagMerge, "$.label")).isEqualTo("travail");
 
-    // Tables des modules propriétaires : réécrites (aujourd'hui en SQL natif par vocabulary).
+    // Tables des modules propriétaires : réécrites (aujourd'hui en SQL natif par vocabulary),
+    // doublons compris (noteBoth et le patient portaient déjà la cible).
     assertThat(emotionOf(feeling1)).isEqualTo(List.of("sadness", lassitude));
     assertThat(emotionOf(feeling2)).isEqualTo(List.of("sadness", lassitude));
     assertThat(tagsOf(noteSource)).containsExactly(travail);
@@ -140,30 +151,28 @@ class VocabularyMergeIT {
         .containsExactly(travail);
     assertThat(patientTagLabels()).containsExactly("travail");
 
-    // ATTENDU (partie 3) : une écriture clinique décale clinical_rev.
-    // assertThat(clinicalRev()).isGreaterThan(revBefore);
-    // ÉTAT ACTUEL : la fusion ne touche pas clinical_rev.
+    // ATTENDU (partie 3) : la propagation devient asynchrone. Les événements de vocabulary ne
+    // citent pas le patient : attendre chaque ATTENDU par await().untilAsserted(...), jamais par
+    // awaitPatientEventsSettled() seul, y compris pour les assertions négatives.
+    //   await().untilAsserted(() -> assertThat(clinicalRev()).isGreaterThan(revBefore));
+    //   await().untilAsserted(() -> assertFollowsMerge(feeling1, feeling2, noteSource, noteBoth));
+    // ÉTAT ACTUEL : la fusion ne touche pas clinical_rev ; search_vector n'est pas recalculé et
+    // la vue d'ensemble, à source_rev = clinical_rev, est servie telle quelle.
     assertThat(clinicalRev()).isEqualTo(revBefore);
-
-    // ATTENDU (partie 3) : le vecteur suit les nouveaux libellés.
-    // assertThat(found("tristesse")).containsExactlyInAnyOrder(feeling1, feeling2);
-    // assertThat(found("lassitude")).isEmpty();
-    // assertThat(found("travail")).containsExactlyInAnyOrder(noteSource, noteBoth);
-    // assertThat(found("boulot")).isEmpty();
-    // ÉTAT ACTUEL : search_vector n'est pas recalculé, la recherche sert les anciens libellés.
     assertThat(found("tristesse")).isEmpty();
     assertThat(found("lassitude")).containsExactlyInAnyOrder(feeling1, feeling2);
     assertThat(found("travail")).containsExactly(noteBoth);
     assertThat(found("boulot")).containsExactlyInAnyOrder(noteSource, noteBoth);
-
-    // ATTENDU (partie 3) : l'émotion dominante est la cible.
-    // assertThat(topEmotionCodes()).containsExactly("sadness");
-    // ÉTAT ACTUEL : la projection, à source_rev = clinical_rev, est servie telle quelle.
     assertThat(topEmotionCodes()).containsExactly(lassitude);
+
+    // Faisabilité de l'ATTENDU (à retirer à la partie 3) : ce que feront les abonnés, simulé en
+    // SQL (recalcul des vecteurs, décalage de clinical_rev), suffit à le satisfaire.
+    simulateOwnerSubscribers();
+    assertFollowsMerge(feeling1, feeling2, noteSource, noteBoth);
   }
 
   @Test
-  void undoingAnEmotionMergeRestoresFeelingsSearchAndOverview() throws Exception {
+  void undoingAnEmotionMergeRestoresTheOwnerTable() throws Exception {
     String lassitude = createEmotion("Lassitude", "sadness");
     UUID feeling = entry("feeling", "Soirée calme à la maison", 1, List.of(), lassitude);
     awaitPatientEventsSettled();
@@ -175,6 +184,16 @@ class VocabularyMergeIT {
                     MockMvcRequestBuilders.post("/api/me/emotions/{code}/merge", lassitude),
                     Map.of("targetCode", "sadness"))
                 .andExpect(status().isOk()));
+    assertThat(emotionOf(feeling)).isEqualTo(List.of("sadness", lassitude));
+    // ATTENDU (partie 3) : la fusion est propagée avant l'annulation.
+    //   await().untilAsserted(() -> assertThat(clinicalRev()).isGreaterThan(revBefore));
+    //   await().untilAsserted(() -> assertEmotionServed("tristesse", "lassitude", "sadness",
+    //       feeling));
+    // ÉTAT ACTUEL : rien n'est recalculé après la fusion.
+    assertThat(clinicalRev()).isEqualTo(revBefore);
+    assertEmotionServed("lassitude", "tristesse", lassitude, feeling);
+    long revAfterMerge = clinicalRev();
+
     send(
             MockMvcRequestBuilders.post(
                 "/api/me/emotions/merges/{id}/undo", (String) JsonPath.read(merge, "$.id")),
@@ -182,15 +201,47 @@ class VocabularyMergeIT {
         .andExpect(status().isOk());
 
     assertThat(emotionOf(feeling)).isEqualTo(Arrays.asList(lassitude, null));
-    // ATTENDU (partie 3) : la fusion puis son annulation décalent clinical_rev.
-    // assertThat(clinicalRev()).isGreaterThan(revBefore);
-    // ÉTAT ACTUEL : ni la fusion ni l'annulation ne touchent clinical_rev.
-    assertThat(clinicalRev()).isEqualTo(revBefore);
-    // Correct aujourd'hui par accident (rien n'a été recalculé depuis la création) ; doit le
-    // rester quand les abonnés recalculeront après la fusion puis après l'annulation.
-    assertThat(found("lassitude")).containsExactly(feeling);
-    assertThat(found("tristesse")).isEmpty();
-    assertThat(topEmotionCodes()).containsExactly(lassitude);
+    // ATTENDU (partie 3) : l'annulation décale clinical_rev à son tour, et un recalcul tardif de
+    // la fusion n'écrase pas celui de l'annulation.
+    //   await().untilAsserted(() -> assertThat(clinicalRev()).isGreaterThan(revAfterMerge));
+    //   await().untilAsserted(() -> assertEmotionServed("lassitude", "tristesse", lassitude,
+    //       feeling));
+    // ÉTAT ACTUEL : l'annulation ne touche pas clinical_rev ; recherche et vue d'ensemble sont
+    // justes par accident, car rien n'a été recalculé depuis la création de l'entrée.
+    assertThat(clinicalRev()).isEqualTo(revAfterMerge);
+    assertEmotionServed("lassitude", "tristesse", lassitude, feeling);
+  }
+
+  // ---- attendus
+
+  /** Recherche et vue d'ensemble suivent les cibles des deux fusions du premier test. */
+  private void assertFollowsMerge(UUID feeling1, UUID feeling2, UUID noteSource, UUID noteBoth)
+      throws Exception {
+    assertEmotionServed("tristesse", "lassitude", "sadness", feeling1, feeling2);
+    assertThat(found("travail")).containsExactlyInAnyOrder(noteSource, noteBoth);
+    assertThat(found("boulot")).isEmpty();
+  }
+
+  /**
+   * La recherche trouve les ressentis par {@code shown} et plus par {@code gone} ; l'émotion
+   * dominante de la vue d'ensemble est {@code topCode}.
+   */
+  private void assertEmotionServed(String shown, String gone, String topCode, UUID... feelings)
+      throws Exception {
+    assertThat(found(shown)).containsExactlyInAnyOrder(feelings);
+    assertThat(found(gone)).isEmpty();
+    assertThat(topEmotionCodes()).containsExactly(topCode);
+  }
+
+  /**
+   * Ce que feront les abonnés des modules propriétaires (partie 3) : recalcul du vecteur de
+   * recherche des entrées du patient et décalage de {@code clinical_rev}, qui périme la vue
+   * d'ensemble.
+   */
+  private void simulateOwnerSubscribers() {
+    jdbc.queryForList(
+        "select entry_search_vector_refresh(id) from entry where patient_id = ?", patient);
+    jdbc.update("update patient set clinical_rev = clinical_rev + 1 where id = ?", patient);
   }
 
   // ---- données
@@ -240,7 +291,7 @@ class VocabularyMergeIT {
    * patient) soient traitées par leurs abonnés : index de recherche et vue d'ensemble calculés.
    */
   private void awaitPatientEventsSettled() {
-    await()
+    await("publications du patient traitées")
         .atMost(Duration.ofSeconds(60))
         .pollInterval(Duration.ofMillis(100))
         .until(

@@ -47,21 +47,21 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import({PostgresTestConfig.class, ExportTestSupport.ClockConfig.class})
-abstract class ExportTestSupport {
+public abstract class ExportTestSupport {
 
-  static final String PASSWORD = "Zebre-Tournesol-42";
+  protected static final String PASSWORD = "Zebre-Tournesol-42";
 
   private static final AtomicInteger IP = new AtomicInteger();
 
   /** Horloge dont le test choisit l'instant courant. */
-  static class MutableClock extends Clock {
+  public static class MutableClock extends Clock {
     private final AtomicReference<Instant> now = new AtomicReference<>(Instant.now());
 
-    void set(Instant instant) {
+    public void set(Instant instant) {
       now.set(instant);
     }
 
-    void advance(Duration d) {
+    public void advance(Duration d) {
       now.updateAndGet(i -> i.plus(d));
     }
 

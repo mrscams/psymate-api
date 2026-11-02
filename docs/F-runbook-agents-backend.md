@@ -13,8 +13,8 @@ Les prompts renvoient aux documents copiés dans `docs/` du dépôt : `docs/A-ar
 | **A**, **B**, **C**, **D**, **E**, **G** | Les documents de référence : A = architecture, B = UX, C = plan, D = orchestration backend, E = modèle de données, G = décisions. « A4.3 » = document A, section 4.3. |
 | **A10** | Section de A ajoutée le 25 octobre : préférences par compte, vérification des praticiens (dossier professionnel), administration. |
 | **A11** | Section de A sur le « compagnon patient » (future app mobile) : rien n'est construit, mais des colonnes et tables vides sont réservées. |
-| **M0 … M7** | Les huit jalons du plan C : M0 socle technique, M1 patients et entrées, M2 liens et graphe, M3 timeline, M4 recherche et vue d'ensemble, M5 annuaire public, M6 capture rapide et finitions, M7 durcissement avant la bêta. |
-| **M1-03**, **M4-01a**… | Une tâche : jalon, tiret, numéro. La ligne correspondante est dans C2 ou C6 (document C). `M4-01a` est une tâche ajoutée par D (D6-A1). |
+| **M0 … M7** | Les huit jalons produit du plan C (M8, migration JPA, et M9, restructuration, sont des séries techniques décrites en C8) : M0 socle technique, M1 patients et entrées, M2 liens et graphe, M3 timeline, M4 recherche et vue d'ensemble, M5 annuaire public, M6 capture rapide et finitions, M7 durcissement avant la bêta. |
+| **M1-03**, **M4-01a**… | Une tâche : jalon, tiret, numéro. La ligne correspondante est dans C2, C6 ou C8 (document C). `M4-01a` est une tâche ajoutée par D (D6-A1). |
 | **V0 … V9** | Les « vagues » de D3 : un groupe de tâches dont toutes les dépendances sont fusionnées, donc lançables ensemble. |
 | **Couloir** | Un module Spring (identity, patients, clinical…). Un seul agent à la fois par couloir. |
 | **UC-01 … UC-19** | Cas d'usage (A2, A10) : un scénario utilisateur numéroté. |
@@ -56,7 +56,7 @@ Toutes les questions ouvertes de la version 1.0 sont tranchées. Le détail et l
 | Q22 | Patient DEMO généré par M7-01, relu ensuite. |
 | Q23 | Français d'abord ; structure i18n conservée, fichiers EN peuvent être en retard. |
 | Q24 | Bucket4j, valeurs actuelles. |
-| Q25 | Agenda Google hors V1 ; pas de M8. |
+| Q25 | Agenda Google hors V1 ; pas de jalon Agenda (ancien M8 ; M8 désigne désormais la migration JPA, C8). |
 | Q26 | Signalements de l'annuaire : V1.1. |
 | Q27, Q28 | **M1-14b** créée (comptes, suspension, journal, recours). |
 | Q29, Q30 | `security_event` + vue `admin_journal_v` ; `clinical_rev` incrémenté par l'application. |
@@ -92,6 +92,8 @@ mkdir -p docs/design .claude/agents
 ```
 
 ## 2.3 Créer `CLAUDE.md` à la racine (copier tel quel)
+
+> Version d'origine, pour l'historique. Le fichier `CLAUDE.md` du dépôt fait foi : il a évolué depuis (règle de grâce de 1 h 15, G Q31 ; accès aux données, G Q32 ; structure par rôle, lecture des projections, suppressions autorisées et SQL natif, G Q33 à Q38).
 
 ```markdown
 # psymate-api
@@ -182,7 +184,7 @@ Tu implémentes exactement la tâche donnée, dans le module donné, et rien d'a
 
 Avant d'écrire une ligne :
 1. Lis CLAUDE.md.
-2. Lis la ligne de ta tâche dans docs/C-plan.md (sections C2 ou C6) et les sections de docs/A-architecture.md citées dans sa colonne « Lire ».
+2. Lis la ligne de ta tâche dans docs/C-plan.md (sections C2, C6 ou C8) et les sections de docs/A-architecture.md ou de la revue (docs/etudes/revue-architecture-2026-11-01.md, tâches M9) citées dans sa colonne « Lire ».
 3. Lis docs/D-orchestration-backend.md D1 et D5 pour savoir ce qui existe déjà sur main et ce que tu n'as pas le droit de toucher.
 4. Si ta tâche crée ou modifie une table, lis docs/E-modele-donnees.md : le DDL est déjà écrit, copie-le, ne le réinvente pas.
 5. Si ton prompt cite une décision « Qn », lis sa ligne dans docs/G-decisions.md et applique-la même si A, C ou E disent autre chose.
@@ -294,7 +296,7 @@ Objectif : un projet Spring Boot 4.1.x Maven (groupId com.psymate, artifactId ps
 
 Versions : tu lis la documentation officielle de Spring Boot 4.1 pour les noms exacts des starters et des artefacts (plusieurs ont été renommés depuis la ligne 3). Tu figes chaque version dans pom.xml. Aucune dépendance Jackson 2 (com.fasterxml.jackson). Tu listes dans la PR chaque dépendance ajoutée avec sa version et le lien vers sa page de documentation.
 
-Périmètre : pom.xml, mvnw, .mvn/, Makefile, docker-compose.yml, src/main/java/com/psymate/App.java, src/main/resources/application.yml (profils local et test ; app.name=PsyMate ; app.mail.from=test@gmail.com en local ; versioning.grace-period=5m ; spring.modulith.events.jdbc.schema-initialization.enabled=false), src/test/java/com/psymate/AppIT.java, .github/workflows/ci.yml, README.md court (commandes). Aucun module, aucune migration, aucune entité : c'est M0-02 et M0-03.
+Périmètre : pom.xml, mvnw, .mvn/, Makefile, docker-compose.yml, src/main/java/com/psymate/App.java, src/main/resources/application.yml (profils local et test ; app.name=PsyMate ; app.mail.from=test@gmail.com en local ; versioning.grace-period=5m, devenu 75m avec G Q31 ; spring.modulith.events.jdbc.schema-initialization.enabled=false), src/test/java/com/psymate/AppIT.java, .github/workflows/ci.yml, README.md court (commandes). Aucun module, aucune migration, aucune entité : c'est M0-02 et M0-03.
 
 Critères d'acceptation (C2 M0-01) :
 - ./mvnw verify vert en local et en CI ;
@@ -664,7 +666,7 @@ Périmètre : src/main/java/com/psymate/clinical/** (domain, application, persis
 Critères d'acceptation (C2 M1-03) :
 - les six types se créent et se corrigent via EntryService ; chaque type a sa ligne de détail quand il en a une (test « chaque type a sa table et son validateur ») ;
 - une entrée sans sessionId (hors type session) est refusée ; une sessionId pointant vers une note est refusée ;
-- une correction après 5 minutes crée une version ; avant 5 minutes, par le même auteur, sans lien ni version, ne crée rien (test avec horloge contrôlée : Clock injecté) ;
+- une correction après 5 minutes crée une version ; avant 5 minutes, par le même auteur, sans lien ni version, ne crée rien (test avec horloge contrôlée : Clock injecté) ; (prompt d'époque : la fenêtre est devenue 1 h 15 avec G Q31)
 - valence/arousal copiés si l'émotion les a, NULL sinon ;
 - toute entrée créée porte author_type = 'practitioner' et submission_id IS NULL ;
 - les six précisions temporelles donnent les bonnes bornes (table de cas) ;
@@ -1457,7 +1459,7 @@ Le backend V1 est complet. Les anciennes questions « à trancher » sont closes
 | Liste des comptes, suspension manuelle, journal, recours, vocabulaire de l'annuaire (Q15, Q27, Q28) | Fait | M1-14b, lot 6 |
 | Export du compte refusé (Q18) | Fait | M6-05, lot 8 |
 | Signalements de l'annuaire (Q26) | V1.1 | Deux tâches `directory` à écrire plus tard (DDL E6.1) |
-| Agenda Google (Q25) | Hors V1 | Aucun jalon M8 ; fiches 15 et 15b marquées « plus tard » |
+| Agenda Google (Q25) | Hors V1 | Aucun jalon Agenda (ancien M8) ; fiches 15 et 15b marquées « plus tard » |
 | Étude hébergement HDS / RGPD (Q16, Q17, Q19) | Après le backend V1 | M7-06 prépare la passation |
 
 Le même document pour le frontend `psymate-web` (**document H**) suivra le même plan : préparation, lots alignés sur les tags de contrat (`v0.1.0` → auth, `v0.2.0` → identité étendue, `v0.3.0` → patients et entrées, …), un prompt par écran à partir des fiches `docs/design/`.

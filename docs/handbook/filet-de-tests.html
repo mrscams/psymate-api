@@ -256,7 +256,7 @@ package com.psymate.clinical;</pre>
 <p>Modulith vérifie les dépendances entre packages. ArchUnit ajoute des règles que Modulith n'exprime pas, écrites en Java sur le bytecode :</p>
 <div class="tbl"><table>
 <tr><th>Règle</th><th>Ce qu'elle interdit</th><th>Pourquoi</th></tr>
-<tr><td><code>noRepositoryAccessAcrossModules</code></td><td>qu'une classe d'un module touche une classe <code>*Repository</code> d'un autre module</td><td>CLAUDE.md : un module ne lit jamais les tables d'un autre ; il passe par la façade</td></tr>
+<tr><td><code>noRepositoryAccessAcrossModules</code></td><td>qu'une classe d'un module touche une classe <code>*Repository</code> d'un autre module</td><td>CLAUDE.md : un module n'écrit jamais dans les tables d'un autre ni ne touche ses classes internes ; il passe par la façade (G Q34)</td></tr>
 <tr><td><code>directoryDoesNotTouchClinicalModules</code></td><td>tout import de <code>patients</code>, <code>clinical</code>, <code>linking</code>, <code>overview</code>, <code>search</code> depuis <code>directory</code></td><td>l'annuaire public ne doit jamais pouvoir atteindre une donnée patient</td></tr>
 <tr><td><code>identityAdminDoesNotTouchClinicalModules</code></td><td>la même liste depuis <code>identity.admin</code></td><td>un administrateur valide des praticiens, jamais des dossiers</td></tr>
 <tr><td><code>reservedPackagesContainNoClassBesidesPackageInfo</code></td><td>toute classe dans <code>ai</code> et <code>companion</code></td><td>les réserves V2 restent vides (A11)</td></tr>

@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T11:27:34.937Z",
+  "task": "M9-01",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Documentation alignee sur G Q31 a Q38 : G7 (Q33-Q38), CLAUDE.md, A3/A4.8/A5, C8 (M8 et M9), E9, F, manuel",
+  "notes": "verify vert : 359 unitaires, 906 IT ; revue ajoutee dans docs/etudes ; test Documenter reporte a M9-02 ; M8-06 deja fusionnee, M9-12 aligne le JdbcClient restant de clinical.export",
+  "next": "M9-04 et M9-02 peuvent demarrer ; M9-02 avant tout deplacement de fichier",
+  "pr": "https://github.com/mrscams/psymate-api/pull/48",
+  "branch": "worktree-A-01",
+  "checkout": "A-01"
+}

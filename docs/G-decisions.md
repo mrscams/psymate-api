@@ -1,6 +1,6 @@
 # Document G – Décisions prises sur les questions ouvertes
 
-29 octobre 2026 · Version 1.0 (complétée le 1er novembre 2026) · Ce document tranche les 30 questions de la Partie 1 du runbook F (Q1–Q28) et de E7 (Q29, Q30), complétées ensuite par Q31 (G3) et Q32 (G6). Chaque agent applique ces décisions ; quand un autre document dit autre chose, **G l'emporte**. Les documents A, B, C, D, E et F ont été écrits avant ces décisions : les écarts connus sont listés en G5.
+29 octobre 2026 · Version 1.1 (complétée le 1er novembre 2026, puis le 2 novembre 2026) · Ce document tranche les 30 questions de la Partie 1 du runbook F (Q1–Q28) et de E7 (Q29, Q30), complétées ensuite par Q31 (G3), Q32 (G6) et Q33–Q38 (G7, revue d'architecture du 1er novembre 2026). Chaque agent applique ces décisions ; quand un autre document dit autre chose, **G l'emporte**. Les documents A, B, C, D, E et F ont été écrits avant ces décisions : les écarts connus sont listés en G5.
 
 ## G1. Identité du produit et des dépôts
 
@@ -49,7 +49,7 @@
 | Q20 | Numéros d'urgence (3114 / 15) dans le pied de page public : **non**. |
 | Q22 | Patient DEMO : généré par M7-01 (18 mois, 20 séances), marqué « DEMO », relu par le propriétaire du projet. |
 | Q23 | **Français d'abord.** La structure i18n (`messages_fr/en.properties`, `messages.fr/en.xlf`) est conservée pour ajouter des langues sans changement de code ; les fichiers EN peuvent être en retard, rien n'est bloqué sur l'anglais. |
-| Q25 | Agenda Google (fiches 15, 15b) : **hors V1**. Pas de jalon M8 ; le module `scheduling` n'est pas créé ; les fiches 15 et 15b sont marquées « plus tard ». |
+| Q25 | Agenda Google (fiches 15, 15b) : **hors V1**. Pas de jalon « Agenda » (l'ancien M8) ; le module `scheduling` n'est pas créé ; les fiches 15 et 15b sont marquées « plus tard ». L'identifiant M8 a été réutilisé pour la migration JPA (Q32, plan C8). |
 | Q26 | Signalements de l'annuaire (fiche 23) : **V1.1**. DDL prêt en E6.1. |
 | Q27 | **M1-14b créée** : liste de tous les comptes, suspension / réactivation manuelle, journal paginé (vue `admin_journal_v`), migration `V10__admin_journal.sql`. S'insère après M1-14, en parallèle du lot 6. |
 | Q28 | Recours du compte suspendu (fiche 27) : dans **M1-14b** (table `practitioner_appeal` déjà créée par V03). |
@@ -64,10 +64,26 @@
 | C, D | Jalon M8 / module `scheduling` retirés (Q25). Tâche M1-14b ajoutée (Q27, Q28). M6-05 étendue avec `export_job` (Q18). |
 | E5.2 | Aucun changement (Q11) : le seed est livré tel quel. |
 | F | Mis à jour le 29 octobre : noms, package, rôle, et renvoi à ce document. Le runbook frontend s'appellera **document H**. |
-| A (structure d'un module) | `persistence/` : JPA (Spring Data) pour le CRUD, `JdbcClient` pour les projections et requêtes natives (Q32). |
+| A (structure d'un module) | `repository/` : JPA (Spring Data) pour le CRUD et fragments `*NativeQueries` pour le SQL natif des modules JPA, `JdbcClient` pour les modules de projection (Q32, précisée par Q38). Arbre complet par rôle : Q33, reporté en A3 le 2 novembre 2026. |
+| A4.8 | Règle de grâce : 75 min (Q31), reporté le 2 novembre 2026. Suppression physique : périmètre de Q37. |
+| A3, A5, CLAUDE.md | Lecture SQL des projections (Q34), structure par rôle (Q33), un fichier par DTO (Q35), suppression physique (Q37), SQL natif (Q38) : reportés le 2 novembre 2026. |
+| C | Section C8 ajoutée le 2 novembre 2026 : tâches M8-01 à M8-06 (migration JPA, Q32) et M9-01 à M9-20 (restructuration, Q33–Q36). |
 
 ## G6. Décisions techniques
 
 | # | Décision |
 | --- | --- |
-| Q32 | 2026-11-01 : Accès aux données : **JPA** (Spring Data JPA / Hibernate 7.4.13.Final) pour les modules CRUD (patients, vocabulary, directory, identity, clinical.export), **`JdbcClient`** pour les projections et requêtes (search, overview, graphe, timeline, keyset admin). Gardes : `@Immutable` sur les tables append-only (`security_event`, `patient_version`, `verification_decision`, `document_access_log`), `@DynamicUpdate` ou `@Immutable` sur `entry_version`, aucune association JPA inter-modules (UUID nus), jamais d'entité dans un DTO ni dans `web`, `open-in-view=false`, `ddl-auto=none` (`validate` en test), Flyway seul maître du DDL, colonnes trigger/générées non modifiables. Migration module par module (M8-02..06), une PR par module. Référence : `docs/etudes/etude-jpa.md`, liste de contrôle `docs/etudes/jpa-conversion-checklist.md`. |
+| Q32 | 2026-11-01 : Accès aux données : **JPA** (Spring Data JPA / Hibernate 7.4.13.Final) pour les modules CRUD (patients, vocabulary, directory, identity, clinical.export), **`JdbcClient`** pour les projections et requêtes (search, overview, graphe, timeline, keyset admin). Gardes : `@Immutable` sur les tables append-only (`security_event`, `patient_version`, `verification_decision`, `document_access_log`), `@DynamicUpdate` ou `@Immutable` sur `entry_version`, aucune association JPA inter-modules (UUID nus), jamais d'entité dans un DTO ni dans `web` (devenu « contrôleur » avec Q33), `open-in-view=false`, `ddl-auto=none` (`validate` en test), Flyway seul maître du DDL, colonnes trigger/générées non modifiables. Migration module par module (M8-02..06), une PR par module. Référence : `docs/etudes/etude-jpa.md`, liste de contrôle `docs/etudes/jpa-conversion-checklist.md`. **Précisée par Q38** (2 novembre 2026) : dans un module JPA, le SQL natif (dont le keyset admin) passe par des fragments Spring Data, pas par `JdbcClient`. |
+
+## G7. Architecture interne et règles révisées (2 novembre 2026)
+
+Décisions prises sur la revue d'architecture du 1er novembre 2026 (remises en cause R1 à R6, questions Q6 et Q7 de la revue). Elles s'appliquent par les tâches M9 du plan (C8).
+
+| # | Décision |
+| --- | --- |
+| Q33 | **Structure d'un module par rôle.** Chaque module a un package racine, et à l'intérieur un dossier par rôle : `api` (façades, vues, événements, exceptions publiques), `controller` (contrôleurs, gestionnaires d'erreurs), `dto` (DTO, requêtes, mappers et assemblers), `service` (services, implémentations de façades et de ports, listeners, jobs), `repository` (repositories Spring Data, fragments natifs, requêtes `JdbcClient`), `model` (entités, records métier, règles, exceptions métier), `config` (configuration, filtres, propriétés). Le suffixe d'une classe donne son dossier. Un module ou un sous-domaine de moins de 8 classes reste plat. Sous-domaines admis : identity (`auth`, `admin`, `verification`, `preferences`) et clinical (`export`). Remplace l'arbre par couche (`domain / application / persistence / web`) de A3. Les classes internes sont **publiques entre dossiers d'un même module** (remplace « tout le reste en package-private » de A3) : la frontière entre modules est vérifiée par Modulith, celle entre dossiers par ArchUnit. Déploiement module par module (M9-07 à M9-18). |
+| Q34 | **Lecture SQL des projections.** Un module n'**écrit** jamais dans les tables d'un autre. Seuls les modules de projection déclarés (search, overview) **lisent** en SQL les tables d'autres modules, en lecture seule, sur une liste tenue par un test d'appartenance des tables (M9-02). Aucun module ne référence les classes internes d'un autre. Remplace « aucun module ne lit les tables d'un autre » de A3 et de CLAUDE.md. |
+| Q35 | **Un fichier par DTO.** Plus de classes conteneurs `*Dtos` : chaque DTO ou requête est son propre fichier dans `dto/`. Les conteneurs existants sont éclatés à la tâche de restructuration de leur module. |
+| Q36 | **Calendrier.** Tout le plan de restructuration (M9-01 à M9-20) est lancé maintenant, avant la V1 web. Pendant la restructuration d'un module, aucune tâche backend fonctionnelle ne touche ce module. M9-02 (motifs `**` des tranches d'IT) est fusionnée avant le premier déplacement de fichier. |
+| Q37 | **Suppression physique.** Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `entry_version`, `link` et les tables de détail courantes. Peuvent l'être : les tables d'association (`entry_tag`, `patient_tag`), les purges planifiées (`contact_request`, `spring_session`, fichiers d'export et justificatifs, dont les lignes restent) et les sessions. Chaque table concernée est listée en E (« Suppressions physiques autorisées »). Précise la règle « rien n'est supprimé physiquement » de CLAUDE.md et A4.8. |
+| Q38 | **SQL natif dans un module JPA.** Il passe par des fragments Spring Data (`*NativeQueries` + `EntityManager`), pour garder une seule unité de travail par module ; un `UPDATE` natif suivi d'une lecture JPA impose un `refresh`. `JdbcClient` est réservé aux modules et sous-domaines non JPA : search, overview, graphe et timeline (linking, clinical), et la recherche publique de l'annuaire (directory). Précise Q32, dont le « keyset admin » reste en `EntityManager` natif. |

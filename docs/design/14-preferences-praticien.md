@@ -23,7 +23,7 @@ Un seul endroit pour tout ce qui est mémorisé **par compte** et retrouvé sur 
   | `sessions.defaultDurationMin` | 15–180 | 60 (G) |
 - Store : `PreferencesStore` chargé au login, mis à jour de façon optimiste, repli sur la dernière valeur serveur en cas d'erreur ; `localStorage.prefs` = cache de démarrage uniquement.
 - Les bascules présentes ailleurs (vue d'ensemble, fenêtre, regroupement timeline) écrivent **les mêmes clés** : une seule source de vérité.
-- Délai de correction sans version (5 min) : affiché en lecture seule, fixé par `versioning.grace-period` côté serveur en V1.
+- Délai de correction sans version (1 h 15, G Q31) : affiché en lecture seule, fixé par `versioning.grace-period` côté serveur en V1.
 
 ## Structure
 1. **Barre d'application** + **navigation du compte** (Préférences actif).

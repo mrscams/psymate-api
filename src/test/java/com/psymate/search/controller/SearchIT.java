@@ -1,4 +1,4 @@
-package com.psymate.search;
+package com.psymate.search.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.DocumentContext;
+import com.psymate.search.SearchSupport;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;

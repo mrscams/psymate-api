@@ -1,4 +1,4 @@
-package com.psymate.search;
+package com.psymate.search.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -6,6 +6,7 @@ import static org.awaitility.Awaitility.await;
 import com.psymate.clinical.api.EntryCorrected;
 import com.psymate.clinical.api.EntryCreated;
 import com.psymate.events.api.DomainEventPublisher;
+import com.psymate.search.SearchSupport;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

@@ -1,5 +1,6 @@
-package com.psymate.search;
+package com.psymate.search.controller;
 
+import com.psymate.search.model.SearchRequestException;
 import com.psymate.shared.problem.AdviceOrder;
 import com.psymate.shared.problem.FieldProblem;
 import jakarta.servlet.http.HttpServletRequest;

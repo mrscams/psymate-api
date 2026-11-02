@@ -1,8 +1,8 @@
-package com.psymate.search;
+package com.psymate.search.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.psymate.search.QuerySyntax.Parsed;
+import com.psymate.search.model.QuerySyntax.Parsed;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 

@@ -1,9 +1,10 @@
-package com.psymate.search;
+package com.psymate.search.controller;
 
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.patients.api.PatientOwnershipGuard;
-import com.psymate.search.EntrySearchService.Request;
-import com.psymate.search.SearchDtos.EntrySearchResultDto;
+import com.psymate.search.dto.EntrySearchResultDto;
+import com.psymate.search.service.EntrySearchService;
+import com.psymate.search.service.EntrySearchService.Request;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

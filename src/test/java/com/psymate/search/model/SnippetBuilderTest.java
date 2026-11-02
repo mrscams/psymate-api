@@ -1,4 +1,4 @@
-package com.psymate.search;
+package com.psymate.search.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

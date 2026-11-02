@@ -1,4 +1,4 @@
-package com.psymate.search;
+package com.psymate.search.service;
 
 import com.psymate.clinical.api.EntriesRelabeled;
 import com.psymate.clinical.api.EntryCorrected;

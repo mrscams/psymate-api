@@ -1,5 +1,6 @@
-package com.psymate.search;
+package com.psymate.search.repository;
 
+import com.psymate.search.model.SnippetBuilder;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -23,9 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
  * cabinet et au patient, et excluent les entrées privées d'un autre praticien.
  */
 @Repository
-class EntrySearchRepository {
+public class EntrySearchRepository {
 
-  static final int PAGE_SIZE = 20;
+  public static final int PAGE_SIZE = 20;
   static final double SIMILARITY_THRESHOLD = 0.3;
 
   private static final String HEADLINE_BODY =
@@ -102,7 +103,7 @@ class EntrySearchRepository {
    * Filtre résolu. Une liste nulle signifie « pas de filtre » ; une liste vide « filtre actif qui
    * ne retient rien » (tag ou émotion inconnus). {@code text} est vide sans recherche textuelle.
    */
-  record Filter(
+  public record Filter(
       UUID tenant,
       UUID patient,
       UUID me,
@@ -115,18 +116,18 @@ class EntrySearchRepository {
       UUID sessionId,
       boolean includeArchived) {
 
-    boolean hasText() {
+    public boolean hasText() {
       return text != null && !text.isBlank();
     }
 
     /** Le texte contient une négation websearch ({@code -mot}). */
-    boolean negated() {
+    public boolean negated() {
       return hasText() && NEGATION.matcher(text).find();
     }
   }
 
   /** Une entrée trouvée, telle que lue en base (titre et extrait encore à convertir en HTML). */
-  record Hit(
+  public record Hit(
       UUID id,
       String type,
       Instant occurredFrom,
@@ -146,11 +147,11 @@ class EntrySearchRepository {
       Double rank,
       Double similarity) {}
 
-  record TypeCount(String code, int count) {}
+  public record TypeCount(String code, int count) {}
 
-  record EmotionCount(String code, String label, int count) {}
+  public record EmotionCount(String code, String label, int count) {}
 
-  record TagCount(UUID id, String label, int count) {}
+  public record TagCount(UUID id, String label, int count) {}
 
   private record Clause(String sql, Map<String, Object> params) {}
 
@@ -162,12 +163,12 @@ class EntrySearchRepository {
 
   // ---- résolution des valeurs saisies
 
-  List<String> entryTypeCodes() {
+  public List<String> entryTypeCodes() {
     return jdbc.sql("select code from entry_type").query(String.class).list();
   }
 
   /** Tags du cabinet dont le libellé normalisé (sans accents ni casse) est l'un de ceux-ci. */
-  List<UUID> resolveTags(UUID tenant, List<String> labels) {
+  public List<UUID> resolveTags(UUID tenant, List<String> labels) {
     return jdbc.sql(
             "select t.id from tag t where t.tenant_id = :tenant and t.normalized_label in"
                 + " (select lower(f_unaccent(x)) from unnest(cast(:labels as text[])) as x)")
@@ -178,7 +179,7 @@ class EntrySearchRepository {
   }
 
   /** Émotions dont le code ou le libellé (fr, en, normalisé) est l'une de ces valeurs. */
-  List<String> resolveEmotions(UUID tenant, List<String> values) {
+  public List<String> resolveEmotions(UUID tenant, List<String> values) {
     return jdbc.sql(
             "with n as (select lower(f_unaccent(x)) as v from unnest(cast(:vals as text[])) as x)"
                 + " select em.code from emotion em"
@@ -250,7 +251,7 @@ class EntrySearchRepository {
   // ---- résultats exacts
 
   /** Nombre d'entrées retenues par le filtre (et par le texte, s'il y en a un). */
-  long countExact(Filter f) {
+  public long countExact(Filter f) {
     Clause c = where(f, Dimension.NONE);
     Map<String, Object> params = new HashMap<>(c.params());
     String sql;
@@ -269,7 +270,7 @@ class EntrySearchRepository {
   }
 
   /** Page de résultats exacts : classés par pertinence avec texte, par récence sans texte. */
-  List<Hit> findExact(Filter f, int page) {
+  public List<Hit> findExact(Filter f, int page) {
     Clause c = where(f, Dimension.NONE);
     Map<String, Object> params = new HashMap<>(c.params());
     params.put("limit", PAGE_SIZE);
@@ -343,7 +344,7 @@ class EntrySearchRepository {
    * sont pas des résultats exacts mais dont un mot ressemble au texte saisi.
    */
   @Transactional(propagation = Propagation.MANDATORY)
-  List<Hit> findApproximate(Filter f) {
+  public List<Hit> findApproximate(Filter f) {
     // Seuil de l'opérateur <% (index ix_entry_version_text_trgm), limité à la transaction.
     jdbc.sql("select set_config('pg_trgm.word_similarity_threshold', :threshold, true)")
         .param("threshold", Double.toString(SIMILARITY_THRESHOLD))
@@ -410,7 +411,7 @@ class EntrySearchRepository {
   }
 
   /** Libellés des tags des entrées données, triés par libellé. */
-  Map<UUID, List<String>> tagLabels(List<UUID> entryIds) {
+  public Map<UUID, List<String>> tagLabels(List<UUID> entryIds) {
     Map<UUID, List<String>> byEntry = new HashMap<>();
     if (entryIds.isEmpty()) {
       return byEntry;
@@ -430,7 +431,7 @@ class EntrySearchRepository {
 
   // ---- facettes (sur les résultats exacts, hors filtre de leur propre dimension)
 
-  List<TypeCount> typeFacets(Filter f) {
+  public List<TypeCount> typeFacets(Filter f) {
     return facet(
         f,
         Dimension.TYPES,
@@ -440,7 +441,7 @@ class EntrySearchRepository {
         (rs, i) -> new TypeCount(rs.getString("k"), rs.getInt("n")));
   }
 
-  List<EmotionCount> emotionFacets(Filter f) {
+  public List<EmotionCount> emotionFacets(Filter f) {
     return facet(
         f,
         Dimension.EMOTIONS,
@@ -450,7 +451,7 @@ class EntrySearchRepository {
         (rs, i) -> new EmotionCount(rs.getString("k"), rs.getString("label"), rs.getInt("n")));
   }
 
-  List<TagCount> tagFacets(Filter f) {
+  public List<TagCount> tagFacets(Filter f) {
     return facet(
         f,
         Dimension.TAGS,

@@ -1,7 +1,8 @@
-package com.psymate.search;
+package com.psymate.search.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.psymate.search.SearchSupport;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.time.Instant;

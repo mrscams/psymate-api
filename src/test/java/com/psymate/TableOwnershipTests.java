@@ -115,10 +115,7 @@ class TableOwnershipTests {
    * liste ne peut que decroitre : chaque entree porte la tache qui la supprime, et {@link
    * #crossModuleExceptionsAreStillNeeded()} echoue des qu'une entree ne sert plus.
    */
-  static final Map<String, Set<String>> CROSS_MODULE_EXCEPTIONS =
-      Map.of(
-          // M9-03 : fusions du vocabulaire par evenements, chaque module reecrit ses tables.
-          "vocabulary", Set.of("entry_feeling", "entry_tag", "patient_tag"));
+  static final Map<String, Set<String>> CROSS_MODULE_EXCEPTIONS = Map.of();
 
   enum Access {
     READ,

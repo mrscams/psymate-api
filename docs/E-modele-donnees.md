@@ -1182,8 +1182,8 @@ Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `ent
 
 | Table ou fichier | Ce qui est supprimé | Par qui | Raison |
 | --- | --- | --- | --- |
-| `entry_tag` | La ligne d'association, quand un tag est retiré d'une entrée ou lors d'une fusion de tags | clinical (et vocabulary jusqu'à M9-03) | Association sans historique propre : l'historique de l'entrée est dans `entry_version.payload` |
-| `patient_tag` | La ligne d'association, quand un tag est retiré d'un patient ou lors d'une fusion | patients (et vocabulary jusqu'à M9-03) | Idem, l'historique du patient est dans `patient_version` |
+| `entry_tag` | La ligne d'association, quand un tag est retiré d'une entrée ou lors d'une fusion de tags | clinical (abonné de `TagsMerged` pour une fusion, M9-03) | Association sans historique propre : l'historique de l'entrée est dans `entry_version.payload` |
+| `patient_tag` | La ligne d'association, quand un tag est retiré d'un patient ou lors d'une fusion | patients (abonné de `TagsMerged` pour une fusion, M9-03) | Idem, l'historique du patient est dans `patient_version` |
 | `contact_request` | La ligne, à `purge_after` (30 jours) | directory, `ContactPurgeJob` | Trace anti-spam seulement, jamais liée à un dossier (minimisation) |
 | `spring_session`, `spring_session_attributes` | Les sessions expirées (nettoyage intégré de Spring Session JDBC) ou révoquées (identity, `SessionNativeQueriesImpl`) | Spring Session, identity | Données techniques de connexion |
 | `event_publication` | Les publications terminées depuis plus de `app.events.completed-retention` (30 jours) | events, `EventPublicationPurgeJob` | Outbox : seules les publications inachevées comptent |

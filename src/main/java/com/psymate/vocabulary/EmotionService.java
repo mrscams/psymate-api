@@ -4,6 +4,7 @@ import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.vocabulary.api.EmotionAffect;
 import com.psymate.vocabulary.api.EmotionCatalog;
 import com.psymate.vocabulary.api.EmotionMergeReverted;
+import com.psymate.vocabulary.api.EmotionUsagePort;
 import com.psymate.vocabulary.api.EmotionView;
 import com.psymate.vocabulary.api.EmotionsMerged;
 import java.time.OffsetDateTime;
@@ -67,18 +68,21 @@ class EmotionService implements EmotionCatalog {
   private final CurrentPractitioner current;
   private final TransactionTemplate tx;
   private final DomainEventPublisher events;
+  private final EmotionUsagePort usage;
 
   EmotionService(
       EmotionRepository emotions,
       EmotionMergeRepository merges,
       CurrentPractitioner current,
       TransactionTemplate tx,
-      DomainEventPublisher events) {
+      DomainEventPublisher events,
+      EmotionUsagePort usage) {
     this.emotions = emotions;
     this.merges = merges;
     this.current = current;
     this.tx = tx;
     this.events = events;
+    this.usage = usage;
   }
 
   @Override
@@ -176,7 +180,9 @@ class EmotionService implements EmotionCatalog {
             () ->
                 VocabularyException.of(
                     HttpStatus.NOT_FOUND, "EMOTION_NOT_FOUND", "Émotion cible introuvable."));
-    int affected = emotions.rewriteFeelings(sourceCode, targetCode);
+    // Les ressentis sont réécrits par clinical, abonné d'EmotionsMerged (M9-03) ; le compte est
+    // celui des ressentis qui portent la source au moment de la fusion.
+    int affected = usage.feelingsWith(sourceCode);
     EmotionMerge merge =
         merges.save(
             EmotionMerge.open(
@@ -218,7 +224,6 @@ class EmotionService implements EmotionCatalog {
           "Le délai d'annulation de 30 jours est dépassé.");
     }
     m.markUndone(now);
-    emotions.restoreFeelings(m.getSourceCode(), m.getTargetCode());
     emotions.findById(m.getSourceCode()).ifPresent(Emotion::activate);
     events.publish(
         new EmotionMergeReverted(

@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T16:40:23.976Z",
+  "task": "M9-15",
+  "agent": "claude",
+  "status": "done",
+  "summary": "identity.verification rangé par rôle (controller, dto, service, repository, model) ; VerificationDtos éclaté ; contrat inchangé",
+  "notes": "verify vert (395 unitaires, 923 IT) ; VerificationMessages dans service/ (le mailer s'en sert, personne ne dépend de controller), même cas pour AdminMessages et AuthMessages ; reviewer : 0 bloquant",
+  "next": "M9-16 (identity.admin) après fusion ; conflit d'une ligne attendu avec M9-12 dans RoleFolderTests",
+  "pr": "https://github.com/mrscams/psymate-api/pull/58",
+  "branch": "claude/m9-15-a9df4e",
+  "checkout": "m9-05-892e09"
+}

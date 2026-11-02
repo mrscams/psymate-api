@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T16:23:49.120Z",
+  "task": "M9-03",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Partie 3/4 : abonnés clinical, patients, search, overview ; vocabulary n'écrit plus aucune table d'un autre module",
+  "notes": "Relecture d'état sous verrou par praticien (ordre indifférent) ; port EmotionUsagePort pour affectedCount ; EntriesRelabeled + clinical_rev ; TableOwnershipTests sans exception ; verify 403 unitaires + 930 IT verts",
+  "next": "Partie 4 : supprimer CurrentPractitioner de vocabulary (ARCH-06), docs A5, E, G",
+  "pr": "https://github.com/mrscams/psymate-api/pull/57",
+  "branch": "claude/m9-03-p3",
+  "checkout": "m9-04-40f9c7"
+}

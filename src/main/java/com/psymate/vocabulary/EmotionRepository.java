@@ -10,8 +10,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** Accès JPA à {@code emotion}. Interne au module ; les réécritures entry_feeling sont natives. */
-interface EmotionRepository extends JpaRepository<Emotion, String>, EmotionNativeQueries {
+/** Accès JPA à {@code emotion}. Interne au module. */
+interface EmotionRepository extends JpaRepository<Emotion, String> {
 
   /** Globales actives et personnalisées actives du praticien : une seule requête, tri en SQL. */
   @Query(

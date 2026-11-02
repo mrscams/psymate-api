@@ -4,6 +4,7 @@ import com.psymate.clinical.api.EntryLinkException;
 import com.psymate.clinical.domain.ClinicalError;
 import com.psymate.clinical.domain.ClinicalException;
 import com.psymate.shared.problem.AdviceOrder;
+import com.psymate.shared.problem.FieldProblem;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -23,27 +24,24 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.MismatchedInputException;
 
 /**
  * Erreurs RFC 9457 (application/problem+json) des contrôleurs clinical : errors[] = [{field, code,
- * message}] pour les 422, statut HTTP du domaine pour les erreurs métier, 403 pour la propriété.
+ * message}] pour les 422, statut HTTP du domaine pour les erreurs métier.
  *
  * <p>Codes racine produits (champ {@code code}) : VALIDATION_FAILED (422, errors[] par champ),
  * MALFORMED_REQUEST (400 : corps JSON illisible sans champ identifiable, ou identifiant de chemin
- * qui n'est pas un UUID), PATIENT_FORBIDDEN (403) et PATIENT_NOT_FOUND (404) levés par la garde de
- * propriété, et le nom de chaque {@link ClinicalError} (statut du domaine ; pour un 422, errors[0]
- * porte le même code).
+ * qui n'est pas un UUID), et le nom de chaque {@link ClinicalError} (statut du domaine ; pour un
+ * 422, errors[0] porte le même code). PATIENT_FORBIDDEN (403) et PATIENT_NOT_FOUND (404), levés par
+ * la garde de propriété, sont des {@code PatientAccessException} rendues par le handler commun de
+ * shared.
  */
 @Order(AdviceOrder.MODULE)
 @RestControllerAdvice(
     assignableTypes = {EntryController.class, SessionController.class, TimelineController.class})
 class ClinicalExceptionHandler {
-
-  /** Entrée de errors[] telle que le client la reçoit. */
-  record ApiFieldError(String field, String code, String message) {}
 
   private final ClinicalMessages messages;
 
@@ -54,11 +52,11 @@ class ClinicalExceptionHandler {
   private ProblemDetail validation(List<FieldProblem> problems, Locale locale) {
     Map<String, FieldProblem> byField = new LinkedHashMap<>();
     problems.forEach(p -> byField.putIfAbsent(p.field(), p));
-    List<ApiFieldError> errors = new ArrayList<>();
+    List<FieldProblem> errors = new ArrayList<>();
     byField
         .values()
         .forEach(
-            p -> errors.add(new ApiFieldError(p.field(), p.code(), messages.message(p, locale))));
+            p -> errors.add(new FieldProblem(p.field(), p.code(), messages.message(p, locale))));
     ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_CONTENT);
     pd.setTitle(messages.get("error.validation.title", locale));
     pd.setDetail(messages.get("error.validation.detail", locale));
@@ -97,7 +95,7 @@ class ClinicalExceptionHandler {
     Locale locale = messages.localeOf(request);
     List<FieldProblem> problems = new ArrayList<>();
     for (ConstraintViolation<?> v : ex.getConstraintViolations()) {
-      problems.add(FieldProblem.of(v));
+      problems.add(FieldProblems.of(v));
     }
     return validation(problems, locale);
   }
@@ -109,7 +107,7 @@ class ClinicalExceptionHandler {
     List<FieldProblem> problems = new ArrayList<>();
     for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
       problems.add(
-          new FieldProblem(fe.getField(), FieldProblem.codeOf(String.valueOf(fe.getCode()))));
+          new FieldProblem(fe.getField(), FieldProblems.codeOf(String.valueOf(fe.getCode()))));
     }
     return validation(problems, locale);
   }
@@ -174,7 +172,7 @@ class ClinicalExceptionHandler {
     if (status == HttpStatus.UNPROCESSABLE_CONTENT) {
       pd.setProperty(
           "errors",
-          List.of(new ApiFieldError(fieldOf(ex.error()), ex.error().name(), ex.getMessage())));
+          List.of(new FieldProblem(fieldOf(ex.error()), ex.error().name(), ex.getMessage())));
     }
     return pd;
   }
@@ -186,16 +184,5 @@ class ClinicalExceptionHandler {
       case SESSION_REQUIRED, SESSION_INVALID, SESSION_NOT_ALLOWED -> "sessionId";
       default -> "";
     };
-  }
-
-  /** 403 (patient d'un autre praticien) et 404 levés par la garde de propriété (patients). */
-  @ExceptionHandler(ResponseStatusException.class)
-  ProblemDetail ownership(ResponseStatusException ex) {
-    HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
-    ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, ex.getReason());
-    pd.setTitle(status.getReasonPhrase());
-    pd.setProperty(
-        "code", status == HttpStatus.FORBIDDEN ? "PATIENT_FORBIDDEN" : "PATIENT_NOT_FOUND");
-    return pd;
   }
 }

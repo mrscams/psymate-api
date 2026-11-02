@@ -1,5 +1,6 @@
 package com.psymate.clinical.web;
 
+import com.psymate.shared.problem.FieldProblem;
 import java.util.List;
 
 /** Corps de requête refusé : 422 avec une entrée errors[] par champ fautif. */

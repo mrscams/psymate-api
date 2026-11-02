@@ -20,6 +20,7 @@ import com.psymate.clinical.domain.MedicationDetail;
 import com.psymate.clinical.domain.SessionDetail;
 import com.psymate.clinical.domain.TimeSpan.Precision;
 import com.psymate.clinical.domain.TimeSpec;
+import com.psymate.patients.api.PatientAccessException;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Duration;
 import java.time.Instant;
@@ -38,7 +39,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
-import org.springframework.web.server.ResponseStatusException;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -351,7 +351,7 @@ class EntryServiceIT {
     UUID mine = patient;
     fx.authenticate(fx.newPractitioner());
     assertThatThrownBy(() -> service.create(mine, note("x")))
-        .isInstanceOf(ResponseStatusException.class);
+        .isInstanceOf(PatientAccessException.class);
   }
 
   // ---- colonnes réservées (A11)
@@ -651,7 +651,7 @@ class EntryServiceIT {
     clock.advance(AFTER_GRACE);
     fx.authenticate(fx.newPractitioner());
     assertThatThrownBy(() -> service.correct(id, correctBody("piratage")))
-        .isInstanceOf(ResponseStatusException.class);
+        .isInstanceOf(PatientAccessException.class);
   }
 
   // ---- archivage, rev, événements, façade
@@ -750,7 +750,7 @@ class EntryServiceIT {
   void archivingAnotherPractitionersEntryIsForbidden() {
     UUID id = service.create(patient, note("v1"));
     fx.authenticate(fx.newPractitioner());
-    assertThatThrownBy(() -> service.archive(id)).isInstanceOf(ResponseStatusException.class);
+    assertThatThrownBy(() -> service.archive(id)).isInstanceOf(PatientAccessException.class);
     assertThat(count("select count(*) from entry where id = ? and archived_at is null", id))
         .isEqualTo(1);
   }

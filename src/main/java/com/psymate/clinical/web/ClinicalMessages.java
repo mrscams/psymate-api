@@ -1,5 +1,6 @@
 package com.psymate.clinical.web;
 
+import com.psymate.shared.problem.FieldProblem;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Locale;
 import org.springframework.context.MessageSource;

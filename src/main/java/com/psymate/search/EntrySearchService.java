@@ -10,7 +10,7 @@ import com.psymate.search.SearchDtos.EntrySearchQueryDto;
 import com.psymate.search.SearchDtos.EntrySearchResultDto;
 import com.psymate.search.SearchDtos.EntrySearchTagFacetDto;
 import com.psymate.search.SearchDtos.EntrySearchTypeFacetDto;
-import com.psymate.search.SearchRequestException.FieldProblem;
+import com.psymate.shared.problem.FieldProblem;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;

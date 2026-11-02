@@ -5,6 +5,7 @@ import com.psymate.overview.OverviewPayload.WindowBlock;
 import com.psymate.overview.OverviewProjector.Computed;
 import com.psymate.overview.OverviewRepository.PatientState;
 import com.psymate.overview.OverviewRepository.Stored;
+import com.psymate.patients.api.PatientAccessException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -15,10 +16,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -89,9 +88,7 @@ class OverviewService {
   @Transactional
   public OverviewDto overview(UUID patientId, OverviewWindow window, Locale locale) {
     PatientState state =
-        repository
-            .patientState(patientId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        repository.patientState(patientId).orElseThrow(PatientAccessException::notFound);
     Served served = readFresh(patientId, state).or(() -> recompute(patientId)).orElseThrow();
     WindowBlock block = served.payload().windows().get(window.code());
     return new OverviewDto(

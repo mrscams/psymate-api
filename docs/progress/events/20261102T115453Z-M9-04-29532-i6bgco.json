@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T11:54:53.014Z",
+  "task": "M9-04",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant(s), 2 à corriger, 5 remarque(s)",
+  "notes": "aucun bloquant. A corriger : FieldProblem pas unique (search.SearchRequestException.FieldProblem, PatientService.FieldProblem privé, ApiFieldError de search et overview restent) ; ResponseStatusException 401 encore levé par PatientService.me() (appelé via requireOwned) et SearchController, désormais rendus par le handler global (code différent).",
+  "branch": "claude/m9-04-40f9c7",
+  "checkout": "m9-04-40f9c7"
+}

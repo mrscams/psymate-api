@@ -5,10 +5,10 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.awaitility.Awaitility.await;
 
 import com.psymate.PostgresTestConfig;
-import com.psymate.clinical.application.CreateEntryCommand;
-import com.psymate.clinical.application.EntryService;
-import com.psymate.clinical.domain.EntryType;
-import com.psymate.clinical.domain.TimeSpec;
+import com.psymate.clinical.model.EntryType;
+import com.psymate.clinical.model.TimeSpec;
+import com.psymate.clinical.service.CreateEntryCommand;
+import com.psymate.clinical.service.EntryService;
 import com.psymate.linking.LinkingFixtures;
 import com.psymate.linking.model.GraphEdge;
 import com.psymate.linking.model.GraphNode;
@@ -512,7 +512,7 @@ class GraphQueryIT {
                 null,
                 null,
                 TimeSpec.ongoing(
-                    com.psymate.clinical.domain.TimeSpan.Precision.EXACT, D1.plusSeconds(60)),
+                    com.psymate.clinical.model.TimeSpan.Precision.EXACT, D1.plusSeconds(60)),
                 null,
                 null,
                 null));

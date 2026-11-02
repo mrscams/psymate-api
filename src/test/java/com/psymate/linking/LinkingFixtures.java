@@ -2,12 +2,12 @@ package com.psymate.linking;
 
 import static org.awaitility.Awaitility.await;
 
-import com.psymate.clinical.application.CreateEntryCommand;
-import com.psymate.clinical.application.EntryService;
-import com.psymate.clinical.domain.EntryType;
-import com.psymate.clinical.domain.FeelingDetail;
-import com.psymate.clinical.domain.MedicationDetail;
-import com.psymate.clinical.domain.SessionDetail;
+import com.psymate.clinical.model.EntryType;
+import com.psymate.clinical.model.FeelingDetail;
+import com.psymate.clinical.model.MedicationDetail;
+import com.psymate.clinical.model.SessionDetail;
+import com.psymate.clinical.service.CreateEntryCommand;
+import com.psymate.clinical.service.EntryService;
 import com.psymate.identity.api.CurrentPractitioner;
 import java.time.Duration;
 import java.time.LocalDate;

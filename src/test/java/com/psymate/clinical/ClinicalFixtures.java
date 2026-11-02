@@ -9,20 +9,20 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /** Données de test : cabinet, praticien authentifié sur le thread, patients. */
-class ClinicalFixtures {
+public class ClinicalFixtures {
 
   final JdbcTemplate jdbc;
-  final UUID tenant = UUID.randomUUID();
-  final UUID practitioner;
+  public final UUID tenant = UUID.randomUUID();
+  public final UUID practitioner;
 
-  ClinicalFixtures(JdbcTemplate jdbc) {
+  public ClinicalFixtures(JdbcTemplate jdbc) {
     this.jdbc = jdbc;
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
     practitioner = newPractitioner();
     authenticate(practitioner);
   }
 
-  UUID newPractitioner() {
+  public UUID newPractitioner() {
     UUID id = UUID.randomUUID();
     String email = id + "@example.test";
     jdbc.update(
@@ -36,7 +36,7 @@ class ClinicalFixtures {
     return id;
   }
 
-  void authenticate(UUID practitionerId) {
+  public void authenticate(UUID practitionerId) {
     CurrentPractitioner principal =
         new CurrentPractitioner(
             practitionerId,
@@ -51,7 +51,7 @@ class ClinicalFixtures {
   }
 
   /** Patient du praticien courant, inséré directement (aucun événement, donc aucun accueil). */
-  UUID newPatient(LocalDate birthDate) {
+  public UUID newPatient(LocalDate birthDate) {
     UUID id = UUID.randomUUID();
     jdbc.update(
         "insert into patient (id, tenant_id, owner_id, display_name, birth_date)"

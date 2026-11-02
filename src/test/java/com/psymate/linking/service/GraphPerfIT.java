@@ -3,8 +3,8 @@ package com.psymate.linking.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.psymate.PostgresTestConfig;
-import com.psymate.clinical.application.EntryService;
-import com.psymate.clinical.domain.EntryType;
+import com.psymate.clinical.model.EntryType;
+import com.psymate.clinical.service.EntryService;
 import com.psymate.linking.LinkingFixtures;
 import com.psymate.linking.model.GraphView;
 import com.psymate.linking.repository.GraphRepository;

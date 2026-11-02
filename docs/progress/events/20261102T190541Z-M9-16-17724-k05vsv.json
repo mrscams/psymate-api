@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T19:05:41.653Z",
+  "task": "M9-16",
+  "agent": "claude",
+  "status": "done",
+  "summary": "identity.admin rangé par rôle, DTO éclatés (28 fichiers), coutures renommées *Queries ; contrat inchangé, verify vert (403 + 930 tests)",
+  "notes": "Q8 tranchée (G Q44) : règle ArchUnit gardée, pas de module imbriqué ; AdminMessages dans service et AdminCursors dans model (sens des dépendances)",
+  "next": "M9-17 (identity.auth) peut démarrer après fusion",
+  "pr": "https://github.com/mrscams/psymate-api/pull/63",
+  "branch": "claude/m9-16-322c8b",
+  "checkout": "m9-16-322c8b"
+}

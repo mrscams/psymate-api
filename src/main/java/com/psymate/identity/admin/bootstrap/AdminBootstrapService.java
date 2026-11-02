@@ -1,5 +1,11 @@
 package com.psymate.identity.admin.bootstrap;
 
+import com.psymate.identity.model.Practitioner;
+import com.psymate.identity.model.SecurityEvent;
+import com.psymate.identity.model.Tenant;
+import com.psymate.identity.repository.PractitionerJpaRepository;
+import com.psymate.identity.repository.SecurityEventJpaRepository;
+import com.psymate.identity.repository.TenantJpaRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Locale;
@@ -38,13 +44,22 @@ class AdminBootstrapService {
   /** password est null quand le compte existait déjà. */
   record Result(Status status, String email, String password) {}
 
-  private final AdminBootstrapRepository repository;
+  private final TenantJpaRepository tenants;
+  private final PractitionerJpaRepository practitioners;
+  private final SecurityEventJpaRepository securityEvents;
   private final PasswordEncoder encoder;
   private final Clock clock;
   private final PasswordGenerator generator = new PasswordGenerator();
 
-  AdminBootstrapService(AdminBootstrapRepository repository, PasswordEncoder encoder, Clock clock) {
-    this.repository = repository;
+  AdminBootstrapService(
+      TenantJpaRepository tenants,
+      PractitionerJpaRepository practitioners,
+      SecurityEventJpaRepository securityEvents,
+      PasswordEncoder encoder,
+      Clock clock) {
+    this.tenants = tenants;
+    this.practitioners = practitioners;
+    this.securityEvents = securityEvents;
     this.encoder = encoder;
     this.clock = clock;
   }
@@ -56,7 +71,7 @@ class AdminBootstrapService {
 
   Result create(String email) {
     String normalized = normalizeEmail(email);
-    if (repository.emailExists(normalized)) {
+    if (practitioners.existsByEmailNormalized(normalized)) {
       return new Result(Status.ALREADY_EXISTS, normalized, null);
     }
     String password = generator.generate();
@@ -66,9 +81,13 @@ class AdminBootstrapService {
     String local = normalized.substring(0, normalized.indexOf('@'));
     String lastName = local.length() > LAST_NAME_MAX ? local.substring(0, LAST_NAME_MAX) : local;
 
-    repository.insertTenant(tenantId, normalized, now);
-    repository.insertAdmin(id, tenantId, normalized, encoder.encode(password), lastName, now);
-    repository.insertSecurityEvent(id, EVENT_KIND, now);
+    // tenant, practitioner et security_event, rien d'autre ; la 2FA reste inactive.
+    tenants.save(new Tenant(tenantId, normalized, now));
+    practitioners.save(
+        Practitioner.bootstrapAdmin(
+            id, tenantId, normalized, encoder.encode(password), lastName, now));
+    securityEvents.save(
+        new SecurityEvent(UUID.randomUUID(), id, null, EVENT_KIND, null, null, now));
     return new Result(Status.CREATED, normalized, password);
   }
 }

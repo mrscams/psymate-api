@@ -1,10 +1,10 @@
 package com.psymate.identity.admin.repository;
 
 import com.psymate.identity.admin.model.AdminCursors.Position;
-import com.psymate.identity.persistence.PractitionerAppeal;
-import com.psymate.identity.persistence.PractitionerAppealJpaRepository;
-import com.psymate.identity.persistence.Rows;
-import com.psymate.identity.persistence.VerificationDecisionJpaRepository;
+import com.psymate.identity.model.PractitionerAppeal;
+import com.psymate.identity.repository.PractitionerAppealJpaRepository;
+import com.psymate.identity.repository.Rows;
+import com.psymate.identity.repository.VerificationDecisionJpaRepository;
 import jakarta.persistence.Tuple;
 import java.time.Instant;
 import java.util.List;

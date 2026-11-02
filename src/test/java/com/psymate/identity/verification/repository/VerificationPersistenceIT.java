@@ -2,10 +2,10 @@ package com.psymate.identity.verification.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.psymate.identity.persistence.DocumentAccessLog;
-import com.psymate.identity.persistence.DocumentAccessLogJpaRepository;
-import com.psymate.identity.persistence.VerificationDecision;
-import com.psymate.identity.persistence.VerificationDecisionJpaRepository;
+import com.psymate.identity.model.DocumentAccessLog;
+import com.psymate.identity.model.VerificationDecision;
+import com.psymate.identity.repository.DocumentAccessLogJpaRepository;
+import com.psymate.identity.repository.VerificationDecisionJpaRepository;
 import com.psymate.identity.verification.VerificationTestConfig;
 import com.psymate.identity.verification.model.VerificationException;
 import com.psymate.identity.verification.repository.VerificationRepository.DuePurge;

@@ -15,7 +15,7 @@ import com.psymate.identity.admin.repository.AppealQueries.DecisionRef;
 import com.psymate.identity.admin.repository.AppealQueries.ExistingAppeal;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.SuspendedAccount;
-import com.psymate.identity.persistence.UniqueViolations;
+import com.psymate.identity.repository.UniqueViolations;
 import com.psymate.shared.web.IpAddresses;
 import java.time.Clock;
 import java.time.Instant;

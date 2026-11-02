@@ -1,12 +1,12 @@
 package com.psymate.identity.auth.repository;
 
 import com.psymate.identity.auth.model.PractitionerRow;
-import com.psymate.identity.persistence.Practitioner;
-import com.psymate.identity.persistence.PractitionerJpaRepository;
-import com.psymate.identity.persistence.SecurityEvent;
-import com.psymate.identity.persistence.SecurityEventJpaRepository;
-import com.psymate.identity.persistence.Tenant;
-import com.psymate.identity.persistence.TenantJpaRepository;
+import com.psymate.identity.model.Practitioner;
+import com.psymate.identity.model.SecurityEvent;
+import com.psymate.identity.model.Tenant;
+import com.psymate.identity.repository.PractitionerJpaRepository;
+import com.psymate.identity.repository.SecurityEventJpaRepository;
+import com.psymate.identity.repository.TenantJpaRepository;
 import com.psymate.shared.time.Timestamps;
 import com.psymate.shared.web.IpAddresses;
 import java.net.InetAddress;

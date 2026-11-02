@@ -1,8 +1,8 @@
 package com.psymate.identity.admin.repository;
 
 import com.psymate.identity.admin.model.AdminCursors.Position;
-import com.psymate.identity.persistence.Rows;
-import com.psymate.identity.persistence.SecurityEventJpaRepository;
+import com.psymate.identity.repository.Rows;
+import com.psymate.identity.repository.SecurityEventJpaRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

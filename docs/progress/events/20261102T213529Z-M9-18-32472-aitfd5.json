@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T21:35:29.639Z",
+  "task": "M9-18",
+  "agent": "claude",
+  "status": "done",
+  "summary": "identity.persistence rangé dans model et repository ; quatre coutures supprimées, PractitionerRepository gardée (G Q45) ; verify vert",
+  "notes": "Q3 tranchée par l'utilisateur : Preferences, AdminBootstrap, AuthToken et Totp supprimées ; 4 événements d'identity annotés @Reserved ; ROLE_FOLDER_MODULES += identity ; 403 unitaires et 930 IT verts ; contrat inchangé",
+  "next": "Relecture et fusion par l'utilisateur ; M9-19 peut démarrer après M9-13",
+  "pr": "https://github.com/mrscams/psymate-api/pull/67",
+  "branch": "claude/m9-18-a6f25c",
+  "checkout": "m9-18-a6f25c"
+}

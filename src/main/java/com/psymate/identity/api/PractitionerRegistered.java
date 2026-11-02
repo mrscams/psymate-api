@@ -1,12 +1,18 @@
 package com.psymate.identity.api;
 
 import com.psymate.events.api.DomainEvent;
+import com.psymate.shared.Reserved;
 import java.util.UUID;
 
 /**
  * Praticien inscrit (compte créé, e-mail non confirmé). Aucune donnée personnelle : seulement des
  * identifiants et la profession.
+ *
+ * <p>Publié dès la V1 sans abonné, comme point d'ancrage (G Q40).
  */
+@Reserved(
+    consumer = "V2, ou le premier abonné s'il vient avant",
+    reason = "Publié dès la V1 comme point d'ancrage (A4.9)")
 public class PractitionerRegistered extends DomainEvent {
 
   private UUID practitionerId;

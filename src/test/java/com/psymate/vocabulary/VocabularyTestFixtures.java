@@ -12,17 +12,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * REST) : un cabinet, des praticiens, des tags, et le praticien courant posé dans le
  * SecurityContext (lu par identity.api.CurrentPractitioner.get()).
  */
-final class VocabularyTestFixtures {
+public final class VocabularyTestFixtures {
 
   private final JdbcTemplate jdbc;
-  final UUID tenant = UUID.randomUUID();
+  public final UUID tenant = UUID.randomUUID();
 
-  VocabularyTestFixtures(JdbcTemplate jdbc) {
+  public VocabularyTestFixtures(JdbcTemplate jdbc) {
     this.jdbc = jdbc;
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
   }
 
-  UUID newPractitioner() {
+  public UUID newPractitioner() {
     UUID id = UUID.randomUUID();
     String email = id + "@example.test";
     jdbc.update(
@@ -36,7 +36,7 @@ final class VocabularyTestFixtures {
     return id;
   }
 
-  UUID newPatient(UUID owner) {
+  public UUID newPatient(UUID owner) {
     UUID id = UUID.randomUUID();
     jdbc.update(
         "insert into patient (id, tenant_id, owner_id, display_name) values (?, ?, ?, 'Patient')",
@@ -47,7 +47,7 @@ final class VocabularyTestFixtures {
   }
 
   /** Tag inséré en SQL ; le libellé normalisé est le libellé en minuscules. */
-  UUID newTag(UUID practitioner, String label) {
+  public UUID newTag(UUID practitioner, String label) {
     UUID id = UUID.randomUUID();
     jdbc.update(
         "insert into tag (id, tenant_id, practitioner_id, label, normalized_label)"
@@ -60,7 +60,7 @@ final class VocabularyTestFixtures {
     return id;
   }
 
-  void loginAs(UUID practitioner) {
+  public void loginAs(UUID practitioner) {
     CurrentPractitioner principal =
         new CurrentPractitioner(
             practitioner,

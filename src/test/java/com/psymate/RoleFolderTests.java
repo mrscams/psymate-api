@@ -47,7 +47,8 @@ class RoleFolderTests {
           "identity.admin",
           "clinical.export",
           "patients",
-          "search");
+          "search",
+          "vocabulary");
 
   /**
    * Modules et sous-domaines de moins de 8 classes qui restent plats (G Q33, regle 1 ; revue §4.1)

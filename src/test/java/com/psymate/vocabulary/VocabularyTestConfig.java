@@ -13,11 +13,11 @@ import org.testcontainers.utility.MountableFile;
  * module vocabulary.
  */
 @TestConfiguration(proxyBeanMethods = false)
-class VocabularyTestConfig {
+public class VocabularyTestConfig {
 
   @Bean
   @ServiceConnection
-  PostgreSQLContainer postgres() {
+  public PostgreSQLContainer postgres() {
     return new PostgreSQLContainer(
             DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"))
         .withDatabaseName("psymate")

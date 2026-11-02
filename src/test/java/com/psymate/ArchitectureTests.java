@@ -20,17 +20,24 @@ import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.domain.JavaParameterizedType;
 import com.tngtech.archunit.core.domain.JavaType;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 class ArchitectureTests {
@@ -76,6 +83,14 @@ class ArchitectureTests {
   static final Set<String> DB_MANAGED_COLUMNS = Set.of("search_vector", "occurred_range");
 
   private static final JavaClasses PRODUCTION = new ClassFileImporter().importPackages(ROOT);
+
+  /**
+   * Classes de src/main seulement : les tests suivent leurs classes et n'ont pas les memes regles.
+   */
+  static final JavaClasses MAIN =
+      new ClassFileImporter()
+          .withImportOption(new ImportOption.DoNotIncludeTests())
+          .importPackages(ROOT);
 
   /** Module name = first package segment after the root package. */
   private static String moduleOf(JavaClass c, String root) {
@@ -143,7 +158,7 @@ class ArchitectureTests {
   }
 
   /** Nom de table : {@code @Table(name)}, sinon nom de classe en snake_case (naming Boot). */
-  private static String tableOf(JavaClass entity) {
+  static String tableOf(JavaClass entity) {
     String explicit =
         entity
             .tryGetAnnotationOfType(TABLE)
@@ -253,21 +268,90 @@ class ArchitectureTests {
         .allowEmptyShould(true);
   }
 
+  private static boolean isEndpoint(JavaClass c) {
+    return c.isAnnotatedWith(RestController.class)
+        || c.isMetaAnnotatedWith(RestController.class)
+        || c.isAnnotatedWith(RestControllerAdvice.class)
+        || c.isMetaAnnotatedWith(RestControllerAdvice.class);
+  }
+
+  private static boolean isUnder(JavaClass c, String root) {
+    return c.getPackageName().equals(root) || c.getPackageName().startsWith(root + ".");
+  }
+
   /**
-   * Aucune entite dans un DTO, dans une classe {@code web} ni dans une classe {@code api} (champs,
-   * signatures, appels : facades et evenements compris), et aucune entite ne reside dans un package
-   * {@code api}. Jackson ne doit jamais voir une entite ni un proxy Hibernate, et un autre module
-   * ne doit jamais en recevoir une.
+   * Types que Jackson lit ou ecrit pour un point d'entree HTTP : types de retour et parametres des
+   * methodes publiques (arguments generiques compris), puis, de proche en proche, les types des
+   * champs de ces types. Seules les classes sous {@code root} sont parcourues ; une entite arrete
+   * le parcours (elle est signalee par la dependance qui y mene).
+   */
+  static Set<JavaClass> publicSignatureClosure(JavaClass endpoint, String root) {
+    Deque<JavaClass> todo = new ArrayDeque<>();
+    for (JavaMethod method : endpoint.getMethods()) {
+      if (!method.getModifiers().contains(JavaModifier.PUBLIC)) {
+        continue;
+      }
+      List<JavaClass> types = new ArrayList<>();
+      collectTypes(method.getReturnType(), types);
+      for (JavaType parameter : method.getParameterTypes()) {
+        collectTypes(parameter, types);
+      }
+      todo.addAll(types);
+    }
+    Set<JavaClass> seen = new LinkedHashSet<>();
+    while (!todo.isEmpty()) {
+      JavaClass c = todo.pop();
+      if (c.equals(endpoint) || !isUnder(c, root) || isEntity(c) || !seen.add(c)) {
+        continue;
+      }
+      for (JavaField field : c.getFields()) {
+        if (!field.getModifiers().contains(JavaModifier.STATIC)) {
+          List<JavaClass> types = new ArrayList<>();
+          collectTypes(field.getType(), types);
+          todo.addAll(types);
+        }
+      }
+    }
+    return seen;
+  }
+
+  /**
+   * Aucune entite exposee (ARCH-04, G Q32) : les classes {@code @RestController} et
+   * {@code @RestControllerAdvice} ou qu'elles soient rangees, les types de leurs signatures
+   * publiques (et, de proche en proche, les types de leurs champs), les types d'un package {@code
+   * api} (facades et evenements compris) ne dependent d'aucune {@code @Entity}, et aucune entite ne
+   * reside dans {@code api}. Les classes {@code *Dto} et celles d'un package {@code dto} sont
+   * verifiees en plus, meme hors signature. Jackson ne doit jamais voir une entite ni un proxy
+   * Hibernate, et un autre module ne doit jamais en recevoir une.
    */
   static ArchRule noEntityExposedToWebOrDto(String root) {
-    DescribedPredicate<JavaClass> web = JavaClass.Predicates.resideInAPackage(root + "..web..");
     DescribedPredicate<JavaClass> api = JavaClass.Predicates.resideInAPackage(root + "..api..");
-    DescribedPredicate<JavaClass> dto = JavaClass.Predicates.simpleNameEndingWith("Dto");
+    // Les *Mapper et *Assembler vivent dans dto/ et sont les seuls a toucher les entites (G Q33,
+    // revue §4.1 regle 3) ; s'ils sont dans une signature publique, la fermeture les verifie.
+    DescribedPredicate<JavaClass> mapper =
+        DescribedPredicate.describe(
+            "a mapper or an assembler",
+            c -> {
+              String name = topLevel(c).getSimpleName();
+              return name.endsWith("Mapper")
+                  || name.endsWith("MapperImpl")
+                  || name.endsWith("Assembler");
+            });
+    DescribedPredicate<JavaClass> dto =
+        JavaClass.Predicates.simpleNameEndingWith("Dto")
+            .or(JavaClass.Predicates.resideInAPackage(root + "..dto.."))
+            .and(DescribedPredicate.not(mapper));
+    DescribedPredicate<JavaClass> endpoint =
+        DescribedPredicate.describe(
+            "annotated with @RestController or @RestControllerAdvice",
+            ArchitectureTests::isEndpoint);
+    DescribedPredicate<JavaClass> checkedOnItsOwn = endpoint.or(api).or(dto);
     return classes()
-        .that(web.or(api).or(dto))
+        .that(checkedOnItsOwn)
         .should(
             new ArchCondition<JavaClass>(
-                "expose a JPA entity (web, api, Dto) or be an entity (api)") {
+                "expose a JPA entity (controller and its public signature, api, dto)"
+                    + " or be an entity (api)") {
               @Override
               public void check(JavaClass origin, ConditionEvents events) {
                 if (api.test(origin) && isEntity(origin)) {
@@ -275,9 +359,191 @@ class ArchitectureTests {
                       SimpleConditionEvent.violated(
                           origin, origin.getName() + " is an @Entity in an api package"));
                 }
+                reportEntityDependencies(origin, "", events);
+                if (!isEndpoint(origin)) {
+                  return;
+                }
+                for (JavaClass exposed : publicSignatureClosure(origin, root)) {
+                  if (!checkedOnItsOwn.test(exposed)) {
+                    reportEntityDependencies(
+                        exposed,
+                        " (reachable from the public signature of " + origin.getName() + ")",
+                        events);
+                  }
+                }
+              }
+
+              private void reportEntityDependencies(
+                  JavaClass c, String context, ConditionEvents events) {
+                for (Dependency d : c.getDirectDependenciesFromSelf()) {
+                  JavaClass target = d.getTargetClass();
+                  if (!target.equals(c) && isEntity(target)) {
+                    events.add(SimpleConditionEvent.violated(d, d.getDescription() + context));
+                  }
+                }
+              }
+            })
+        .allowEmptyShould(true);
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Gardes independantes de la structure (M9-02, G Q32 a Q38)
+  // ---------------------------------------------------------------------------------------------
+
+  /** Modules et sous-domaines JPA (G Q32) : le SQL natif y passe par des fragments (G Q38). */
+  static final List<String> JPA_PACKAGES =
+      List.of("patients", "vocabulary", "directory", "identity", "clinical.export");
+
+  /** Modules et sous-domaines {@code JdbcClient} (G Q32) : aucune API JPA. */
+  static final List<String> JDBC_PACKAGES = List.of("search", "overview", "linking", "clinical");
+
+  /** Sous-domaines JPA a l'interieur d'un module {@code JdbcClient}. */
+  static final List<String> JPA_SUBDOMAINS_OF_JDBC_MODULES = List.of("clinical.export");
+
+  /**
+   * Classes JdbcClient voulues dans un module JPA (G Q38) : la recherche publique de l'annuaire.
+   * Format {@code <package relatif>.<classe de premier niveau>} : la classe peut changer de dossier
+   * dans son module sans casser l'entree.
+   */
+  static final Set<String> JDBC_IN_JPA_ALLOWED = Set.of("directory.PublicDirectoryRepository");
+
+  /**
+   * Exceptions temporaires a la garde de technologie. Cette liste ne peut que decroitre : chaque
+   * entree porte la tache qui la supprime, et {@link #technologyExceptionsAreStillNeeded()} echoue
+   * des qu'une entree ne sert plus.
+   */
+  static final Set<String> JDBC_IN_JPA_EXCEPTIONS =
+      Set.of(
+          // M9-12 : SQL natif de clinical.export en fragments *NativeQueries (G Q38).
+          "clinical.export.ExportJobRepository",
+          // M9-12 : idem (lecture des entrees et verrou praticien).
+          "clinical.export.ExportRepository");
+
+  /**
+   * Packages de {@code shared} encore autorises a utiliser {@code JdbcClient} ou {@code
+   * EntityManager}. Ne peut que decroitre.
+   */
+  static final Set<String> SHARED_SQL_EXCEPTIONS =
+      Set.of(
+          // M9-05 : shared.audit passe dans identity.audit (AuditWriter ecrit security_event).
+          "shared.audit");
+
+  private static final String JDBC_CORE = "org.springframework.jdbc.core";
+
+  /**
+   * API JPA. {@code org.hibernate} sans Hibernate Validator ({@code org.hibernate.validator}), qui
+   * sert a la validation des DTO dans tous les modules.
+   */
+  private static final List<String> JPA_API_PACKAGES =
+      List.of("jakarta.persistence", "org.springframework.data.jpa", "org.hibernate");
+
+  private static final String HIBERNATE_VALIDATOR = "org.hibernate.validator";
+
+  /** Package relatif a la racine ({@code clinical.export}), ou null hors racine. */
+  private static String relativePackage(JavaClass c, String root) {
+    String pkg = c.getPackageName();
+    return pkg.startsWith(root + ".") ? pkg.substring(root.length() + 1) : null;
+  }
+
+  private static boolean inAny(String relative, Collection<String> prefixes) {
+    return relative != null
+        && prefixes.stream().anyMatch(p -> relative.equals(p) || relative.startsWith(p + "."));
+  }
+
+  private static boolean inPackage(JavaClass c, String pkg) {
+    return c.getPackageName().equals(pkg) || c.getPackageName().startsWith(pkg + ".");
+  }
+
+  private static boolean isJdbc(JavaClass c) {
+    return inPackage(c, JDBC_CORE);
+  }
+
+  private static boolean isJpaApi(JavaClass c) {
+    return JPA_API_PACKAGES.stream().anyMatch(p -> inPackage(c, p))
+        && !inPackage(c, HIBERNATE_VALIDATOR);
+  }
+
+  private static JavaClass topLevel(JavaClass c) {
+    JavaClass top = c;
+    while (top.getEnclosingClass().isPresent()) {
+      top = top.getEnclosingClass().get();
+    }
+    return top;
+  }
+
+  /** Vrai si la classe (ou sa classe englobante) correspond a une entree {@code pkg.Classe}. */
+  static boolean matchesClassEntry(JavaClass c, String root, Collection<String> entries) {
+    String relative = relativePackage(c, root);
+    String simpleName = topLevel(c).getSimpleName();
+    for (String entry : entries) {
+      int dot = entry.lastIndexOf('.');
+      if (entry.substring(dot + 1).equals(simpleName)
+          && inAny(relative, List.of(entry.substring(0, dot)))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Technologie d'acces par module (G Q32, Q38) : pas de {@code JdbcClient} ni de {@code
+   * JdbcTemplate} dans un module ou sous-domaine JPA, hors {@code allowedJdbcClasses} ; pas d'API
+   * JPA ({@code jakarta.persistence}, Spring Data JPA, Hibernate) dans un module {@code JdbcClient}
+   * hors de ses sous-domaines JPA.
+   */
+  static ArchRule dataAccessTechnologyMatchesModule(
+      String root, Collection<String> allowedJdbcClasses) {
+    return classes()
+        .should(
+            new ArchCondition<JavaClass>("use the data access technology of its module") {
+              @Override
+              public void check(JavaClass origin, ConditionEvents events) {
+                String relative = relativePackage(origin, root);
+                boolean jpa = inAny(relative, JPA_PACKAGES);
+                boolean jdbc =
+                    inAny(relative, JDBC_PACKAGES)
+                        && !inAny(relative, JPA_SUBDOMAINS_OF_JDBC_MODULES);
+                if (jpa && matchesClassEntry(origin, root, allowedJdbcClasses)) {
+                  return;
+                }
                 for (Dependency d : origin.getDirectDependenciesFromSelf()) {
                   JavaClass target = d.getTargetClass();
-                  if (!target.equals(origin) && isEntity(target)) {
+                  if (jpa && isJdbc(target)) {
+                    events.add(
+                        SimpleConditionEvent.violated(
+                            d, d.getDescription() + " (JdbcClient in a JPA module, G Q38)"));
+                  } else if (jdbc && isJpaApi(target)) {
+                    events.add(
+                        SimpleConditionEvent.violated(
+                            d, d.getDescription() + " (JPA in a JdbcClient module, G Q32)"));
+                  }
+                }
+              }
+            })
+        .allowEmptyShould(true);
+  }
+
+  /**
+   * {@code shared} est de l'infrastructure technique (A5) : il ne depend d'aucun module et
+   * n'utilise ni {@code JdbcClient} ni {@code EntityManager} (ARCH-09), hors {@code
+   * exceptedPackages}.
+   */
+  static ArchRule sharedIsTechnicalOnly(String root, Collection<String> exceptedPackages) {
+    return classes()
+        .that()
+        .resideInAPackage(root + ".shared..")
+        .should(
+            new ArchCondition<JavaClass>(
+                "depend on a module, on JdbcClient or on jakarta.persistence") {
+              @Override
+              public void check(JavaClass origin, ConditionEvents events) {
+                boolean sqlAllowed = inAny(relativePackage(origin, root), exceptedPackages);
+                for (Dependency d : origin.getDirectDependenciesFromSelf()) {
+                  JavaClass target = d.getTargetClass();
+                  String module = moduleOf(target, root);
+                  boolean otherModule = module != null && !module.equals("shared");
+                  boolean sql = isJdbc(target) || inPackage(target, "jakarta.persistence");
+                  if (otherModule || (sql && !sqlAllowed)) {
                     events.add(SimpleConditionEvent.violated(d, d.getDescription()));
                   }
                 }
@@ -528,9 +794,121 @@ class ArchitectureTests {
         .hasMessageContaining("LeakyController")
         .hasMessageContaining("LeakyApiEntity")
         .hasMessageContaining("LeakyFacade")
+        // Hors package web : l'annotation suffit (ARCH-04).
+        .hasMessageContaining("LeakyAdvice")
+        // Record imbrique d'un conteneur *Dtos, parametre d'un controleur.
+        .hasMessageContaining("LeakyDtos$CreateThing")
+        // Type atteint par un champ d'un type de retour, sans suffixe Dto.
+        .hasMessageContaining("LeakyLine")
+        // Classe de dto/ sans suffixe Dto.
+        .hasMessageContaining("LeakyRequest")
+        .hasMessageNotContaining("CThingMapper")
         .hasMessageNotContaining("GoodDto")
         .hasMessageNotContaining("GoodFacade")
-        .hasMessageNotContaining("GoodController");
+        .hasMessageNotContaining("GoodController")
+        .hasMessageNotContaining("CleanView")
+        .hasMessageNotContaining("UnexposedHelper");
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // M9-02
+  // ---------------------------------------------------------------------------------------------
+
+  private static final String TECH_FIXTURE_ROOT = "psymatefixture.badtech";
+  private static final String SHARED_FIXTURE_ROOT = "psymatefixture.badshared";
+
+  private static Set<String> union(Set<String> a, Set<String> b) {
+    Set<String> all = new HashSet<>(a);
+    all.addAll(b);
+    return all;
+  }
+
+  @Test
+  void dataAccessTechnologyMatchesModuleInProduction() {
+    dataAccessTechnologyMatchesModule(ROOT, union(JDBC_IN_JPA_ALLOWED, JDBC_IN_JPA_EXCEPTIONS))
+        .check(MAIN);
+  }
+
+  /** Une exception qui ne sert plus doit etre retiree : la liste ne fait que decroitre. */
+  @Test
+  void technologyExceptionsAreStillNeeded() {
+    for (String entry : union(JDBC_IN_JPA_ALLOWED, JDBC_IN_JPA_EXCEPTIONS)) {
+      boolean used =
+          MAIN.stream()
+              .filter(c -> matchesClassEntry(c, ROOT, List.of(entry)))
+              .flatMap(c -> c.getDirectDependenciesFromSelf().stream())
+              .anyMatch(d -> isJdbc(d.getTargetClass()));
+      assertThat(used).as("exception inutile, a retirer : " + entry).isTrue();
+    }
+  }
+
+  @Test
+  void technologyRuleDetectsJdbcInJpaModuleAndJpaInJdbcModule() {
+    JavaClasses fixtures = new ClassFileImporter().importPackages(TECH_FIXTURE_ROOT);
+    ArchRule rule =
+        dataAccessTechnologyMatchesModule(
+            TECH_FIXTURE_ROOT,
+            Set.of("directory.PublicDirectoryRepository", "clinical.export.ExportRepository"));
+    assertThatThrownBy(() -> rule.check(fixtures))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("PatientJdbcRepository")
+        .hasMessageContaining("SearchEntityManagerUser")
+        .hasMessageContaining("ClinicalJpaThing")
+        .hasMessageNotContaining("PublicDirectoryRepository")
+        .hasMessageNotContaining("ExportRepository")
+        .hasMessageNotContaining("ExportJobStore")
+        .hasMessageNotContaining("TimelineRepository")
+        .hasMessageNotContaining("SearchValidatedRequest")
+        .hasMessageNotContaining("PatientNativeQueriesImpl");
+  }
+
+  @Test
+  void bootstrapDoesNotDependOnAuth() {
+    moduleMustNotDependOn(ROOT, "identity.admin.bootstrap", "identity.auth").check(PRODUCTION);
+  }
+
+  @Test
+  void bootstrapRuleDetectsAuthImport() {
+    JavaClasses fixtures = new ClassFileImporter().importPackages(FIXTURE_ROOT);
+    ArchRule rule =
+        moduleMustNotDependOn(FIXTURE_ROOT, "identity.admin.bootstrap", "identity.auth");
+    assertThatThrownBy(() -> rule.check(fixtures))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("BootstrapBad")
+        .hasMessageNotContaining("BootstrapGood");
+  }
+
+  @Test
+  void sharedIsTechnicalOnlyInProduction() {
+    sharedIsTechnicalOnly(ROOT, SHARED_SQL_EXCEPTIONS).check(MAIN);
+  }
+
+  @Test
+  void sharedExceptionsAreStillNeeded() {
+    for (String pkg : SHARED_SQL_EXCEPTIONS) {
+      boolean used =
+          MAIN.stream()
+              .filter(c -> inAny(relativePackage(c, ROOT), List.of(pkg)))
+              .flatMap(c -> c.getDirectDependenciesFromSelf().stream())
+              .anyMatch(
+                  d ->
+                      isJdbc(d.getTargetClass())
+                          || inPackage(d.getTargetClass(), "jakarta.persistence"));
+      assertThat(used).as("exception inutile, a retirer : " + pkg).isTrue();
+    }
+  }
+
+  @Test
+  void sharedRuleDetectsModuleImportAndSql() {
+    JavaClasses fixtures = new ClassFileImporter().importPackages(SHARED_FIXTURE_ROOT);
+    ArchRule rule = sharedIsTechnicalOnly(SHARED_FIXTURE_ROOT, Set.of("shared.audit"));
+    assertThatThrownBy(() -> rule.check(fixtures))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("BadProblem")
+        .hasMessageContaining("BadLimiter")
+        .hasMessageContaining("BadEntityManagerUser")
+        .hasMessageNotContaining("AuditLike")
+        .hasMessageNotContaining("GoodShared");
   }
 
   @Test

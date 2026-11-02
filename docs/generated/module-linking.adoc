@@ -1,0 +1,19 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.psymate.linking`
+|Spring components
+|_Services_
+
+* `c.p.l.api.GraphQueryFacade` (via `c.p.l.application.GraphQueryService`)
+* `c.p.l.api.LinkFacade` (via `c.p.l.application.LinkFacadeService`)
+|Bean references
+|* `c.p.c.api.EntryFacade` (in Clinical)
+* `c.p.e.api.DomainEventPublisher` (in Events)
+* `c.p.e.api.EventDeduplicator` (in Events)
+* `c.p.p.api.PatientFacade` (in Patients)
+* `c.p.p.api.PatientOwnershipGuard` (in Patients)
+* `c.p.v.api.LinkTypeCatalog` (in Vocabulary)
+|Events listened to
+|* `c.p.c.api.EntryArchived` (async) 
+|===

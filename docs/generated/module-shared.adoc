@@ -1,0 +1,16 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.psymate.shared`
+|Spring components
+|_Configuration properties_
+
+* `c.p.s.ratelimit.RateLimitProperties`
+
+_Others_
+
+* `c.p.s.audit.AuditWriter`
+* `c.p.s.problem.GlobalExceptionHandler`
+* `c.p.s.ratelimit.RateLimitFilters`
+* `c.p.s.ratelimit.RateLimiter`
+|===

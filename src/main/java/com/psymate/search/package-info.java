@@ -10,13 +10,7 @@
  * clinical.api.EntryCreated} et {@code EntryCorrected} sont importées.
  */
 @ApplicationModule(
-    allowedDependencies = {
-      "events :: api",
-      "patients :: api",
-      "identity :: api",
-      "clinical :: api",
-      "shared"
-    })
+    allowedDependencies = {"patients :: api", "identity :: api", "clinical :: api", "shared"})
 package com.psymate.search;
 
 import org.springframework.modulith.ApplicationModule;

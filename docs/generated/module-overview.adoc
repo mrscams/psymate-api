@@ -1,0 +1,13 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.psymate.overview`
+|Bean references
+|* `c.p.p.api.PatientOwnershipGuard` (in Patients)
+|Events listened to
+|* `c.p.c.api.EntryArchived` (async) 
+* `c.p.c.api.EntryCorrected` (async) 
+* `c.p.c.api.EntryCreated` (async) 
+* `c.p.l.api.LinkAccepted` (async) 
+* `c.p.p.api.PatientUpdated` (async) 
+|===

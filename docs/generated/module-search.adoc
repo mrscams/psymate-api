@@ -1,0 +1,10 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.psymate.search`
+|Bean references
+|* `c.p.p.api.PatientOwnershipGuard` (in Patients)
+|Events listened to
+|* `c.p.c.api.EntryCorrected` (async) 
+* `c.p.c.api.EntryCreated` (async) 
+|===

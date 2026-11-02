@@ -1,0 +1,15 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.psymate.vocabulary`
+|Spring components
+|_Services_
+
+* `c.p.v.api.EmotionCatalog` (via `c.p.v.EmotionService`)
+* `c.p.v.api.LinkTypeCatalog` (via `c.p.v.LinkTypeService`)
+* `c.p.v.api.TagFacade` (via `c.p.v.TagService`)
+
+_Others_
+
+* `c.p.v.CurrentPractitionerPort` (via `c.p.v.IdentityCurrentPractitionerAdapter`)
+|===

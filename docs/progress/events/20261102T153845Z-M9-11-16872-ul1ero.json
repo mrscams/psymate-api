@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T15:38:45.254Z",
+  "task": "M9-11",
+  "agent": "claude",
+  "status": "done",
+  "summary": "directory rangé par rôle (api/controller/dto/service/repository/model/config), un fichier par DTO, ROLE_FOLDER_MODULES += directory ; contrat inchangé",
+  "notes": "Renommages DirectoryVocabularyException et PublicProfileAssembler ; écarts pour la règle 3 : model/ProfileEdit, model/PublicDirectoryCriteria et PublicProfileDetail, service/DirectoryVocabularyService ; JPQL select new mis à jour ; verify vert (395 unitaires, 920 IT)",
+  "next": "Relecture et fusion par l'utilisateur ; conflit d'une ligne attendu avec M9-14 dans RoleFolderTests (garder directory et linking)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/56",
+  "branch": "claude/m9-11-4ad3d8",
+  "checkout": "m9-06-a9e549"
+}

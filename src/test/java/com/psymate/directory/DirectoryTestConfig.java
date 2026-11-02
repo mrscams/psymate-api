@@ -9,11 +9,11 @@ import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
 /**
- * Conteneur pgvector (comme PostgresTestConfig, package-private dans com.psymate) pour les tests du
- * module directory.
+ * Conteneur pgvector pour les tests du module directory, identique à {@code
+ * com.psymate.PostgresTestConfig} (public) ; les supports de test seront réunis par M9-19.
  */
 @TestConfiguration(proxyBeanMethods = false)
-class DirectoryTestConfig {
+public class DirectoryTestConfig {
 
   @Bean
   @ServiceConnection

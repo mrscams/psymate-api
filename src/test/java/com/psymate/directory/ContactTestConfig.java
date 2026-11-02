@@ -13,7 +13,7 @@ import org.testcontainers.utility.MountableFile;
 
 /** Postgres (pgvector) + Mailpit pour les tests du formulaire de contact. */
 @TestConfiguration(proxyBeanMethods = false)
-class ContactTestConfig {
+public class ContactTestConfig {
 
   @Bean
   @ServiceConnection

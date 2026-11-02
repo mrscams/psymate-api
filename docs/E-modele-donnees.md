@@ -677,7 +677,7 @@ CREATE INDEX event_publication_serialized_event_hash_idx ON event_publication US
 CREATE INDEX event_publication_by_completion_date_idx ON event_publication (completion_date);
 ```
 
-Événements de domaine émis dès la V1 (A4.9, A10.1) : `PatientCreated`, `PatientUpdated`, `EntryCreated`, `EntryCorrected`, `EntryArchived`, `LinkAccepted`, `LinkRejected`, `PractitionerRegistered`, `VerificationSubmitted`, `PractitionerApproved`, `PractitionerRejected`, `PractitionerSuspended`, `PreferencesChanged`, `ProfilePublished`, `ProfileUnpublished`.
+Événements de domaine émis dès la V1 (A4.9, A10.1) : `PatientCreated`, `PatientUpdated`, `EntryCreated`, `EntryCorrected`, `EntryArchived`, `LinkAccepted`, `LinkRejected`, `PractitionerRegistered`, `VerificationSubmitted`, `PractitionerApproved`, `PractitionerRejected`, `PractitionerSuspended`, `PreferencesChanged`, `ProfilePublished`, `ProfileUnpublished`. Fusions du vocabulaire (G Q42, M9-03) : `EmotionsMerged`, `EmotionMergeReverted`, `TagsMerged`, et en retour `EntriesRelabeled` (clinical, un par patient réétiqueté).
 
 ### E3.9 Projections : recherche et vue d'ensemble
 

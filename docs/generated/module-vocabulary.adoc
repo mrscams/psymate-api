@@ -9,10 +9,6 @@
 * `c.p.v.api.LinkTypeCatalog` (via `c.p.v.LinkTypeService`)
 * `c.p.v.api.MergeFacade` (via `c.p.v.MergeService`)
 * `c.p.v.api.TagFacade` (via `c.p.v.TagService`)
-
-_Others_
-
-* `c.p.v.CurrentPractitionerPort` (via `c.p.v.IdentityCurrentPractitionerAdapter`)
 |Bean references
 |* `c.p.e.api.DomainEventPublisher` (in Events)
 |===

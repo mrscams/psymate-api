@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T17:45:33.755Z",
+  "task": "M9-12",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 60 fusionnee dans main (e5cc57d) : clinical.export range par role, SQL natif en fragments Spring Data, decision Q43",
+  "next": "M9-13 (dossiers de clinical) peut demarrer",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

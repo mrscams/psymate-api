@@ -35,7 +35,7 @@ Cadre : G Q32 et `docs/etudes/etude-jpa.md` (§3 verdicts, §5 ordre, §6 risque
 - [ ] Listes chargées par lot (`@EntityGraph` ou requête dédiée), comme `withRelations` aujourd'hui : pas de N+1 sur patients/tags/drapeaux, profils, vocabulaires.
 - [ ] `@Transactional(readOnly = true)` sur toute lecture ; aucune entité modifiée par erreur dans une transaction de lecture.
 - [ ] Pas de `LAZY` hors transaction : l'objet retourné par la couche application est un record ou un DTO, jamais l'entité.
-- [ ] `FOR UPDATE` : `@Lock(PESSIMISTIC_WRITE)` avec `ORDER BY` stable pour garder l'ordre de verrouillage (voir `AdminPractitionerRepository`).
+- [ ] `FOR UPDATE` : `@Lock(PESSIMISTIC_WRITE)` avec `ORDER BY` stable pour garder l'ordre de verrouillage (voir `AdminPractitionerQueries`).
 
 ## 6. Erreurs 409 d'unicité
 

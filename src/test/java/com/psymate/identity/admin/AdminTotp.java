@@ -10,7 +10,7 @@ import javax.crypto.spec.SecretKeySpec;
  * Générateur TOTP de test (RFC 6238, HMAC-SHA1, 6 chiffres, pas de 30 s), indépendant du code de
  * production.
  */
-final class AdminTotp {
+public final class AdminTotp {
 
   private AdminTotp() {}
 
@@ -31,7 +31,7 @@ final class AdminTotp {
     return out.toByteArray();
   }
 
-  static String code(String base32Secret, Instant at) {
+  public static String code(String base32Secret, Instant at) {
     try {
       Mac mac = Mac.getInstance("HmacSHA1");
       mac.init(new SecretKeySpec(base32Decode(base32Secret), "HmacSHA1"));

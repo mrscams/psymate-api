@@ -5,7 +5,7 @@
 |Spring components
 |_Controllers_
 
-* `c.p.i.api.AuthErrorScope` (via `c.p.i.admin.AppealController`)
+* `c.p.i.api.AuthErrorScope` (via `c.p.i.admin.controller.AppealController`)
 
 _Services_
 

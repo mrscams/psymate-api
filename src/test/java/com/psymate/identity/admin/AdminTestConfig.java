@@ -20,13 +20,13 @@ import org.testcontainers.utility.MountableFile;
 
 /** Postgres (pgvector), Mailpit et enregistreur d'événements pour les tests d'administration. */
 @TestConfiguration(proxyBeanMethods = false)
-class AdminTestConfig {
+public class AdminTestConfig {
 
   /** Événements PractitionerApproved, PractitionerRejected et PractitionerSuspended reçus. */
-  static class Recorder {
-    final List<UUID> approved = new CopyOnWriteArrayList<>();
-    final List<UUID> rejected = new CopyOnWriteArrayList<>();
-    final List<UUID> suspended = new CopyOnWriteArrayList<>();
+  public static class Recorder {
+    public final List<UUID> approved = new CopyOnWriteArrayList<>();
+    public final List<UUID> rejected = new CopyOnWriteArrayList<>();
+    public final List<UUID> suspended = new CopyOnWriteArrayList<>();
 
     @EventListener
     void on(PractitionerSuspended e) {

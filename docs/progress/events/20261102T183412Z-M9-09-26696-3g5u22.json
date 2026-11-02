@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T18:34:12.584Z",
+  "task": "M9-09",
+  "agent": "claude",
+  "status": "done",
+  "summary": "patients range par role (api, controller, dto, service, repository, model), PatientDtos eclate, PatientArchived @Reserved ; contrat inchange",
+  "notes": "Ecart : PatientAssembler devient mapper statique, chargement par lot dans PatientService (dto ne lit pas de repository), memes requetes ; verify : 403 unitaires + 930 IT verts",
+  "next": "Relecture et fusion par l'utilisateur ; conflit d'une ligne attendu sur ROLE_FOLDER_MODULES avec M9-07 et M9-16",
+  "pr": "https://github.com/mrscams/psymate-api/pull/62",
+  "branch": "claude/m9-09-b9fa53",
+  "checkout": "m9-09-b9fa53"
+}

@@ -1,6 +1,7 @@
 package com.psymate.vocabulary;
 
 import com.psymate.events.api.DomainEventPublisher;
+import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.vocabulary.api.TagFacade;
 import com.psymate.vocabulary.api.TagView;
 import com.psymate.vocabulary.api.TagsMerged;
@@ -21,19 +22,16 @@ class TagService implements TagFacade {
 
   private final TagRepository tags;
   private final EmotionRepository emotions;
-  private final CurrentPractitioner current;
   private final TransactionTemplate tx;
   private final DomainEventPublisher events;
 
   TagService(
       TagRepository tags,
       EmotionRepository emotions,
-      CurrentPractitioner current,
       TransactionTemplate tx,
       DomainEventPublisher events) {
     this.tags = tags;
     this.emotions = emotions;
-    this.current = current;
     this.tx = tx;
     this.events = events;
   }
@@ -41,13 +39,13 @@ class TagService implements TagFacade {
   @Override
   @Transactional(readOnly = true)
   public List<TagView> tagsOfCurrentPractitioner() {
-    return tags.findActive(current.id()).stream().map(VocabularyViews::tag).toList();
+    return tags.findActive(me().id()).stream().map(VocabularyViews::tag).toList();
   }
 
   @Override
   @Transactional(readOnly = true)
   public Optional<TagView> resolve(String label) {
-    return tags.findActiveByNormalized(current.id(), TextNormalizer.normalize(label))
+    return tags.findActiveByNormalized(me().id(), TextNormalizer.normalize(label))
         .map(VocabularyViews::tag);
   }
 
@@ -58,7 +56,7 @@ class TagService implements TagFacade {
     if (ids.isEmpty()) {
       return out;
     }
-    for (Tag t : tags.findActiveByIds(current.id(), ids)) {
+    for (Tag t : tags.findActiveByIds(me().id(), ids)) {
       out.put(t.getId(), t.getLabel());
     }
     return out;
@@ -79,7 +77,7 @@ class TagService implements TagFacade {
   }
 
   private TagView doCreate(String clean) {
-    UUID practitioner = current.id();
+    UUID practitioner = me().id();
     String norm = TextNormalizer.normalize(clean);
     checkNotEmotion(practitioner, norm);
     if (tags.findActiveByNormalized(practitioner, norm).isPresent()) {
@@ -88,12 +86,7 @@ class TagService implements TagFacade {
     Tag created =
         tags.save(
             new Tag(
-                UUID.randomUUID(),
-                current.tenantId(),
-                practitioner,
-                clean,
-                norm,
-                Timestamps.now()));
+                UUID.randomUUID(), me().tenantId(), practitioner, clean, norm, Timestamps.now()));
     return VocabularyViews.tag(created);
   }
 
@@ -107,7 +100,7 @@ class TagService implements TagFacade {
   }
 
   private TagView doRename(UUID id, String label) {
-    UUID practitioner = current.id();
+    UUID practitioner = me().id();
     Tag tag = tags.findActiveById(practitioner, id).orElseThrow(TagService::notFound);
     String clean = validate(label);
     String norm = TextNormalizer.normalize(clean);
@@ -123,7 +116,7 @@ class TagService implements TagFacade {
   /** Fusionne la source dans la cible : réétiquette, archive la source (merged_into). */
   @Transactional
   TagView merge(UUID sourceId, UUID targetId) {
-    UUID practitioner = current.id();
+    UUID practitioner = me().id();
     Tag source = tags.findActiveById(practitioner, sourceId).orElseThrow(TagService::notFound);
     TagMergePolicy.check(sourceId, targetId);
     Tag target = tags.findActiveById(practitioner, targetId).orElseThrow(TagService::notFound);
@@ -131,8 +124,18 @@ class TagService implements TagFacade {
     // sont réécrits par clinical et patients, abonnés de TagsMerged (M9-03).
     tags.addUsageCount(sourceId, targetId);
     source.archiveInto(targetId, Timestamps.now());
-    events.publish(new TagsMerged(current.tenantId(), practitioner, sourceId, targetId));
+    events.publish(new TagsMerged(me().tenantId(), practitioner, sourceId, targetId));
     return VocabularyViews.tag(target);
+  }
+
+  /**
+   * Praticien de la session (identity.api). Les endpoints du module sont protégés par la sécurité
+   * d'identity : une requête sans principal est une erreur de configuration, jamais un accès
+   * anonyme toléré.
+   */
+  private static CurrentPractitioner me() {
+    return CurrentPractitioner.get()
+        .orElseThrow(() -> new IllegalStateException("Aucun praticien authentifié"));
   }
 
   private void checkNotEmotion(UUID practitioner, String norm) {

@@ -1,6 +1,7 @@
 package com.psymate.vocabulary;
 
 import com.psymate.events.api.DomainEventPublisher;
+import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.vocabulary.api.EmotionAffect;
 import com.psymate.vocabulary.api.EmotionCatalog;
 import com.psymate.vocabulary.api.EmotionMergeReverted;
@@ -65,7 +66,6 @@ class EmotionService implements EmotionCatalog {
 
   private final EmotionRepository emotions;
   private final EmotionMergeRepository merges;
-  private final CurrentPractitioner current;
   private final TransactionTemplate tx;
   private final DomainEventPublisher events;
   private final EmotionUsagePort usage;
@@ -73,13 +73,11 @@ class EmotionService implements EmotionCatalog {
   EmotionService(
       EmotionRepository emotions,
       EmotionMergeRepository merges,
-      CurrentPractitioner current,
       TransactionTemplate tx,
       DomainEventPublisher events,
       EmotionUsagePort usage) {
     this.emotions = emotions;
     this.merges = merges;
-    this.current = current;
     this.tx = tx;
     this.events = events;
     this.usage = usage;
@@ -88,21 +86,21 @@ class EmotionService implements EmotionCatalog {
   @Override
   @Transactional(readOnly = true)
   public List<EmotionView> activeEmotions() {
-    return emotions.findActiveFor(current.id()).stream().map(VocabularyViews::emotion).toList();
+    return emotions.findActiveFor(me().id()).stream().map(VocabularyViews::emotion).toList();
   }
 
   @Override
   @Transactional(readOnly = true)
   public Optional<EmotionView> findActiveByLabel(String label) {
     return emotions
-        .findFirstActiveByNormalized(current.id(), TextNormalizer.normalize(label))
+        .findFirstActiveByNormalized(me().id(), TextNormalizer.normalize(label))
         .map(VocabularyViews::emotion);
   }
 
   @Override
   @Transactional(readOnly = true)
   public Optional<EmotionAffect> affectOf(String code) {
-    return emotions.findUsable(current.id(), code).map(VocabularyViews::affect);
+    return emotions.findUsable(me().id(), code).map(VocabularyViews::affect);
   }
 
   /**
@@ -126,7 +124,7 @@ class EmotionService implements EmotionCatalog {
   }
 
   private EmotionView doCreate(String label, String family) {
-    UUID practitioner = current.id();
+    UUID practitioner = me().id();
     String norm = TextNormalizer.normalize(label);
     if (emotions.labelTaken(practitioner, norm, "")) {
       throw conflict();
@@ -135,7 +133,7 @@ class EmotionService implements EmotionCatalog {
     Emotion created =
         emotions.save(
             Emotion.custom(
-                code, current.tenantId(), practitioner, family, label, norm, Timestamps.now()));
+                code, me().tenantId(), practitioner, family, label, norm, Timestamps.now()));
     return VocabularyViews.emotion(created);
   }
 
@@ -149,7 +147,7 @@ class EmotionService implements EmotionCatalog {
   }
 
   private EmotionView doRename(String code, String labelFr) {
-    UUID practitioner = current.id();
+    UUID practitioner = me().id();
     Emotion e = activeOwn(practitioner, code);
     String label = validateLabel(labelFr);
     String norm = TextNormalizer.normalize(label);
@@ -163,7 +161,7 @@ class EmotionService implements EmotionCatalog {
   /** Fusionne une custom active dans une globale active ou une custom active du praticien. */
   @Transactional
   MergeView merge(String sourceCode, String targetCode) {
-    UUID practitioner = current.id();
+    UUID practitioner = me().id();
     // Verrou de la source d'abord : deux fusions concurrentes de la même émotion se sérialisent.
     Emotion source =
         emotions.findByCodeForUpdate(sourceCode).orElseThrow(EmotionService::emotionNotFound);
@@ -195,15 +193,14 @@ class EmotionService implements EmotionCatalog {
                 UNDO_DAYS));
     source.deactivate();
     events.publish(
-        new EmotionsMerged(
-            current.tenantId(), merge.getId(), practitioner, sourceCode, targetCode));
+        new EmotionsMerged(me().tenantId(), merge.getId(), practitioner, sourceCode, targetCode));
     return view(merge);
   }
 
   /** Annule une fusion dans les 30 jours ; après undo_until ou déjà annulée : 409. */
   @Transactional
   MergeView undo(UUID mergeId) {
-    UUID practitioner = current.id();
+    UUID practitioner = me().id();
     // Fusion verrouillée : deux undo concurrents se sérialisent, le second voit undone_at posé.
     EmotionMerge m =
         merges
@@ -227,8 +224,18 @@ class EmotionService implements EmotionCatalog {
     emotions.findById(m.getSourceCode()).ifPresent(Emotion::activate);
     events.publish(
         new EmotionMergeReverted(
-            current.tenantId(), m.getId(), practitioner, m.getSourceCode(), m.getTargetCode()));
+            me().tenantId(), m.getId(), practitioner, m.getSourceCode(), m.getTargetCode()));
     return view(m);
+  }
+
+  /**
+   * Praticien de la session (identity.api). Les endpoints du module sont protégés par la sécurité
+   * d'identity : une requête sans principal est une erreur de configuration, jamais un accès
+   * anonyme toléré.
+   */
+  private static CurrentPractitioner me() {
+    return CurrentPractitioner.get()
+        .orElseThrow(() -> new IllegalStateException("Aucun praticien authentifié"));
   }
 
   private Emotion activeOwn(UUID practitioner, String code) {

@@ -8,6 +8,10 @@
 * `c.p.p.api.PatientFacade`, `c.p.p.api.PatientOwnershipGuard` (via `c.p.p.PatientService`)
 |Bean references
 |* `c.p.e.api.DomainEventPublisher` (in Events)
+* `c.p.e.api.EventDeduplicator` (in Events)
 * `c.p.v.api.EmotionCatalog` (in Vocabulary)
+* `c.p.v.api.MergeFacade` (in Vocabulary)
 * `c.p.v.api.TagFacade` (in Vocabulary)
+|Events listened to
+|* `c.p.v.api.TagsMerged` (async) 
 |===

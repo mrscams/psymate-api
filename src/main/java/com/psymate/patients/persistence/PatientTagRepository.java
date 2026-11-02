@@ -8,7 +8,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface PatientTagRepository extends JpaRepository<PatientTag, PatientTagId> {
+public interface PatientTagRepository
+    extends JpaRepository<PatientTag, PatientTagId>, PatientTagNativeQueries {
 
   /** Retire les tags du patient absents de {@code tagIds} (liste non vide). */
   @Modifying(clearAutomatically = true)

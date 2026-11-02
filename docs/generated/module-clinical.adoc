@@ -8,6 +8,7 @@
 * `c.p.c.api.EntryFacade` (via `c.p.c.application.EntryFacadeService`)
 |Bean references
 |* `c.p.e.api.DomainEventPublisher` (in Events)
+* `c.p.e.api.EventDeduplicator` (in Events)
 * `c.p.i.api.EncryptedStorageFacade` (in Identity)
 * `c.p.i.api.PractitionerFacade` (in Identity)
 * `c.p.i.api.SuspendedAccountAuthenticator` (in Identity)
@@ -15,7 +16,11 @@
 * `c.p.p.api.PatientOwnershipGuard` (in Patients)
 * `c.p.v.api.EmotionCatalog` (in Vocabulary)
 * `c.p.v.api.LinkTypeCatalog` (in Vocabulary)
+* `c.p.v.api.MergeFacade` (in Vocabulary)
 * `c.p.v.api.TagFacade` (in Vocabulary)
 |Events listened to
 |* `c.p.p.api.PatientCreated` (async) 
+* `c.p.v.api.EmotionMergeReverted` (async) 
+* `c.p.v.api.EmotionsMerged` (async) 
+* `c.p.v.api.TagsMerged` (async) 
 |===

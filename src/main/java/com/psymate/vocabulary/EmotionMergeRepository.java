@@ -1,6 +1,7 @@
 package com.psymate.vocabulary;
 
 import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,4 +20,7 @@ interface EmotionMergeRepository extends JpaRepository<EmotionMerge, UUID> {
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select m from EmotionMerge m where m.id = :id and m.practitionerId = :p")
   Optional<EmotionMerge> findOwnForUpdate(@Param("id") UUID id, @Param("p") UUID practitionerId);
+
+  /** Toutes les fusions du praticien, annulées comprises (résolution, M9-03). */
+  List<EmotionMerge> findByPractitionerId(UUID practitionerId);
 }

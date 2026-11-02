@@ -127,8 +127,9 @@ class TagService implements TagFacade {
     Tag source = tags.findActiveById(practitioner, sourceId).orElseThrow(TagService::notFound);
     TagMergePolicy.check(sourceId, targetId);
     Tag target = tags.findActiveById(practitioner, targetId).orElseThrow(TagService::notFound);
-    // Natif : entry_tag, patient_tag et usage_count (la cible est rafraîchie dans le fragment).
-    tags.moveTagUsages(sourceId, targetId);
+    // usage_count en natif (la cible est rafraîchie dans le fragment) ; entry_tag et patient_tag
+    // sont réécrits par clinical et patients, abonnés de TagsMerged (M9-03).
+    tags.addUsageCount(sourceId, targetId);
     source.archiveInto(targetId, Timestamps.now());
     events.publish(new TagsMerged(current.tenantId(), practitioner, sourceId, targetId));
     return VocabularyViews.tag(target);

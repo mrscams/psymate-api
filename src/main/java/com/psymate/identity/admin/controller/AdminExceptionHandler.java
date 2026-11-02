@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
       AdminJournalController.class,
       AppealController.class
     })
-public class AdminExceptionHandler {
+class AdminExceptionHandler {
 
   private final AdminMessages messages;
 

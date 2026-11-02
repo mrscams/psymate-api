@@ -16,7 +16,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * démons : un échec d'envoi n'annule jamais la décision.
  */
 @Component
-public class AdminAsyncMail {
+class AdminAsyncMail {
 
   private static final Logger LOG = LoggerFactory.getLogger(AdminAsyncMail.class);
 

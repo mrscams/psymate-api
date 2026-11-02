@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
             + " justificatifs). Réservé aux administrateurs avec double authentification active.")
 @RestController
 @RequestMapping("/api/admin/journal")
-public class AdminJournalController {
+class AdminJournalController {
 
   private final AdminJournalService service;
 

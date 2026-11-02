@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
  * AuthService).
  */
 @Component
-public class OverdueReminderJob {
+class OverdueReminderJob {
 
   static final String CRON = "0 0 7 * * *";
 

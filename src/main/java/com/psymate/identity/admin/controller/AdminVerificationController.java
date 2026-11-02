@@ -48,7 +48,7 @@ import org.springframework.web.bind.annotation.RestController;
             + " double authentification active.")
 @RestController
 @RequestMapping("/api/admin/verifications")
-public class AdminVerificationController {
+class AdminVerificationController {
 
   private final AdminVerificationService service;
 

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 /** E-mails de l'administration : décisions envoyées aux praticiens, rappel aux administrateurs. */
 @Component
-public class AdminMailer {
+class AdminMailer {
 
   private final JavaMailSender sender;
   private final AdminMessages messages;

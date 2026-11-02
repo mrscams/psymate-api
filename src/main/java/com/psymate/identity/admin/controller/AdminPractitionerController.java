@@ -38,7 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
             + " aux administrateurs avec double authentification active.")
 @RestController
 @RequestMapping("/api/admin/practitioners")
-public class AdminPractitionerController {
+class AdminPractitionerController {
 
   private final AdminPractitionerService service;
 

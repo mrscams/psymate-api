@@ -51,7 +51,7 @@ import org.springframework.web.bind.annotation.RestController;
             + " e-mail et mot de passe) et examen des recours par un administrateur avec"
             + " double authentification active.")
 @RestController
-public class AppealController implements AuthErrorScope {
+class AppealController implements AuthErrorScope {
 
   private final AppealAuthenticator authenticator;
   private final AppealService service;

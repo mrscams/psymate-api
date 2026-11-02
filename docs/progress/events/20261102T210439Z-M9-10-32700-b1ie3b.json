@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-02T21:04:39.294Z",
+  "task": "M9-10",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 66 fusionnee dans main (c793955) : vocabulary range par role, un fichier par DTO",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

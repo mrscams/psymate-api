@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-02T21:04:38.626Z",
+  "task": "M9-08",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 64 fusionnee dans main (b22b761) : overview range par role, OverviewDtos eclate, FeelingsCalculator",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

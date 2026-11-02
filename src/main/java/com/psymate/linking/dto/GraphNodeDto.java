@@ -4,7 +4,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Nœud : une entrée du patient, avec son degré dans tout le dossier. */
+/**
+ * Nœud : une entrée du patient, avec son degré dans tout le dossier. {@code authorType} se lit
+ * seulement : aucun corps de requête ne l'accepte (A11).
+ */
 @Schema(description = "Nœud du graphe : une entrée non archivée du patient.")
 public record GraphNodeDto(
     @Schema(

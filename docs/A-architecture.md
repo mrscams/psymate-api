@@ -680,7 +680,7 @@ flowchart LR
   LS --> ES
 ```
 
-`LinkService` appelle `EntryFacade` pour vérifier que les deux entrées appartiennent au même patient du praticien courant. Les autres dépendances synchrones entre modules métier : `clinical → patients` (`PatientFacade.touchClinicalRev`, garde de propriété), `linking → patients` (garde), `linking → clinical` (`EntryFacade.adjustLinkCount`), `clinical.export → identity` (`EncryptedStorageFacade`, `SuspendedAccountAuthenticator`).
+`LinkService` appelle `EntryFacade` pour vérifier que les deux entrées appartiennent au même patient du praticien courant. Les autres dépendances synchrones entre modules métier : `clinical → patients` (`PatientFacade.touchClinicalRev`, garde de propriété), `linking → patients` (garde), `linking → clinical` (`EntryFacade.adjustLinkCount`), `clinical.export → identity` (`EncryptedStorageFacade`, `SuspendedAccountAuthenticator`). `EntryFacade.adjustLinkCount` n'est pas une lecture : linking y fait écrire par clinical le compteur `entry.link_count`, dans la transaction du lien, pour que la timeline l'affiche exact ; ce choix synchrone est assumé, sans événement `LinkRemoved` en V1 (G Q41).
 
 ### Style d'API
 

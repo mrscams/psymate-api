@@ -10,7 +10,8 @@ import java.util.UUID;
 /**
  * Corps de POST /api/entries/{id}/links. {@code direction} dit où se place l'entrée de l'URL :
  * outgoing (défaut), elle est la source et {@code targetId} la cible ; incoming, {@code targetId}
- * est la source et l'entrée de l'URL la cible.
+ * est la source et l'entrée de l'URL la cible. La provenance et le statut ne s'écrivent jamais : en
+ * V1 un lien posé à la main est toujours manual et accepted.
  */
 @Schema(
     description =

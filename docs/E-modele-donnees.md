@@ -106,7 +106,7 @@ Les suffixes `_v2`, `_reserve`, `_cond` marquent les relations qui n'ont aucune 
 | Horodatage | `timestamptz` partout, stocké en UTC. `created_at` et `updated_at` sur toute table mutable ; `updated_at` maintenu par l'application (pas de trigger). |
 | Énumérations | `text` + contrainte `CHECK (… IN (…))`, jamais de type `ENUM` PostgreSQL (une valeur de plus = un `ALTER … DROP CONSTRAINT / ADD CONSTRAINT`, pas de `ALTER TYPE`). |
 | Multi-tenant | `tenant_id uuid NOT NULL` sur toute table métier (patients, entrées, liens, tags). Jamais de RLS en V1 (ADR-09) : la garde est applicative (`PatientOwnershipGuard`), mais la colonne est là pour la V2. |
-| Suppression | Jamais de `DELETE` sur une donnée clinique : `archived_at timestamptz`. Les `DELETE` physiques n'existent que sur les tables techniques à durée de vie courte (`auth_token`, `contact_request`, sessions, fichiers de justificatifs et d'exports). |
+| Suppression | Jamais de `DELETE` sur une donnée clinique : `archived_at timestamptz`. Les seules suppressions physiques autorisées sont listées en E9 (G Q37) : tables d'association, purges planifiées, sessions, fichiers. |
 | Versions | Append-only : `entry_version`, `patient_version`, `verification_decision`. Aucune de ces tables n'a d'`UPDATE` autorisé en dehors de colonnes techniques explicitement listées. |
 | Rôles PostgreSQL | Base `psymate`, utilisateur propriétaire `psymate` (migrations), rôle applicatif `psymate_app` (G Q9) créé par le script d'init du conteneur Compose (jamais par Flyway) ; Flyway pose les `REVOKE UPDATE, DELETE` sur les tables append-only. |
 | Texte libre | Toujours dans une colonne `text` dédiée (`body`, `message`, `reason`), jamais dans un `jsonb`, pour la recherche et les futurs embeddings. |
@@ -618,7 +618,7 @@ CREATE INDEX ix_export_job_practitioner ON export_job(practitioner_id, requested
 CREATE INDEX ix_export_job_purge ON export_job(expires_at) WHERE purged_at IS NULL AND status = 'done';
 ```
 
-Règles non portées par le schéma, à tester (M1-03) : chaque `entry` de type `feeling` / `medication` / `session` a exactement une ligne dans sa table de détail (test « chaque type a sa table ») ; `session_id` pointe vers une entrée de `type = 'session'` du même `patient_id` ; une correction crée une version sauf dans la fenêtre de grâce de 5 minutes (A4.8) ; `author_type` et `submission_id` ne sont jamais écrits par du code V1. Un seul `export_job` en cours (`queued` ou `running`) par praticien (M6-05).
+Règles non portées par le schéma, à tester (M1-03) : chaque `entry` de type `feeling` / `medication` / `session` a exactement une ligne dans sa table de détail (test « chaque type a sa table ») ; `session_id` pointe vers une entrée de `type = 'session'` du même `patient_id` ; une correction crée une version sauf dans la fenêtre de grâce de 1 h 15 (75 min, A4.8, G Q31) ; `author_type` et `submission_id` ne sont jamais écrits par du code V1. Un seul `export_job` en cours (`queued` ou `running`) par praticien (M6-05).
 
 ### E3.7 Liens
 
@@ -1141,7 +1141,7 @@ CREATE UNIQUE INDEX ux_appointment_google ON appointment(google_event_id) WHERE 
 | O2 | Tags au niveau patient (fiche 16) ? | `patient_tag` · tags d'entrées seulement | **Tranché (G Q7)** : `patient_tag` (M1-01) |
 | O3 | Historique de la fiche patient (fiche 16) ? | `patient_version` · pas d'historique | **Tranché (G Q7)** : `patient_version` et `patient_flag` en table (M1-01) |
 | O4 | Signalements (fiche 23) ? | V1 · V1.1 · hors périmètre | **Tranché (G Q26)** : V1.1 ; DDL en E6.1 |
-| O5 | Agenda (fiches 15, 15b) ? | Jalon M8 · hors V1 | **Tranché (G Q25)** : hors V1, pas de M8 ; DDL conservé en E6.2 |
+| O5 | Agenda (fiches 15, 15b) ? | Jalon M8 · hors V1 | **Tranché (G Q25)** : hors V1, pas de jalon Agenda (ancien M8 ; l'identifiant M8 désigne désormais la migration JPA) ; DDL conservé en E6.2 |
 | O6 | Famille des cinq émotions cliniques ajoutées ; libellés *pensiveness*, *loathing* | voir E5.2 | **Tranché (G Q10, Q11)** : E5.2 livré tel quel, pas d'atelier préalable ; retours des praticiens plus tard |
 | O7 | Matrice `allowed_source_types` / `allowed_target_types` | voir E5.3 | **Tranché (G Q12)** : E5.3 conservée |
 | O8 | Événements admin pour le journal (fiche 22 : `directory_event`, `system_event`) | tables dédiées · colonnes de `security_event` | **Tranché (G Q29)** : `security_event` seul avec `kind` préfixé et la vue `admin_journal_v` (E3.13, V10, M1-14b) |
@@ -1185,7 +1185,7 @@ Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `ent
 | `entry_tag` | La ligne d'association, quand un tag est retiré d'une entrée ou lors d'une fusion de tags | clinical (et vocabulary jusqu'à M9-03) | Association sans historique propre : l'historique de l'entrée est dans `entry_version.payload` |
 | `patient_tag` | La ligne d'association, quand un tag est retiré d'un patient ou lors d'une fusion | patients (et vocabulary jusqu'à M9-03) | Idem, l'historique du patient est dans `patient_version` |
 | `contact_request` | La ligne, à `purge_after` (30 jours) | directory, `ContactPurgeJob` | Trace anti-spam seulement, jamais liée à un dossier (minimisation) |
-| `spring_session`, `spring_session_attributes` | Les sessions expirées ou révoquées | identity | Données techniques de connexion |
+| `spring_session`, `spring_session_attributes` | Les sessions expirées (nettoyage intégré de Spring Session JDBC) ou révoquées (identity, `SessionNativeQueriesImpl`) | Spring Session, identity | Données techniques de connexion |
 | `event_publication` | Les publications terminées depuis plus de `app.events.completed-retention` (30 jours) | events, `EventPublicationPurgeJob` | Outbox : seules les publications inachevées comptent |
 | Fichiers des justificatifs (`verification_document`) | Le **fichier** chiffré, à `purge_after` ou quand le praticien retire la pièce ; **la ligne reste** (`purged_at`, marque de retrait) | identity.verification | Minimisation des pièces d'identité ; la trace reste auditable |
 | Fichiers d'export (`export_job`) | Le **fichier**, à `expires_at` (7 jours) ; **la ligne reste** (`purged_at`) | clinical.export, `ExportPurgeJob` | Le lien expire ; la trace de l'export reste |

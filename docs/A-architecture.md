@@ -209,7 +209,7 @@ flowchart LR
   style AI stroke-dasharray: 5 5
 ```
 
-Les flèches pleines sont des dépendances de compilation (API publique du module), les pointillés des flux d'événements. `Search` et `Overview` sont déclenchés par les événements, mais ils dépendent aussi à la compilation de l'API de `patients` (garde de propriété), d'`identity` et de `clinical`, et ils lisent en SQL les tables de `clinical`, `patients` et `linking` pour construire leurs projections (G Q34, voir A5).
+Les flèches pleines sont des dépendances de compilation (API publique du module), les pointillés des flux d'événements. `Search` et `Overview` sont déclenchés par les événements, mais ils dépendent aussi à la compilation de l'API de `patients` (garde de propriété), d'`identity` et de `clinical` (et de `linking` pour Overview), et ils lisent en SQL les tables de `clinical`, `patients`, `linking` et `vocabulary` (`tag`, `emotion`, `entry_type`) pour construire leurs projections (G Q34, voir A5).
 
 ### Diagramme de classes du domaine
 
@@ -617,8 +617,8 @@ Un seul déployable backend, une seule SPA, une seule base : la complexité est 
 | `vocabulary` | Émotions, types de liens, tags | `identity` | `EmotionCatalog`, `LinkTypeCatalog`, `TagFacade` et leurs vues |
 | `clinical` | Entrées, versions, séances, brouillons, export | `identity`, `patients`, `vocabulary`, `events` | `EntryFacade`, `EntryLinksPort`, `EntryLinksReadPort`, `EntrySummary`, `EntryCreated`, `EntryCorrected`, `EntryArchived` |
 | `linking` | Liens, cycle de vie, graphe | `clinical`, `vocabulary`, `events`, `identity`, `patients` | `LinkFacade`, `GraphQueryFacade` et ses vues, `LinkAccepted`, `LinkRejected` |
-| `search` | Index, requêtes, facettes | `events` (écoute), `patients` (garde), `identity`, `clinical` ; lecture SQL des tables cliniques (G Q34) | aucun package `api` : endpoint REST seulement |
-| `overview` | Projection vue d'ensemble | `events` (écoute), `patients` (garde), `identity`, `clinical`, `linking` ; lecture SQL (G Q34) | aucun package `api` : endpoint REST seulement |
+| `search` | Index, requêtes, facettes | `events` (écoute), `patients` (garde), `identity`, `clinical` ; lecture SQL des tables de clinical et de vocabulary (`tag`, `emotion`, `entry_type`) (G Q34) | aucun package `api` : endpoint REST seulement |
+| `overview` | Projection vue d'ensemble | `events` (écoute), `patients` (garde), `identity`, `clinical`, `linking` ; lecture SQL des tables de clinical, patients, linking et vocabulary (`emotion`) (G Q34) | aucun package `api` : endpoint REST seulement |
 | `events` | Outbox, republication, abonnés | — | `DomainEvent`, `DomainEventPublisher`, `EventDeduplicator` |
 | `ai` (V2) | Suggestions, motifs, questions | `events`, `clinical` (lecture), `linking` (écriture `proposed`) | `SuggestionFacade` |
 | `companion` (réservé, A11) | Appairage d'appareils patients, réception des lots | `patients`, `clinical` (dépôt d'entrées `author_type = patient`), `events` ; jamais `identity.admin`, `directory` | `SubmissionReceived`, `SubmissionAttached` |

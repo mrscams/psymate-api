@@ -13,7 +13,7 @@ import org.testcontainers.utility.MountableFile;
  * module patients.
  */
 @TestConfiguration(proxyBeanMethods = false)
-class PatientTestConfig {
+public class PatientTestConfig {
 
   @Bean
   @ServiceConnection

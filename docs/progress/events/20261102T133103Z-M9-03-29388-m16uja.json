@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T13:31:03.645Z",
+  "task": "M9-03",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Partie 1/4 : IT de bout en bout des fusions, ARCH-01 confirmé (clinical_rev, recherche et vue d'ensemble périmés)",
+  "notes": "VocabularyMergeIT, 2 tests ; attendus en commentaire, prouvés atteignables par simulation des abonnés ; verify 385 unitaires + 920 IT verts ; docs/generated de main périmés (hors périmètre)",
+  "next": "Partie 2 : événements EmotionsMerged, EmotionMergeReverted, TagsMerged dans vocabulary.api, après fusion de la PR 51",
+  "pr": "https://github.com/mrscams/psymate-api/pull/51",
+  "branch": "claude/m9-03-4f1175",
+  "checkout": "m9-04-40f9c7"
+}

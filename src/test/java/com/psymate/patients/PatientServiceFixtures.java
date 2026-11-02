@@ -11,17 +11,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * Données et identité de test pour les IT qui appellent PatientService directement (sans REST) : un
  * cabinet, des praticiens, des tags, et le praticien courant posé dans le SecurityContext.
  */
-final class PatientServiceFixtures {
+public final class PatientServiceFixtures {
 
   private final JdbcTemplate jdbc;
-  final UUID tenant = UUID.randomUUID();
+  public final UUID tenant = UUID.randomUUID();
 
-  PatientServiceFixtures(JdbcTemplate jdbc) {
+  public PatientServiceFixtures(JdbcTemplate jdbc) {
     this.jdbc = jdbc;
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
   }
 
-  UUID newPractitioner() {
+  public UUID newPractitioner() {
     UUID id = UUID.randomUUID();
     String email = id + "@example.test";
     jdbc.update(
@@ -39,7 +39,7 @@ final class PatientServiceFixtures {
    * Attend la séance d'accueil que clinical écrit en asynchrone à la création du patient : elle
    * incrémente clinical_rev, donc un test qui compare clinical_rev doit d'abord la laisser passer.
    */
-  void awaitIntakeSession(UUID patientId) {
+  public void awaitIntakeSession(UUID patientId) {
     long deadline = System.nanoTime() + 20_000_000_000L;
     while (System.nanoTime() < deadline) {
       Integer entries =
@@ -58,7 +58,7 @@ final class PatientServiceFixtures {
     throw new IllegalStateException("Séance d'accueil non créée pour " + patientId);
   }
 
-  UUID newTag(UUID practitioner, String label) {
+  public UUID newTag(UUID practitioner, String label) {
     UUID id = UUID.randomUUID();
     jdbc.update(
         "insert into tag (id, tenant_id, practitioner_id, label, normalized_label)"
@@ -71,7 +71,7 @@ final class PatientServiceFixtures {
     return id;
   }
 
-  void loginAs(UUID practitioner) {
+  public void loginAs(UUID practitioner) {
     CurrentPractitioner principal =
         new CurrentPractitioner(
             practitioner,

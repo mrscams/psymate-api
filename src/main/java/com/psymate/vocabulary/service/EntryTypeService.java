@@ -12,7 +12,7 @@ public class EntryTypeService {
 
   private final EntryTypeRepository entryTypes;
 
-  public EntryTypeService(EntryTypeRepository entryTypes) {
+  EntryTypeService(EntryTypeRepository entryTypes) {
     this.entryTypes = entryTypes;
   }
 

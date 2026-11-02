@@ -15,25 +15,24 @@ public interface TagRepository extends JpaRepository<Tag, UUID>, TagNativeQuerie
   @Query(
       "select t from Tag t where t.practitionerId = :p and t.archivedAt is null"
           + " order by t.normalizedLabel")
-  public List<Tag> findActive(@Param("p") UUID practitionerId);
+  List<Tag> findActive(@Param("p") UUID practitionerId);
 
   @Query(
       "select t from Tag t where t.practitionerId = :p and t.normalizedLabel = :n"
           + " and t.archivedAt is null")
-  public Optional<Tag> findActiveByNormalized(
+  Optional<Tag> findActiveByNormalized(
       @Param("p") UUID practitionerId, @Param("n") String normalized);
 
   @Query("select t from Tag t where t.id = :id and t.practitionerId = :p and t.archivedAt is null")
-  public Optional<Tag> findActiveById(@Param("p") UUID practitionerId, @Param("id") UUID id);
+  Optional<Tag> findActiveById(@Param("p") UUID practitionerId, @Param("id") UUID id);
 
   /** Tags actifs du praticien parmi {@code ids}, en une seule requête (pas de N+1). */
   @Query(
       "select t from Tag t where t.practitionerId = :p and t.id in :ids"
           + " and t.archivedAt is null")
-  public List<Tag> findActiveByIds(
-      @Param("p") UUID practitionerId, @Param("ids") Collection<UUID> ids);
+  List<Tag> findActiveByIds(@Param("p") UUID practitionerId, @Param("ids") Collection<UUID> ids);
 
   /** Tags du praticien archivés par une fusion ({@code merged_into} renseigné). */
   @Query("select t from Tag t where t.practitionerId = :p and t.mergedInto is not null")
-  public List<Tag> findMerged(@Param("p") UUID practitionerId);
+  List<Tag> findMerged(@Param("p") UUID practitionerId);
 }

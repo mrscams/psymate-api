@@ -17,7 +17,7 @@ public class VocabularyTestConfig {
 
   @Bean
   @ServiceConnection
-  public PostgreSQLContainer postgres() {
+  PostgreSQLContainer postgres() {
     return new PostgreSQLContainer(
             DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"))
         .withDatabaseName("psymate")

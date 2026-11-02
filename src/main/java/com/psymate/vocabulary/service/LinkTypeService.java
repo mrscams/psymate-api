@@ -13,7 +13,7 @@ public class LinkTypeService implements LinkTypeCatalog {
 
   private final LinkTypeRepository linkTypes;
 
-  public LinkTypeService(LinkTypeRepository linkTypes) {
+  LinkTypeService(LinkTypeRepository linkTypes) {
     this.linkTypes = linkTypes;
   }
 

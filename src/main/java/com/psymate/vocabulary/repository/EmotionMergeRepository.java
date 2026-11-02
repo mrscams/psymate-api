@@ -20,9 +20,8 @@ public interface EmotionMergeRepository extends JpaRepository<EmotionMerge, UUID
    */
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select m from EmotionMerge m where m.id = :id and m.practitionerId = :p")
-  public Optional<EmotionMerge> findOwnForUpdate(
-      @Param("id") UUID id, @Param("p") UUID practitionerId);
+  Optional<EmotionMerge> findOwnForUpdate(@Param("id") UUID id, @Param("p") UUID practitionerId);
 
   /** Toutes les fusions du praticien, annulées comprises (résolution, M9-03). */
-  public List<EmotionMerge> findByPractitionerId(UUID practitionerId);
+  List<EmotionMerge> findByPractitionerId(UUID practitionerId);
 }

@@ -31,9 +31,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class EmotionService implements EmotionCatalog {
 
-  public static final Set<String> FAMILIES =
+  static final Set<String> FAMILIES =
       Set.of("joy", "trust", "fear", "surprise", "sadness", "disgust", "anger", "anticipation");
-  public static final int UNDO_DAYS = 30;
+  static final int UNDO_DAYS = 30;
 
   private final EmotionRepository emotions;
   private final EmotionMergeRepository merges;
@@ -41,7 +41,7 @@ public class EmotionService implements EmotionCatalog {
   private final DomainEventPublisher events;
   private final EmotionUsagePort usage;
 
-  public EmotionService(
+  EmotionService(
       EmotionRepository emotions,
       EmotionMergeRepository merges,
       TransactionTemplate tx,

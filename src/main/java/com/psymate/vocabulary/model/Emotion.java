@@ -29,8 +29,8 @@ import org.springframework.data.domain.Persistable;
 @DynamicUpdate
 public class Emotion implements Persistable<String> {
 
-  public static final String SCOPE_GLOBAL = "global";
-  public static final String SCOPE_CUSTOM = "custom";
+  static final String SCOPE_GLOBAL = "global";
+  static final String SCOPE_CUSTOM = "custom";
 
   @Id private String code;
 
@@ -76,7 +76,7 @@ public class Emotion implements Persistable<String> {
 
   protected Emotion() {}
 
-  public Emotion(
+  Emotion(
       String code,
       String scope,
       UUID tenantId,
@@ -196,7 +196,7 @@ public class Emotion implements Persistable<String> {
     return labelEn;
   }
 
-  public String getLabelNormalized() {
+  String getLabelNormalized() {
     return labelNormalized;
   }
 
@@ -204,7 +204,7 @@ public class Emotion implements Persistable<String> {
     return active;
   }
 
-  public UUID getCreatedBy() {
+  UUID getCreatedBy() {
     return createdBy;
   }
 

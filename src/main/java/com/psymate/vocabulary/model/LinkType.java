@@ -54,7 +54,7 @@ public class LinkType {
 
   protected LinkType() {}
 
-  public LinkType(
+  LinkType(
       String code,
       boolean directed,
       String labelFr,

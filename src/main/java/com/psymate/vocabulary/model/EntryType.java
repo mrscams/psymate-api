@@ -40,7 +40,7 @@ public class EntryType {
 
   protected EntryType() {}
 
-  public EntryType(
+  EntryType(
       String code,
       String labelFr,
       String labelEn,

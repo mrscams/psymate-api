@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /** Lecture seule du catalogue {@code link_type}. Interne au module. */
 public interface LinkTypeRepository extends JpaRepository<LinkType, String> {
 
-  public List<LinkType> findByActiveTrueOrderBySortOrder();
+  List<LinkType> findByActiveTrueOrderBySortOrder();
 
-  public Optional<LinkType> findByCodeAndActiveTrue(String code);
+  Optional<LinkType> findByCodeAndActiveTrue(String code);
 }

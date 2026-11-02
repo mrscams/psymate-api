@@ -17,7 +17,7 @@ public final class VocabularyViews {
 
   private VocabularyViews() {}
 
-  public static EmotionView emotion(Emotion e) {
+  static EmotionView emotion(Emotion e) {
     return new EmotionView(
         e.getCode(),
         e.getScope(),
@@ -28,16 +28,16 @@ public final class VocabularyViews {
         e.isActive());
   }
 
-  public static EmotionAffect affect(Emotion e) {
+  static EmotionAffect affect(Emotion e) {
     return new EmotionAffect(e.getCode(), e.getValence(), e.getArousal());
   }
 
-  public static TagView tag(Tag t) {
+  static TagView tag(Tag t) {
     return new TagView(
         t.getId(), t.getLabel(), t.getNormalizedLabel(), t.getUsageCount(), t.getCreatedAt());
   }
 
-  public static EntryTypeView entryType(EntryType t) {
+  static EntryTypeView entryType(EntryType t) {
     return new EntryTypeView(
         t.getCode(),
         t.getLabelFr(),
@@ -47,7 +47,7 @@ public final class VocabularyViews {
         t.getSortOrder());
   }
 
-  public static LinkTypeView linkType(LinkType t) {
+  static LinkTypeView linkType(LinkType t) {
     return new LinkTypeView(
         t.getCode(),
         t.isDirected(),

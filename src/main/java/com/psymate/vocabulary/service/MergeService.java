@@ -20,7 +20,7 @@ public class MergeService implements MergeFacade {
   private final EmotionMergeRepository merges;
   private final TagRepository tags;
 
-  public MergeService(EmotionMergeRepository merges, TagRepository tags) {
+  MergeService(EmotionMergeRepository merges, TagRepository tags) {
     this.merges = merges;
     this.tags = tags;
   }

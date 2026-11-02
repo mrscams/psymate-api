@@ -33,7 +33,7 @@ public class TagService implements TagFacade {
   private final TransactionTemplate tx;
   private final DomainEventPublisher events;
 
-  public TagService(
+  TagService(
       TagRepository tags,
       EmotionRepository emotions,
       TransactionTemplate tx,

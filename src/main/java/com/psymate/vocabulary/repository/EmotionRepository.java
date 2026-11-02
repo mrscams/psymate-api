@@ -20,17 +20,16 @@ public interface EmotionRepository extends JpaRepository<Emotion, String> {
           + " and (e.scope = 'global' or e.practitionerId = :p)"
           + " order by case e.scope when 'global' then 0 else 1 end, e.family,"
           + " e.intensityLevel nulls last, e.labelFr")
-  public List<Emotion> findActiveFor(@Param("p") UUID practitionerId);
+  List<Emotion> findActiveFor(@Param("p") UUID practitionerId);
 
   @Query(
       "select e from Emotion e where e.active = true and e.labelNormalized = :n"
           + " and (e.scope = 'global' or e.practitionerId = :p)"
           + " order by case e.scope when 'global' then 0 else 1 end")
-  public List<Emotion> findActiveByNormalized(
+  List<Emotion> findActiveByNormalized(
       @Param("p") UUID practitionerId, @Param("n") String normalized, Limit limit);
 
-  public default Optional<Emotion> findFirstActiveByNormalized(
-      UUID practitionerId, String normalized) {
+  default Optional<Emotion> findFirstActiveByNormalized(UUID practitionerId, String normalized) {
     return findActiveByNormalized(practitionerId, normalized, Limit.of(1)).stream().findFirst();
   }
 
@@ -38,7 +37,7 @@ public interface EmotionRepository extends JpaRepository<Emotion, String> {
   @Query(
       "select count(e) > 0 from Emotion e where e.labelNormalized = :n"
           + " and (e.scope = 'global' or e.practitionerId = :p) and e.code <> :x")
-  public boolean labelTaken(
+  boolean labelTaken(
       @Param("p") UUID practitionerId,
       @Param("n") String normalized,
       @Param("x") String excludingCode);
@@ -47,13 +46,13 @@ public interface EmotionRepository extends JpaRepository<Emotion, String> {
   @Query(
       "select e from Emotion e where e.code = :c and e.scope = 'custom'"
           + " and e.practitionerId = :p")
-  public Optional<Emotion> findOwnCustom(@Param("p") UUID practitionerId, @Param("c") String code);
+  Optional<Emotion> findOwnCustom(@Param("p") UUID practitionerId, @Param("c") String code);
 
   /** Émotion active utilisable par le praticien (globale ou sienne). */
   @Query(
       "select e from Emotion e where e.code = :c and e.active = true"
           + " and (e.scope = 'global' or e.practitionerId = :p)")
-  public Optional<Emotion> findUsable(@Param("p") UUID practitionerId, @Param("c") String code);
+  Optional<Emotion> findUsable(@Param("p") UUID practitionerId, @Param("c") String code);
 
   /**
    * Charge l'émotion avec un verrou de ligne (fusions concurrentes de la même source). Une seule
@@ -61,5 +60,5 @@ public interface EmotionRepository extends JpaRepository<Emotion, String> {
    */
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select e from Emotion e where e.code = :c")
-  public Optional<Emotion> findByCodeForUpdate(@Param("c") String code);
+  Optional<Emotion> findByCodeForUpdate(@Param("c") String code);
 }

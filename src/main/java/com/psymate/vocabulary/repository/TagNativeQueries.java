@@ -15,5 +15,5 @@ public interface TagNativeQueries {
    * cible du contexte de persistance (sinon elle porterait l'ancien compteur). L'archivage de la
    * source reste une méthode d'entité ({@code Tag.archiveInto}).
    */
-  public void addUsageCount(UUID source, UUID target);
+  void addUsageCount(UUID source, UUID target);
 }

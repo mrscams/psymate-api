@@ -51,7 +51,7 @@ public class EmotionMerge implements Persistable<UUID> {
 
   protected EmotionMerge() {}
 
-  public EmotionMerge(
+  EmotionMerge(
       UUID id,
       UUID practitionerId,
       String sourceCode,

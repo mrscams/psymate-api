@@ -27,7 +27,7 @@ public final class MergeResolver {
    * et ne peut pas l'être de nouveau avant l'annulation) ; l'historique suit toutes les fusions. Un
    * cycle, impossible en pratique, arrête le parcours au lieu de boucler.
    */
-  public static List<EmotionResolution> emotions(List<EmotionEdge> merges, String code) {
+  static List<EmotionResolution> emotions(List<EmotionEdge> merges, String code) {
     Map<String, String> active = new HashMap<>();
     Map<String, Set<String>> all = new HashMap<>();
     for (EmotionEdge m : merges) {
@@ -47,7 +47,7 @@ public final class MergeResolver {
   }
 
   /** Pour chaque tag archivé par une fusion, le bout de sa chaîne {@code merged_into}. */
-  public static Map<UUID, UUID> tags(Map<UUID, UUID> mergedInto) {
+  static Map<UUID, UUID> tags(Map<UUID, UUID> mergedInto) {
     Map<UUID, UUID> out = new HashMap<>();
     mergedInto.keySet().forEach(source -> out.put(source, follow(source, mergedInto)));
     return out;

@@ -1,8 +1,11 @@
 package com.psymate.vocabulary;
 
+import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.vocabulary.api.EmotionAffect;
 import com.psymate.vocabulary.api.EmotionCatalog;
+import com.psymate.vocabulary.api.EmotionMergeReverted;
 import com.psymate.vocabulary.api.EmotionView;
+import com.psymate.vocabulary.api.EmotionsMerged;
 import java.time.OffsetDateTime;
 import java.util.HexFormat;
 import java.util.List;
@@ -63,16 +66,19 @@ class EmotionService implements EmotionCatalog {
   private final EmotionMergeRepository merges;
   private final CurrentPractitioner current;
   private final TransactionTemplate tx;
+  private final DomainEventPublisher events;
 
   EmotionService(
       EmotionRepository emotions,
       EmotionMergeRepository merges,
       CurrentPractitioner current,
-      TransactionTemplate tx) {
+      TransactionTemplate tx,
+      DomainEventPublisher events) {
     this.emotions = emotions;
     this.merges = merges;
     this.current = current;
     this.tx = tx;
+    this.events = events;
   }
 
   @Override
@@ -182,6 +188,9 @@ class EmotionService implements EmotionCatalog {
                 Timestamps.now(),
                 UNDO_DAYS));
     source.deactivate();
+    events.publish(
+        new EmotionsMerged(
+            current.tenantId(), merge.getId(), practitioner, sourceCode, targetCode));
     return view(merge);
   }
 
@@ -211,6 +220,9 @@ class EmotionService implements EmotionCatalog {
     m.markUndone(now);
     emotions.restoreFeelings(m.getSourceCode(), m.getTargetCode());
     emotions.findById(m.getSourceCode()).ifPresent(Emotion::activate);
+    events.publish(
+        new EmotionMergeReverted(
+            current.tenantId(), m.getId(), practitioner, m.getSourceCode(), m.getTargetCode()));
     return view(m);
   }
 

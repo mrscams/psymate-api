@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T14:49:56.592Z",
+  "task": "M9-03",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Partie 2/4 : EmotionsMerged, EmotionMergeReverted, TagsMerged publiés par l'outbox dans la transaction de fusion",
+  "notes": "Écritures natives conservées ; 3 types en exception d'ApiUsageTests jusqu'à la partie 3 ; verify 395 unitaires + 923 IT verts",
+  "next": "Partie 3 : abonnés clinical et patients, après décision sur l'ordre fusion/annulation et sur affectedCount",
+  "pr": "https://github.com/mrscams/psymate-api/pull/55",
+  "branch": "claude/m9-03-p2",
+  "checkout": "m9-04-40f9c7"
+}

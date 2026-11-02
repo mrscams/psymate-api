@@ -1,4 +1,4 @@
-package com.psymate.shared.audit;
+package com.psymate.identity.audit;
 
 import java.time.Instant;
 import java.util.Map;

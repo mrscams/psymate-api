@@ -7,6 +7,7 @@ import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.PractitionerFacade;
 import com.psymate.identity.api.PractitionerFacade.PractitionerView;
+import com.psymate.shared.time.Timestamps;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -101,7 +102,7 @@ class ProfileService {
       throw ProfileException.invalid(errors);
     }
     PractitionerProfile profile = lock(p.id());
-    profile.applyEdit(request, DirectoryClock.now(clock));
+    profile.applyEdit(request, Timestamps.now(clock));
     return ProfileAssembler.toDto(profile, p.profession());
   }
 
@@ -114,7 +115,7 @@ class ProfileService {
     afterRollbackDelete(key);
     PractitionerProfile profile = lock(p.id());
     String previousKey = profile.getPhotoAssetKey();
-    profile.setPhoto(key, DirectoryClock.now(clock));
+    profile.setPhoto(key, Timestamps.now(clock));
     afterCommitDelete(previousKey);
     return ProfileAssembler.toDto(profile, p.profession());
   }
@@ -126,7 +127,7 @@ class ProfileService {
     PractitionerProfile profile = lock(p.id());
     String previousKey = profile.getPhotoAssetKey();
     if (previousKey != null) {
-      profile.setPhoto(null, DirectoryClock.now(clock));
+      profile.setPhoto(null, Timestamps.now(clock));
       afterCommitDelete(previousKey);
     }
   }
@@ -187,7 +188,7 @@ class ProfileService {
           List.of(),
           Map.of("missing", missing));
     }
-    if (entity.publish(DirectoryClock.now(clock))) {
+    if (entity.publish(Timestamps.now(clock))) {
       events.publish(new ProfilePublished(p.tenantId(), p.id(), entity.getSlug()));
     }
   }
@@ -197,7 +198,7 @@ class ProfileService {
     CurrentPractitioner p = me();
     ensureExists(p);
     PractitionerProfile entity = lock(p.id());
-    if (entity.unpublish(DirectoryClock.now(clock))) {
+    if (entity.unpublish(Timestamps.now(clock))) {
       events.publish(new ProfileUnpublished(p.tenantId(), p.id(), entity.getSlug()));
     }
   }
@@ -211,7 +212,7 @@ class ProfileService {
   @Transactional
   public void unpublishByPractitioner(UUID tenantId, UUID practitionerId) {
     Optional<PractitionerProfile> found = profiles.findForUpdate(practitionerId);
-    if (found.isPresent() && found.get().unpublish(DirectoryClock.now(clock))) {
+    if (found.isPresent() && found.get().unpublish(Timestamps.now(clock))) {
       events.publish(new ProfileUnpublished(tenantId, practitionerId, found.get().getSlug()));
     }
   }

@@ -1,5 +1,6 @@
 package com.psymate.identity.persistence;
 
+import com.psymate.shared.time.Timestamps;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
@@ -20,7 +21,7 @@ class AuthTokenNativeQueriesImpl implements AuthTokenNativeQueries {
         em.createNativeQuery(
                 "update auth_token set consumed_at = :now where token_hash = :h and kind = :k and"
                     + " consumed_at is null and expires_at > :now returning practitioner_id")
-            .setParameter("now", Times.utc(now))
+            .setParameter("now", Timestamps.utc(now))
             .setParameter("h", tokenHash)
             .setParameter("k", kind)
             .getResultList();

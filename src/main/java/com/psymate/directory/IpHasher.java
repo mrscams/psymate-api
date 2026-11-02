@@ -35,7 +35,7 @@ class IpHasher {
 
   /**
    * {@code normalizedIp} : adresse déjà normalisée (IPv6 en /64, voir {@link
-   * com.psymate.shared.ratelimit.RateLimiter#ipKey}).
+   * com.psymate.shared.web.IpAddresses#subnetKey}).
    */
   String hash(String normalizedIp, LocalDate dayUtc) {
     try {

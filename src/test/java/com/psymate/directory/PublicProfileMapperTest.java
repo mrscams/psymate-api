@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.psymate.directory.PublicDirectoryDtos.PublicProfile;
 import com.psymate.directory.PublicDirectoryRepository.Detail;
-import com.psymate.shared.ratelimit.RateLimiter;
+import com.psymate.shared.web.IpAddresses;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -75,10 +75,10 @@ class PublicProfileMapperTest {
 
   @Test
   void ipv6IsGroupedBySlash64() {
-    assertThat(RateLimiter.ipKey("2001:db8:1:2:0:0:0:1"))
-        .isEqualTo(RateLimiter.ipKey("2001:db8:1:2:ffff:0:0:9"));
-    assertThat(RateLimiter.ipKey("2001:db8:1:3::1"))
-        .isNotEqualTo(RateLimiter.ipKey("2001:db8:1:2::1"));
-    assertThat(RateLimiter.ipKey("10.0.0.1")).isEqualTo("10.0.0.1");
+    assertThat(IpAddresses.subnetKey("2001:db8:1:2:0:0:0:1"))
+        .isEqualTo(IpAddresses.subnetKey("2001:db8:1:2:ffff:0:0:9"));
+    assertThat(IpAddresses.subnetKey("2001:db8:1:3::1"))
+        .isNotEqualTo(IpAddresses.subnetKey("2001:db8:1:2::1"));
+    assertThat(IpAddresses.subnetKey("10.0.0.1")).isEqualTo("10.0.0.1");
   }
 }

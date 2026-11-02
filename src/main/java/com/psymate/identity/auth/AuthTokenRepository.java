@@ -2,7 +2,7 @@ package com.psymate.identity.auth;
 
 import com.psymate.identity.persistence.AuthToken;
 import com.psymate.identity.persistence.AuthTokenJpaRepository;
-import com.psymate.identity.persistence.Times;
+import com.psymate.shared.time.Timestamps;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,7 +23,7 @@ class AuthTokenRepository {
 
   /** Invalide les jetons actifs du même type (une nouvelle demande annule les précédents). */
   void consumeActive(UUID practitionerId, String kind, Instant now) {
-    tokens.consumeActive(practitionerId, kind, Times.utc(now));
+    tokens.consumeActive(practitionerId, kind, Timestamps.utc(now));
   }
 
   /** Consomme atomiquement un jeton valide ; vide si inconnu, déjà consommé ou expiré. */
@@ -33,6 +33,6 @@ class AuthTokenRepository {
 
   /** Nombre de jetons du type créés depuis {@code since} (limites de renvoi), consommés ou non. */
   int countCreatedSince(UUID practitionerId, String kind, Instant since) {
-    return (int) tokens.countCreatedSince(practitionerId, kind, Times.utc(since));
+    return (int) tokens.countCreatedSince(practitionerId, kind, Timestamps.utc(since));
   }
 }

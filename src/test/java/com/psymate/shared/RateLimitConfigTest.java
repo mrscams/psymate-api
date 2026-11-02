@@ -6,6 +6,7 @@ import com.psymate.shared.ratelimit.RateLimitProperties;
 import com.psymate.shared.ratelimit.RateLimitProperties.Key;
 import com.psymate.shared.ratelimit.RateLimitProperties.Rule;
 import com.psymate.shared.ratelimit.RateLimiter;
+import com.psymate.shared.web.IpAddresses;
 import io.github.bucket4j.ConsumptionProbe;
 import java.time.Duration;
 import java.util.Set;
@@ -78,11 +79,11 @@ class RateLimitConfigTest {
     runner.run(
         ctx -> {
           RateLimiter limiter = new RateLimiter(ctx.getBean(RateLimitProperties.class));
-          assertThat(RateLimiter.ipKey("2001:db8:1:2:0:0:0:1"))
-              .isEqualTo(RateLimiter.ipKey("2001:db8:1:2:ffff:0:0:9"));
-          assertThat(RateLimiter.ipKey("2001:db8:1:3::1"))
-              .isNotEqualTo(RateLimiter.ipKey("2001:db8:1:2::1"));
-          assertThat(RateLimiter.ipKey("10.0.0.1")).isEqualTo("10.0.0.1");
+          assertThat(IpAddresses.subnetKey("2001:db8:1:2:0:0:0:1"))
+              .isEqualTo(IpAddresses.subnetKey("2001:db8:1:2:ffff:0:0:9"));
+          assertThat(IpAddresses.subnetKey("2001:db8:1:3::1"))
+              .isNotEqualTo(IpAddresses.subnetKey("2001:db8:1:2::1"));
+          assertThat(IpAddresses.subnetKey("10.0.0.1")).isEqualTo("10.0.0.1");
 
           // Deux adresses du même /64 partagent le seau de la règle « ip ».
           for (int i = 0; i < 3; i++) {

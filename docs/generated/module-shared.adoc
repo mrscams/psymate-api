@@ -9,7 +9,6 @@
 
 _Others_
 
-* `c.p.s.audit.AuditWriter`
 * `c.p.s.problem.GlobalExceptionHandler`
 * `c.p.s.ratelimit.RateLimitFilters`
 * `c.p.s.ratelimit.RateLimiter`

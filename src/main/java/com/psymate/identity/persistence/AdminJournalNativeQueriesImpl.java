@@ -1,5 +1,6 @@
 package com.psymate.identity.persistence;
 
+import com.psymate.shared.time.Timestamps;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -49,11 +50,11 @@ class AdminJournalNativeQueriesImpl implements AdminJournalNativeQueries {
     }
     if (from != null) {
       sql.append(" and j.occurred_at >= :from");
-      params.put("from", Times.utc(from));
+      params.put("from", Timestamps.utc(from));
     }
     if (to != null) {
       sql.append(" and j.occurred_at <= :to");
-      params.put("to", Times.utc(to));
+      params.put("to", Timestamps.utc(to));
     }
     if (cursorKey != null) {
       sql.append(

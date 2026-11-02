@@ -1,5 +1,6 @@
 package com.psymate.identity.persistence;
 
+import com.psymate.shared.time.Timestamps;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -151,7 +152,7 @@ public class Practitioner implements Persistable<UUID> {
     p.addressPostalCode = addressPostalCode;
     p.addressCity = addressCity;
     p.remoteOnly = remoteOnly;
-    p.createdAt = Times.utc(now);
+    p.createdAt = Timestamps.utc(now);
     p.updatedAt = p.createdAt;
     return p;
   }
@@ -184,7 +185,7 @@ public class Practitioner implements Persistable<UUID> {
     p.verificationStatus = "approved";
     p.remoteOnly = false;
     p.preferences = new LinkedHashMap<>(Map.of(MUST_CHANGE_PASSWORD, true));
-    p.createdAt = Times.utc(now);
+    p.createdAt = Timestamps.utc(now);
     p.emailConfirmedAt = p.createdAt;
     p.verifiedAt = p.createdAt;
     p.updatedAt = p.createdAt;
@@ -199,7 +200,7 @@ public class Practitioner implements Persistable<UUID> {
 
   /** Passe email_pending à docs_pending et pose email_confirmed_at (A10.3). */
   public void confirmEmail(Instant now) {
-    this.emailConfirmedAt = Times.utc(now);
+    this.emailConfirmedAt = Timestamps.utc(now);
     this.updatedAt = this.emailConfirmedAt;
     if ("email_pending".equals(verificationStatus)) {
       this.verificationStatus = "docs_pending";
@@ -209,12 +210,12 @@ public class Practitioner implements Persistable<UUID> {
   public void changeEmail(String email, String emailNormalized, Instant now) {
     this.email = Objects.requireNonNull(email);
     this.emailNormalized = Objects.requireNonNull(emailNormalized);
-    this.updatedAt = Times.utc(now);
+    this.updatedAt = Timestamps.utc(now);
   }
 
   public void changePassword(String passwordHash, Instant now) {
     this.passwordHash = Objects.requireNonNull(passwordHash);
-    this.updatedAt = Times.utc(now);
+    this.updatedAt = Timestamps.utc(now);
   }
 
   /**
@@ -223,7 +224,7 @@ public class Practitioner implements Persistable<UUID> {
   public void startTotpEnrollment(byte[] encrypted, Instant now) {
     this.totpSecretEnc = encrypted;
     this.totpEnabledAt = null;
-    this.updatedAt = Times.utc(now);
+    this.updatedAt = Timestamps.utc(now);
   }
 
   /** Active la 2FA, seulement si un secret est en attente. */
@@ -231,14 +232,14 @@ public class Practitioner implements Persistable<UUID> {
     if (totpSecretEnc == null) {
       return;
     }
-    this.totpEnabledAt = Times.utc(now);
+    this.totpEnabledAt = Timestamps.utc(now);
     this.updatedAt = this.totpEnabledAt;
   }
 
   public void clearTotp(Instant now) {
     this.totpSecretEnc = null;
     this.totpEnabledAt = null;
-    this.updatedAt = Times.utc(now);
+    this.updatedAt = Timestamps.utc(now);
   }
 
   /** Remplace toutes les préférences (n'écrit pas updated_at, comme l'ancien UPDATE). */
@@ -252,7 +253,7 @@ public class Practitioner implements Persistable<UUID> {
    */
   public void moveVerificationTo(String status, Instant now) {
     this.verificationStatus = Objects.requireNonNull(status);
-    this.updatedAt = Times.utc(now);
+    this.updatedAt = Timestamps.utc(now);
   }
 
   public void updateProfessionalInfo(
@@ -269,31 +270,31 @@ public class Practitioner implements Persistable<UUID> {
     this.addressPostalCode = postalCode;
     this.addressCity = city;
     this.remoteOnly = remoteOnly;
-    this.updatedAt = Times.utc(now);
+    this.updatedAt = Timestamps.utc(now);
   }
 
   public void markApproved(UUID adminId, Instant now) {
     this.verificationStatus = "approved";
-    this.verifiedAt = Times.utc(now);
+    this.verifiedAt = Timestamps.utc(now);
     this.verifiedBy = adminId;
     this.updatedAt = this.verifiedAt;
   }
 
   public void markNeedsMore(Instant now) {
     this.verificationStatus = "needs_more";
-    this.updatedAt = Times.utc(now);
+    this.updatedAt = Timestamps.utc(now);
   }
 
   public void markRejected(Instant now, Instant purgeAfter) {
     this.verificationStatus = "rejected";
-    this.suspendedAt = Times.utc(now);
-    this.purgeAfter = Times.utc(purgeAfter);
+    this.suspendedAt = Timestamps.utc(now);
+    this.purgeAfter = Timestamps.utc(purgeAfter);
     this.updatedAt = this.suspendedAt;
   }
 
   public void markSuspended(Instant now) {
     this.verificationStatus = "suspended";
-    this.suspendedAt = Times.utc(now);
+    this.suspendedAt = Timestamps.utc(now);
     this.updatedAt = this.suspendedAt;
   }
 
@@ -302,7 +303,7 @@ public class Practitioner implements Persistable<UUID> {
     this.verificationStatus = Objects.requireNonNull(status);
     this.suspendedAt = null;
     this.purgeAfter = null;
-    this.updatedAt = Times.utc(now);
+    this.updatedAt = Timestamps.utc(now);
   }
 
   // --- Lecture ---

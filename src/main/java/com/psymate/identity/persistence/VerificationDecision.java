@@ -1,5 +1,6 @@
 package com.psymate.identity.persistence;
 
+import com.psymate.shared.time.Timestamps;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -74,7 +75,7 @@ public class VerificationDecision implements Persistable<UUID> {
     this.messageToPractitioner = messageToPractitioner;
     this.checklist = checklist == null ? new LinkedHashMap<>() : new LinkedHashMap<>(checklist);
     this.relatedId = relatedId;
-    this.decidedAt = Times.utc(decidedAt);
+    this.decidedAt = Timestamps.utc(decidedAt);
   }
 
   @Override

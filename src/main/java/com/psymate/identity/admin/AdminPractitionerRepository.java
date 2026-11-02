@@ -5,7 +5,7 @@ import com.psymate.identity.persistence.Practitioner;
 import com.psymate.identity.persistence.PractitionerAppealJpaRepository;
 import com.psymate.identity.persistence.PractitionerJpaRepository;
 import com.psymate.identity.persistence.Rows;
-import com.psymate.identity.persistence.Times;
+import com.psymate.shared.time.Timestamps;
 import jakarta.persistence.Tuple;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -132,8 +132,8 @@ class AdminPractitionerRepository {
                 new AppealRow(
                     a.id(),
                     a.decisionId(),
-                    Times.instant(a.submittedAt()),
-                    Times.instant(a.reviewedAt()),
+                    Timestamps.instant(a.submittedAt()),
+                    Timestamps.instant(a.reviewedAt()),
                     a.outcome(),
                     a.message(),
                     a.responseMessage()))

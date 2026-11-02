@@ -24,27 +24,27 @@ import tools.jackson.databind.json.JsonMapper;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(AuthTestConfig.class)
-abstract class AbstractLoginIT {
+public abstract class AbstractLoginIT {
 
-  static final String PASSWORD = "Zebre-Tournesol-42";
-  static final String IP = "203.0.113.10";
+  protected static final String PASSWORD = "Zebre-Tournesol-42";
+  protected static final String IP = "203.0.113.10";
 
-  @Autowired MockMvc mvc;
-  @Autowired JdbcTemplate jdbc;
-  @Autowired MutableClock clock;
-  final JsonMapper json = JsonMapper.builder().build();
+  @Autowired protected MockMvc mvc;
+  @Autowired protected JdbcTemplate jdbc;
+  @Autowired protected MutableClock clock;
+  protected final JsonMapper json = JsonMapper.builder().build();
 
   @BeforeEach
   void resetClock() {
     clock.reset();
   }
 
-  static String newEmail() {
+  protected static String newEmail() {
     return "l" + UUID.randomUUID().toString().substring(0, 8) + "@example.org";
   }
 
   /** Inscrit un compte puis fixe son statut de vérification. */
-  String account(String status) throws Exception {
+  protected String account(String status) throws Exception {
     String email = newEmail();
     String body =
         json.writeValueAsString(RegistrationFixtures.payload(email, PASSWORD, "psychologist"));
@@ -60,16 +60,16 @@ abstract class AbstractLoginIT {
     return email;
   }
 
-  String account() throws Exception {
+  protected String account() throws Exception {
     return account("docs_pending");
   }
 
-  UUID idOf(String email) {
+  protected UUID idOf(String email) {
     return jdbc.queryForObject(
         "select id from practitioner where email_normalized = ?", UUID.class, email);
   }
 
-  MvcResult post(String url, Object body, Cookie cookie, String ip) throws Exception {
+  protected MvcResult post(String url, Object body, Cookie cookie, String ip) throws Exception {
     var req =
         MockMvcRequestBuilders.post(url)
             .contentType(MediaType.APPLICATION_JSON)
@@ -85,7 +85,7 @@ abstract class AbstractLoginIT {
     return mvc.perform(req).andReturn();
   }
 
-  MvcResult login(String email, String password, String otp, String ip) throws Exception {
+  protected MvcResult login(String email, String password, String otp, String ip) throws Exception {
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("email", email);
     body.put("password", password);
@@ -95,7 +95,7 @@ abstract class AbstractLoginIT {
     return post("/api/auth/login", body, null, ip);
   }
 
-  Cookie session(String email) throws Exception {
+  protected Cookie session(String email) throws Exception {
     MvcResult r = login(email, PASSWORD, null, IP);
     if (r.getResponse().getStatus() != 200) {
       throw new AssertionError("login status " + r.getResponse().getStatus());
@@ -103,11 +103,11 @@ abstract class AbstractLoginIT {
     return r.getResponse().getCookie("SESSION");
   }
 
-  JsonNode body(MvcResult r) throws Exception {
+  protected JsonNode body(MvcResult r) throws Exception {
     return json.readTree(r.getResponse().getContentAsString());
   }
 
-  int events(String email, String kind) {
+  protected int events(String email, String kind) {
     return jdbc.queryForObject(
         "select count(*) from security_event e join practitioner p on p.id = e.practitioner_id"
             + " where p.email_normalized = ? and e.kind = ?",

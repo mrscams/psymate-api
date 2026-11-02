@@ -276,7 +276,7 @@
 package com.psymate.clinical;
 
 import org.springframework.modulith.ApplicationModule;</code></pre>
-<p><code>identity :: api</code> se lit « le package <code>api</code> du module identity, et rien d'autre ». Si une classe de <code>clinical</code> importe <code>com.psymate.identity.auth.LoginService</code>, <code>ModularityTests</code> échoue avec le nom de la classe fautive.</p>
+<p><code>identity :: api</code> se lit « le package <code>api</code> du module identity, et rien d'autre ». Si une classe de <code>clinical</code> importe <code>com.psymate.identity.auth.service.LoginService</code>, <code>ModularityTests</code> échoue avec le nom de la classe fautive.</p>
 
 <h3>Une façade</h3>
 <pre class="code"><code>// com.psymate.patients.api — ce que les autres modules peuvent demander à patients
@@ -487,7 +487,7 @@ class IntakeSessionListener {
     <rect x="565" y="55" width="170" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="650" y="79" fill="var(--fg)">contact : 5/h/IP + honeypot</text>
 
     <rect x="20" y="130" width="740" height="180" rx="8" fill="var(--surface)" stroke="var(--line)"/>
-    <text x="40" y="152" fill="var(--fg)" font-weight="600" text-anchor="start">Chaîne principale — /api/** (identity.auth.SecurityConfig)</text>
+    <text x="40" y="152" fill="var(--fg)" font-weight="600" text-anchor="start">Chaîne principale — /api/** (identity.auth.config.SecurityConfig)</text>
     <rect x="40" y="165" width="130" height="40" rx="6" fill="var(--info-soft)" stroke="var(--info)"/><text x="105" y="189" fill="var(--fg)">session cookie</text>
     <rect x="195" y="165" width="150" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="270" y="189" fill="var(--fg)">authenticated()</text>
     <rect x="370" y="165" width="170" height="40" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="455" y="189" fill="var(--fg)">hasRole(ADMIN) /api/admin/**</text>

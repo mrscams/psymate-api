@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T20:11:06.880Z",
+  "task": "M9-17",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant, 2 à corriger, 4 remarques",
+  "notes": "aucun bloquant. A corriger : (1) LoginService (service) importe config.EmailConfirmationFilter.PENDING, cycle config/service hors règle 3 de la revue 4.1, déplacer la constante vers model ; (2) TotpTest (model) embarque 2 tests de LoginAttemptLimiter (service) qui forcent public sur son constructeur, State, locked, remainingLock, recordFailure : les déplacer dans service/ et restaurer la visibilité paquet",
+  "branch": "claude/m9-17-369575",
+  "checkout": "m9-17-369575"
+}

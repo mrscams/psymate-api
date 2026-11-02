@@ -14,13 +14,13 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /** Lecture des e-mails reçus par Mailpit dans les tests (l'envoi est asynchrone). */
-final class MailpitClient {
+public final class MailpitClient {
 
   private final GenericContainer<?> mailpit;
   private final HttpClient http = HttpClient.newHttpClient();
   private final JsonMapper json = JsonMapper.builder().build();
 
-  MailpitClient(GenericContainer<?> mailpit) {
+  public MailpitClient(GenericContainer<?> mailpit) {
     this.mailpit = mailpit;
   }
 
@@ -37,7 +37,7 @@ final class MailpitClient {
   }
 
   /** Texte du dernier e-mail pour ce destinataire et ce sujet ; null après 10 s d'attente. */
-  String lastText(String to, String subject) throws Exception {
+  public String lastText(String to, String subject) throws Exception {
     long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
     while (true) {
       JsonNode found = search(to, subject);
@@ -53,13 +53,13 @@ final class MailpitClient {
   }
 
   /** Nombre d'e-mails correspondants, après une courte attente pour laisser partir l'asynchrone. */
-  int count(String to, String subject) throws Exception {
+  public int count(String to, String subject) throws Exception {
     Thread.sleep(1500);
     return search(to, subject).path("messages").size();
   }
 
   /** Dernier jeton de confirmation (lien /confirmer-email/{token}) reçu par l'adresse. */
-  String confirmationToken(String to) throws Exception {
+  public String confirmationToken(String to) throws Exception {
     String text = lastText(to, "confirmez");
     if (text == null) {
       return null;

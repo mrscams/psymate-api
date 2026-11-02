@@ -43,7 +43,7 @@ class OpenApiConfig {
   static final String FIELD_PROBLEM_SCHEMA = "FieldProblem";
 
   /**
-   * Routes servies sans session (voir identity.auth.SecurityConfig et
+   * Routes servies sans session (voir identity.auth.config.SecurityConfig et
    * directory.PublicSecurityConfig) : aucune 401 UNAUTHENTICATED transverse n'y est ajoutée.
    */
   private static final List<String> PUBLIC_PREFIXES =

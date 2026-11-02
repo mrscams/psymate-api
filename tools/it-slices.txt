@@ -9,6 +9,9 @@
 # 4 (identity/auth ; identity/admin + preferences + verification ; directory avec clinical) gagne 2 a 3 min
 # sur un poste libre mais manque de memoire des qu'un autre build tourne (PR #42) ; a reessayer avec
 # un plafond -Xmx par voie.
-clinical=com/psymate/clinical/**/*IT.java,com/psymate/vocabulary/*IT.java,com/psymate/patients/*IT.java,com/psymate/events/*IT.java,!**/perf/**
-identity=com/psymate/identity/**/*IT.java,com/psymate/directory/*IT.java,!**/perf/**
-core=com/psymate/linking/**/*IT.java,com/psymate/overview/*IT.java,com/psymate/search/*IT.java,com/psymate/shared/*IT.java,com/psymate/*IT.java,!**/perf/**
+# Motifs `**` par module (M9-02, ARCH-17) : un IT deplace dans un dossier de role (search/controller/...)
+# reste dans sa tranche. Seul `com/psymate/*IT.java` (tests transverses a la racine) reste a un niveau,
+# sinon il engloberait tous les modules.
+clinical=com/psymate/clinical/**/*IT.java,com/psymate/vocabulary/**/*IT.java,com/psymate/patients/**/*IT.java,com/psymate/events/**/*IT.java,!**/perf/**
+identity=com/psymate/identity/**/*IT.java,com/psymate/directory/**/*IT.java,!**/perf/**
+core=com/psymate/linking/**/*IT.java,com/psymate/overview/**/*IT.java,com/psymate/search/**/*IT.java,com/psymate/shared/**/*IT.java,com/psymate/*IT.java,!**/perf/**

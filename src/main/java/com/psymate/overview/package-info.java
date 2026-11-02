@@ -12,14 +12,7 @@
  * la garde de propriété ({@code patients.api}) sont importées.
  */
 @ApplicationModule(
-    allowedDependencies = {
-      "events :: api",
-      "patients :: api",
-      "identity :: api",
-      "clinical :: api",
-      "linking :: api",
-      "shared"
-    })
+    allowedDependencies = {"patients :: api", "clinical :: api", "linking :: api", "shared"})
 package com.psymate.overview;
 
 import org.springframework.modulith.ApplicationModule;

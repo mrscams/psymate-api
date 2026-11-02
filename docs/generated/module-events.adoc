@@ -1,0 +1,10 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.psymate.events`
+|Spring components
+|* `c.p.e.api.DomainEventPublisher` (via `c.p.e.SpringDomainEventPublisher`)
+* `c.p.e.api.EventDeduplicator` (via `c.p.e.JdbcEventDeduplicator`)
+|Events listened to
+|* `org.springframework.boot.context.event.ApplicationReadyEvent` 
+|===

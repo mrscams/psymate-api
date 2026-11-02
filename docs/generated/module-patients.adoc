@@ -1,0 +1,13 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.psymate.patients`
+|Spring components
+|_Services_
+
+* `c.p.p.api.PatientFacade`, `c.p.p.api.PatientOwnershipGuard` (via `c.p.p.PatientService`)
+|Bean references
+|* `c.p.e.api.DomainEventPublisher` (in Events)
+* `c.p.v.api.EmotionCatalog` (in Vocabulary)
+* `c.p.v.api.TagFacade` (in Vocabulary)
+|===

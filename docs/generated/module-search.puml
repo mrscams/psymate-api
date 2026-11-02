@@ -1,0 +1,38 @@
+@startuml
+title <size:24>Search</size>
+
+set separator none
+top to bottom direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Component>
+
+System_Boundary("App_boundary", "App", $tags="") {
+  Container_Boundary("App.App_boundary", "App", $tags="") {
+    Component(App.App.Clinical, "Clinical", $techn="Module", $descr="", $tags="", $link="")
+    Component(App.App.Identity, "Identity", $techn="Module", $descr="", $tags="", $link="")
+    Component(App.App.Patients, "Patients", $techn="Module", $descr="", $tags="", $link="")
+    Component(App.App.Search, "Search", $techn="Module", $descr="", $tags="", $link="")
+  }
+
+}
+
+Rel(App.App.Clinical, App.App.Identity, "uses", $techn="", $tags="", $link="")
+Rel(App.App.Clinical, App.App.Patients, "listens to", $techn="", $tags="", $link="")
+Rel(App.App.Clinical, App.App.Patients, "uses", $techn="", $tags="", $link="")
+Rel(App.App.Patients, App.App.Identity, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Search, App.App.Clinical, "listens to", $techn="", $tags="", $link="")
+Rel(App.App.Search, App.App.Identity, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Search, App.App.Patients, "uses", $techn="", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

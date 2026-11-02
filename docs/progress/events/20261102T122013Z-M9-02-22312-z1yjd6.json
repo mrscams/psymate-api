@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T12:20:13.799Z",
+  "task": "M9-02",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "2 bloquant(s), 6 à corriger, 6 remarque(s)",
+  "notes": "Bloquants : (1) noEntityExposedToWebOrDto signale tout *Mapper/*Assembler rangé dans dto/ (ils touchent aux entités, revue §4.1 règle 3) ; (2) RoleFolderTests suffixe->dossier contredit annotation/§4.3 : ExportJob (Job), ContactRequest (Request), NameFilter (Filter), clinical.api.LinkRequest.",
+  "branch": "claude/m9-02-4cf77b",
+  "checkout": "dazzling-thompson-0f4d46"
+}

@@ -1,0 +1,40 @@
+@startuml
+title <size:24>Overview</size>
+
+set separator none
+top to bottom direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Component>
+
+System_Boundary("App_boundary", "App", $tags="") {
+  Container_Boundary("App.App_boundary", "App", $tags="") {
+    Component(App.App.Clinical, "Clinical", $techn="Module", $descr="", $tags="", $link="")
+    Component(App.App.Linking, "Linking", $techn="Module", $descr="", $tags="", $link="")
+    Component(App.App.Overview, "Overview", $techn="Module", $descr="", $tags="", $link="")
+    Component(App.App.Patients, "Patients", $techn="Module", $descr="", $tags="", $link="")
+  }
+
+}
+
+Rel(App.App.Clinical, App.App.Patients, "listens to", $techn="", $tags="", $link="")
+Rel(App.App.Clinical, App.App.Patients, "uses", $techn="", $tags="", $link="")
+Rel(App.App.Linking, App.App.Clinical, "listens to", $techn="", $tags="", $link="")
+Rel(App.App.Linking, App.App.Clinical, "uses", $techn="", $tags="", $link="")
+Rel(App.App.Linking, App.App.Patients, "uses", $techn="", $tags="", $link="")
+Rel(App.App.Overview, App.App.Clinical, "listens to", $techn="", $tags="", $link="")
+Rel(App.App.Overview, App.App.Linking, "listens to", $techn="", $tags="", $link="")
+Rel(App.App.Overview, App.App.Patients, "listens to", $techn="", $tags="", $link="")
+Rel(App.App.Overview, App.App.Patients, "uses", $techn="", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

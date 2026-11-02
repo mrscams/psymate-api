@@ -1,0 +1,37 @@
+@startuml
+title <size:24>Directory</size>
+
+set separator none
+top to bottom direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Component>
+
+System_Boundary("App_boundary", "App", $tags="") {
+  Container_Boundary("App.App_boundary", "App", $tags="") {
+    Component(App.App.Directory, "Directory", $techn="Module", $descr="", $tags="", $link="")
+    Component(App.App.Events, "Events", $techn="Module", $descr="", $tags="", $link="")
+    Component(App.App.Identity, "Identity", $techn="Module", $descr="", $tags="", $link="")
+    Component(App.App.Shared, "Shared", $techn="Module", $descr="", $tags="", $link="")
+  }
+
+}
+
+Rel(App.App.Directory, App.App.Events, "uses", $techn="", $tags="", $link="")
+Rel(App.App.Directory, App.App.Identity, "listens to", $techn="", $tags="", $link="")
+Rel(App.App.Directory, App.App.Identity, "uses", $techn="", $tags="", $link="")
+Rel(App.App.Directory, App.App.Shared, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Identity, App.App.Events, "uses", $techn="", $tags="", $link="")
+Rel(App.App.Identity, App.App.Shared, "depends on", $techn="", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

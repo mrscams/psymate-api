@@ -1,0 +1,20 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.psymate.identity`
+|Spring components
+|_Controllers_
+
+* `c.p.i.api.AuthErrorScope` (via `c.p.i.admin.AppealController`)
+
+_Services_
+
+* `c.p.i.api.PractitionerFacade` (via `c.p.i.auth.PractitionerFacadeImpl`)
+* `c.p.i.api.SuspendedAccountAuthenticator` (via `c.p.i.auth.AppealAuthenticator`)
+
+_Others_
+
+* `c.p.i.api.EncryptedStorageFacade` (via `c.p.i.verification.EncryptedStorageFacadeImpl`)
+|Bean references
+|* `c.p.e.api.DomainEventPublisher` (in Events)
+|===

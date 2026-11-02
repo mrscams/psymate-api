@@ -12,4 +12,6 @@
 _Others_
 
 * `c.p.v.CurrentPractitionerPort` (via `c.p.v.IdentityCurrentPractitionerAdapter`)
+|Bean references
+|* `c.p.e.api.DomainEventPublisher` (in Events)
 |===

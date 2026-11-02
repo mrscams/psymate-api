@@ -259,6 +259,11 @@ class VocabularyMergeIT {
               assertThat(e.getTargetCode()).isEqualTo("sadness");
             });
     assertThat(events.stream(EmotionsMerged.class)).hasSize(1);
+
+    // Une seconde annulation est refusée (409) et ne republie rien.
+    send(MockMvcRequestBuilders.post("/api/me/emotions/merges/{id}/undo", mergeId), Map.of())
+        .andExpect(status().isConflict());
+    assertThat(events.stream(EmotionMergeReverted.class)).hasSize(1);
   }
 
   @Test
@@ -292,7 +297,7 @@ class VocabularyMergeIT {
     send(
             MockMvcRequestBuilders.post("/api/tags/{id}/merge", boulot),
             Map.of("targetId", boulot.toString()))
-        .andExpect(status().is4xxClientError());
+        .andExpect(status().isUnprocessableEntity());
     String merge =
         body(
             send(

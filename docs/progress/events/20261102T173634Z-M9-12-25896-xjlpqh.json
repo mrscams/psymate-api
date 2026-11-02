@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-02T17:36:34.032Z",
+  "task": "M9-12",
+  "agent": "claude",
+  "status": "done",
+  "summary": "PR 60 à jour de main : la décision Q5 de la revue devient G Q43 (Q42 prise par M9-03)",
+  "notes": "fusion de main (M9-03 4/4) ; conflit de numérotation dans G7 résolu en gardant les deux décisions ; 403 tests unitaires et gardes verts après fusion",
+  "pr": "https://github.com/mrscams/psymate-api/pull/60",
+  "branch": "claude/m9-12-0e14a5",
+  "checkout": "m9-06-a9e549"
+}

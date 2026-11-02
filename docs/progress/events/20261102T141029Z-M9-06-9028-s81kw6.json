@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T14:10:29.069Z",
+  "task": "M9-06",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 53 fusionnee dans main (9dfb613) : facades mortes supprimees, shared.Reserved, garde ApiUsageTests, decisions G Q39 et Q40",
+  "next": "M9-07 (search), M9-11 (directory) et M9-14 (linking) debloquees",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

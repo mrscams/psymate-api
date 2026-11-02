@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T12:40:59.506Z",
+  "task": "M9-02",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Gardes independantes de la structure : entite exposee par annotations, technologie par module, autorise inclus dans utilise, bootstrap/shared, appartenance des tables, dossiers par role et garde DTO, Documenter, motifs ** ; verify vert",
+  "notes": "382 unitaires, 906 IT verts. src/main : declarations inutiles retirees de search et overview package-info. Exceptions : clinical.export (M9-12), shared.audit (M9-05), vocabulary (M9-03). Revue reviewer : 2 bloquants et 6 points corriges.",
+  "next": "M9-03, M9-05, M9-06 puis M9-07 (ROLE_FOLDER_MODULES += search)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/50",
+  "branch": "claude/m9-02-4cf77b",
+  "checkout": "dazzling-thompson-0f4d46"
+}

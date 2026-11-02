@@ -17,20 +17,20 @@ import org.springframework.context.annotation.Primary;
  * ClinicalTestConfig}. Chaque test repart de {@link #NOW}.
  */
 @TestConfiguration
-class OverviewTestConfig {
+public class OverviewTestConfig {
 
   /** Instant courant de départ de tous les tests overview (un jeudi, 12 h UTC). */
-  static final Instant NOW = Instant.parse("2026-10-29T12:00:00Z");
+  public static final Instant NOW = Instant.parse("2026-10-29T12:00:00Z");
 
   /** Horloge dont le test choisit l'instant courant. */
-  static class MutableClock extends Clock {
+  public static class MutableClock extends Clock {
     private final AtomicReference<Instant> now = new AtomicReference<>(NOW);
 
-    void set(Instant instant) {
+    public void set(Instant instant) {
       now.set(instant);
     }
 
-    void advance(Duration d) {
+    public void advance(Duration d) {
       now.updateAndGet(i -> i.plus(d));
     }
 

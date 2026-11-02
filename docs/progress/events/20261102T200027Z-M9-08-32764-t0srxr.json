@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T20:00:27.284Z",
+  "task": "M9-08",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant, 0 à corriger, 4 remarque(s)",
+  "notes": "aucun bloquant. Remarques : SQL du projecteur dans service/ ; odt/instant publics dans OverviewRepository ; Javadoc OverviewPayload 'le contrôleur' obsolète (préexistant) ; docs/generated modifié non commité (sortie des tests de modules)",
+  "branch": "claude/m9-08-fa7fc9",
+  "checkout": "m9-08-fa7fc9"
+}

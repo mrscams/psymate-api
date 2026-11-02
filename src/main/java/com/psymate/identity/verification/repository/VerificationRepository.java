@@ -1,4 +1,4 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.repository;
 
 import com.psymate.identity.persistence.DocumentAccessLog;
 import com.psymate.identity.persistence.DocumentAccessLogJpaRepository;
@@ -26,10 +26,10 @@ import org.springframework.transaction.annotation.Transactional;
  * seule la purge planifiée tourne hors transaction et passe par un UPDATE conditionnel.
  */
 @Repository
-class VerificationRepository {
+public class VerificationRepository {
 
   /** Ligne de verification_document (clé de stockage incluse : usage interne uniquement). */
-  record DocumentRow(
+  public record DocumentRow(
       UUID id,
       UUID practitionerId,
       String type,
@@ -46,7 +46,7 @@ class VerificationRepository {
       Instant deletedAt) {}
 
   /** Compte du praticien tel que lu en base (la session peut être en retard). */
-  record AccountRow(
+  public record AccountRow(
       UUID id,
       UUID tenantId,
       String displayName,
@@ -60,11 +60,11 @@ class VerificationRepository {
       String city,
       boolean remoteOnly) {}
 
-  record DecisionRow(String kind, String message, Instant decidedAt) {}
+  public record DecisionRow(String kind, String message, Instant decidedAt) {}
 
-  record DuePurge(UUID id, String storageKey) {}
+  public record DuePurge(UUID id, String storageKey) {}
 
-  record AdminRecipient(String email, String locale) {}
+  public record AdminRecipient(String email, String locale) {}
 
   private final PractitionerJpaRepository practitioners;
   private final VerificationDocumentJpaRepository documents;
@@ -119,7 +119,7 @@ class VerificationRepository {
         p.isRemoteOnly());
   }
 
-  Optional<AccountRow> findAccount(UUID id) {
+  public Optional<AccountRow> findAccount(UUID id) {
     return practitioners.findById(id).map(VerificationRepository::map);
   }
 
@@ -128,23 +128,23 @@ class VerificationRepository {
    * premier accès au compte dans la transaction (l'entité n'est pas relue si elle est déjà
    * chargée).
    */
-  Optional<AccountRow> lockAccount(UUID id) {
+  public Optional<AccountRow> lockAccount(UUID id) {
     return practitioners.findForUpdate(id).map(VerificationRepository::map);
   }
 
   /** Justificatifs de vérification non retirés par le praticien (le recours est hors périmètre). */
-  List<DocumentRow> activeDocuments(UUID practitionerId) {
+  public List<DocumentRow> activeDocuments(UUID practitionerId) {
     return documents.activeDocuments(practitionerId).stream()
         .map(VerificationRepository::map)
         .toList();
   }
 
-  Optional<DocumentRow> findDocument(UUID id) {
+  public Optional<DocumentRow> findDocument(UUID id) {
     return documents.findById(id).map(VerificationRepository::map);
   }
 
   @Transactional
-  void insertDocument(
+  public void insertDocument(
       UUID id,
       UUID practitionerId,
       String type,
@@ -173,7 +173,7 @@ class VerificationRepository {
 
   /** Retrait par le praticien : la ligne reste, le fichier est supprimé (purged_at posé). */
   @Transactional
-  void markDeleted(UUID id, Instant now) {
+  public void markDeleted(UUID id, Instant now) {
     documents.findById(id).ifPresent(d -> d.markDeleted(now));
   }
 
@@ -181,23 +181,23 @@ class VerificationRepository {
    * Appelé hors transaction par la purge planifiée : UPDATE conditionnel dans sa propre
    * transaction, sans effet si le fichier est déjà marqué purgé.
    */
-  void markPurged(UUID id, Instant now) {
+  public void markPurged(UUID id, Instant now) {
     documents.markPurged(id, Timestamps.utc(now));
   }
 
-  List<DuePurge> duePurges(Instant now, int limit) {
+  public List<DuePurge> duePurges(Instant now, int limit) {
     return documents.duePurges(Timestamps.utc(now), Limit.of(limit)).stream()
         .map(d -> new DuePurge(d.id(), d.storageKey()))
         .toList();
   }
 
   @Transactional
-  void setStatus(UUID practitionerId, String status, Instant now) {
+  public void setStatus(UUID practitionerId, String status, Instant now) {
     practitioners.findById(practitionerId).ifPresent(p -> p.moveVerificationTo(status, now));
   }
 
   @Transactional
-  void updateProfessionalInfo(
+  public void updateProfessionalInfo(
       UUID id,
       String professionalNumber,
       String phone,
@@ -215,30 +215,30 @@ class VerificationRepository {
   }
 
   /** Messages reçus uniquement : la note interne n'est jamais lue ici. */
-  List<DecisionRow> decisionMessages(UUID practitionerId) {
+  public List<DecisionRow> decisionMessages(UUID practitionerId) {
     return decisions.messages(practitionerId).stream()
         .map(m -> new DecisionRow(m.kind(), m.message(), Timestamps.instant(m.decidedAt())))
         .toList();
   }
 
   /** Date de la dernière soumission (journal de sécurité, il n'y a pas de colonne dédiée). */
-  Optional<Instant> lastSubmittedAt(UUID practitionerId) {
+  public Optional<Instant> lastSubmittedAt(UUID practitionerId) {
     return events.lastOccurredAt(practitionerId, "verification_submitted").map(Timestamps::instant);
   }
 
   @Transactional
-  void insertSecurityEvent(UUID practitionerId, String kind, Instant now) {
+  public void insertSecurityEvent(UUID practitionerId, String kind, Instant now) {
     events.save(new SecurityEvent(UUID.randomUUID(), practitionerId, null, kind, null, null, now));
   }
 
   @Transactional
-  void insertAccessLog(UUID documentId, UUID accessorId, String ip, Instant now) {
+  public void insertAccessLog(UUID documentId, UUID accessorId, String ip, Instant now) {
     accessLogs.save(
         new DocumentAccessLog(
             UUID.randomUUID(), documentId, accessorId, IpAddresses.parse(ip), now));
   }
 
-  List<AdminRecipient> adminRecipients() {
+  public List<AdminRecipient> adminRecipients() {
     return practitioners.adminRecipients().stream()
         .map(r -> new AdminRecipient(r.email(), r.locale()))
         .toList();

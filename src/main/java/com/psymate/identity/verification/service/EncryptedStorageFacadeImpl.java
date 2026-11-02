@@ -1,4 +1,4 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.service;
 
 import com.psymate.identity.api.EncryptedStorageFacade;
 import org.springframework.stereotype.Component;

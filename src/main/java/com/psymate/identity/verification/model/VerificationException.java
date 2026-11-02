@@ -1,14 +1,14 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.model;
 
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 
 /** Erreur métier du dossier professionnel, rendue en RFC 9457 par VerificationExceptionHandler. */
-class VerificationException extends RuntimeException {
+public class VerificationException extends RuntimeException {
 
   /** Erreur de champ : champ, code, clé de message. */
-  record FieldError(String field, String code, String messageKey) {}
+  public record FieldError(String field, String code, String messageKey) {}
 
   private final HttpStatus status;
   private final String code;
@@ -30,11 +30,11 @@ class VerificationException extends RuntimeException {
     this.extra = extra;
   }
 
-  static VerificationException of(HttpStatus status, String code, String messageKey) {
+  public static VerificationException of(HttpStatus status, String code, String messageKey) {
     return new VerificationException(status, code, messageKey, List.of(), Map.of());
   }
 
-  static VerificationException fields(List<FieldError> errors) {
+  public static VerificationException fields(List<FieldError> errors) {
     return new VerificationException(
         HttpStatus.UNPROCESSABLE_CONTENT,
         "VALIDATION_FAILED",
@@ -43,7 +43,7 @@ class VerificationException extends RuntimeException {
         Map.of());
   }
 
-  static VerificationException incomplete(List<String> missing) {
+  public static VerificationException incomplete(List<String> missing) {
     return new VerificationException(
         HttpStatus.CONFLICT,
         "VERIFICATION_INCOMPLETE",
@@ -52,23 +52,23 @@ class VerificationException extends RuntimeException {
         Map.of("missing", missing));
   }
 
-  HttpStatus status() {
+  public HttpStatus status() {
     return status;
   }
 
-  String code() {
+  public String code() {
     return code;
   }
 
-  String messageKey() {
+  public String messageKey() {
     return messageKey;
   }
 
-  List<FieldError> errors() {
+  public List<FieldError> errors() {
     return errors;
   }
 
-  Map<String, Object> extra() {
+  public Map<String, Object> extra() {
     return extra;
   }
 }

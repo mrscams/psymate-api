@@ -1,4 +1,4 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.service;
 
 import java.util.Locale;
 import org.springframework.context.MessageSource;
@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 /** Messages localisés du dossier professionnel (messages_fr/en.properties, repli français). */
 @Component
-class VerificationMessages {
+public class VerificationMessages {
 
   private final MessageSource source;
 
@@ -19,7 +19,7 @@ class VerificationMessages {
     this.source = s;
   }
 
-  String get(String key, Locale locale, Object... args) {
+  public String get(String key, Locale locale, Object... args) {
     Locale l = locale != null && "en".equals(locale.getLanguage()) ? Locale.ENGLISH : Locale.FRENCH;
     return source.getMessage(key, args, l);
   }

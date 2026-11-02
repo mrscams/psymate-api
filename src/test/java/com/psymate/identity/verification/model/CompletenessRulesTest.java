@@ -1,4 +1,4 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

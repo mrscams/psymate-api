@@ -1,18 +1,21 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.service;
 
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.VerificationSubmitted;
-import com.psymate.identity.verification.VerificationDtos.AddressDto;
-import com.psymate.identity.verification.VerificationDtos.DecisionDto;
-import com.psymate.identity.verification.VerificationDtos.DocumentDto;
-import com.psymate.identity.verification.VerificationDtos.ProfessionalInfoDto;
-import com.psymate.identity.verification.VerificationDtos.ProfessionalInfoRequest;
-import com.psymate.identity.verification.VerificationDtos.SignedUrlDto;
-import com.psymate.identity.verification.VerificationDtos.VerificationDto;
-import com.psymate.identity.verification.VerificationException.FieldError;
-import com.psymate.identity.verification.VerificationRepository.AccountRow;
-import com.psymate.identity.verification.VerificationRepository.DocumentRow;
-import com.psymate.identity.verification.VerificationRepository.DuePurge;
+import com.psymate.identity.verification.dto.AddressDto;
+import com.psymate.identity.verification.dto.DecisionDto;
+import com.psymate.identity.verification.dto.DocumentDto;
+import com.psymate.identity.verification.dto.ProfessionalInfoDto;
+import com.psymate.identity.verification.dto.ProfessionalInfoRequest;
+import com.psymate.identity.verification.dto.SignedUrlDto;
+import com.psymate.identity.verification.dto.VerificationDto;
+import com.psymate.identity.verification.model.CompletenessRules;
+import com.psymate.identity.verification.model.VerificationException;
+import com.psymate.identity.verification.model.VerificationException.FieldError;
+import com.psymate.identity.verification.repository.VerificationRepository;
+import com.psymate.identity.verification.repository.VerificationRepository.AccountRow;
+import com.psymate.identity.verification.repository.VerificationRepository.DocumentRow;
+import com.psymate.identity.verification.repository.VerificationRepository.DuePurge;
 import jakarta.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -39,12 +42,12 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 /** Dossier professionnel du praticien connecté (A10.2, A10.3, fiche 13). */
 @Service
-class VerificationService {
+public class VerificationService {
 
   private static final Logger LOG = LoggerFactory.getLogger(VerificationService.class);
 
   static final Duration URL_VALIDITY = Duration.ofMinutes(5);
-  static final int MAX_DOCUMENTS = 20;
+  public static final int MAX_DOCUMENTS = 20;
   static final int PURGE_BATCH = 500;
 
   private static final Set<String> TYPES =
@@ -58,7 +61,7 @@ class VerificationService {
   private static final Pattern IP = Pattern.compile("^[0-9A-Fa-f:.]{2,45}$");
 
   /** Fichier déchiffré prêt à être servi. */
-  record FileContent(byte[] bytes, String mime) {}
+  public record FileContent(byte[] bytes, String mime) {}
 
   private final VerificationRepository repo;
   private final StorageService storage;
@@ -97,7 +100,7 @@ class VerificationService {
   // ---- lecture
 
   @Transactional(readOnly = true)
-  VerificationDto get(UUID practitionerId) {
+  public VerificationDto get(UUID practitionerId) {
     AccountRow account = account(practitionerId);
     List<DocumentRow> docs = repo.activeDocuments(practitionerId);
     List<String> present = presentTypes(docs);
@@ -117,14 +120,14 @@ class VerificationService {
   }
 
   @Transactional(readOnly = true)
-  DocumentDto getDocument(UUID practitionerId, UUID documentId) {
+  public DocumentDto getDocument(UUID practitionerId, UUID documentId) {
     return toDto(owned(practitionerId, documentId));
   }
 
   // ---- dépôt et retrait
 
   @Transactional
-  DocumentDto upload(
+  public DocumentDto upload(
       UUID practitionerId,
       String type,
       String title,
@@ -168,7 +171,7 @@ class VerificationService {
   }
 
   @Transactional
-  void delete(UUID practitionerId, UUID documentId) {
+  public void delete(UUID practitionerId, UUID documentId) {
     DocumentRow doc = owned(practitionerId, documentId);
     requireEditable(lock(practitionerId));
     repo.markDeleted(doc.id(), clock.instant());
@@ -184,7 +187,7 @@ class VerificationService {
   // ---- lecture du fichier par URL signée
 
   @Transactional(readOnly = true)
-  SignedUrlDto signedUrl(UUID practitionerId, UUID documentId) {
+  public SignedUrlDto signedUrl(UUID practitionerId, UUID documentId) {
     DocumentRow doc = owned(practitionerId, documentId);
     if (doc.purgedAt() != null) {
       throw purged();
@@ -201,7 +204,7 @@ class VerificationService {
    * Chaque lecture écrit une ligne document_access_log.
    */
   @Transactional
-  FileContent file(UUID practitionerId, UUID documentId, Long exp, String sig, String ip) {
+  public FileContent file(UUID practitionerId, UUID documentId, Long exp, String sig, String ip) {
     DocumentRow doc = owned(practitionerId, documentId);
     Instant now = clock.instant();
     boolean valid =
@@ -228,7 +231,7 @@ class VerificationService {
   // ---- soumission
 
   @Transactional
-  VerificationDto submit(UUID practitionerId) {
+  public VerificationDto submit(UUID practitionerId) {
     AccountRow account = lock(practitionerId);
     requireEditable(account);
     List<String> missing =
@@ -249,7 +252,8 @@ class VerificationService {
   // ---- informations professionnelles
 
   @Transactional
-  ProfessionalInfoDto updateProfessionalInfo(UUID practitionerId, ProfessionalInfoRequest r) {
+  public ProfessionalInfoDto updateProfessionalInfo(
+      UUID practitionerId, ProfessionalInfoRequest r) {
     AccountRow a = lock(practitionerId);
     List<FieldError> errors = new ArrayList<>();
     String pro =

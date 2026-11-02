@@ -1,4 +1,4 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.service;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

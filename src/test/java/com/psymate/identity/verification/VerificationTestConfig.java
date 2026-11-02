@@ -18,11 +18,11 @@ import org.testcontainers.utility.MountableFile;
 
 /** Postgres (pgvector), Mailpit et enregistreur d'événements pour les tests du dossier. */
 @TestConfiguration(proxyBeanMethods = false)
-class VerificationTestConfig {
+public class VerificationTestConfig {
 
   /** Événements VerificationSubmitted reçus. */
-  static class Recorder {
-    final List<UUID> submitted = new CopyOnWriteArrayList<>();
+  public static class Recorder {
+    public final List<UUID> submitted = new CopyOnWriteArrayList<>();
 
     @EventListener
     void on(VerificationSubmitted e) {

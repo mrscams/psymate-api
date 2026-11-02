@@ -1,4 +1,4 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.service;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T17:33:29.045Z",
+  "task": "M9-12",
+  "agent": "claude",
+  "status": "done",
+  "summary": "PR 60 : clinical.export rangé par rôle, SQL natif en fragments ExportJobNativeQueries et ExportNativeQueries, ExportDtos éclaté, Q5 tranchée (G Q42)",
+  "notes": "verify vert après fusion de main (403 unitaires, 930 IT) ; ContractIT vert sans make contract ; requêtes SQL identiques à main ; ExportIT vert sous New_York et Kiritimati ; exception clinical.export retirée de la garde de technologie ; ROLE_FOLDER_MODULES += clinical.export",
+  "next": "M9-13 (renommage des dossiers de clinical) débloquée",
+  "pr": "https://github.com/mrscams/psymate-api/pull/60",
+  "branch": "claude/m9-12-0e14a5",
+  "checkout": "m9-06-a9e549"
+}

@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T14:49:50.822Z",
+  "task": "M9-14",
+  "agent": "claude",
+  "status": "done",
+  "summary": "linking rangé par rôle (controller, dto, service, repository, model), DTO éclatés, linking dans ROLE_FOLDER_MODULES ; contrat inchangé",
+  "notes": "Q1 de la revue tranchée (G Q41) : pas de LinkRemoved en V1, link_count synchrone. Écarts au §4.3 imposés par la règle 3 : Graph* dans model, LinkMessages dans dto. verify vert : 395 unitaires, 920 IT",
+  "next": "Relecture et fusion par l'utilisateur ; conflit d'une ligne attendu avec M9-11 dans RoleFolderTests",
+  "pr": "https://github.com/mrscams/psymate-api/pull/54",
+  "branch": "claude/m9-14-6fa5af",
+  "checkout": "m9-05-892e09"
+}

@@ -276,7 +276,7 @@
 package com.psymate.clinical;
 
 import org.springframework.modulith.ApplicationModule;</code></pre>
-<p><code>identity :: api</code> se lit « le package <code>api</code> du module identity, et rien d'autre ». Si une classe de <code>clinical</code> importe <code>com.psymate.identity.auth.LoginService</code>, <code>ModularityTests</code> échoue avec le nom de la classe fautive.</p>
+<p><code>identity :: api</code> se lit « le package <code>api</code> du module identity, et rien d'autre ». Si une classe de <code>clinical</code> importe <code>com.psymate.identity.auth.service.LoginService</code>, <code>ModularityTests</code> échoue avec le nom de la classe fautive.</p>
 
 <h3>Une façade</h3>
 <pre class="code"><code>// com.psymate.patients.api — ce que les autres modules peuvent demander à patients

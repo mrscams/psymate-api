@@ -19,17 +19,17 @@ import org.testcontainers.utility.MountableFile;
 
 /** Postgres (pgvector) + Mailpit + horloge contrôlée pour AuthIT. */
 @TestConfiguration(proxyBeanMethods = false)
-class AuthTestConfig {
+public class AuthTestConfig {
 
   /** Horloge modifiable, partagée par l'application et le test. */
-  static class MutableClock extends Clock {
+  public static class MutableClock extends Clock {
     private volatile Instant now = Instant.now();
 
-    void advance(Duration d) {
+    public void advance(Duration d) {
       now = now.plus(d);
     }
 
-    void reset() {
+    public void reset() {
       now = Instant.now();
     }
 

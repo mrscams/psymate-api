@@ -9,8 +9,8 @@
 
 _Services_
 
-* `c.p.i.api.PractitionerFacade` (via `c.p.i.auth.PractitionerFacadeImpl`)
-* `c.p.i.api.SuspendedAccountAuthenticator` (via `c.p.i.auth.AppealAuthenticator`)
+* `c.p.i.api.PractitionerFacade` (via `c.p.i.auth.service.PractitionerFacadeImpl`)
+* `c.p.i.api.SuspendedAccountAuthenticator` (via `c.p.i.auth.service.AppealAuthenticator`)
 
 _Others_
 

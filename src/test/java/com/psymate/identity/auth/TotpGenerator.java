@@ -7,11 +7,11 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 /** Générateur TOTP de test, indépendant du code de production (RFC 6238, HMAC-SHA1). */
-final class TotpGenerator {
+public final class TotpGenerator {
 
   private TotpGenerator() {}
 
-  static byte[] base32Decode(String s) {
+  public static byte[] base32Decode(String s) {
     String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     int buffer = 0;
@@ -28,7 +28,7 @@ final class TotpGenerator {
     return out.toByteArray();
   }
 
-  static String code(byte[] key, long epochSeconds) {
+  public static String code(byte[] key, long epochSeconds) {
     try {
       Mac mac = Mac.getInstance("HmacSHA1");
       mac.init(new SecretKeySpec(key, "HmacSHA1"));
@@ -45,7 +45,7 @@ final class TotpGenerator {
     }
   }
 
-  static String code(String base32Secret, Instant at) {
+  public static String code(String base32Secret, Instant at) {
     return code(base32Decode(base32Secret), at.getEpochSecond());
   }
 }

@@ -12,7 +12,7 @@ import com.psymate.identity.admin.service.AppealService;
 import com.psymate.identity.api.AuthErrorScope;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.SuspendedAccount;
-import com.psymate.identity.auth.AppealAuthenticator;
+import com.psymate.identity.auth.service.AppealAuthenticator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;

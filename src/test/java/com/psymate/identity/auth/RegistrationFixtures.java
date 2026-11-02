@@ -4,14 +4,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** Corps d'inscription valides pour les tests d'intégration. */
-final class RegistrationFixtures {
+public final class RegistrationFixtures {
 
-  static final String PASSWORD = "Zebre-Tournesol-42";
+  public static final String PASSWORD = "Zebre-Tournesol-42";
 
   private RegistrationFixtures() {}
 
   /** Inscription complète en cabinet (adresse renseignée). */
-  static Map<String, Object> payload(String email, String password, String profession) {
+  public static Map<String, Object> payload(String email, String password, String profession) {
     Map<String, Object> p = new LinkedHashMap<>();
     p.put("email", email);
     p.put("password", password);

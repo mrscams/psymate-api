@@ -625,11 +625,13 @@ search/
 ```
 overview/
   controller/   OverviewController, OverviewExceptionHandler, OverviewMessages, OverviewRequestException
-  dto/          OverviewDtos
-  service/      OverviewService, OverviewListener, NarrativeComposer
-  repository/   OverviewRepository, OverviewProjector (il lit le SQL ; à scinder plus tard s'il le faut)
-  model/        OverviewPayload, OverviewWindow, NarrativeFacts, NarrativeCalculator, TrendCalculator,
+  dto/          OverviewDto et ses 19 blocs, un fichier par record (ex-OverviewDtos)
+  service/      OverviewService, OverviewListener, NarrativeComposer, OverviewProjector (il lit le SQL et
+                construit les DTO ; à scinder plus tard s'il le faut), OverviewPayload, TrendCalculator,
                 FeelingsCalculator (ex-FeelingsAssembler : il calcule un bloc de la projection, ce n'est pas un DTO)
+                (M9-08, règle 3 : ils construisent ou portent des DTO, que model ne peut pas référencer)
+  repository/   OverviewRepository (l'activité récente sort en RecentEntry, le service en fait le DTO)
+  model/        OverviewWindow, NarrativeFacts, NarrativeCalculator
 ```
 
 #### identity
@@ -733,10 +735,10 @@ Préfixe `com.psymate.` omis. Les tests suivent leurs classes dans la même PR. 
 | `search` | EntrySearchRepository | `search.repository` |
 | `search` | QuerySyntax, SnippetBuilder, SearchRequestException (M9-07, règle 3 : l'exception est levée par le service, SnippetBuilder est lu par le repository) | `search.model` |
 | `overview` | OverviewController, OverviewExceptionHandler, OverviewMessages, OverviewRequestException | `overview.controller` |
-| `overview` | OverviewDtos | `overview.dto` |
-| `overview` | OverviewService, OverviewListener, NarrativeComposer | `overview.service` |
-| `overview` | OverviewRepository, OverviewProjector | `overview.repository` |
-| `overview` | OverviewPayload, OverviewWindow, NarrativeFacts, NarrativeCalculator, TrendCalculator, FeelingsAssembler | `overview.model` (FeelingsAssembler → FeelingsCalculator) |
+| `overview` | OverviewDtos | `overview.dto` (un fichier par record, G Q35) |
+| `overview` | OverviewService, OverviewListener, NarrativeComposer, OverviewProjector, OverviewPayload, TrendCalculator, FeelingsAssembler (M9-08, règle 3 : ils construisent ou portent des DTO, que model ne peut pas référencer) | `overview.service` (FeelingsAssembler → FeelingsCalculator) |
+| `overview` | OverviewRepository | `overview.repository` |
+| `overview` | OverviewWindow, NarrativeFacts, NarrativeCalculator | `overview.model` |
 | `identity.persistence` | AuthToken, DocumentAccessLog, Practitioner, PractitionerAppeal, SecurityEvent, Tenant, TotpRecoveryCode, VerificationDecision, VerificationDocument | `identity.model` |
 | `identity.persistence` | *JpaRepository, *NativeQueries, *NativeQueriesImpl, Rows, UniqueViolations | `identity.repository` |
 | `identity.persistence` | Times ; IpLiterals | `shared.time.Timestamps` ; `shared.web.IpAddresses` |

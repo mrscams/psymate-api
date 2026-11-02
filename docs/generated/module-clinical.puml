@@ -37,6 +37,7 @@ Rel(App.App.Identity, App.App.Events, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Identity, App.App.Shared, "depends on", $techn="", $tags="", $link="")
 Rel(App.App.Patients, App.App.Events, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Patients, App.App.Identity, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Patients, App.App.Shared, "depends on", $techn="", $tags="", $link="")
 Rel(App.App.Patients, App.App.Vocabulary, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Vocabulary, App.App.Identity, "depends on", $techn="", $tags="", $link="")
 

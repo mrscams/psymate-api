@@ -1,4 +1,4 @@
-package com.psymate.shared;
+package com.psymate.identity.audit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -15,9 +15,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import com.psymate.PostgresTestConfig;
 import com.psymate.identity.api.CurrentPractitioner;
-import com.psymate.shared.audit.AuditEvent;
-import com.psymate.shared.audit.AuditWriter;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -210,6 +209,34 @@ class AuditIT {
             jdbc.queryForObject(
                 "select count(*) from security_event where kind like 'patient.%'", Long.class))
         .isEqualTo(before);
+  }
+
+  @Test
+  void edgeValuesAreWrittenAsNullAndTheTimestampIsRoundedByTheDriver() {
+    String marker = UUID.randomUUID().toString();
+    // Système (aucun praticien), adresse non littérale, pas de User-Agent, 9 décimales.
+    writer.write(
+        new AuditEvent(
+            null,
+            AuditEvent.PATIENT_READ,
+            "unknown",
+            null,
+            Map.of("marker", marker),
+            Instant.parse("2026-11-02T10:15:30.123456789Z")));
+
+    Map<String, Object> row =
+        jdbc.queryForMap(
+            "select practitioner_id, actor_id, ip, user_agent,"
+                + " to_char(occurred_at at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SS.US') as at"
+                + " from security_event where details->>'marker' = ?",
+            marker);
+    assertThat(row.get("practitioner_id")).isNull();
+    assertThat(row.get("actor_id")).isNull();
+    // Une adresse illisible devient null (IpAddresses.normalize) au lieu de faire échouer le cast.
+    assertThat(row.get("ip")).isNull();
+    assertThat(row.get("user_agent")).isNull();
+    // Arrondi du pilote à la microseconde, comme le Timestamp lié par JdbcClient avant M9-05.
+    assertThat(row.get("at")).isEqualTo("2026-11-02 10:15:30.123457");
   }
 
   @Test

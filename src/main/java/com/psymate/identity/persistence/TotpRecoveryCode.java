@@ -1,5 +1,6 @@
 package com.psymate.identity.persistence;
 
+import com.psymate.shared.time.Timestamps;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -43,7 +44,7 @@ public class TotpRecoveryCode implements Persistable<UUID> {
     this.id = Objects.requireNonNull(id);
     this.practitionerId = Objects.requireNonNull(practitionerId);
     this.codeHash = Objects.requireNonNull(codeHash);
-    this.createdAt = Times.utc(now);
+    this.createdAt = Timestamps.utc(now);
   }
 
   @Override

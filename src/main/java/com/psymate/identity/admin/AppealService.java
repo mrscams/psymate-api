@@ -12,6 +12,7 @@ import com.psymate.identity.admin.AppealRepository.ExistingAppeal;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.SuspendedAccount;
 import com.psymate.identity.persistence.UniqueViolations;
+import com.psymate.shared.web.IpAddresses;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -249,7 +250,7 @@ class AppealService {
     details.put("appealId", appealId);
     details.put("outcome", outcome);
     shared.insertAdminEvent(
-        target.id(), admin.id(), "admin.appeal", AdminIps.normalize(ip), write(details), now);
+        target.id(), admin.id(), "admin.appeal", IpAddresses.normalize(ip), write(details), now);
     if (accepted) {
       accounts.restore(admin, target, message, ip, "appeal", now, false);
       asyncMail.afterCommit(

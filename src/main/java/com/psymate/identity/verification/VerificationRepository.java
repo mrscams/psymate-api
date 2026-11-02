@@ -2,15 +2,15 @@ package com.psymate.identity.verification;
 
 import com.psymate.identity.persistence.DocumentAccessLog;
 import com.psymate.identity.persistence.DocumentAccessLogJpaRepository;
-import com.psymate.identity.persistence.IpLiterals;
 import com.psymate.identity.persistence.Practitioner;
 import com.psymate.identity.persistence.PractitionerJpaRepository;
 import com.psymate.identity.persistence.SecurityEvent;
 import com.psymate.identity.persistence.SecurityEventJpaRepository;
-import com.psymate.identity.persistence.Times;
 import com.psymate.identity.persistence.VerificationDecisionJpaRepository;
 import com.psymate.identity.persistence.VerificationDocument;
 import com.psymate.identity.persistence.VerificationDocumentJpaRepository;
+import com.psymate.shared.time.Timestamps;
+import com.psymate.shared.web.IpAddresses;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -97,10 +97,10 @@ class VerificationRepository {
         d.getMime(),
         d.getSizeBytes(),
         d.getSha256(),
-        Times.instant(d.getUploadedAt()),
+        Timestamps.instant(d.getUploadedAt()),
         d.getReviewedStatus(),
-        Times.instant(d.getPurgedAt()),
-        Times.instant(d.getDeletedAt()));
+        Timestamps.instant(d.getPurgedAt()),
+        Timestamps.instant(d.getDeletedAt()));
   }
 
   private static AccountRow map(Practitioner p) {
@@ -182,11 +182,11 @@ class VerificationRepository {
    * transaction, sans effet si le fichier est déjà marqué purgé.
    */
   void markPurged(UUID id, Instant now) {
-    documents.markPurged(id, Times.utc(now));
+    documents.markPurged(id, Timestamps.utc(now));
   }
 
   List<DuePurge> duePurges(Instant now, int limit) {
-    return documents.duePurges(Times.utc(now), Limit.of(limit)).stream()
+    return documents.duePurges(Timestamps.utc(now), Limit.of(limit)).stream()
         .map(d -> new DuePurge(d.id(), d.storageKey()))
         .toList();
   }
@@ -217,13 +217,13 @@ class VerificationRepository {
   /** Messages reçus uniquement : la note interne n'est jamais lue ici. */
   List<DecisionRow> decisionMessages(UUID practitionerId) {
     return decisions.messages(practitionerId).stream()
-        .map(m -> new DecisionRow(m.kind(), m.message(), Times.instant(m.decidedAt())))
+        .map(m -> new DecisionRow(m.kind(), m.message(), Timestamps.instant(m.decidedAt())))
         .toList();
   }
 
   /** Date de la dernière soumission (journal de sécurité, il n'y a pas de colonne dédiée). */
   Optional<Instant> lastSubmittedAt(UUID practitionerId) {
-    return events.lastOccurredAt(practitionerId, "verification_submitted").map(Times::instant);
+    return events.lastOccurredAt(practitionerId, "verification_submitted").map(Timestamps::instant);
   }
 
   @Transactional
@@ -235,7 +235,7 @@ class VerificationRepository {
   void insertAccessLog(UUID documentId, UUID accessorId, String ip, Instant now) {
     accessLogs.save(
         new DocumentAccessLog(
-            UUID.randomUUID(), documentId, accessorId, IpLiterals.parse(ip), now));
+            UUID.randomUUID(), documentId, accessorId, IpAddresses.parse(ip), now));
   }
 
   List<AdminRecipient> adminRecipients() {

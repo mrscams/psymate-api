@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T13:43:42.871Z",
+  "task": "M9-05",
+  "agent": "claude",
+  "status": "done",
+  "summary": "shared.audit dans identity.audit, shared.web.IpAddresses et shared.time.Timestamps remplacent 5 copies, garde shared sans exception ; verify vert (392 unitaires, 919 IT)",
+  "notes": "INSERT d'audit par fragment AuditEventNativeQueries (identity est JPA) ; entree shared retiree de TableOwnershipTests avec accord, conflit de 2 lignes attendu avec M9-03 ; vocabulary/Timestamps laisse a M9-10",
+  "next": "Debloque M9-15 a M9-18 (identity)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/52",
+  "branch": "claude/m9-05-892e09",
+  "checkout": "m9-05-892e09"
+}

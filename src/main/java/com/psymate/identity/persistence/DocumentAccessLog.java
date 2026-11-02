@@ -1,5 +1,6 @@
 package com.psymate.identity.persistence;
 
+import com.psymate.shared.time.Timestamps;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -48,7 +49,7 @@ public class DocumentAccessLog implements Persistable<UUID> {
     this.documentId = Objects.requireNonNull(documentId);
     this.adminId = Objects.requireNonNull(adminId);
     this.ip = ip;
-    this.accessedAt = Times.utc(accessedAt);
+    this.accessedAt = Timestamps.utc(accessedAt);
   }
 
   @Override

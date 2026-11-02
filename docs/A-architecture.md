@@ -622,7 +622,7 @@ Un seul déployable backend, une seule SPA, une seule base : la complexité est 
 | `events` | Outbox, republication, abonnés | — | `DomainEvent`, `DomainEventPublisher`, `EventDeduplicator` |
 | `ai` (V2) | Suggestions, motifs, questions | `events`, `clinical` (lecture), `linking` (écriture `proposed`) | `SuggestionFacade` |
 | `companion` (réservé, A11) | Appairage d'appareils patients, réception des lots | `patients`, `clinical` (dépôt d'entrées `author_type = patient`), `events` ; jamais `identity.admin`, `directory` | `SubmissionReceived`, `SubmissionAttached` |
-| `shared` | Outils transverses : erreurs RFC 9457 (`ProblemException`), limitation de débit, i18n des messages | — (ne dépend d'aucun module) | types et outils techniques, sans accès aux tables (l'écriture d'audit actuelle passe dans `identity`, tâche M9-05) |
+| `shared` | Infrastructure web transverse utilisée par au moins deux modules : erreurs RFC 9457 (`ProblemException`), limitation de débit, i18n des messages, adresses IP (`shared.web.IpAddresses`), horodatages UTC à la microseconde (`shared.time.Timestamps`) | — (ne dépend d'aucun module) | outils techniques, aucune table : ni `JdbcClient` ni `EntityManager` (garde ArchUnit sans exception depuis M9-05 ; le journal d'audit est dans `identity.audit`) |
 
 Règle vérifiée par `ApplicationModules.of(App.class).verify()` dans la CI : toute dépendance hors des `package-info.java` fait échouer le build. Chaque dépendance passe par le package `api` du module cible (`"patients :: api"`) ; `shared` est autorisé partout. La référence est le `package-info.java` de chaque module ; ce tableau en est l'état au 2 novembre 2026, et il sera généré par `Documenter` (tâche M9-02).
 

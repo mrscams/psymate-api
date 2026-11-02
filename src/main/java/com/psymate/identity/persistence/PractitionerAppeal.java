@@ -1,5 +1,6 @@
 package com.psymate.identity.persistence;
 
+import com.psymate.shared.time.Timestamps;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -54,7 +55,7 @@ public class PractitionerAppeal implements Persistable<UUID> {
     this.practitionerId = Objects.requireNonNull(practitionerId);
     this.decisionId = Objects.requireNonNull(decisionId);
     this.message = Objects.requireNonNull(message);
-    this.submittedAt = Times.utc(submittedAt);
+    this.submittedAt = Timestamps.utc(submittedAt);
   }
 
   /**
@@ -64,7 +65,7 @@ public class PractitionerAppeal implements Persistable<UUID> {
    */
   public void decide(UUID adminId, String outcome, String responseMessage, Instant now) {
     this.reviewedBy = Objects.requireNonNull(adminId);
-    this.reviewedAt = Times.utc(now);
+    this.reviewedAt = Timestamps.utc(now);
     this.outcome = Objects.requireNonNull(outcome);
     this.responseMessage = responseMessage;
   }

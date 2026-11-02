@@ -15,6 +15,7 @@ import com.psymate.identity.admin.AdminPractitionerRepository.AccountRow;
 import com.psymate.identity.admin.AdminPractitionerRepository.Filter;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.PractitionerSuspended;
+import com.psymate.shared.web.IpAddresses;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -200,7 +201,7 @@ class AdminPractitionerService {
     }
 
     Instant now = clock.instant();
-    String cleanIp = AdminIps.normalize(ip);
+    String cleanIp = IpAddresses.normalize(ip);
     UUID decisionId = UUID.randomUUID();
     repo.markSuspended(id, now);
     shared.insertDecision(
@@ -283,7 +284,12 @@ class AdminPractitionerService {
     details.put("newStatus", newStatus);
     details.put("source", source);
     shared.insertAdminEvent(
-        target.id(), admin.id(), "admin.reactivate", AdminIps.normalize(ip), write(details), now);
+        target.id(),
+        admin.id(),
+        "admin.reactivate",
+        IpAddresses.normalize(ip),
+        write(details),
+        now);
     if (sendMail) {
       asyncMail.afterCommit(
           target.locale(), l -> mailer.sendReactivated(target.email(), l, target.displayName()));

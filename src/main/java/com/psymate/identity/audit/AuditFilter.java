@@ -1,4 +1,4 @@
-package com.psymate.shared.audit;
+package com.psymate.identity.audit;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,13 +30,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *
  * <p>Placé après l'authentification dans la chaîne principale d'identity : une requête refusée en
  * amont (401, 403, 429) n'a rien lu et n'est pas journalisée. Le chemin est reconnu sur sa forme
- * décodée. Le praticien est lu dans le SecurityContext (son nom est son UUID) : shared ne peut pas
- * importer identity.
+ * décodée. Le praticien est lu dans le SecurityContext (son nom est son UUID).
  *
  * <p>Les {@code details} portent l'identifiant lu dans l'URL ({@code patientId}, {@code entryId},
  * {@code linkId} ou {@code sessionId} ; null s'il est absent ou n'est pas un UUID, le chemin décodé
  * complet étant dans {@code path}), pas un patient résolu : retrouver le patient d'une entrée, d'un
- * lien ou d'une séance exigerait de dépendre de clinical ou de linking, ce que shared n'a pas le
+ * lien ou d'une séance exigerait de dépendre de clinical ou de linking, ce qu'identity n'a pas le
  * droit de faire. Le journal reste exploitable : l'identifiant d'entrée se rattache au patient par
  * une requête d'administration.
  *

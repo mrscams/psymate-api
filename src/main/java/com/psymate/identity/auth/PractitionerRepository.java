@@ -6,7 +6,8 @@ import com.psymate.identity.persistence.SecurityEvent;
 import com.psymate.identity.persistence.SecurityEventJpaRepository;
 import com.psymate.identity.persistence.Tenant;
 import com.psymate.identity.persistence.TenantJpaRepository;
-import com.psymate.identity.persistence.Times;
+import com.psymate.shared.time.Timestamps;
+import com.psymate.shared.web.IpAddresses;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Instant;
@@ -147,7 +148,7 @@ class PractitionerRepository {
   }
 
   void touchLastLogin(UUID id, Instant now) {
-    practitioners.touchLastLogin(id, Times.utc(now));
+    practitioners.touchLastLogin(id, Timestamps.utc(now));
   }
 
   /** Révoque toutes les sessions serveur du praticien (principal_name = id). */
@@ -158,7 +159,7 @@ class PractitionerRepository {
   /** Reflète le compteur d'échecs et le verrou (audit) ; l'application du verrou est en mémoire. */
   void recordFailedLogin(UUID id, int failures, Instant lockedUntil) {
     practitioners.recordFailedLogin(
-        id, (short) Math.min(failures, Short.MAX_VALUE), Times.utc(lockedUntil));
+        id, (short) Math.min(failures, Short.MAX_VALUE), Timestamps.utc(lockedUntil));
   }
 
   void resetFailedLogins(UUID id) {
@@ -177,6 +178,6 @@ class PractitionerRepository {
 
   /** Fin de verrou enregistrée en base (second garde, survit à un redémarrage). */
   Optional<Instant> lockedUntil(UUID id) {
-    return practitioners.lockedUntil(id).map(Times::instant);
+    return practitioners.lockedUntil(id).map(Timestamps::instant);
   }
 }

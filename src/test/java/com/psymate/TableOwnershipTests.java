@@ -118,9 +118,7 @@ class TableOwnershipTests {
   static final Map<String, Set<String>> CROSS_MODULE_EXCEPTIONS =
       Map.of(
           // M9-03 : fusions du vocabulaire par evenements, chaque module reecrit ses tables.
-          "vocabulary", Set.of("entry_feeling", "entry_tag", "patient_tag"),
-          // M9-05 : shared.audit passe dans identity.audit.
-          "shared", Set.of("security_event"));
+          "vocabulary", Set.of("entry_feeling", "entry_tag", "patient_tag"));
 
   enum Access {
     READ,

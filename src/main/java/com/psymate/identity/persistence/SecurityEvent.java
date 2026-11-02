@@ -1,5 +1,6 @@
 package com.psymate.identity.persistence;
 
+import com.psymate.shared.time.Timestamps;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -64,7 +65,7 @@ public class SecurityEvent implements Persistable<UUID> {
     this.kind = Objects.requireNonNull(kind);
     this.ip = ip;
     this.details = details == null ? null : new LinkedHashMap<>(details);
-    this.occurredAt = Times.utc(occurredAt);
+    this.occurredAt = Timestamps.utc(occurredAt);
   }
 
   @Override

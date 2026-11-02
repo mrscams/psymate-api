@@ -1,7 +1,7 @@
 package com.psymate.identity.auth;
 
-import com.psymate.shared.audit.AuditFilter;
-import com.psymate.shared.audit.AuditWriter;
+import com.psymate.identity.audit.AuditFilter;
+import com.psymate.identity.audit.AuditWriter;
 import com.psymate.shared.problem.ErrorCode;
 import com.psymate.shared.problem.ProblemWriter;
 import com.psymate.shared.problem.Problems;

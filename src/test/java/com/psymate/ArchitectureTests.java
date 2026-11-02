@@ -419,15 +419,6 @@ class ArchitectureTests {
           // M9-12 : idem (lecture des entrees et verrou praticien).
           "clinical.export.ExportRepository");
 
-  /**
-   * Packages de {@code shared} encore autorises a utiliser {@code JdbcClient} ou {@code
-   * EntityManager}. Ne peut que decroitre.
-   */
-  static final Set<String> SHARED_SQL_EXCEPTIONS =
-      Set.of(
-          // M9-05 : shared.audit passe dans identity.audit (AuditWriter ecrit security_event).
-          "shared.audit");
-
   private static final String JDBC_CORE = "org.springframework.jdbc.core";
 
   /**
@@ -525,10 +516,10 @@ class ArchitectureTests {
 
   /**
    * {@code shared} est de l'infrastructure technique (A5) : il ne depend d'aucun module et
-   * n'utilise ni {@code JdbcClient} ni {@code EntityManager} (ARCH-09), hors {@code
-   * exceptedPackages}.
+   * n'utilise ni {@code JdbcClient} ni {@code EntityManager} (ARCH-09), sans exception depuis
+   * M9-05.
    */
-  static ArchRule sharedIsTechnicalOnly(String root, Collection<String> exceptedPackages) {
+  static ArchRule sharedIsTechnicalOnly(String root) {
     return classes()
         .that()
         .resideInAPackage(root + ".shared..")
@@ -537,13 +528,12 @@ class ArchitectureTests {
                 "depend on a module, on JdbcClient or on jakarta.persistence") {
               @Override
               public void check(JavaClass origin, ConditionEvents events) {
-                boolean sqlAllowed = inAny(relativePackage(origin, root), exceptedPackages);
                 for (Dependency d : origin.getDirectDependenciesFromSelf()) {
                   JavaClass target = d.getTargetClass();
                   String module = moduleOf(target, root);
                   boolean otherModule = module != null && !module.equals("shared");
                   boolean sql = isJdbc(target) || inPackage(target, "jakarta.persistence");
-                  if (otherModule || (sql && !sqlAllowed)) {
+                  if (otherModule || sql) {
                     events.add(SimpleConditionEvent.violated(d, d.getDescription()));
                   }
                 }
@@ -880,34 +870,19 @@ class ArchitectureTests {
 
   @Test
   void sharedIsTechnicalOnlyInProduction() {
-    sharedIsTechnicalOnly(ROOT, SHARED_SQL_EXCEPTIONS).check(MAIN);
-  }
-
-  @Test
-  void sharedExceptionsAreStillNeeded() {
-    for (String pkg : SHARED_SQL_EXCEPTIONS) {
-      boolean used =
-          MAIN.stream()
-              .filter(c -> inAny(relativePackage(c, ROOT), List.of(pkg)))
-              .flatMap(c -> c.getDirectDependenciesFromSelf().stream())
-              .anyMatch(
-                  d ->
-                      isJdbc(d.getTargetClass())
-                          || inPackage(d.getTargetClass(), "jakarta.persistence"));
-      assertThat(used).as("exception inutile, a retirer : " + pkg).isTrue();
-    }
+    sharedIsTechnicalOnly(ROOT).check(MAIN);
   }
 
   @Test
   void sharedRuleDetectsModuleImportAndSql() {
     JavaClasses fixtures = new ClassFileImporter().importPackages(SHARED_FIXTURE_ROOT);
-    ArchRule rule = sharedIsTechnicalOnly(SHARED_FIXTURE_ROOT, Set.of("shared.audit"));
+    ArchRule rule = sharedIsTechnicalOnly(SHARED_FIXTURE_ROOT);
     assertThatThrownBy(() -> rule.check(fixtures))
         .isInstanceOf(AssertionError.class)
         .hasMessageContaining("BadProblem")
         .hasMessageContaining("BadLimiter")
         .hasMessageContaining("BadEntityManagerUser")
-        .hasMessageNotContaining("AuditLike")
+        .hasMessageContaining("AuditLike")
         .hasMessageNotContaining("GoodShared");
   }
 

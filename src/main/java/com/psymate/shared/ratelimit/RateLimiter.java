@@ -2,12 +2,9 @@ package com.psymate.shared.ratelimit;
 
 import com.psymate.shared.ratelimit.RateLimitProperties.Key;
 import com.psymate.shared.ratelimit.RateLimitProperties.Rule;
+import com.psymate.shared.web.IpAddresses;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,8 +16,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * ne coûte plus de mémoire) et, au-delà de {@link #MAX_TRACKED} demandeurs suivis, les nouveaux
  * partagent un seau commun (protection de la mémoire contre un scan avec des clés innombrables).
  *
- * <p>Les clés {@code ip} sont normalisées par {@link #ipKey} : une IPv6 est regroupée par préfixe
- * /64, une IPv4 reste telle quelle.
+ * <p>Les clés {@code ip} sont normalisées par {@link IpAddresses#subnetKey} : une IPv6 est
+ * regroupée par préfixe /64, une IPv4 reste telle quelle.
  */
 public final class RateLimiter {
 
@@ -59,26 +56,6 @@ public final class RateLimiter {
     return t;
   }
 
-  /** Une IPv6 est regroupée par préfixe /64 ; une IPv4 reste telle quelle. */
-  public static String ipKey(String remoteAddr) {
-    if (remoteAddr == null) {
-      return "unknown";
-    }
-    if (remoteAddr.indexOf(':') >= 0) {
-      try {
-        // Adresse littérale : aucune résolution DNS.
-        InetAddress a = InetAddress.getByName(remoteAddr);
-        if (a instanceof Inet6Address) {
-          return HexFormat.of().formatHex(a.getAddress(), 0, 8) + "/64";
-        }
-        return a.getHostAddress();
-      } catch (UnknownHostException e) {
-        return remoteAddr;
-      }
-    }
-    return remoteAddr;
-  }
-
   private static final class Table {
 
     private final Rule rule;
@@ -91,7 +68,7 @@ public final class RateLimiter {
 
     ConsumptionProbe tryConsume(String rawKey) {
       cleanupIfDue();
-      String key = rule.key() == Key.IP ? ipKey(rawKey) : String.valueOf(rawKey);
+      String key = rule.key() == Key.IP ? IpAddresses.subnetKey(rawKey) : String.valueOf(rawKey);
       Bucket bucket = buckets.get(key);
       if (bucket == null) {
         // Au-delà de la borne, les nouvelles clés partagent un seau commun (repris d'IpBuckets) :

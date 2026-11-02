@@ -1,5 +1,6 @@
 package com.psymate.identity.persistence;
 
+import com.psymate.shared.time.Timestamps;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -102,7 +103,7 @@ public class VerificationDocument implements Persistable<UUID> {
     d.mime = Objects.requireNonNull(mime);
     d.sizeBytes = sizeBytes;
     d.sha256 = Objects.requireNonNull(sha256);
-    d.uploadedAt = Times.utc(now);
+    d.uploadedAt = Timestamps.utc(now);
     d.reviewedStatus = "pending";
     return d;
   }
@@ -111,7 +112,7 @@ public class VerificationDocument implements Persistable<UUID> {
 
   /** Retrait par le praticien : la ligne reste, le fichier est supprimé (purged_at posé). */
   public void markDeleted(Instant now) {
-    OffsetDateTime at = Times.utc(now);
+    OffsetDateTime at = Timestamps.utc(now);
     this.deletedAt = at;
     if (this.purgedAt == null) {
       this.purgedAt = at;
@@ -121,14 +122,14 @@ public class VerificationDocument implements Persistable<UUID> {
   /** Fichier purgé : seulement s'il ne l'était pas déjà (idempotent). */
   public void markPurged(Instant now) {
     if (this.purgedAt == null) {
-      this.purgedAt = Times.utc(now);
+      this.purgedAt = Timestamps.utc(now);
     }
   }
 
   /** Examen par un administrateur. */
   public void review(String status, UUID adminId, Instant now) {
     this.reviewedStatus = Objects.requireNonNull(status);
-    this.reviewedAt = Times.utc(now);
+    this.reviewedAt = Timestamps.utc(now);
     this.reviewedBy = adminId;
   }
 

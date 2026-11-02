@@ -2,18 +2,18 @@ package com.psymate.identity.admin;
 
 import com.psymate.identity.persistence.DocumentAccessLog;
 import com.psymate.identity.persistence.DocumentAccessLogJpaRepository;
-import com.psymate.identity.persistence.IpLiterals;
 import com.psymate.identity.persistence.Practitioner;
 import com.psymate.identity.persistence.PractitionerJpaRepository;
 import com.psymate.identity.persistence.PractitionerJpaRepository.AdminAccount;
 import com.psymate.identity.persistence.Rows;
 import com.psymate.identity.persistence.SecurityEvent;
 import com.psymate.identity.persistence.SecurityEventJpaRepository;
-import com.psymate.identity.persistence.Times;
 import com.psymate.identity.persistence.VerificationDecision;
 import com.psymate.identity.persistence.VerificationDecisionJpaRepository;
 import com.psymate.identity.persistence.VerificationDocument;
 import com.psymate.identity.persistence.VerificationDocumentJpaRepository;
+import com.psymate.shared.time.Timestamps;
+import com.psymate.shared.web.IpAddresses;
 import jakarta.persistence.Tuple;
 import java.time.Instant;
 import java.util.Arrays;
@@ -138,9 +138,9 @@ class AdminVerificationRepository {
         a.locale(),
         a.role(),
         a.status(),
-        Times.instant(a.createdAt()),
-        Times.instant(a.emailConfirmedAt()),
-        Times.instant(a.verifiedAt()),
+        Timestamps.instant(a.createdAt()),
+        Timestamps.instant(a.emailConfirmedAt()),
+        Timestamps.instant(a.verifiedAt()),
         a.phone(),
         a.professionalNumber(),
         a.street(),
@@ -161,9 +161,9 @@ class AdminVerificationRepository {
         p.getLocale(),
         p.getRole(),
         p.getVerificationStatus(),
-        Times.instant(p.getCreatedAt()),
-        Times.instant(p.getEmailConfirmedAt()),
-        Times.instant(p.getVerifiedAt()),
+        Timestamps.instant(p.getCreatedAt()),
+        Timestamps.instant(p.getEmailConfirmedAt()),
+        Timestamps.instant(p.getVerifiedAt()),
         p.getPhone(),
         p.getProfessionalNumber(),
         p.getAddressStreet(),
@@ -183,11 +183,11 @@ class AdminVerificationRepository {
         d.getStorageKey(),
         d.getMime(),
         d.getSizeBytes(),
-        Times.instant(d.getUploadedAt()),
+        Timestamps.instant(d.getUploadedAt()),
         d.getReviewedStatus(),
-        Times.instant(d.getReviewedAt()),
-        Times.instant(d.getPurgedAt()),
-        Times.instant(d.getDeletedAt()));
+        Timestamps.instant(d.getReviewedAt()),
+        Timestamps.instant(d.getPurgedAt()),
+        Timestamps.instant(d.getDeletedAt()));
   }
 
   private DecisionRow map(VerificationDecision d) {
@@ -197,7 +197,7 @@ class AdminVerificationRepository {
         d.getMessageToPractitioner(),
         d.getInternalNote(),
         json.writeValueAsString(d.getChecklist()),
-        Times.instant(d.getDecidedAt()),
+        Timestamps.instant(d.getDecidedAt()),
         d.getAdminId());
   }
 
@@ -272,7 +272,7 @@ class AdminVerificationRepository {
   }
 
   Optional<Instant> lastSubmittedAt(UUID practitionerId) {
-    return events.lastOccurredAt(practitionerId, "verification_submitted").map(Times::instant);
+    return events.lastOccurredAt(practitionerId, "verification_submitted").map(Timestamps::instant);
   }
 
   /** Justificatifs de vérification non retirés par le praticien. */
@@ -364,7 +364,7 @@ class AdminVerificationRepository {
 
   /** Planifie la purge des fichiers du dossier (décision + 90 jours). */
   void schedulePurge(UUID practitionerId, Instant purgeAfter) {
-    documents.schedulePurge(practitionerId, Times.utc(purgeAfter));
+    documents.schedulePurge(practitionerId, Timestamps.utc(purgeAfter));
   }
 
   // ---- journal
@@ -372,7 +372,7 @@ class AdminVerificationRepository {
   @Transactional
   void insertAccessLog(UUID documentId, UUID adminId, String ip, Instant now) {
     accessLogs.save(
-        new DocumentAccessLog(UUID.randomUUID(), documentId, adminId, IpLiterals.parse(ip), now));
+        new DocumentAccessLog(UUID.randomUUID(), documentId, adminId, IpAddresses.parse(ip), now));
   }
 
   /** Journal d'administration (G Q29) : security_event avec l'administrateur comme acteur. */
@@ -385,7 +385,7 @@ class AdminVerificationRepository {
             practitionerId,
             adminId,
             kind,
-            IpLiterals.parse(ip),
+            IpAddresses.parse(ip),
             detailsJson == null ? null : map(detailsJson),
             now));
   }

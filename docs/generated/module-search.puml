@@ -21,6 +21,7 @@ System_Boundary("App_boundary", "App", $tags="") {
     Component(App.App.Identity, "Identity", $techn="Module", $descr="", $tags="", $link="")
     Component(App.App.Patients, "Patients", $techn="Module", $descr="", $tags="", $link="")
     Component(App.App.Search, "Search", $techn="Module", $descr="", $tags="", $link="")
+    Component(App.App.Shared, "Shared", $techn="Module", $descr="", $tags="", $link="")
   }
 
 }
@@ -28,10 +29,14 @@ System_Boundary("App_boundary", "App", $tags="") {
 Rel(App.App.Clinical, App.App.Identity, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Clinical, App.App.Patients, "listens to", $techn="", $tags="", $link="")
 Rel(App.App.Clinical, App.App.Patients, "uses", $techn="", $tags="", $link="")
+Rel(App.App.Clinical, App.App.Shared, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Identity, App.App.Shared, "depends on", $techn="", $tags="", $link="")
 Rel(App.App.Patients, App.App.Identity, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Patients, App.App.Shared, "depends on", $techn="", $tags="", $link="")
 Rel(App.App.Search, App.App.Clinical, "listens to", $techn="", $tags="", $link="")
 Rel(App.App.Search, App.App.Identity, "depends on", $techn="", $tags="", $link="")
 Rel(App.App.Search, App.App.Patients, "uses", $techn="", $tags="", $link="")
+Rel(App.App.Search, App.App.Shared, "depends on", $techn="", $tags="", $link="")
 
 SHOW_LEGEND(true)
 hide stereotypes

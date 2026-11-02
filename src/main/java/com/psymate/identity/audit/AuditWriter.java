@@ -1,24 +1,25 @@
-package com.psymate.shared.audit;
+package com.psymate.identity.audit;
 
+import com.psymate.identity.persistence.SecurityEventJpaRepository;
+import com.psymate.shared.web.IpAddresses;
 import jakarta.annotation.PreDestroy;
-import java.sql.Timestamp;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.simple.JdbcClient;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Écrit le journal d'audit applicatif (qui a lu ou modifié quel patient) dans {@code
  * security_event} (E3.2, G Q29 : un seul journal, pas de nouvelle table).
  *
- * <p>La table appartient au module identity, qui y écrit ses propres événements de sécurité ; ce
- * composant de shared n'y fait que des INSERT, jamais de lecture, de modification ni de suppression
- * (la table est en ajout seul pour le rôle applicatif). Les lignes d'audit se distinguent par
- * {@code kind} = {@code patient.read} ou {@code patient.write}.
+ * <p>Ce composant n'y fait que des INSERT, par le fragment natif de {@link
+ * SecurityEventJpaRepository}, jamais de lecture, de modification ni de suppression (la table est
+ * en ajout seul pour le rôle applicatif). Les lignes d'audit se distinguent des autres événements
+ * de sécurité d'identity par {@code kind} = {@code patient.read} ou {@code patient.write}.
  *
  * <p>Écriture asynchrone : un pool privé d'un thread daemon à file bornée (10 000), comme le relais
  * de contact du module directory (pas de {@code @EnableAsync}, voir ContactRequestService). Si la
@@ -33,7 +34,7 @@ public class AuditWriter {
   private static final int MAX_USER_AGENT = 500;
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
-  private final JdbcClient jdbc;
+  private final SecurityEventJpaRepository events;
   private final ThreadPoolExecutor executor =
       new ThreadPoolExecutor(
           1,
@@ -48,8 +49,8 @@ public class AuditWriter {
           },
           new ThreadPoolExecutor.CallerRunsPolicy());
 
-  public AuditWriter(JdbcClient jdbc) {
-    this.jdbc = jdbc;
+  public AuditWriter(SecurityEventJpaRepository events) {
+    this.events = events;
   }
 
   /** Planifie l'écriture hors du thread de la requête ; ne lève jamais d'exception. */
@@ -63,18 +64,15 @@ public class AuditWriter {
 
   /** Écriture synchrone d'une ligne (INSERT seul) ; lève l'exception de la base en cas d'échec. */
   public void write(AuditEvent event) {
-    jdbc.sql(
-            "insert into security_event (id, practitioner_id, actor_id, kind, ip, user_agent,"
-                + " details, occurred_at) values (:id, :p, null, :k, cast(:ip as inet), :ua,"
-                + " cast(:details as jsonb), :at)")
-        .param("id", UUID.randomUUID())
-        .param("p", event.practitionerId())
-        .param("k", event.kind())
-        .param("ip", ipOf(event.ip()), java.sql.Types.VARCHAR)
-        .param("ua", truncate(event.userAgent()), java.sql.Types.VARCHAR)
-        .param("details", JSON.writeValueAsString(event.details()))
-        .param("at", Timestamp.from(event.occurredAt()))
-        .update();
+    // Instant non tronqué : le pilote l'arrondit à la microseconde, comme avant M9-05.
+    events.insertAuditEvent(
+        UUID.randomUUID(),
+        event.practitionerId(),
+        event.kind(),
+        IpAddresses.normalize(event.ip()),
+        truncate(event.userAgent()),
+        JSON.writeValueAsString(event.details()),
+        event.occurredAt().atOffset(ZoneOffset.UTC));
   }
 
   private void writeQuietly(AuditEvent event) {
@@ -83,15 +81,6 @@ public class AuditWriter {
     } catch (RuntimeException e) {
       LOG.warn("Ligne d'audit non écrite ({})", event.kind(), e);
     }
-  }
-
-  /** Retire l'éventuel identifiant de zone d'une adresse IPv6 ({@code fe80::1%eth0}). */
-  private static String ipOf(String ip) {
-    if (ip == null || ip.isBlank()) {
-      return null;
-    }
-    int zone = ip.indexOf('%');
-    return zone >= 0 ? ip.substring(0, zone) : ip;
   }
 
   private static String truncate(String userAgent) {

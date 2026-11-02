@@ -1,5 +1,6 @@
 package com.psymate.identity.persistence;
 
+import com.psymate.shared.time.Timestamps;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -33,7 +34,7 @@ public class Tenant implements Persistable<UUID> {
   public Tenant(UUID id, String name, Instant now) {
     this.id = Objects.requireNonNull(id);
     this.name = Objects.requireNonNull(name);
-    this.createdAt = Times.utc(Objects.requireNonNull(now));
+    this.createdAt = Timestamps.utc(Objects.requireNonNull(now));
   }
 
   @Override

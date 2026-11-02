@@ -1,6 +1,7 @@
 package com.psymate.directory;
 
 import com.psymate.directory.VocabularyException.FieldError;
+import com.psymate.shared.time.Timestamps;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.SQLException;
 import java.time.Clock;
@@ -219,7 +220,7 @@ class DirectoryVocabularyAdminService {
     int sort =
         r.sortOrder() != null ? r.sortOrder() : Math.min(repo.nextSortOrder(r.kind()), MAX_SORT);
     DirectoryVocabulary created =
-        repo.save(new DirectoryVocabulary(id, labelFr, labelEn, sort, DirectoryClock.now(clock)));
+        repo.save(new DirectoryVocabulary(id, labelFr, labelEn, sort, Timestamps.now(clock)));
     // Un code qui n'existait pas ne peut être dans aucune fiche : aucun usage.
     return dto(created, 0);
   }
@@ -268,7 +269,7 @@ class DirectoryVocabularyAdminService {
           "vocabulary.error.inuse",
           Map.of("usedByPublishedProfiles", used));
     }
-    current.update(labelFr, labelEn, sort, active, DirectoryClock.now(clock));
+    current.update(labelFr, labelEn, sort, active, Timestamps.now(clock));
     return dto(current, used);
   }
 

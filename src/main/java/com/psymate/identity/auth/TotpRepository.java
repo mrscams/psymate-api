@@ -1,9 +1,9 @@
 package com.psymate.identity.auth;
 
 import com.psymate.identity.persistence.PractitionerJpaRepository;
-import com.psymate.identity.persistence.Times;
 import com.psymate.identity.persistence.TotpRecoveryCode;
 import com.psymate.identity.persistence.TotpRecoveryCodeJpaRepository;
+import com.psymate.shared.time.Timestamps;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
@@ -39,7 +39,7 @@ class TotpRepository {
   TotpState find(UUID id) {
     return practitioners
         .findTotp(id)
-        .map(v -> new TotpState(v.secret(), Times.instant(v.enabledAt())))
+        .map(v -> new TotpState(v.secret(), Timestamps.instant(v.enabledAt())))
         .orElse(new TotpState(null, null));
   }
 
@@ -60,7 +60,7 @@ class TotpRepository {
 
   /** Les codes de secours restants sont marqués utilisés (rien n'est supprimé). */
   void retireRecoveryCodes(UUID id, Instant now) {
-    recoveryCodes.retireRecoveryCodes(id, Times.utc(now));
+    recoveryCodes.retireRecoveryCodes(id, Timestamps.utc(now));
   }
 
   void insertRecoveryCode(UUID practitionerId, String hash, Instant now) {
@@ -69,6 +69,6 @@ class TotpRepository {
 
   /** Marque le code utilisé ; vrai une seule fois (mise à jour atomique). */
   boolean consumeRecoveryCode(UUID practitionerId, String hash, Instant now) {
-    return recoveryCodes.consumeRecoveryCode(practitionerId, hash, Times.utc(now)) == 1;
+    return recoveryCodes.consumeRecoveryCode(practitionerId, hash, Timestamps.utc(now)) == 1;
   }
 }

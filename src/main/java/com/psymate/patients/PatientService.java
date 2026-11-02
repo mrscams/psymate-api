@@ -7,6 +7,7 @@ import com.psymate.patients.PatientDtos.FlagRequest;
 import com.psymate.patients.PatientDtos.PatientDto;
 import com.psymate.patients.PatientDtos.PatientPage;
 import com.psymate.patients.PatientDtos.VersionDto;
+import com.psymate.patients.api.PatientAccessException;
 import com.psymate.patients.api.PatientArchived;
 import com.psymate.patients.api.PatientCreated;
 import com.psymate.patients.api.PatientFacade;
@@ -23,6 +24,8 @@ import com.psymate.patients.persistence.PatientTagId;
 import com.psymate.patients.persistence.PatientTagRepository;
 import com.psymate.patients.persistence.PatientVersion;
 import com.psymate.patients.persistence.PatientVersionRepository;
+import com.psymate.shared.problem.ErrorCode;
+import com.psymate.shared.problem.ProblemException;
 import com.psymate.vocabulary.api.EmotionCatalog;
 import com.psymate.vocabulary.api.TagFacade;
 import com.psymate.vocabulary.api.TagView;
@@ -44,7 +47,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 class PatientService implements PatientFacade, PatientOwnershipGuard {
@@ -179,7 +181,7 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
         patients
             .findOwnership(patientId)
             .map(PatientService::ownership)
-            .orElseThrow(PatientService::notFound);
+            .orElseThrow(PatientAccessException::notFound);
     requireMine(me, o.tenantId(), o.ownerId());
     return o;
   }
@@ -190,18 +192,14 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
    */
   private Patient lockedOwned(UUID patientId) {
     CurrentPractitioner me = me();
-    Patient p = patients.findForUpdate(patientId).orElseThrow(PatientService::notFound);
+    Patient p = patients.findForUpdate(patientId).orElseThrow(PatientAccessException::notFound);
     requireMine(me, p.getTenantId(), p.getOwnerId());
     return p;
   }
 
-  private static ResponseStatusException notFound() {
-    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Patient introuvable.");
-  }
-
   private static void requireMine(CurrentPractitioner me, UUID tenantId, UUID ownerId) {
     if (!ownerId.equals(me.id()) || !tenantId.equals(me.tenantId())) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ce patient n'est pas le vôtre.");
+      throw PatientAccessException.forbidden();
     }
   }
 
@@ -212,7 +210,7 @@ class PatientService implements PatientFacade, PatientOwnershipGuard {
   private static CurrentPractitioner me() {
     return CurrentPractitioner.get()
         .orElseThrow(
-            () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Session requise."));
+            () -> new ProblemException(401, ErrorCode.UNAUTHENTICATED, "Session requise."));
   }
 
   // ---- lecture

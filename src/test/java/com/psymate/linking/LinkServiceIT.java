@@ -19,6 +19,7 @@ import com.psymate.linking.application.LinkService;
 import com.psymate.linking.domain.Link;
 import com.psymate.linking.domain.LinkError;
 import com.psymate.linking.domain.LinkException;
+import com.psymate.patients.api.PatientAccessException;
 import com.psymate.vocabulary.api.LinkTypeView;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -44,7 +45,6 @@ import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Cycle de vie des liens (M2-01, A7, UC-06) sur PostgreSQL réel : règles, compteurs, événements.
@@ -110,8 +110,7 @@ class LinkServiceIT {
   private static void assertForbidden(ThrowingCallable action) {
     assertThat(catchThrowable(action))
         .isInstanceOfSatisfying(
-            ResponseStatusException.class,
-            e -> assertThat(e.getStatusCode().value()).isEqualTo(403));
+            PatientAccessException.class, e -> assertThat(e.status().value()).isEqualTo(403));
   }
 
   private int linkRows() {

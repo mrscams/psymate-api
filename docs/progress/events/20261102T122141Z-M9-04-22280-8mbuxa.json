@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T12:21:41.209Z",
+  "task": "M9-04",
+  "agent": "claude",
+  "status": "done",
+  "summary": "PatientAccessException levée par la garde, 6 traductions supprimées, FieldProblem unique, garde ApiBoundaryTests ; verify vert (362 + 918)",
+  "notes": "Réponses 403/404 identiques prouvées par PatientAccessProblemIT vert sur main puis sur la branche ; 4 IT de service changent d'assertion de type ; contrat inchangé ; aucune dépendance",
+  "next": "M9-09 et M9-13 débloquées côté M9-04 ; ne pas fusionner avant relecture utilisateur",
+  "pr": "https://github.com/mrscams/psymate-api/pull/49",
+  "branch": "claude/m9-04-40f9c7",
+  "checkout": "m9-04-40f9c7"
+}

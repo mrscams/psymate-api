@@ -3,6 +3,7 @@ package com.psymate.clinical.web;
 import com.psymate.clinical.web.EntryDtos.ClinicalRequest;
 import com.psymate.clinical.web.EntryDtos.PatchEntryRequest;
 import com.psymate.shared.problem.AdviceOrder;
+import com.psymate.shared.problem.FieldProblem;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;

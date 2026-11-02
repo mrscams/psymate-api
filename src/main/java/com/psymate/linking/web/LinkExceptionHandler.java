@@ -4,6 +4,7 @@ import com.psymate.linking.domain.GraphRequestException;
 import com.psymate.linking.domain.LinkError;
 import com.psymate.linking.domain.LinkException;
 import com.psymate.shared.problem.AdviceOrder;
+import com.psymate.shared.problem.FieldProblem;
 import com.psymate.vocabulary.api.LinkTypeView;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -17,23 +18,20 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.MismatchedInputException;
 
 /**
  * Erreurs RFC 9457 (application/problem+json) du contrôleur de liens : errors[] = [{field, code,
- * message}] pour les 422, statut du domaine pour les erreurs métier, 403 / 404 de la garde de
- * propriété des patients. Un 409 LINK_EXISTS porte {@code existingLinkId}, un 422
- * LINK_TYPE_NOT_ALLOWED porte {@code allowedLinkTypes} (types possibles pour cette paire). Sert
- * aussi le contrôleur de graphe (M2-03).
+ * message}] pour les 422, statut du domaine pour les erreurs métier. Un 409 LINK_EXISTS porte
+ * {@code existingLinkId}, un 422 LINK_TYPE_NOT_ALLOWED porte {@code allowedLinkTypes} (types
+ * possibles pour cette paire). Sert aussi le contrôleur de graphe (M2-03). Les 403 / 404 de la
+ * garde de propriété des patients sont des {@code PatientAccessException}, rendues par le handler
+ * commun de shared.
  */
 @Order(AdviceOrder.MODULE)
 @RestControllerAdvice(assignableTypes = {LinkController.class, GraphController.class})
 class LinkExceptionHandler {
-
-  /** Entrée de errors[] telle que le client la reçoit. */
-  record ApiFieldError(String field, String code, String message) {}
 
   /** Type de lien proposé au client quand le sien est refusé. */
   record AllowedLinkType(String code, String label) {}
@@ -58,11 +56,11 @@ class LinkExceptionHandler {
     pd.setTitle(status.getReasonPhrase());
     pd.setProperty("code", error.name());
     if (error == LinkError.ENTRY_ARCHIVED) {
-      pd.setProperty("errors", List.of(new ApiFieldError(ex.field(), error.name(), detail)));
+      pd.setProperty("errors", List.of(new FieldProblem(ex.field(), error.name(), detail)));
     }
     if (status == HttpStatus.UNPROCESSABLE_CONTENT) {
       String field = ex.field() != null ? ex.field() : fieldOf(error);
-      pd.setProperty("errors", List.of(new ApiFieldError(field, error.name(), detail)));
+      pd.setProperty("errors", List.of(new FieldProblem(field, error.name(), detail)));
     }
     if (error == LinkError.LINK_EXISTS) {
       pd.setProperty("existingLinkId", ex.existingLinkId());
@@ -99,13 +97,13 @@ class LinkExceptionHandler {
   }
 
   private ProblemDetail validation(List<FieldProblem> problems, Locale locale) {
-    List<ApiFieldError> errors = new ArrayList<>();
+    List<FieldProblem> errors = new ArrayList<>();
     problems.stream()
         .filter(p -> errors.stream().noneMatch(e -> e.field().equals(p.field())))
         .forEach(
             p ->
                 errors.add(
-                    new ApiFieldError(
+                    new FieldProblem(
                         p.field(),
                         p.code(),
                         messages.get(
@@ -133,10 +131,19 @@ class LinkExceptionHandler {
   ProblemDetail bean(MethodArgumentNotValidException ex, HttpServletRequest request) {
     List<FieldProblem> problems = new ArrayList<>();
     for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
-      problems.add(
-          new FieldProblem(fe.getField(), FieldProblem.codeOf(String.valueOf(fe.getCode()))));
+      problems.add(new FieldProblem(fe.getField(), constraintCode(String.valueOf(fe.getCode()))));
     }
     return validation(problems, messages.localeOf(request));
+  }
+
+  /** Code stable à partir du nom de la contrainte Jakarta (NotBlank, Size, Pattern...). */
+  private static String constraintCode(String constraint) {
+    return switch (constraint) {
+      case "NotBlank", "NotNull", "NotEmpty" -> "REQUIRED";
+      case "Min", "Max", "Size" -> "OUT_OF_RANGE";
+      case "Pattern" -> "INVALID_VALUE";
+      default -> "INVALID";
+    };
   }
 
   /** Corps illisible : 422 par champ si Jackson sait lequel (UUID, type), sinon 400. */
@@ -166,16 +173,5 @@ class LinkExceptionHandler {
       }
     }
     return sb.toString();
-  }
-
-  /** 403 (patient d'un autre praticien) et 404 levés par la garde de propriété (patients). */
-  @ExceptionHandler(ResponseStatusException.class)
-  ProblemDetail ownership(ResponseStatusException ex) {
-    HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
-    ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, ex.getReason());
-    pd.setTitle(status.getReasonPhrase());
-    pd.setProperty(
-        "code", status == HttpStatus.FORBIDDEN ? "PATIENT_FORBIDDEN" : "PATIENT_NOT_FOUND");
-    return pd;
   }
 }

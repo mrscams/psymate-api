@@ -24,6 +24,7 @@ import com.psymate.clinical.web.EntryDtos.EntryMedicationRequest;
 import com.psymate.clinical.web.EntryDtos.EntryOccurredRequest;
 import com.psymate.clinical.web.EntryDtos.EntrySessionRequest;
 import com.psymate.clinical.web.EntryDtos.PatchEntryRequest;
+import com.psymate.shared.problem.FieldProblem;
 import com.psymate.vocabulary.api.EmotionCatalog;
 import com.psymate.vocabulary.api.TagFacade;
 import com.psymate.vocabulary.api.TagView;
@@ -76,11 +77,11 @@ class EntryCommandFactory {
     List<FieldProblem> problems = new ArrayList<>();
     EntryType type = null;
     if (blank(r.type())) {
-      problems.add(FieldProblem.required("type"));
+      problems.add(FieldProblems.required("type"));
     } else {
       type = EntryType.fromCode(r.type()).orElse(null);
       if (type == null) {
-        problems.add(FieldProblem.invalidValue("type"));
+        problems.add(FieldProblems.invalidValue("type"));
       }
     }
     Visibility visibility = visibility(r.visibility(), problems);
@@ -172,21 +173,21 @@ class EntryCommandFactory {
       String prefix = "links[" + i + "].";
       EntryLinkRequest link = requested.get(i);
       if (link == null) {
-        problems.add(FieldProblem.required("links[" + i + "]"));
+        problems.add(FieldProblems.required("links[" + i + "]"));
         continue;
       }
       if (link.targetId() == null) {
-        problems.add(FieldProblem.required(prefix + "targetId"));
+        problems.add(FieldProblems.required(prefix + "targetId"));
       }
       if (blank(link.linkType())) {
-        problems.add(FieldProblem.required(prefix + "linkType"));
+        problems.add(FieldProblems.required(prefix + "linkType"));
       }
       LinkDirection direction = LinkDirection.OUTGOING;
       if (link.direction() != null) {
         switch (link.direction()) {
           case "outgoing" -> direction = LinkDirection.OUTGOING;
           case "incoming" -> direction = LinkDirection.INCOMING;
-          default -> problems.add(FieldProblem.invalidValue(prefix + "direction"));
+          default -> problems.add(FieldProblems.invalidValue(prefix + "direction"));
         }
       }
       links.add(new LinkRequest(link.targetId(), link.linkType(), direction));
@@ -256,7 +257,7 @@ class EntryCommandFactory {
       case "private" -> Visibility.PRIVATE;
       case "clinical" -> Visibility.CLINICAL;
       default -> {
-        problems.add(FieldProblem.invalidValue("visibility"));
+        problems.add(FieldProblems.invalidValue("visibility"));
         yield null;
       }
     };
@@ -270,7 +271,7 @@ class EntryCommandFactory {
       case "draft" -> EntryStatus.DRAFT;
       case "final" -> EntryStatus.FINAL;
       default -> {
-        problems.add(FieldProblem.invalidValue("status"));
+        problems.add(FieldProblems.invalidValue("status"));
         yield null;
       }
     };
@@ -335,11 +336,11 @@ class EntryCommandFactory {
       try {
         precision = Precision.fromCode(o.precision());
       } catch (IllegalArgumentException e) {
-        problems.add(FieldProblem.invalidValue("occurred.precision"));
+        problems.add(FieldProblems.invalidValue("occurred.precision"));
       }
     }
     if (o.from() == null && precision != Precision.LIFE_PHASE) {
-      problems.add(FieldProblem.required("occurred.from"));
+      problems.add(FieldProblems.required("occurred.from"));
     } else if (o.from() != null && o.to() != null && o.to().isBefore(o.from())) {
       problems.add(new FieldProblem("occurred.to", "INVALID_TIME"));
     }
@@ -417,7 +418,7 @@ class EntryCommandFactory {
       EntryType type, EntryContent content, String emotionToCheck, List<FieldProblem> problems) {
     validator
         .validate(content, EntryChecks.groupOf(type))
-        .forEach(v -> problems.add(FieldProblem.of(v)));
+        .forEach(v -> problems.add(FieldProblems.of(v)));
     boolean emotionAlreadyWrong =
         problems.stream().anyMatch(p -> p.field().equals("feeling.emotionCode"));
     if (!blank(emotionToCheck)
@@ -437,7 +438,7 @@ class EntryCommandFactory {
       String field = "tags[" + i + "]";
       String label = labels.get(i);
       if (label == null || label.replace("#", "").isBlank()) {
-        problems.add(FieldProblem.required(field));
+        problems.add(FieldProblems.required(field));
         continue;
       }
       TagView tag = tags.resolve(label).orElse(null);

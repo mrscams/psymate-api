@@ -1,12 +1,13 @@
 package com.psymate.search;
 
+import com.psymate.shared.problem.FieldProblem;
 import java.util.List;
 
-/** Paramètres de recherche invalides : un problème par champ (400, SEARCH_BAD_REQUEST). */
+/**
+ * Paramètres de recherche invalides : un problème par champ (400, SEARCH_BAD_REQUEST), sans message
+ * (clé search.error.CODE des messages, ajoutée par SearchExceptionHandler).
+ */
 class SearchRequestException extends RuntimeException {
-
-  /** Un champ fautif et son code d'erreur (clé search.error.CODE des messages). */
-  record FieldProblem(String field, String code) {}
 
   private final transient List<FieldProblem> problems;
 

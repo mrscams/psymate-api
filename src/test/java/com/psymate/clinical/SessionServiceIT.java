@@ -19,6 +19,7 @@ import com.psymate.clinical.domain.ClinicalError;
 import com.psymate.clinical.domain.ClinicalException;
 import com.psymate.clinical.domain.EntryType;
 import com.psymate.clinical.domain.TimeSpec;
+import com.psymate.patients.api.PatientAccessException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -43,7 +44,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
-import org.springframework.web.server.ResponseStatusException;
 
 /** M1-04 : démarrer, clôturer, compléter une séance, séance courante, contacts. */
 @SpringBootTest
@@ -599,13 +599,13 @@ class SessionServiceIT {
     fx.authenticate(fx.newPractitioner());
 
     assertThatThrownBy(() -> sessions.start(patient, new StartSessionCommand("in_person", null)))
-        .isInstanceOf(ResponseStatusException.class);
+        .isInstanceOf(PatientAccessException.class);
     assertThatThrownBy(() -> sessions.close(session, new CloseSessionCommand(30, null)))
-        .isInstanceOf(ResponseStatusException.class);
+        .isInstanceOf(PatientAccessException.class);
     assertThatThrownBy(
             () -> sessions.contact(patient, new ContactCommand("phone", T0, "Appel", null)))
-        .isInstanceOf(ResponseStatusException.class);
-    assertThatThrownBy(() -> sessions.current(patient)).isInstanceOf(ResponseStatusException.class);
+        .isInstanceOf(PatientAccessException.class);
+    assertThatThrownBy(() -> sessions.current(patient)).isInstanceOf(PatientAccessException.class);
   }
 
   @Test

@@ -20,6 +20,7 @@ import com.psymate.linking.application.LinkService;
 import com.psymate.linking.domain.GraphRequestException;
 import com.psymate.linking.domain.LinkError;
 import com.psymate.linking.domain.LinkException;
+import com.psymate.patients.api.PatientAccessException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -39,7 +40,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Requête de voisinage et niveau de détail (M2-03, A4.4, A6) par la façade, sur PostgreSQL réel.
@@ -479,25 +479,25 @@ class GraphQueryIT {
     UUID theirPatient = fx.newPatient();
     fx.authenticate(me);
 
-    ResponseStatusException ex =
+    PatientAccessException ex =
         thrown(
-            ResponseStatusException.class,
+            PatientAccessException.class,
             () -> graph.neighborhood(new GraphQuery(theirPatient, null, 2, null, null, null)));
-    assertThat(ex.getStatusCode().value()).isEqualTo(403);
-    ResponseStatusException expand =
+    assertThat(ex.status().value()).isEqualTo(403);
+    PatientAccessException expand =
         thrown(
-            ResponseStatusException.class,
+            PatientAccessException.class,
             () -> graph.expand(theirPatient, "sn:" + UUID.randomUUID() + ":feeling", null));
-    assertThat(expand.getStatusCode().value()).isEqualTo(403);
+    assertThat(expand.status().value()).isEqualTo(403);
   }
 
   @Test
   void anUnknownPatientIsNotFound() {
-    ResponseStatusException ex =
+    PatientAccessException ex =
         thrown(
-            ResponseStatusException.class,
+            PatientAccessException.class,
             () -> graph.neighborhood(new GraphQuery(UUID.randomUUID(), null, 2, null, null, null)));
-    assertThat(ex.getStatusCode().value()).isEqualTo(404);
+    assertThat(ex.status().value()).isEqualTo(404);
   }
 
   // ---- niveau de détail et expand

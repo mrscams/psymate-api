@@ -11,7 +11,7 @@ public interface GraphQueryFacade {
    * de degré 1 d'un même type reliés au même voisin sont regroupés en super-nœuds. Seuls les liens
    * acceptés comptent ; les entrées archivées n'apparaissent pas.
    *
-   * @throws org.springframework.web.server.ResponseStatusException 403 si le patient est d'un autre
+   * @throws com.psymate.patients.api.PatientAccessException 403 si le patient est d'un autre
    *     praticien, 404 s'il n'existe pas
    * @throws com.psymate.linking.domain.GraphRequestException 422 si la profondeur, un type de lien
    *     ou la période est invalide

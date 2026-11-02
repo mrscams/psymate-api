@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T21:29:25.852Z",
+  "task": "M9-13",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant, 1 à corriger, 4 remarque(s)",
+  "notes": "aucun bloquant ; à corriger : consigner dans la PR l'écart EntryCommandFactory dans controller (revue §4.3 la place dans dto)",
+  "branch": "claude/m9-13-138b85",
+  "checkout": "m9-13-138b85"
+}

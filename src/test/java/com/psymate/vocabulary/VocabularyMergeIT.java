@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.psymate.clinical.api.EntriesRelabeled;
 import com.psymate.clinical.application.EntryRelabelService;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.vocabulary.api.EmotionMergeReverted;
@@ -30,6 +31,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.event.ApplicationEvents;
@@ -71,6 +73,7 @@ class VocabularyMergeIT {
   @Autowired private JdbcTemplate jdbc;
   @Autowired private ApplicationEvents events;
   @Autowired private EntryRelabelService relabel;
+  @Autowired private EventSerializer serializer;
 
   private RequestPostProcessor auth;
   private UUID tenant;
@@ -203,6 +206,7 @@ class VocabularyMergeIT {
     relabel.relabelFeelings(tenant, me, lassitude);
     assertThat(emotionOf(feeling)).isEqualTo(Arrays.asList(lassitude, null));
     assertThat(clinicalRev()).isEqualTo(revAfterUndo);
+    assertThat(events.stream(EntriesRelabeled.class)).isEmpty();
   }
 
   @Test
@@ -264,6 +268,112 @@ class VocabularyMergeIT {
         });
     assertThat(patientTagLabels()).containsExactly("proches");
     eventually(() -> assertThat(found("proches")).containsExactlyInAnyOrder(onPerso, onFamille));
+  }
+
+  @Test
+  void aFeelingCorrectedByHandFollowsALaterMergeOfItsNewEmotion() throws Exception {
+    String lassitude = createEmotion("Lassitude", "sadness");
+    String morosite = createEmotion("Morosité", "sadness");
+    UUID feeling = entry("feeling", "Soirée calme à la maison", 1, List.of(), lassitude);
+    awaitPatientEventsSettled();
+    merge(lassitude, "sadness");
+    eventually(() -> assertThat(emotionOf(feeling)).isEqualTo(List.of("sadness", lassitude)));
+    send(
+            MockMvcRequestBuilders.patch("/api/entries/{id}", feeling),
+            Map.of("feeling", Map.of("emotionCode", morosite)))
+        .andExpect(status().isOk());
+
+    // L'émotion choisie à la main est fusionnée à son tour : le ressenti la suit, et garde son
+    // origine (comme avant M9-03).
+    merge(morosite, "joy");
+
+    eventually(() -> assertThat(emotionOf(feeling)).isEqualTo(List.of("joy", lassitude)));
+  }
+
+  @Test
+  void chainedEmotionMergesAndTheUndoOfTheFirstLinkReachTheOwnerTable() throws Exception {
+    String lassitude = createEmotion("Lassitude", "sadness");
+    String morosite = createEmotion("Morosité", "sadness");
+    UUID onLassitude = entry("feeling", "Soirée calme à la maison", 1, List.of(), lassitude);
+    UUID onMorosite = entry("feeling", "Réveil difficile ce matin", 2, List.of(), morosite);
+    awaitPatientEventsSettled();
+
+    // Deux fusions enchaînées sans attendre : leurs abonnés peuvent passer dans les deux ordres.
+    String first = merge(lassitude, morosite);
+    merge(morosite, "sadness");
+
+    eventually(
+        () -> {
+          assertThat(emotionOf(onLassitude)).isEqualTo(List.of("sadness", lassitude));
+          assertThat(emotionOf(onMorosite)).isEqualTo(List.of("sadness", morosite));
+        });
+
+    undo(first);
+
+    eventually(() -> assertThat(emotionOf(onLassitude)).isEqualTo(Arrays.asList(lassitude, null)));
+    assertThat(emotionOf(onMorosite)).isEqualTo(List.of("sadness", morosite));
+    // Chaque ressenti porte de nouveau sa propre émotion courante : les deux sont dominantes.
+    eventually(
+        () -> {
+          assertThat(found("lassitude")).containsExactly(onLassitude);
+          assertThat(found("morosite")).isEmpty();
+          assertThat(topEmotionCodes()).containsExactlyInAnyOrder(lassitude, "sadness");
+        });
+  }
+
+  @Test
+  void aMergeUndoneRightAwayEndsRestoredWhateverTheDeliveryOrder() throws Exception {
+    String lassitude = createEmotion("Lassitude", "sadness");
+    UUID feeling = entry("feeling", "Soirée calme à la maison", 1, List.of(), lassitude);
+    awaitPatientEventsSettled();
+
+    String mergeId = merge(lassitude, "sadness");
+    undo(mergeId);
+
+    // Les deux abonnés de clinical (fusion et annulation) ont traité leurs publications, celles
+    // de cette fusion précisément.
+    await("abonnés de clinical de la fusion " + mergeId)
+        .atMost(Duration.ofSeconds(60))
+        .pollInterval(Duration.ofMillis(200))
+        .until(
+            () ->
+                jdbc.queryForObject(
+                        "select count(*) from event_publication where listener_id like 'clinical.%'"
+                            + " and serialized_event like ? and completion_date is not null",
+                        Integer.class, "%" + mergeId + "%")
+                    == 2);
+    assertThat(emotionOf(feeling)).isEqualTo(Arrays.asList(lassitude, null));
+    eventually(() -> assertEmotionServed("lassitude", "tristesse", lassitude, feeling));
+  }
+
+  @Test
+  void eachPatientTouchedByAMergeHasItsClinicalRevisionShifted() throws Exception {
+    UUID other = UUID.randomUUID();
+    jdbc.update(
+        "insert into patient (id, tenant_id, owner_id, display_name) values (?, ?, ?, 'Autre')",
+        other,
+        tenant,
+        me);
+    send(
+            MockMvcRequestBuilders.post("/api/patients/{id}/sessions/start", other),
+            Map.of("modality", "in_person"))
+        .andExpect(status().isCreated());
+    String lassitude = createEmotion("Lassitude", "sadness");
+    UUID mine = entry(patient, "feeling", "Soirée calme à la maison", 1, List.of(), lassitude);
+    UUID theirs = entry(other, "feeling", "Réveil difficile ce matin", 2, List.of(), lassitude);
+    awaitPatientEventsSettled();
+    long revMine = clinicalRev(patient);
+    long revTheirs = clinicalRev(other);
+
+    merge(lassitude, "sadness");
+
+    eventually(
+        () -> {
+          assertThat(emotionOf(mine)).isEqualTo(List.of("sadness", lassitude));
+          assertThat(emotionOf(theirs)).isEqualTo(List.of("sadness", lassitude));
+          assertThat(clinicalRev(patient)).isGreaterThan(revMine);
+          assertThat(clinicalRev(other)).isGreaterThan(revTheirs);
+        });
   }
 
   // ---- événements
@@ -332,6 +442,30 @@ class VocabularyMergeIT {
             });
   }
 
+  /** La republication relit serialized_event : les champs sans setter doivent revenir. */
+  @Test
+  void mergeEventsSurviveTheOutboxSerializationRoundTrip() {
+    UUID merge = UUID.randomUUID();
+    UUID source = UUID.randomUUID();
+    UUID target = UUID.randomUUID();
+    UUID entryId = UUID.randomUUID();
+
+    EmotionsMerged merged = new EmotionsMerged(tenant, merge, me, "c_a", "sadness");
+    assertThat(roundTrip(merged)).usingRecursiveComparison().isEqualTo(merged);
+    assertThat(roundTrip(merged).getMergeId()).isEqualTo(merge);
+    EmotionMergeReverted reverted = new EmotionMergeReverted(tenant, merge, me, "c_a", "sadness");
+    assertThat(roundTrip(reverted)).usingRecursiveComparison().isEqualTo(reverted);
+    TagsMerged tags = new TagsMerged(tenant, me, source, target);
+    assertThat(roundTrip(tags)).usingRecursiveComparison().isEqualTo(tags);
+    EntriesRelabeled relabeled = new EntriesRelabeled(tenant, patient, List.of(entryId));
+    assertThat(roundTrip(relabeled)).usingRecursiveComparison().isEqualTo(relabeled);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> T roundTrip(T event) {
+    return (T) serializer.deserialize(serializer.serialize(event), event.getClass());
+  }
+
   @Test
   void refusedMergesAndUndosPublishNothing() throws Exception {
     String lassitude = createEmotion("Lassitude", "sadness");
@@ -377,6 +511,22 @@ class VocabularyMergeIT {
 
   // ---- données
 
+  /** Fusionne une émotion personnalisée et rend l'identifiant de la fusion. */
+  private String merge(String source, String target) throws Exception {
+    return JsonPath.read(
+        body(
+            send(
+                    MockMvcRequestBuilders.post("/api/me/emotions/{code}/merge", source),
+                    Map.of("targetCode", target))
+                .andExpect(status().isOk())),
+        "$.id");
+  }
+
+  private void undo(String mergeId) throws Exception {
+    send(MockMvcRequestBuilders.post("/api/me/emotions/merges/{id}/undo", mergeId), Map.of())
+        .andExpect(status().isOk());
+  }
+
   private String createEmotion(String label, String family) throws Exception {
     return JsonPath.read(
         body(
@@ -399,6 +549,12 @@ class VocabularyMergeIT {
   /** Crée une entrée par l'API de clinical ; {@code emotionCode} non nul pour un ressenti. */
   private UUID entry(String type, String body, int daysAgo, List<String> tags, String emotionCode)
       throws Exception {
+    return entry(patient, type, body, daysAgo, tags, emotionCode);
+  }
+
+  private UUID entry(
+      UUID patientId, String type, String body, int daysAgo, List<String> tags, String emotionCode)
+      throws Exception {
     Instant from = Instant.now().minus(daysAgo, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS);
     Map<String, Object> payload = new LinkedHashMap<>();
     payload.put("type", type);
@@ -412,14 +568,14 @@ class VocabularyMergeIT {
     return UUID.fromString(
         JsonPath.read(
             body(
-                send(MockMvcRequestBuilders.post("/api/patients/{id}/entries", patient), payload)
+                send(MockMvcRequestBuilders.post("/api/patients/{id}/entries", patientId), payload)
                     .andExpect(status().isCreated())),
             "$.id"));
   }
 
   /**
-   * Attend que toutes les publications qui citent le patient (création des entrées, tags du
-   * patient) soient traitées par leurs abonnés : index de recherche et vue d'ensemble calculés.
+   * Attend que toutes les publications du cabinet du test (création des entrées, tags des patients)
+   * soient traitées par leurs abonnés : index de recherche et vue d'ensemble calculés.
    */
   private void awaitPatientEventsSettled() {
     await("publications du patient traitées")
@@ -431,7 +587,7 @@ class VocabularyMergeIT {
                         "select count(*) from event_publication where serialized_event like ?"
                             + " and completion_date is null",
                         Integer.class,
-                        "%" + patient + "%")
+                        "%" + tenant + "%")
                     == 0);
   }
 
@@ -493,8 +649,12 @@ class VocabularyMergeIT {
   }
 
   private long clinicalRev() {
+    return clinicalRev(patient);
+  }
+
+  private long clinicalRev(UUID patientId) {
     return jdbc.queryForObject(
-        "select clinical_rev from patient where id = ?", Long.class, patient);
+        "select clinical_rev from patient where id = ?", Long.class, patientId);
   }
 
   // ---- HTTP

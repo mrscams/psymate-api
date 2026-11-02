@@ -8,7 +8,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface PatientTagRepository extends JpaRepository<PatientTag, PatientTagId> {
+public interface PatientTagRepository
+    extends JpaRepository<PatientTag, PatientTagId>, PatientTagNativeQueries {
 
   /** Retire les tags du patient absents de {@code tagIds} (liste non vide). */
   @Modifying(clearAutomatically = true)
@@ -33,34 +34,4 @@ public interface PatientTagRepository extends JpaRepository<PatientTag, PatientT
 
   /** Tags de plusieurs patients en une requete (pas de N+1). */
   List<PatientTag> findByIdPatientIdIn(Collection<UUID> patientIds);
-
-  // ---- fusions de tags (M9-03, abonné de vocabulary.api.TagsMerged)
-
-  /**
-   * Verrou transactionnel par praticien : les réécritures après fusion d'un même praticien se
-   * sérialisent, et l'état des fusions est relu après le verrou.
-   */
-  @Query(
-      value =
-          "select count(*) from (select pg_advisory_xact_lock(hashtext('patients.vocabulary-merge'),"
-              + " hashtext(:p))) as locked",
-      nativeQuery = true)
-  long lockPractitioner(@Param("p") String practitionerId);
-
-  @Query("select t.id.patientId from PatientTag t where t.id.tagId = :tagId")
-  List<UUID> findPatientIdsByTagId(@Param("tagId") UUID tagId);
-
-  /** Pose {@code target} sur chaque patient qui porte {@code source}, sans doublon. */
-  @Modifying(clearAutomatically = true)
-  @Query(
-      value =
-          "insert into patient_tag (patient_id, tag_id)"
-              + " select patient_id, :target from patient_tag where tag_id = :source"
-              + " on conflict do nothing",
-      nativeQuery = true)
-  void copyTag(@Param("source") UUID source, @Param("target") UUID target);
-
-  @Modifying(clearAutomatically = true)
-  @Query("delete from PatientTag t where t.id.tagId = :tagId")
-  int deleteByTagId(@Param("tagId") UUID tagId);
 }

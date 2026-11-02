@@ -53,7 +53,10 @@ public class EntryRelabelService {
     repo.lockPractitioner(practitionerId);
     List<RelabeledEntry> changed = new ArrayList<>();
     for (EmotionResolution r : merges.emotionResolutions(practitionerId, code)) {
-      changed.addAll(repo.relabelFeelings(r.sourceCode(), r.currentCode(), r.historicalCodes()));
+      changed.addAll(
+          r.currentCode().equals(r.sourceCode())
+              ? repo.restoreFeelings(r.sourceCode(), r.historicalCodes())
+              : repo.moveFeelings(r.sourceCode(), r.currentCode(), r.historicalCodes()));
     }
     propagate(tenantId, changed);
   }

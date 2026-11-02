@@ -33,12 +33,10 @@ class PatientTagRelabelService {
 
   @Transactional
   void relabel(UUID tenantId, UUID practitionerId) {
-    patientTags.lockPractitioner(practitionerId.toString());
+    patientTags.lockPractitionerForTagMerge(practitionerId);
     Set<UUID> touched = new TreeSet<>();
     for (Map.Entry<UUID, UUID> m : merges.tagResolutions(practitionerId).entrySet()) {
-      touched.addAll(patientTags.findPatientIdsByTagId(m.getKey()));
-      patientTags.copyTag(m.getKey(), m.getValue());
-      patientTags.deleteByTagId(m.getKey());
+      touched.addAll(patientTags.replaceTag(m.getKey(), m.getValue()));
     }
     touched.forEach(
         patientId -> events.publish(new PatientUpdated(tenantId, patientId, practitionerId)));

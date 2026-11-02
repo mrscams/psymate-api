@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T18:14:52.762Z",
+  "task": "M9-07",
+  "agent": "claude",
+  "status": "done",
+  "summary": "PR 61 : search rangé par rôle, SearchDtos éclaté en 7 fichiers, search dans ROLE_FOLDER_MODULES",
+  "notes": "verify vert (403 unitaires, 930 IT) ; ContractIT vert sans make contract ; IT de search inchangés ; écart au §4.3 par la règle 3 : SnippetBuilder et SearchRequestException dans model, revue corrigée",
+  "next": "M9-08 (overview) débloquée ; même écart attendu pour OverviewRequestException",
+  "pr": "https://github.com/mrscams/psymate-api/pull/61",
+  "branch": "claude/m9-07-ad3628",
+  "checkout": "m9-07-ad3628"
+}

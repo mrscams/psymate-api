@@ -5,7 +5,7 @@
 |Spring components
 |_Services_
 
-* `c.p.p.api.PatientFacade`, `c.p.p.api.PatientOwnershipGuard` (via `c.p.p.PatientService`)
+* `c.p.p.api.PatientFacade`, `c.p.p.api.PatientOwnershipGuard` (via `c.p.p.service.PatientService`)
 |Bean references
 |* `c.p.e.api.DomainEventPublisher` (in Events)
 * `c.p.e.api.EventDeduplicator` (in Events)

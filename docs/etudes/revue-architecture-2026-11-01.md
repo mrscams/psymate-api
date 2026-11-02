@@ -613,11 +613,11 @@ Actuel : directory/ (43 plats) + api/       Cible :
 
 ```
 search/
-  controller/   SearchController, SearchExceptionHandler, SearchMessages, SearchRequestException
+  controller/   SearchController, SearchExceptionHandler, SearchMessages
   dto/          SearchDtos
-  service/      EntrySearchService, SearchIndexListener, SnippetBuilder
+  service/      EntrySearchService, SearchIndexListener
   repository/   EntrySearchRepository
-  model/        QuerySyntax
+  model/        QuerySyntax, SnippetBuilder, SearchRequestException (M9-07, règle 3 : l'exception est levée par le service, SnippetBuilder est lu par le repository)
 ```
 
 #### overview (16 classes)
@@ -727,11 +727,11 @@ Préfixe `com.psymate.` omis. Les tests suivent leurs classes dans la même PR. 
 | `directory` | PublicSecurityConfig | `directory.config` |
 | `directory` | DirectoryFacadeImpl, ProfileFacadeImpl ; `directory.api` DirectoryFacade, ProfileFacade | supprimés (ARCH-07) |
 | `directory` | DirectoryClock | `shared.time.Timestamps` |
-| `search` | SearchController, SearchExceptionHandler, SearchMessages, SearchRequestException | `search.controller` |
+| `search` | SearchController, SearchExceptionHandler, SearchMessages | `search.controller` |
 | `search` | SearchDtos | `search.dto` |
-| `search` | EntrySearchService, SearchIndexListener, SnippetBuilder | `search.service` |
+| `search` | EntrySearchService, SearchIndexListener | `search.service` |
 | `search` | EntrySearchRepository | `search.repository` |
-| `search` | QuerySyntax | `search.model` |
+| `search` | QuerySyntax, SnippetBuilder, SearchRequestException (M9-07, règle 3 : l'exception est levée par le service, SnippetBuilder est lu par le repository) | `search.model` |
 | `overview` | OverviewController, OverviewExceptionHandler, OverviewMessages, OverviewRequestException | `overview.controller` |
 | `overview` | OverviewDtos | `overview.dto` |
 | `overview` | OverviewService, OverviewListener, NarrativeComposer | `overview.service` |

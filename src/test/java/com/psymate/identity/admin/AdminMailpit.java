@@ -12,13 +12,13 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /** Lecture des e-mails reçus par Mailpit dans les tests (l'envoi est asynchrone). */
-final class AdminMailpit {
+public final class AdminMailpit {
 
   private final GenericContainer<?> mailpit;
   private final HttpClient http = HttpClient.newHttpClient();
   private final JsonMapper json = JsonMapper.builder().build();
 
-  AdminMailpit(GenericContainer<?> mailpit) {
+  public AdminMailpit(GenericContainer<?> mailpit) {
     this.mailpit = mailpit;
   }
 
@@ -35,12 +35,12 @@ final class AdminMailpit {
   }
 
   /** Texte du dernier e-mail pour ce destinataire et ce sujet ; null après 10 s d'attente. */
-  String lastText(String to, String subject) throws Exception {
+  public String lastText(String to, String subject) throws Exception {
     return lastText(to, subject, Duration.ofSeconds(10));
   }
 
   /** Comme lastText, avec une attente maximale choisie (envoi lent ou file d'envoi chargée). */
-  String lastText(String to, String subject, Duration wait) throws Exception {
+  public String lastText(String to, String subject, Duration wait) throws Exception {
     long deadline = System.nanoTime() + wait.toNanos();
     while (true) {
       JsonNode found = search(to, subject);
@@ -56,7 +56,7 @@ final class AdminMailpit {
   }
 
   /** Nombre d'e-mails correspondants, après une courte attente pour laisser partir l'asynchrone. */
-  int count(String to, String subject) throws Exception {
+  public int count(String to, String subject) throws Exception {
     Thread.sleep(1500);
     return search(to, subject).path("messages").size();
   }

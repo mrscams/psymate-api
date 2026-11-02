@@ -972,7 +972,7 @@ Ces points touchent à des règles de CLAUDE.md, à des décisions G ou à des A
 5. **Lecture des entrées par l'export.** `clinical.export.ExportRepository` doit-il continuer à relire les entrées par son propre SQL, ou réutiliser les lectures de `clinical.persistence.EntryRepository` (ARCH-21) ? **Tranchée le 2026-11-02 : elle garde sa propre lecture, en fragment natif (G Q43).**
 6. **DTO.** Des classes conteneurs `*Dtos`, ou un fichier par DTO ? Les deux coexistent (ARCH-20). **Tranchée le 2026-11-02 : un fichier par DTO.**
 7. **Calendrier.** La restructuration passe-t-elle avant ou après la V1 web ? Les déplacements ne changent pas le contrat, donc le frontend n'est pas bloqué. En revanche, ils entrent en conflit avec toute branche backend ouverte. **Tranchée le 2026-11-02 : tout le plan maintenant.**
-8. **Modules imbriqués.** L'équipe veut-elle essayer les modules Modulith imbriqués pour `identity.admin`, comme D5 l. 254 l'envisageait, à la place de la règle ArchUnit `identityAdminDoesNotTouchClinicalModules` ?
+8. **Modules imbriqués.** L'équipe veut-elle essayer les modules Modulith imbriqués pour `identity.admin`, comme D5 l. 254 l'envisageait, à la place de la règle ArchUnit `identityAdminDoesNotTouchClinicalModules` ? **Tranchée le 2026-11-02 : non, la règle ArchUnit reste la garde (G Q44).**
 9. **Événements sans abonné.** Les sept événements d'ARCH-19 doivent-ils continuer à être publiés dès la V1 (hooks), ou seulement à l'arrivée de leur premier abonné ? **Tranchée le 2026-11-02 : ils restent publiés, annotés `@Reserved` (G Q40).**
 
 ### 7.1 Décisions prises le 2026-11-02

@@ -42,28 +42,28 @@ import tools.jackson.databind.json.JsonMapper;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(AdminTestConfig.class)
-abstract class AbstractAccountsIT {
+public abstract class AbstractAccountsIT {
 
-  static final String PASSWORD = "Zebre-Tournesol-42";
+  protected static final String PASSWORD = "Zebre-Tournesol-42";
 
   private static final AtomicInteger IP = new AtomicInteger();
 
   /** Parties de clés qui trahiraient une donnée patient, de clinique ou de secret. */
-  static final List<String> FORBIDDEN_KEY_PARTS =
+  protected static final List<String> FORBIDDEN_KEY_PARTS =
       List.of("patient", "entry", "storagekey", "sha256", "password", "totp", "secret");
 
-  @Autowired MockMvc mvc;
-  @Autowired JdbcTemplate jdbc;
-  @Autowired AdminTestConfig.Recorder recorder;
-  @Autowired GenericContainer<?> mailpit;
-  @Autowired PasswordEncoder encoder;
-  final JsonMapper json = JsonMapper.builder().build();
-  AdminMailpit mails;
-  UUID tenant;
+  @Autowired protected MockMvc mvc;
+  @Autowired protected JdbcTemplate jdbc;
+  @Autowired protected AdminTestConfig.Recorder recorder;
+  @Autowired protected GenericContainer<?> mailpit;
+  @Autowired protected PasswordEncoder encoder;
+  protected final JsonMapper json = JsonMapper.builder().build();
+  protected AdminMailpit mails;
+  protected UUID tenant;
   private static String passwordHash;
 
   @BeforeEach
-  void setUpAccounts() {
+  protected void setUpAccounts() {
     mails = new AdminMailpit(mailpit);
     tenant = UUID.randomUUID();
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
@@ -75,7 +75,8 @@ abstract class AbstractAccountsIT {
   // ---- comptes
 
   /** Compte confirmé, e-mail id@example.test, mot de passe PASSWORD. */
-  UUID account(String displayName, String status, String role, boolean totp, String locale) {
+  protected UUID account(
+      String displayName, String status, String role, boolean totp, String locale) {
     UUID id = UUID.randomUUID();
     String email = id + "@example.test";
     jdbc.update(
@@ -99,25 +100,25 @@ abstract class AbstractAccountsIT {
     return id;
   }
 
-  UUID admin() {
+  protected UUID admin() {
     return account("Admin Test", "approved", "admin", true, "fr");
   }
 
-  UUID adminWithoutTwoFactor() {
+  protected UUID adminWithoutTwoFactor() {
     return account("Admin Sans 2FA", "approved", "admin", false, "fr");
   }
 
-  UUID practitioner(String displayName, String status) {
+  protected UUID practitioner(String displayName, String status) {
     return account(displayName, status, "practitioner", false, "fr");
   }
 
-  String emailOf(UUID id) {
+  protected String emailOf(UUID id) {
     return id + "@example.test";
   }
 
   // ---- authentification
 
-  RequestPostProcessor as(UUID id, String role, String status) {
+  protected RequestPostProcessor as(UUID id, String role, String status) {
     CurrentPractitioner principal =
         new CurrentPractitioner(
             id, tenant, id + "@example.test", "Dr Test", "psychologist", status);
@@ -127,18 +128,18 @@ abstract class AbstractAccountsIT {
         UsernamePasswordAuthenticationToken.authenticated(principal, null, authorities));
   }
 
-  RequestPostProcessor asAdmin(UUID id) {
+  protected RequestPostProcessor asAdmin(UUID id) {
     return as(id, "ROLE_ADMIN", "approved");
   }
 
   /** Adresse source unique par appel : le verrou de connexion est par e-mail + IP. */
-  static String freshIp() {
+  protected static String freshIp() {
     int n = IP.incrementAndGet();
     return "10.14." + (n / 250) + "." + (n % 250 + 1);
   }
 
   /** Connexion réelle : renvoie la réponse, dont le cookie SESSION en cas de succès. */
-  MvcResult login(String email, String password) throws Exception {
+  protected MvcResult login(String email, String password) throws Exception {
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("email", email);
     body.put("password", password);
@@ -155,47 +156,47 @@ abstract class AbstractAccountsIT {
         .andReturn();
   }
 
-  Cookie sessionOf(UUID id) throws Exception {
+  protected Cookie sessionOf(UUID id) throws Exception {
     MvcResult r = login(emailOf(id), PASSWORD);
     assertThat(r.getResponse().getStatus()).as("login").isEqualTo(200);
     return r.getResponse().getCookie("SESSION");
   }
 
-  MvcResult me(Cookie session) throws Exception {
+  protected MvcResult me(Cookie session) throws Exception {
     return mvc.perform(get("/api/auth/me").cookie(session)).andReturn();
   }
 
   // ---- utilitaires
 
-  JsonNode body(MvcResult r) throws Exception {
+  protected JsonNode body(MvcResult r) throws Exception {
     return json.readTree(r.getResponse().getContentAsString());
   }
 
   /**
    * Texte du dernier e-mail reçu, avec une longue attente (l'envoi est asynchrone et parfois lent).
    */
-  String mailText(String to, String subject) throws Exception {
+  protected String mailText(String to, String subject) throws Exception {
     return mails.lastText(to, subject, Duration.ofSeconds(60));
   }
 
-  int status(MvcResult r) {
+  protected int status(MvcResult r) {
     return r.getResponse().getStatus();
   }
 
-  String code(MvcResult r) throws Exception {
+  protected String code(MvcResult r) throws Exception {
     return body(r).path("code").asString();
   }
 
-  String statusOf(UUID id) {
+  protected String statusOf(UUID id) {
     return jdbc.queryForObject(
         "select verification_status from practitioner where id = ?", String.class, id);
   }
 
-  int count(String sql, Object... args) {
+  protected int count(String sql, Object... args) {
     return jdbc.queryForObject(sql, Integer.class, args);
   }
 
-  static boolean await(BooleanSupplier condition) throws InterruptedException {
+  protected static boolean await(BooleanSupplier condition) throws InterruptedException {
     long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
     while (!condition.getAsBoolean()) {
       if (System.nanoTime() > deadline) {
@@ -207,7 +208,7 @@ abstract class AbstractAccountsIT {
   }
 
   /** Aucune clé du JSON ne contient une partie interdite (donnée patient, secret, stockage). */
-  void assertNoForbiddenKey(JsonNode node, String path) {
+  protected void assertNoForbiddenKey(JsonNode node, String path) {
     if (node.isObject()) {
       for (var e : node.properties()) {
         String key = e.getKey().toLowerCase(java.util.Locale.ROOT);

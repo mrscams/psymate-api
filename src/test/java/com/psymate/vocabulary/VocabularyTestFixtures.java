@@ -10,7 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 /**
  * Données et identité de test pour les IT qui appellent les services du module directement (sans
  * REST) : un cabinet, des praticiens, des tags, et le praticien courant posé dans le
- * SecurityContext (lu par IdentityCurrentPractitionerAdapter).
+ * SecurityContext (lu par identity.api.CurrentPractitioner.get()).
  */
 final class VocabularyTestFixtures {
 

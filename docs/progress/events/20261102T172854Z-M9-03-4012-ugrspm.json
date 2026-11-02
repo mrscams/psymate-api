@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T17:28:54.651Z",
+  "task": "M9-03",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "Parties 3 et 4 fusionnees (PR 57, 59 ; 8392684) : abonnes des fusions dans clinical et patients, vocabulary n ecrit plus aucune table d un autre module",
+  "next": "M9-07, M9-08, M9-09 et M9-10 debloquees",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

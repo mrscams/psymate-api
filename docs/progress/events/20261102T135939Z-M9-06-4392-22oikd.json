@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T13:59:39.581Z",
+  "task": "M9-06",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Élagage de l'API publique : LinkFacade, LinkView, GraphQueryFacade, DirectoryFacade, ProfileFacade et 3 méthodes d'EntryFacade supprimés ; @Reserved ; garde ApiUsageTests",
+  "notes": "G Q39 (graphe interne à linking) et Q40 (événements sans abonné publiés, @Reserved) tranchées par l'utilisateur ; verify vert (388 unitaires, 917 IT) ; contrat inchangé ; aucune dépendance Maven ; exceptions de la garde : SessionView (M9-13), 4 événements identity (M9-18), PatientArchived (M9-09), EntryTypeView (M9-10)",
+  "next": "Débloque M9-11 (directory) et M9-14 (linking) après fusion",
+  "pr": "https://github.com/mrscams/psymate-api/pull/53",
+  "branch": "claude/m9-06-a9e549",
+  "checkout": "m9-06-a9e549"
+}

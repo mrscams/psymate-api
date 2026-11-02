@@ -680,7 +680,7 @@ flowchart LR
   LS --> ES
 ```
 
-`LinkService` appelle `EntryFacade` pour vérifier que les deux entrées appartiennent au même patient du praticien courant. Les autres dépendances synchrones entre modules métier : `clinical → patients` (`PatientFacade.touchClinicalRev`, garde de propriété), `linking → patients` (garde), `linking → clinical` (`EntryFacade.adjustLinkCount`), `clinical.export → identity` (`EncryptedStorageFacade`, `SuspendedAccountAuthenticator`). `EntryFacade.adjustLinkCount` n'est pas une lecture : linking y fait écrire par clinical le compteur `entry.link_count`, dans la transaction du lien, pour que la timeline l'affiche exact ; ce choix synchrone est assumé, sans événement `LinkRemoved` en V1 (G Q41).
+`LinkService` appelle `EntryFacade` pour vérifier que les deux entrées appartiennent au même patient du praticien courant. Les autres dépendances synchrones entre modules métier : `clinical → patients` (`PatientFacade.touchClinicalRev`, garde de propriété), `linking → patients` (garde), `linking → clinical` (`EntryFacade.adjustLinkCount`), `clinical.export → identity` (`EncryptedStorageFacade`, `SuspendedAccountAuthenticator`), et pour les fusions du vocabulaire (G Q42) `clinical → vocabulary` et `patients → vocabulary` (`MergeFacade`, lue par leurs abonnés), plus `vocabulary → clinical` par le port inversé `EmotionUsagePort` (déclaré dans `vocabulary.api`, implémenté par clinical, comme `EntryLinksPort`). `EntryFacade.adjustLinkCount` n'est pas une lecture : linking y fait écrire par clinical le compteur `entry.link_count`, dans la transaction du lien, pour que la timeline l'affiche exact ; ce choix synchrone est assumé, sans événement `LinkRemoved` en V1 (G Q41).
 
 ### Style d'API
 

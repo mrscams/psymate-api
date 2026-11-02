@@ -185,7 +185,7 @@ Huit contextes bornés en V1 (plus l'IA en V2), chacun un module Spring Modulith
 | Events | Outbox, publication des événements de domaine | `OutboxEvent` | — | tous (émetteurs) |
 | AI (V2) | Suggestions, motifs, questions | `Suggestion` (vue de `Link`) | `Embedding`, `Chunk`, `PatternReport` | Events, Clinical record (lecture), Linking (écriture `proposed`) |
 
-Contexte ajouté le 24 octobre 2026 — **Directory** (module `com.psymate.directory`) : responsable de l'annuaire public et des profils publics. Agrégat `PractitionerProfile` (photo, présentation, spécialités, publics, modalités, langues, localisation, contact, disponibilité, `published`). Dépend de **Identity** (profession, identité du praticien) uniquement ; **ne dépend jamais** de Patients, Clinical record ou Linking, et aucun de ces modules ne dépend de lui. Expose `DirectoryFacade` (recherche publique, fiche) et `ProfileFacade` (édition par le praticien), et les événements `ProfilePublished` / `ProfileUnpublished`. Les contrôleurs publics (`/public/…`) sont les seuls accessibles sans session ; ils ne lisent que `practitioner_profile`. Le décompte passe à neuf contextes en V1.
+Contexte ajouté le 24 octobre 2026 — **Directory** (module `com.psymate.directory`) : responsable de l'annuaire public et des profils publics. Agrégat `PractitionerProfile` (photo, présentation, spécialités, publics, modalités, langues, localisation, contact, disponibilité, `published`). Dépend de **Identity** (profession, identité du praticien) uniquement ; **ne dépend jamais** de Patients, Clinical record ou Linking, et aucun de ces modules ne dépend de lui. Expose seulement les événements `ProfilePublished` / `ProfileUnpublished` ; aucune façade, car aucun module ne lit l'annuaire (M9-06). Les contrôleurs publics (`/public/…`) sont les seuls accessibles sans session ; ils ne lisent que `practitioner_profile`. Le décompte passe à neuf contextes en V1.
 
 Contexte **réservé** le 25 octobre 2026, non construit en V1 — **Companion** (module `com.psymate.companion`, voir A11) : réception des lots envoyés par l'application mobile du patient et appairage des appareils. Au même titre que `ai`, il n'existe en V1 que par ses colonnes et ses tables vides.
 
@@ -612,21 +612,21 @@ Un seul déployable backend, une seule SPA, une seule base : la complexité est 
 
 | Module | Responsabilité | Peut dépendre de | Expose |
 | --- | --- | --- | --- |
-| `identity` | Comptes, tenants, sessions, mots de passe, vérification, administration | `events` | `CurrentPractitioner`, `PractitionerFacade`, `EncryptedStorageFacade`, `SuspendedAccountAuthenticator`, `PractitionerRegistered`, `PractitionerApproved`, `PractitionerRejected`, `PractitionerSuspended`, `PreferencesChanged`, `VerificationSubmitted` |
-| `patients` | Profils, propriété, archivage | `identity`, `vocabulary`, `events` | `PatientFacade`, `PatientOwnershipGuard`, `PatientRef`, `PatientCreated`, `PatientUpdated`, `PatientArchived` |
+| `identity` | Comptes, tenants, sessions, mots de passe, vérification, administration | `events` | `CurrentPractitioner`, `PractitionerFacade`, `EncryptedStorageFacade`, `SuspendedAccountAuthenticator`, `PractitionerRejected`, `PractitionerSuspended` ; sans abonné en V1 (G Q40) : `PractitionerRegistered`, `PractitionerApproved`, `PreferencesChanged`, `VerificationSubmitted` |
+| `patients` | Profils, propriété, archivage | `identity`, `vocabulary`, `events` | `PatientFacade`, `PatientOwnershipGuard`, `PatientRef`, `PatientCreated`, `PatientUpdated` ; sans abonné en V1 (G Q40) : `PatientArchived` |
 | `vocabulary` | Émotions, types de liens, tags | `identity` | `EmotionCatalog`, `LinkTypeCatalog`, `TagFacade` et leurs vues |
-| `clinical` | Entrées, versions, séances, brouillons, export | `identity`, `patients`, `vocabulary`, `events` | `EntryFacade`, `EntryLinksPort`, `EntryLinksReadPort`, `EntrySummary`, `EntryCreated`, `EntryCorrected`, `EntryArchived` |
-| `linking` | Liens, cycle de vie, graphe | `clinical`, `vocabulary`, `events`, `identity`, `patients` | `LinkFacade`, `GraphQueryFacade` et ses vues, `LinkAccepted`, `LinkRejected` |
+| `clinical` | Entrées, versions, séances, brouillons, export | `identity`, `patients`, `vocabulary`, `events` | `EntryFacade` (lecture des entrées pour linking, et `adjustLinkCount`), `EntryLinksPort`, `EntryLinksReadPort`, `EntrySummary`, `EntryCreated`, `EntryCorrected`, `EntryArchived` |
+| `linking` | Liens, cycle de vie, graphe | `clinical`, `vocabulary`, `events`, `identity`, `patients` | `LinkAccepted` ; `LinkRejected` (`@Reserved`, V2). Le graphe n'est pas exposé : `GraphQueryService` reste interne (G Q39) |
 | `search` | Index, requêtes, facettes | `events` (écoute), `patients` (garde), `identity`, `clinical` ; lecture SQL des tables de clinical et de vocabulary (`tag`, `emotion`, `entry_type`) (G Q34) | aucun package `api` : endpoint REST seulement |
 | `overview` | Projection vue d'ensemble | `events` (écoute), `patients` (garde), `identity`, `clinical`, `linking` ; lecture SQL des tables de clinical, patients, linking et vocabulary (`emotion`) (G Q34) | aucun package `api` : endpoint REST seulement |
 | `events` | Outbox, republication, abonnés | — | `DomainEvent`, `DomainEventPublisher`, `EventDeduplicator` |
-| `ai` (V2) | Suggestions, motifs, questions | `events`, `clinical` (lecture), `linking` (écriture `proposed`) | `SuggestionFacade` |
+| `ai` (V2) | Suggestions, motifs, questions | `events`, `clinical` (lecture), `linking` (écriture `proposed`), chacun par son `api` | `SuggestionFacade` |
 | `companion` (réservé, A11) | Appairage d'appareils patients, réception des lots | `patients`, `clinical` (dépôt d'entrées `author_type = patient`), `events` ; jamais `identity.admin`, `directory` | `SubmissionReceived`, `SubmissionAttached` |
 | `shared` | Outils transverses : erreurs RFC 9457 (`ProblemException`), limitation de débit, i18n des messages | — (ne dépend d'aucun module) | types et outils techniques, sans accès aux tables (l'écriture d'audit actuelle passe dans `identity`, tâche M9-05) |
 
-Règle vérifiée par `ApplicationModules.of(App.class).verify()` dans la CI : toute dépendance hors des `package-info.java` fait échouer le build. Chaque dépendance passe par le package `api` du module cible (`"patients :: api"`) ; `shared` est autorisé partout. La référence est le `package-info.java` de chaque module ; ce tableau en est l'état au 2 novembre 2026, et il sera généré par `Documenter` (tâche M9-02).
+Règle vérifiée par `ApplicationModules.of(App.class).verify()` dans la CI : toute dépendance hors des `package-info.java` fait échouer le build. Chaque dépendance passe par le package `api` du module cible (`"patients :: api"`, y compris pour `ai` et `companion`) ; `shared` est autorisé partout. Tout type public d'un package `api` est utilisé par un autre module ou porte `@Reserved` (`shared.Reserved`, avec son futur consommateur et sa raison) : garde `ApiUsageTests` (M9-06), dont la liste d'exceptions nomme la tâche qui règle chaque reste. La référence est le `package-info.java` de chaque module ; ce tableau en est l'état au 2 novembre 2026, et il sera généré par `Documenter` (tâche M9-02).
 
-Module ajouté le 24 octobre 2026 — `directory` : annuaire public et profils ; peut dépendre de `identity` et `events` ; expose `DirectoryFacade`, `ProfileFacade`, `ProfilePublished`, `ProfileUnpublished` (les deux façades n'ont pas de consommateur en production ; leur sort est réglé par M9-06). Ses contrôleurs sous `/api/public/**` sont exclus de l'authentification dans la configuration Spring Security et soumis à une limitation de débit par adresse (Bucket4j, G Q24).
+Module ajouté le 24 octobre 2026 — `directory` : annuaire public et profils ; peut dépendre de `identity` et `events` ; expose seulement `ProfilePublished` et `ProfileUnpublished`, publiés sans abonné en V1 et annotés `@Reserved` (G Q40) ; les façades `DirectoryFacade` et `ProfileFacade`, sans consommateur, ont été supprimées par M9-06. Ses contrôleurs sous `/api/public/**` sont exclus de l'authentification dans la configuration Spring Security et soumis à une limitation de débit par adresse (Bucket4j, G Q24).
 
 ### C4 niveau 1 : contexte
 
@@ -870,7 +870,7 @@ sequenceDiagram
   UI->>CL: POST /entries (avec links[])
   CL->>CL: crée entrée + version 1
   CL->>LI: createLinks(entryId, links)
-  LI->>CL: EntryFacade.sameOwnedPatient(source, target)
+  LI->>CL: EntryFacade.patientOf(source) et patientOf(target)
   LI->>LI: valide type vs types d'entrées
   LI->>LI: insert link (manual, accepted)
   LI-->>EV: LinkAccepted

@@ -1,6 +1,6 @@
 package com.psymate.linking.web;
 
-import com.psymate.linking.api.GraphQuery;
+import com.psymate.linking.application.GraphQuery;
 import com.psymate.linking.application.GraphQueryService;
 import com.psymate.linking.web.GraphDtos.ExpandGraphRequest;
 import com.psymate.linking.web.GraphDtos.GraphDto;

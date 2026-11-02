@@ -9,13 +9,12 @@ import com.psymate.clinical.application.CreateEntryCommand;
 import com.psymate.clinical.application.EntryService;
 import com.psymate.clinical.domain.EntryType;
 import com.psymate.clinical.domain.TimeSpec;
-import com.psymate.linking.api.GraphEdge;
-import com.psymate.linking.api.GraphNode;
-import com.psymate.linking.api.GraphQuery;
-import com.psymate.linking.api.GraphQueryFacade;
-import com.psymate.linking.api.GraphSuperNode;
-import com.psymate.linking.api.GraphView;
+import com.psymate.linking.application.GraphEdge;
+import com.psymate.linking.application.GraphNode;
+import com.psymate.linking.application.GraphQuery;
 import com.psymate.linking.application.GraphQueryService;
+import com.psymate.linking.application.GraphSuperNode;
+import com.psymate.linking.application.GraphView;
 import com.psymate.linking.application.LinkService;
 import com.psymate.linking.domain.GraphRequestException;
 import com.psymate.linking.domain.LinkError;
@@ -54,7 +53,7 @@ class GraphQueryIT {
 
   private static final Instant D1 = Instant.parse("2025-01-01T10:00:00Z");
 
-  @Autowired private GraphQueryFacade graph;
+  @Autowired private GraphQueryService graph;
   @Autowired private LinkService links;
   @Autowired private EntryService entries;
   @Autowired private JdbcTemplate jdbc;

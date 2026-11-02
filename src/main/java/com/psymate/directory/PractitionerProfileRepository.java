@@ -13,9 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 /** Accès JPA à {@code practitioner_profile} ; la recherche publique reste en JdbcClient. */
 interface PractitionerProfileRepository extends JpaRepository<PractitionerProfile, UUID> {
 
-  /** Slug et état de publication, sans charger la fiche (façade ProfileFacade). */
-  record Summary(String slug, boolean published) {}
-
   /** Praticien visé par une fiche publiée et adresse de contact de sa fiche (peut être nulle). */
   record Recipient(UUID practitionerId, String contactEmail) {}
 
@@ -47,11 +44,6 @@ interface PractitionerProfileRepository extends JpaRepository<PractitionerProfil
       @Param("practitionerId") UUID practitionerId,
       @Param("slug") String slug,
       @Param("displayName") String displayName);
-
-  @Query(
-      "select new com.psymate.directory.PractitionerProfileRepository$Summary(p.slug, p.published)"
-          + " from PractitionerProfile p where p.practitionerId = :id")
-  Optional<Summary> findSummary(@Param("id") UUID id);
 
   /** Fiche publiée uniquement : un slug inconnu ou non publié donne un résultat vide. */
   @Query(

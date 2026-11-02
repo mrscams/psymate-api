@@ -10,9 +10,9 @@ Fichier genere par `ModularityTests.writesModuleDocumentation` (`./mvnw verify`)
 | directory | `com.psymate.directory` | events, identity, shared | events, identity, shared | api |
 | events | `com.psymate.events` | shared | — | api |
 | identity | `com.psymate.identity` | events, shared | events, shared | api |
-| linking | `com.psymate.linking` | clinical, events, identity, patients, shared, vocabulary | clinical, events, identity, patients, vocabulary | api |
-| overview | `com.psymate.overview` | clinical, linking, patients, shared | clinical, linking, patients | — |
-| patients | `com.psymate.patients` | events, identity, shared, vocabulary | events, identity, vocabulary | api |
-| search | `com.psymate.search` | clinical, identity, patients, shared | clinical, identity, patients | — |
+| linking | `com.psymate.linking` | clinical, events, identity, patients, shared, vocabulary | clinical, events, identity, patients, shared, vocabulary | api |
+| overview | `com.psymate.overview` | clinical, linking, patients, shared | clinical, linking, patients, shared | — |
+| patients | `com.psymate.patients` | events, identity, shared, vocabulary | events, identity, shared, vocabulary | api |
+| search | `com.psymate.search` | clinical, identity, patients, shared | clinical, identity, patients, shared | — |
 | shared | `com.psymate.shared` | — | — | — |
 | vocabulary | `com.psymate.vocabulary` | identity, shared | identity | api |

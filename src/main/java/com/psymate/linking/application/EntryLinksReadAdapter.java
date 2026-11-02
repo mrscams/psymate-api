@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Implémentation par linking du port de lecture {@link EntryLinksReadPort} de clinical (export,
- * M6-05). Lit directement les liens acceptés : {@code LinkFacade#acceptedLinksOf} exige un
+ * M6-05). Lit directement les liens acceptés : {@link LinkService#acceptedLinksOf} exige un
  * principal de session (ADR-09), absent dans le travail d'export du compte suspendu. La garde de
  * propriété est celle de l'appelant (voir le port).
  */

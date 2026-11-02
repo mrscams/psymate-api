@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T20:40:31.899Z",
+  "task": "M9-17",
+  "agent": "claude",
+  "status": "done",
+  "summary": "identity.auth rangé par rôle (controller/dto/service/repository/model/config), AuthDtos et AuthExceptions éclatés ; contrat inchangé ; verify vert (403 unitaires, 930 IT)",
+  "notes": "Écarts au §4.3 : AuthMessages dans service, PractitionerRow dans model ; filtres via AuthService.find et TwoFactorService.isEnabled (règle 3) ; email_pending dans PractitionerRow.EMAIL_PENDING ; coutures seulement déplacées",
+  "next": "M9-18 (entités communes et coutures) peut démarrer après fusion",
+  "pr": "https://github.com/mrscams/psymate-api/pull/65",
+  "branch": "claude/m9-17-369575",
+  "checkout": "m9-17-369575"
+}

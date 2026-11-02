@@ -15,4 +15,4 @@ Fichier genere par `ModularityTests.writesModuleDocumentation` (`./mvnw verify`)
 | patients | `com.psymate.patients` | events, identity, shared, vocabulary | events, identity, shared, vocabulary | api |
 | search | `com.psymate.search` | clinical, identity, patients, shared | clinical, identity, patients, shared | — |
 | shared | `com.psymate.shared` | — | — | — |
-| vocabulary | `com.psymate.vocabulary` | events, identity, shared | events, identity | api |
+| vocabulary | `com.psymate.vocabulary` | events, identity, shared | events, identity, shared | api |

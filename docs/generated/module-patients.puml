@@ -35,6 +35,7 @@ Rel(App.App.Patients, App.App.Vocabulary, "listens to", $techn="", $tags="", $li
 Rel(App.App.Patients, App.App.Vocabulary, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Vocabulary, App.App.Events, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Vocabulary, App.App.Identity, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Vocabulary, App.App.Shared, "depends on", $techn="", $tags="", $link="")
 
 SHOW_LEGEND(true)
 hide stereotypes

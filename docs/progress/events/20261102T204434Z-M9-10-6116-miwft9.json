@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T20:44:34.793Z",
+  "task": "M9-10",
+  "agent": "claude",
+  "status": "done",
+  "summary": "vocabulary rangé par rôle (controller, dto, service, repository, model), un fichier par DTO, ROLE_FOLDER_MODULES += vocabulary ; contrat inchangé",
+  "notes": "6 DTO extraits sans renommage ; Timestamps local remplacé par shared.time.Timestamps ; verify local : 403 unitaires + 930 IT verts (JVM d'IT tombée par manque de mémoire, 5 classes relancées seules, vertes) ; revue sans bloquant, visibilité resserrée",
+  "next": "Relecture et fusion par l'utilisateur ; M9-20 pour VocabularyViews si renommage en Assembler",
+  "pr": "https://github.com/mrscams/psymate-api/pull/66",
+  "branch": "claude/m9-10-63406e",
+  "checkout": "m9-10-63406e"
+}

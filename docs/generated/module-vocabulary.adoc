@@ -5,10 +5,10 @@
 |Spring components
 |_Services_
 
-* `c.p.v.api.EmotionCatalog` (via `c.p.v.EmotionService`)
-* `c.p.v.api.LinkTypeCatalog` (via `c.p.v.LinkTypeService`)
-* `c.p.v.api.MergeFacade` (via `c.p.v.MergeService`)
-* `c.p.v.api.TagFacade` (via `c.p.v.TagService`)
+* `c.p.v.api.EmotionCatalog` (via `c.p.v.service.EmotionService`)
+* `c.p.v.api.LinkTypeCatalog` (via `c.p.v.service.LinkTypeService`)
+* `c.p.v.api.MergeFacade` (via `c.p.v.service.MergeService`)
+* `c.p.v.api.TagFacade` (via `c.p.v.service.TagService`)
 |Bean references
 |* `c.p.e.api.DomainEventPublisher` (in Events)
 |===

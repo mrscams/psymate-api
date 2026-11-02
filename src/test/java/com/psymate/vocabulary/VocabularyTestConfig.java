@@ -13,7 +13,7 @@ import org.testcontainers.utility.MountableFile;
  * module vocabulary.
  */
 @TestConfiguration(proxyBeanMethods = false)
-class VocabularyTestConfig {
+public class VocabularyTestConfig {
 
   @Bean
   @ServiceConnection

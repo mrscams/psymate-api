@@ -12,9 +12,9 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Entité vers DTO : regroupe par patient les drapeaux actifs et les tags chargés PAR LOT par {@code
- * PatientService} (une requête chacun, puis les libellés par la façade vocabulary), sans N+1. Les
- * entités ne sortent jamais du module : les Map jsonb sont copiées.
+ * Entité vers DTO : regroupe par patient les drapeaux actifs et les tags que le service a chargés
+ * PAR LOT (une requête chacun, puis les libellés par la façade vocabulary), sans N+1. Les entités
+ * ne sortent jamais du module : les Map jsonb sont copiées.
  */
 public final class PatientAssembler {
 

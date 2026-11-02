@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
  * local). Le corps contient le nom, l'e-mail, l'objet et le message du visiteur ; jamais son IP.
  */
 @Component
-public class ContactMailer {
+class ContactMailer {
 
   /** Message à relayer. */
   record ContactMessage(

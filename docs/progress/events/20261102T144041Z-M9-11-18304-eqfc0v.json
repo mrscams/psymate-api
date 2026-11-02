@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T14:40:41.981Z",
+  "task": "M9-11",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant(s), 2 à corriger, 4 remarque(s)",
+  "notes": "aucun bloquant ; à corriger : chemins périmés dans docs/ops/hebergement-passation.md (lignes 40, 52, 53, 64, 71, 93, 94, 105, 113, 119), ContactMailer public sans besoin",
+  "branch": "claude/m9-11-4ad3d8",
+  "checkout": "m9-06-a9e549"
+}

@@ -1,6 +1,7 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.service;
 
-import com.psymate.clinical.export.ExportJobRepository.ExportJobView;
+import com.psymate.clinical.export.repository.ExportJobRepository;
+import com.psymate.clinical.export.repository.ExportJobRepository.ExportJobView;
 import com.psymate.identity.api.EncryptedStorageFacade;
 import com.psymate.shared.problem.ProblemException;
 import jakarta.annotation.PreDestroy;
@@ -36,13 +37,13 @@ import org.springframework.transaction.support.TransactionTemplate;
  * constant.
  */
 @Service
-class ExportJobService {
+public class ExportJobService {
 
   /** Durée de vie du fichier après la fin du travail. */
-  static final Duration RETENTION = Duration.ofDays(7);
+  public static final Duration RETENTION = Duration.ofDays(7);
 
   /** Un job queued ou running plus vieux que cela est considéré interrompu (arrêt du serveur). */
-  static final Duration STALE_AFTER = Duration.ofHours(1);
+  public static final Duration STALE_AFTER = Duration.ofHours(1);
 
   static final String STATUS_PREFIX = "export-status|";
   static final String FILE_PREFIX = "export-file|";
@@ -50,10 +51,10 @@ class ExportJobService {
   private static final Logger LOG = LoggerFactory.getLogger(ExportJobService.class);
 
   /** Job créé : identifiant et URL de suivi (avec son jeton). */
-  record Requested(UUID jobId, String statusUrl) {}
+  public record Requested(UUID jobId, String statusUrl) {}
 
   /** Vue d'un job pour l'API ; {@code downloadUrl} seulement tant que le fichier est valable. */
-  record JobStatus(
+  public record JobStatus(
       UUID jobId,
       String status,
       Instant requestedAt,
@@ -63,7 +64,7 @@ class ExportJobService {
       String error) {}
 
   /** Fichier prêt à servir. */
-  record ZipFile(String filename, byte[] content) {}
+  public record ZipFile(String filename, byte[] content) {}
 
   private final ExportJobRepository jobs;
   private final ExportJobRunner runner;
@@ -108,7 +109,7 @@ class ExportJobService {
    *
    * @throws ProblemException 409 EXPORT_IN_PROGRESS si un job est déjà queued ou running
    */
-  Requested request(UUID practitionerId, ExportTexts texts) {
+  public Requested request(UUID practitionerId, ExportTexts texts) {
     UUID id = UUID.randomUUID();
     Instant now = clock.instant();
     tx.executeWithoutResult(
@@ -141,7 +142,7 @@ class ExportJobService {
    * @throws ProblemException 404 EXPORT_NOT_FOUND si le job n'existe pas, est à un autre praticien,
    *     ou si le jeton ne correspond pas : l'existence d'un job n'est jamais révélée.
    */
-  JobStatus status(UUID jobId, Optional<UUID> principalId, String token, ExportTexts texts) {
+  public JobStatus status(UUID jobId, Optional<UUID> principalId, String token, ExportTexts texts) {
     ExportJobView job = jobs.find(jobId).orElseThrow(() -> notFound(texts));
     boolean owner = principalId.filter(job.practitionerId()::equals).isPresent();
     if (!owner && !validToken(job, token)) {
@@ -170,7 +171,7 @@ class ExportJobService {
    * @throws ProblemException 403 SIGNED_URL_INVALID (signature ou échéance falsifiée, job inconnu),
    *     410 EXPORT_EXPIRED (échéance passée ou fichier purgé)
    */
-  ZipFile file(UUID jobId, String exp, String sig, ExportTexts texts) {
+  public ZipFile file(UUID jobId, String exp, String sig, ExportTexts texts) {
     ExportJobView job = jobs.find(jobId).orElseThrow(() -> signedUrlInvalid(texts));
     long expEpoch = parseEpoch(exp, texts);
     if (sig == null

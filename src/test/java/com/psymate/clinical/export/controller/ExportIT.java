@@ -1,4 +1,4 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.psymate.clinical.export.ExportTestSupport;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;

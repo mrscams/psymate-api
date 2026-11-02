@@ -1,9 +1,10 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.psymate.clinical.export.ExportDocument.EntryBlock;
-import com.psymate.clinical.export.ExportDocument.SessionBlock;
+import com.psymate.clinical.export.model.ExportDocument;
+import com.psymate.clinical.export.model.ExportDocument.EntryBlock;
+import com.psymate.clinical.export.model.ExportDocument.SessionBlock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;

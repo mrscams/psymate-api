@@ -1,6 +1,9 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.service;
 
-import com.psymate.clinical.export.ExportJobRepository.ExportJobView;
+import com.psymate.clinical.export.model.ExportDocument;
+import com.psymate.clinical.export.model.ExportFormat;
+import com.psymate.clinical.export.repository.ExportJobRepository;
+import com.psymate.clinical.export.repository.ExportJobRepository.ExportJobView;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.EncryptedStorageFacade;
 import com.psymate.identity.api.PractitionerFacade;
@@ -39,9 +42,9 @@ import org.springframework.stereotype.Component;
  * passe le job en {@code failed} avec le message tronqué à 500 caractères, sans trace d'appels.
  */
 @Component
-class ExportJobRunner {
+public class ExportJobRunner {
 
-  static final int MAX_ERROR = 500;
+  public static final int MAX_ERROR = 500;
 
   private static final Logger LOG = LoggerFactory.getLogger(ExportJobRunner.class);
   private static final Locale LOCALE = Locale.FRENCH;

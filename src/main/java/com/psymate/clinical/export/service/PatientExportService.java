@@ -1,11 +1,15 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.service;
 
 import com.psymate.clinical.api.EntryLinksReadPort;
 import com.psymate.clinical.api.LinkedEntryView;
-import com.psymate.clinical.export.ExportDocument.EntryBlock;
-import com.psymate.clinical.export.ExportDocument.SessionBlock;
-import com.psymate.clinical.export.ExportRepository.EntryRow;
-import com.psymate.clinical.export.ExportRepository.SessionRow;
+import com.psymate.clinical.export.model.ExportDocument;
+import com.psymate.clinical.export.model.ExportDocument.EntryBlock;
+import com.psymate.clinical.export.model.ExportDocument.SessionBlock;
+import com.psymate.clinical.export.model.ExportFormat;
+import com.psymate.clinical.export.model.ExportedFile;
+import com.psymate.clinical.export.repository.ExportRepository;
+import com.psymate.clinical.export.repository.ExportRepository.EntryRow;
+import com.psymate.clinical.export.repository.ExportRepository.SessionRow;
 import com.psymate.patients.api.PatientFacade;
 import com.psymate.vocabulary.api.EmotionCatalog;
 import com.psymate.vocabulary.api.EmotionView;

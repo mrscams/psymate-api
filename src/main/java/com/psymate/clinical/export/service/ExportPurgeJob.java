@@ -1,4 +1,4 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.service;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;

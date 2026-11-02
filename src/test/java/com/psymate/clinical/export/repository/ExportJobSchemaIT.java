@@ -1,4 +1,4 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

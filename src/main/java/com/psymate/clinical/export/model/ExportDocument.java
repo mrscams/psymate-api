@@ -1,4 +1,4 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.model;
 
 import java.time.LocalDate;
 import java.util.List;

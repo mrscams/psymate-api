@@ -11,7 +11,7 @@ import com.psymate.clinical.application.EntryService;
 import com.psymate.clinical.domain.EntryType;
 import com.psymate.clinical.domain.SessionDetail;
 import com.psymate.clinical.domain.Visibility;
-import com.psymate.clinical.export.PatientExportService;
+import com.psymate.clinical.export.service.PatientExportService;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.linking.api.LinkAccepted;

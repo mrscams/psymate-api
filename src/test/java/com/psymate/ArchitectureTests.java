@@ -412,12 +412,7 @@ class ArchitectureTests {
    * entree porte la tache qui la supprime, et {@link #technologyExceptionsAreStillNeeded()} echoue
    * des qu'une entree ne sert plus.
    */
-  static final Set<String> JDBC_IN_JPA_EXCEPTIONS =
-      Set.of(
-          // M9-12 : SQL natif de clinical.export en fragments *NativeQueries (G Q38).
-          "clinical.export.ExportJobRepository",
-          // M9-12 : idem (lecture des entrees et verrou praticien).
-          "clinical.export.ExportRepository");
+  static final Set<String> JDBC_IN_JPA_EXCEPTIONS = Set.of();
 
   private static final String JDBC_CORE = "org.springframework.jdbc.core";
 

@@ -1,4 +1,4 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.service;
 
 import com.psymate.clinical.domain.TimeSpan;
 import java.time.Instant;

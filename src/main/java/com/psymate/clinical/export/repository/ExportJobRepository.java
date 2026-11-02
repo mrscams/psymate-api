@@ -1,5 +1,6 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.repository;
 
+import com.psymate.clinical.export.model.ExportJob;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -7,7 +8,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,10 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
  * propre transaction courte, sans entité réutilisée d'un appel à l'autre.
  */
 @Repository
-class ExportJobRepository {
+public class ExportJobRepository {
 
   /** Ligne export_job, vue de lecture pour les services. */
-  record ExportJobView(
+  public record ExportJobView(
       UUID id,
       UUID practitionerId,
       String status,
@@ -38,11 +38,9 @@ class ExportJobRepository {
   private static final List<String> ACTIVE = List.of(ExportJob.QUEUED, ExportJob.RUNNING);
 
   private final ExportJobJpaRepository jobs;
-  private final JdbcClient jdbc;
 
-  ExportJobRepository(ExportJobJpaRepository jobs, JdbcClient jdbc) {
+  ExportJobRepository(ExportJobJpaRepository jobs) {
     this.jobs = jobs;
-    this.jdbc = jdbc;
   }
 
   /** Instant → UTC à la précision de PostgreSQL (microsecondes). */
@@ -68,7 +66,7 @@ class ExportJobRepository {
   }
 
   @Transactional(readOnly = true)
-  Optional<ExportJobView> find(UUID id) {
+  public Optional<ExportJobView> find(UUID id) {
     return jobs.findById(id).map(ExportJobRepository::view);
   }
 
@@ -76,25 +74,22 @@ class ExportJobRepository {
 
   /**
    * Verrou de transaction : sérialise les demandes d'un même praticien (un seul job en cours).
-   * Natif ({@code pg_advisory_xact_lock}, tenu jusqu'au commit), sur la connexion de la transaction
-   * JPA courante.
+   * Natif ({@code pg_advisory_xact_lock}, tenu jusqu'au commit), par le fragment {@link
+   * ExportJobNativeQueries} sur l'{@code EntityManager} de la transaction courante (G Q38).
    */
   @Transactional(propagation = Propagation.MANDATORY)
-  void lockPractitioner(UUID practitionerId) {
-    jdbc.sql("select pg_advisory_xact_lock(hashtextextended(:k, 0))")
-        .param("k", "export:" + practitionerId)
-        .query()
-        .listOfRows();
+  public void lockPractitioner(UUID practitionerId) {
+    jobs.lockPractitioner(practitionerId);
   }
 
   @Transactional(propagation = Propagation.MANDATORY)
-  boolean hasActive(UUID practitionerId) {
+  public boolean hasActive(UUID practitionerId) {
     return jobs.existsByPractitionerIdAndStatusIn(practitionerId, ACTIVE);
   }
 
   /** Nouvelle ligne {@code queued} ; l'INSERT part au commit de la transaction du service. */
   @Transactional(propagation = Propagation.MANDATORY)
-  void insert(UUID id, UUID practitionerId, Instant now) {
+  public void insert(UUID id, UUID practitionerId, Instant now) {
     jobs.save(new ExportJob(id, practitionerId, utc(now)));
   }
 
@@ -103,7 +98,7 @@ class ExportJobRepository {
    * ont été interrompus (arrêt du serveur) et ne doivent pas bloquer les demandes suivantes.
    */
   @Transactional(propagation = Propagation.MANDATORY)
-  void failStale(UUID practitionerId, Instant before, Instant now) {
+  public void failStale(UUID practitionerId, Instant before, Instant now) {
     jobs.failStale(practitionerId, utc(before), utc(now));
   }
 
@@ -116,29 +111,29 @@ class ExportJobRepository {
    * @return faux si le job n'existe pas ou n'est plus en attente (déjà pris ou terminé)
    */
   @Transactional
-  boolean markRunning(UUID id) {
+  public boolean markRunning(UUID id) {
     return jobs.findForUpdate(id).map(ExportJob::markRunning).orElse(false);
   }
 
   @Transactional
-  void markDone(UUID id, String storageKey, Instant finishedAt, Instant expiresAt) {
+  public void markDone(UUID id, String storageKey, Instant finishedAt, Instant expiresAt) {
     jobs.findById(id).ifPresent(j -> j.markDone(storageKey, utc(finishedAt), utc(expiresAt)));
   }
 
   @Transactional
-  void markFailed(UUID id, String error, Instant finishedAt) {
+  public void markFailed(UUID id, String error, Instant finishedAt) {
     jobs.findById(id).ifPresent(j -> j.markFailed(error, utc(finishedAt)));
   }
 
   /** Jobs terminés dont l'échéance est passée et dont le fichier n'est pas encore supprimé. */
   @Transactional(readOnly = true)
-  List<ExportJobView> dueForPurge(Instant now) {
+  public List<ExportJobView> dueForPurge(Instant now) {
     return jobs.dueForPurge(utc(now)).stream().map(ExportJobRepository::view).toList();
   }
 
   /** Idempotent : la première date de purge reste. */
   @Transactional
-  void markPurged(UUID id, Instant now) {
+  public void markPurged(UUID id, Instant now) {
     jobs.findForUpdate(id).ifPresent(j -> j.markPurged(utc(now)));
   }
 }

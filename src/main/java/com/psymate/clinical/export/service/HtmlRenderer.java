@@ -1,7 +1,8 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.service;
 
-import com.psymate.clinical.export.ExportDocument.EntryBlock;
-import com.psymate.clinical.export.ExportDocument.SessionBlock;
+import com.psymate.clinical.export.model.ExportDocument;
+import com.psymate.clinical.export.model.ExportDocument.EntryBlock;
+import com.psymate.clinical.export.model.ExportDocument.SessionBlock;
 import org.springframework.stereotype.Component;
 
 /**

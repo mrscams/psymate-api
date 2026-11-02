@@ -1,4 +1,4 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.service;
 
 import java.util.Locale;
 import org.springframework.context.MessageSource;

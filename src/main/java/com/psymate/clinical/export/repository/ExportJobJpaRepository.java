@@ -1,5 +1,6 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.repository;
 
+import com.psymate.clinical.export.model.ExportJob;
 import jakarta.persistence.LockModeType;
 import java.time.OffsetDateTime;
 import java.util.Collection;
@@ -15,8 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Accès Spring Data à {@code export_job} ; interne au module, jamais exposé hors de {@code export}.
+ * Le SQL natif du sous-domaine passe par ses fragments (G Q38) : le verrou praticien ({@link
+ * ExportJobNativeQueries}) et la lecture du dossier à exporter ({@link ExportNativeQueries}).
  */
-interface ExportJobJpaRepository extends JpaRepository<ExportJob, UUID> {
+interface ExportJobJpaRepository
+    extends JpaRepository<ExportJob, UUID>, ExportJobNativeQueries, ExportNativeQueries {
 
   /** Ligne verrouillée ({@code for update}) pour une transition de statut sous verrou. */
   @Lock(LockModeType.PESSIMISTIC_WRITE)

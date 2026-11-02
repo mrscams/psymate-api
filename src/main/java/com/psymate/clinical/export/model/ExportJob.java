@@ -1,4 +1,4 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,12 +20,12 @@ import org.springframework.data.domain.Persistable;
  */
 @Entity
 @Table(name = "export_job")
-class ExportJob implements Persistable<UUID> {
+public class ExportJob implements Persistable<UUID> {
 
-  static final String QUEUED = "queued";
-  static final String RUNNING = "running";
-  static final String DONE = "done";
-  static final String FAILED = "failed";
+  public static final String QUEUED = "queued";
+  public static final String RUNNING = "running";
+  public static final String DONE = "done";
+  public static final String FAILED = "failed";
 
   @Id private UUID id;
 
@@ -49,7 +49,7 @@ class ExportJob implements Persistable<UUID> {
   protected ExportJob() {}
 
   /** Nouvelle demande : {@code queued}, sans fichier ni échéance. */
-  ExportJob(UUID id, UUID practitionerId, OffsetDateTime requestedAt) {
+  public ExportJob(UUID id, UUID practitionerId, OffsetDateTime requestedAt) {
     this.id = Objects.requireNonNull(id);
     this.practitionerId = Objects.requireNonNull(practitionerId);
     this.requestedAt = Objects.requireNonNull(requestedAt);
@@ -61,7 +61,7 @@ class ExportJob implements Persistable<UUID> {
    *
    * @return faux si le job n'était plus en attente (déjà pris ou terminé) : rien n'est modifié
    */
-  boolean markRunning() {
+  public boolean markRunning() {
     if (!QUEUED.equals(status)) {
       return false;
     }
@@ -70,7 +70,7 @@ class ExportJob implements Persistable<UUID> {
   }
 
   /** Fichier stocké : {@code done}, échéance posée, erreur d'une tentative précédente effacée. */
-  void markDone(String storageKey, OffsetDateTime finishedAt, OffsetDateTime expiresAt) {
+  public void markDone(String storageKey, OffsetDateTime finishedAt, OffsetDateTime expiresAt) {
     this.status = DONE;
     this.storageKey = Objects.requireNonNull(storageKey);
     this.finishedAt = Objects.requireNonNull(finishedAt);
@@ -78,7 +78,7 @@ class ExportJob implements Persistable<UUID> {
     this.error = null;
   }
 
-  void markFailed(String error, OffsetDateTime finishedAt) {
+  public void markFailed(String error, OffsetDateTime finishedAt) {
     this.status = FAILED;
     this.error = error;
     this.finishedAt = Objects.requireNonNull(finishedAt);
@@ -89,7 +89,7 @@ class ExportJob implements Persistable<UUID> {
    *
    * @return vrai si la ligne vient d'être marquée, faux si elle l'était déjà
    */
-  boolean markPurged(OffsetDateTime at) {
+  public boolean markPurged(OffsetDateTime at) {
     if (purgedAt != null) {
       return false;
     }
@@ -102,35 +102,35 @@ class ExportJob implements Persistable<UUID> {
     return id;
   }
 
-  UUID getPractitionerId() {
+  public UUID getPractitionerId() {
     return practitionerId;
   }
 
-  String getStatus() {
+  public String getStatus() {
     return status;
   }
 
-  OffsetDateTime getRequestedAt() {
+  public OffsetDateTime getRequestedAt() {
     return requestedAt;
   }
 
-  OffsetDateTime getFinishedAt() {
+  public OffsetDateTime getFinishedAt() {
     return finishedAt;
   }
 
-  String getStorageKey() {
+  public String getStorageKey() {
     return storageKey;
   }
 
-  OffsetDateTime getExpiresAt() {
+  public OffsetDateTime getExpiresAt() {
     return expiresAt;
   }
 
-  OffsetDateTime getPurgedAt() {
+  public OffsetDateTime getPurgedAt() {
     return purgedAt;
   }
 
-  String getError() {
+  public String getError() {
     return error;
   }
 

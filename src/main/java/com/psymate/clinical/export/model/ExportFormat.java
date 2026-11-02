@@ -1,4 +1,4 @@
-package com.psymate.clinical.export;
+package com.psymate.clinical.export.model;
 
 import java.util.Locale;
 import java.util.Optional;

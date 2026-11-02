@@ -1,6 +1,6 @@
 package com.psymate.clinical.export.repository;
 
-import com.psymate.clinical.domain.TimeSpan;
+import com.psymate.clinical.model.TimeSpan;
 import jakarta.persistence.Tuple;
 import java.time.Instant;
 import java.time.LocalDate;

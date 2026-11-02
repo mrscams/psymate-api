@@ -17,18 +17,18 @@ import org.testcontainers.utility.MountableFile;
 
 /** Conteneur pgvector et horloge pilotable pour les tests du module clinical. */
 @TestConfiguration(proxyBeanMethods = false)
-class ClinicalTestConfig {
+public class ClinicalTestConfig {
 
   /** Horloge dont le test choisit l'instant courant. */
-  static class MutableClock extends Clock {
+  public static class MutableClock extends Clock {
     private final AtomicReference<Instant> now =
         new AtomicReference<>(Instant.parse("2026-10-30T10:00:00Z"));
 
-    void set(Instant instant) {
+    public void set(Instant instant) {
       now.set(instant);
     }
 
-    void advance(Duration d) {
+    public void advance(Duration d) {
       now.updateAndGet(i -> i.plus(d));
     }
 

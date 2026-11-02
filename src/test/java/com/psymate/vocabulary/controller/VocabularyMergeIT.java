@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.psymate.clinical.api.EntriesRelabeled;
-import com.psymate.clinical.application.EntryRelabelService;
+import com.psymate.clinical.service.EntryRelabelService;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.vocabulary.VocabularyTestConfig;
 import com.psymate.vocabulary.api.EmotionMergeReverted;

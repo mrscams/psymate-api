@@ -2,9 +2,9 @@ package com.psymate.clinical.export.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.psymate.clinical.domain.TimeSpan;
-import com.psymate.clinical.domain.TimeSpan.Precision;
 import com.psymate.clinical.export.model.ExportFormat;
+import com.psymate.clinical.model.TimeSpan;
+import com.psymate.clinical.model.TimeSpan.Precision;
 import java.time.Instant;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;

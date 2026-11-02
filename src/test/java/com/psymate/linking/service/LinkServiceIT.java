@@ -7,10 +7,10 @@ import static org.awaitility.Awaitility.await;
 
 import com.psymate.PostgresTestConfig;
 import com.psymate.clinical.api.EntryArchived;
-import com.psymate.clinical.application.CorrectEntryCommand;
-import com.psymate.clinical.application.CorrectionResult;
-import com.psymate.clinical.application.EntryService;
-import com.psymate.clinical.domain.EntryType;
+import com.psymate.clinical.model.EntryType;
+import com.psymate.clinical.service.CorrectEntryCommand;
+import com.psymate.clinical.service.CorrectionResult;
+import com.psymate.clinical.service.EntryService;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.linking.LinkingFixtures;
 import com.psymate.linking.api.LinkAccepted;

@@ -5,7 +5,7 @@
 |Spring components
 |_Services_
 
-* `c.p.c.api.EntryFacade` (via `c.p.c.application.EntryFacadeService`)
+* `c.p.c.api.EntryFacade` (via `c.p.c.service.EntryFacadeService`)
 |Bean references
 |* `c.p.e.api.DomainEventPublisher` (in Events)
 * `c.p.e.api.EventDeduplicator` (in Events)

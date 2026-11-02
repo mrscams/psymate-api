@@ -14,8 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import com.psymate.PostgresTestConfig;
-import com.psymate.clinical.application.EntryService;
-import com.psymate.clinical.domain.EntryType;
+import com.psymate.clinical.model.EntryType;
+import com.psymate.clinical.service.EntryService;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.linking.LinkingFixtures;
 import java.nio.charset.StandardCharsets;

@@ -1,5 +1,6 @@
 package com.psymate.overview;
 
+import com.psymate.clinical.api.EntriesRelabeled;
 import com.psymate.clinical.api.EntryArchived;
 import com.psymate.clinical.api.EntryCorrected;
 import com.psymate.clinical.api.EntryCreated;
@@ -40,6 +41,11 @@ class OverviewListener {
 
   @ApplicationModuleListener(id = "overview.entry-archived")
   void on(EntryArchived event) {
+    refresh(event.getPatientId());
+  }
+
+  @ApplicationModuleListener(id = "overview.entries-relabeled")
+  void on(EntriesRelabeled event) {
     refresh(event.getPatientId());
   }
 

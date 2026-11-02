@@ -10,29 +10,7 @@ class TagNativeQueriesImpl implements TagNativeQueries {
   @PersistenceContext private EntityManager em;
 
   @Override
-  public void moveTagUsages(UUID source, UUID target) {
-    if (NativeSql.tableExists(em, "entry_tag")) {
-      em.createNativeQuery(
-              "delete from entry_tag where tag_id = :s and entry_id in"
-                  + " (select entry_id from entry_tag where tag_id = :t)")
-          .setParameter("s", source)
-          .setParameter("t", target)
-          .executeUpdate();
-      em.createNativeQuery("update entry_tag set tag_id = :t where tag_id = :s")
-          .setParameter("s", source)
-          .setParameter("t", target)
-          .executeUpdate();
-    }
-    em.createNativeQuery(
-            "delete from patient_tag where tag_id = :s and patient_id in"
-                + " (select patient_id from patient_tag where tag_id = :t)")
-        .setParameter("s", source)
-        .setParameter("t", target)
-        .executeUpdate();
-    em.createNativeQuery("update patient_tag set tag_id = :t where tag_id = :s")
-        .setParameter("s", source)
-        .setParameter("t", target)
-        .executeUpdate();
+  public void addUsageCount(UUID source, UUID target) {
     em.createNativeQuery(
             "update tag set usage_count = usage_count"
                 + " + (select usage_count from tag where id = :s) where id = :t")

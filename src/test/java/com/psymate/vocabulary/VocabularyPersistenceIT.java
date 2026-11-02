@@ -1,6 +1,7 @@
 package com.psymate.vocabulary;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.psymate.vocabulary.EmotionService.MergeView;
 import com.psymate.vocabulary.api.EmotionCatalog;
@@ -11,6 +12,7 @@ import com.psymate.vocabulary.api.TagFacade;
 import com.psymate.vocabulary.api.TagView;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -431,14 +433,24 @@ class VocabularyPersistenceIT {
 
     tags.merge(source, target);
 
-    assertThat(
-            jdbc.queryForList(
-                "select patient_id from patient_tag where tag_id = ?", UUID.class, target))
-        .containsExactlyInAnyOrder(p1, p2);
-    assertThat(
-            jdbc.queryForObject(
-                "select count(*) from patient_tag where tag_id = ?", Integer.class, source))
-        .isZero();
+    // patient_tag est réécrit par l'abonné de patients (M9-03), après le commit de la fusion.
+    await()
+        .atMost(Duration.ofSeconds(60))
+        .untilAsserted(
+            () -> {
+              assertThat(
+                      jdbc.queryForList(
+                          "select patient_id from patient_tag where tag_id = ?",
+                          UUID.class,
+                          target))
+                  .containsExactlyInAnyOrder(p1, p2);
+              assertThat(
+                      jdbc.queryForObject(
+                          "select count(*) from patient_tag where tag_id = ?",
+                          Integer.class,
+                          source))
+                  .isZero();
+            });
     assertThat(tagFacade.tagsOfCurrentPractitioner())
         .extracting(TagView::id)
         .containsExactly(target);

@@ -1,6 +1,7 @@
 package com.psymate.vocabulary;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -10,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.psymate.identity.api.CurrentPractitioner;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -523,16 +525,24 @@ class VocabularyIT {
     postJson("/api/tags/" + source + "/merge", "{\"targetId\":\"" + target + "\"}")
         .andExpect(status().isOk());
 
-    assertThat(
-            jdbc.queryForObject(
-                "select count(*) from patient_tag where tag_id = ?::uuid", Integer.class, source))
-        .isZero();
-    assertThat(
-            jdbc.queryForList(
-                "select patient_id from patient_tag where tag_id = ?::uuid order by added_at",
-                UUID.class,
-                target))
-        .containsExactlyInAnyOrder(p1, p2);
+    // patient_tag est réécrit par l'abonné de patients (M9-03), après le commit de la fusion.
+    await()
+        .atMost(Duration.ofSeconds(60))
+        .untilAsserted(
+            () -> {
+              assertThat(
+                      jdbc.queryForObject(
+                          "select count(*) from patient_tag where tag_id = ?::uuid",
+                          Integer.class,
+                          source))
+                  .isZero();
+              assertThat(
+                      jdbc.queryForList(
+                          "select patient_id from patient_tag where tag_id = ?::uuid",
+                          UUID.class,
+                          target))
+                  .containsExactlyInAnyOrder(p1, p2);
+            });
   }
 
   @Test

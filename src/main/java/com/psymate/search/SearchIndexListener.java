@@ -1,5 +1,6 @@
 package com.psymate.search;
 
+import com.psymate.clinical.api.EntriesRelabeled;
 import com.psymate.clinical.api.EntryCorrected;
 import com.psymate.clinical.api.EntryCreated;
 import java.util.UUID;
@@ -9,8 +10,9 @@ import org.springframework.stereotype.Component;
 
 /**
  * Tient le {@code search_vector} à jour quand les données hors de la version courante changent
- * (E3.9) : les tags et l'émotion d'une entrée sont écrits après sa version, et une correction de
- * tags seule ne crée pas de version. Les triggers de V08 couvrent les cas où le titre ou le corps
+ * (E3.9) : les tags et l'émotion d'une entrée sont écrits après sa version, une correction de tags
+ * seule ne crée pas de version, et une fusion du vocabulaire réécrit émotions et tags sans version
+ * ({@link EntriesRelabeled}, M9-03). Les triggers de V08 couvrent les cas où le titre ou le corps
  * changent ; ces abonnés rappellent {@code entry_search_vector_refresh}, qui recalcule le vecteur
  * depuis l'état courant de la base.
  *
@@ -36,6 +38,11 @@ class SearchIndexListener {
   @ApplicationModuleListener(id = "search.entry-corrected")
   void on(EntryCorrected event) {
     refresh(event.getEntryId());
+  }
+
+  @ApplicationModuleListener(id = "search.entries-relabeled")
+  void on(EntriesRelabeled event) {
+    event.getEntryIds().forEach(this::refresh);
   }
 
   private void refresh(UUID entryId) {

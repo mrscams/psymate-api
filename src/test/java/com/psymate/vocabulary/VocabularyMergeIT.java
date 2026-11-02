@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.psymate.clinical.application.EntryRelabelService;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.vocabulary.api.EmotionMergeReverted;
 import com.psymate.vocabulary.api.EmotionsMerged;
@@ -20,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.awaitility.core.ThrowingRunnable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,22 +45,18 @@ import tools.jackson.databind.json.JsonMapper;
  * Fusions du vocabulaire de bout en bout (M9-03, revue ARCH-01) : après la fusion de deux émotions
  * et de deux tags, les tables des modules propriétaires ({@code entry_feeling}, {@code entry_tag}
  * de clinical, {@code patient_tag} de patients), {@code patient.clinical_rev}, la recherche et la
- * vue d'ensemble doivent refléter la cible. Les entrées sont créées par l'API de clinical, comme en
+ * vue d'ensemble reflètent la cible. Les entrées sont créées par l'API de clinical, comme en
  * production, pour que l'index de recherche et la vue d'ensemble soient calculés par leurs abonnés
  * avant la fusion.
  *
- * <p>État au 2 novembre 2026 (partie 2/4) : vocabulary publie {@code EmotionsMerged}, {@code
- * EmotionMergeReverted} et {@code TagsMerged}, sans abonné encore ; les tables sont toujours
- * réécrites en SQL natif par vocabulary, sans décalage de {@code clinical_rev} ; la recherche et la
- * vue d'ensemble restent périmées. Les assertions attendues sont en commentaire « ATTENDU »,
- * remplacées par une assertion « ÉTAT ACTUEL » qui sera inversée à la partie 3 (abonnés des modules
- * propriétaires). Elles sont regroupées dans {@code assertFollowsMerge} et {@code
- * assertEmotionServed}, déjà exécutées une fois après {@code simulateOwnerSubscribers} pour prouver
- * qu'elles sont atteignables.
+ * <p>Depuis la partie 3/4, vocabulary publie {@code EmotionsMerged}, {@code EmotionMergeReverted}
+ * et {@code TagsMerged} ; clinical et patients réécrivent leurs tables en abonnés asynchrones, à
+ * partir de l'état des fusions relu dans vocabulary. Les événements de vocabulary ne citent pas le
+ * patient : chaque attendu après une fusion est attendu par {@link #eventually}, jamais par {@link
+ * #awaitPatientEventsSettled()} seul, y compris les assertions négatives.
  *
- * <p>La vue d'ensemble suit l'horloge réelle : si minuit UTC tombait entre deux lectures, la
- * projection serait recalculée et une assertion « ÉTAT ACTUEL » échouerait (risque accepté,
- * quelques secondes par jour ; l'horloge fixe d'overview est privée à son package).
+ * <p>La vue d'ensemble suit l'horloge réelle, ce qui est sans risque ici : un recalcul imprévu
+ * (minuit UTC) sert l'état courant, celui qu'attendent les assertions.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -72,6 +70,7 @@ class VocabularyMergeIT {
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
   @Autowired private ApplicationEvents events;
+  @Autowired private EntryRelabelService relabel;
 
   private RequestPostProcessor auth;
   private UUID tenant;
@@ -138,6 +137,7 @@ class VocabularyMergeIT {
                     MockMvcRequestBuilders.post("/api/me/emotions/{code}/merge", lassitude),
                     Map.of("targetCode", "sadness"))
                 .andExpect(status().isOk()));
+    // Compté de façon synchrone par clinical (EmotionUsagePort), avant la réécriture.
     assertThat((Integer) JsonPath.read(merge, "$.affectedCount")).isEqualTo(2);
     String tagMerge =
         body(
@@ -147,40 +147,30 @@ class VocabularyMergeIT {
                 .andExpect(status().isOk()));
     assertThat((String) JsonPath.read(tagMerge, "$.label")).isEqualTo("travail");
 
-    // Tables des modules propriétaires : réécrites (aujourd'hui en SQL natif par vocabulary),
-    // doublons compris (noteBoth et le patient portaient déjà la cible).
-    assertThat(emotionOf(feeling1)).isEqualTo(List.of("sadness", lassitude));
-    assertThat(emotionOf(feeling2)).isEqualTo(List.of("sadness", lassitude));
-    assertThat(tagsOf(noteSource)).containsExactly(travail);
-    assertThat(tagsOf(noteBoth)).containsExactly(travail);
-    assertThat(
-            jdbc.queryForList(
-                "select tag_id from patient_tag where patient_id = ?", UUID.class, patient))
-        .containsExactly(travail);
+    // Tables des modules propriétaires, réécrites par leurs abonnés, doublons compris (noteBoth
+    // et le patient portaient déjà la cible).
+    eventually(
+        () -> {
+          assertThat(emotionOf(feeling1)).isEqualTo(List.of("sadness", lassitude));
+          assertThat(emotionOf(feeling2)).isEqualTo(List.of("sadness", lassitude));
+          assertThat(tagsOf(noteSource)).containsExactly(travail);
+          assertThat(tagsOf(noteBoth)).containsExactly(travail);
+          assertThat(patientTags()).containsExactly(travail);
+        });
     assertThat(patientTagLabels()).containsExactly("travail");
 
-    // ATTENDU (partie 3) : la propagation devient asynchrone. Les événements de vocabulary ne
-    // citent pas le patient : attendre chaque ATTENDU par await().untilAsserted(...), jamais par
-    // awaitPatientEventsSettled() seul, y compris pour les assertions négatives.
-    //   await().untilAsserted(() -> assertThat(clinicalRev()).isGreaterThan(revBefore));
-    //   await().untilAsserted(() -> assertFollowsMerge(feeling1, feeling2, noteSource, noteBoth));
-    // ÉTAT ACTUEL : la fusion ne touche pas clinical_rev ; search_vector n'est pas recalculé et
-    // la vue d'ensemble, à source_rev = clinical_rev, est servie telle quelle.
-    assertThat(clinicalRev()).isEqualTo(revBefore);
-    assertThat(found("tristesse")).isEmpty();
-    assertThat(found("lassitude")).containsExactlyInAnyOrder(feeling1, feeling2);
-    assertThat(found("travail")).containsExactly(noteBoth);
-    assertThat(found("boulot")).containsExactlyInAnyOrder(noteSource, noteBoth);
-    assertThat(topEmotionCodes()).containsExactly(lassitude);
-
-    // Faisabilité de l'ATTENDU (à retirer à la partie 3) : ce que feront les abonnés, simulé en
-    // SQL (recalcul des vecteurs, décalage de clinical_rev), suffit à le satisfaire.
-    simulateOwnerSubscribers();
-    assertFollowsMerge(feeling1, feeling2, noteSource, noteBoth);
+    // Projections : clinical_rev décalé, vecteurs recalculés, vue d'ensemble à jour.
+    eventually(() -> assertThat(clinicalRev()).isGreaterThan(revBefore));
+    eventually(
+        () -> {
+          assertEmotionServed("tristesse", "lassitude", "sadness", feeling1, feeling2);
+          assertThat(found("travail")).containsExactlyInAnyOrder(noteSource, noteBoth);
+          assertThat(found("boulot")).isEmpty();
+        });
   }
 
   @Test
-  void undoingAnEmotionMergeRestoresTheOwnerTable() throws Exception {
+  void undoingAnEmotionMergeRestoresFeelingsSearchAndOverview() throws Exception {
     String lassitude = createEmotion("Lassitude", "sadness");
     UUID feeling = entry("feeling", "Soirée calme à la maison", 1, List.of(), lassitude);
     awaitPatientEventsSettled();
@@ -192,14 +182,9 @@ class VocabularyMergeIT {
                     MockMvcRequestBuilders.post("/api/me/emotions/{code}/merge", lassitude),
                     Map.of("targetCode", "sadness"))
                 .andExpect(status().isOk()));
-    assertThat(emotionOf(feeling)).isEqualTo(List.of("sadness", lassitude));
-    // ATTENDU (partie 3) : la fusion est propagée avant l'annulation.
-    //   await().untilAsserted(() -> assertThat(clinicalRev()).isGreaterThan(revBefore));
-    //   await().untilAsserted(() -> assertEmotionServed("tristesse", "lassitude", "sadness",
-    //       feeling));
-    // ÉTAT ACTUEL : rien n'est recalculé après la fusion.
-    assertThat(clinicalRev()).isEqualTo(revBefore);
-    assertEmotionServed("lassitude", "tristesse", lassitude, feeling);
+    eventually(() -> assertThat(emotionOf(feeling)).isEqualTo(List.of("sadness", lassitude)));
+    eventually(() -> assertThat(clinicalRev()).isGreaterThan(revBefore));
+    eventually(() -> assertEmotionServed("tristesse", "lassitude", "sadness", feeling));
     long revAfterMerge = clinicalRev();
 
     send(
@@ -208,19 +193,80 @@ class VocabularyMergeIT {
             Map.of())
         .andExpect(status().isOk());
 
+    eventually(() -> assertThat(emotionOf(feeling)).isEqualTo(Arrays.asList(lassitude, null)));
+    eventually(() -> assertThat(clinicalRev()).isGreaterThan(revAfterMerge));
+    eventually(() -> assertEmotionServed("lassitude", "tristesse", lassitude, feeling));
+
+    // Livraison tardive de la fusion, après l'annulation : l'état relu dans vocabulary prime sur
+    // l'événement, rien ne change.
+    long revAfterUndo = clinicalRev();
+    relabel.relabelFeelings(tenant, me, lassitude);
     assertThat(emotionOf(feeling)).isEqualTo(Arrays.asList(lassitude, null));
-    // ATTENDU (partie 3) : l'annulation décale clinical_rev à son tour, et un recalcul tardif de
-    // la fusion n'écrase pas celui de l'annulation.
-    //   await().untilAsserted(() -> assertThat(clinicalRev()).isGreaterThan(revAfterMerge));
-    //   await().untilAsserted(() -> assertEmotionServed("lassitude", "tristesse", lassitude,
-    //       feeling));
-    // ÉTAT ACTUEL : l'annulation ne touche pas clinical_rev ; recherche et vue d'ensemble sont
-    // justes par accident, car rien n'a été recalculé depuis la création de l'entrée.
-    assertThat(clinicalRev()).isEqualTo(revAfterMerge);
-    assertEmotionServed("lassitude", "tristesse", lassitude, feeling);
+    assertThat(clinicalRev()).isEqualTo(revAfterUndo);
   }
 
-  // ---- événements (partie 2/4)
+  @Test
+  void anUndoDoesNotRevertAFeelingCorrectedByHand() throws Exception {
+    String lassitude = createEmotion("Lassitude", "sadness");
+    UUID corrected = entry("feeling", "Soirée calme à la maison", 1, List.of(), lassitude);
+    UUID untouched = entry("feeling", "Réveil difficile ce matin", 2, List.of(), lassitude);
+    awaitPatientEventsSettled();
+    String merge =
+        body(
+            send(
+                    MockMvcRequestBuilders.post("/api/me/emotions/{code}/merge", lassitude),
+                    Map.of("targetCode", "sadness"))
+                .andExpect(status().isOk()));
+    eventually(() -> assertThat(emotionOf(corrected)).isEqualTo(List.of("sadness", lassitude)));
+    send(
+            MockMvcRequestBuilders.patch("/api/entries/{id}", corrected),
+            Map.of("feeling", Map.of("emotionCode", "joy")))
+        .andExpect(status().isOk());
+
+    send(
+            MockMvcRequestBuilders.post(
+                "/api/me/emotions/merges/{id}/undo", (String) JsonPath.read(merge, "$.id")),
+            Map.of())
+        .andExpect(status().isOk());
+
+    eventually(() -> assertThat(emotionOf(untouched)).isEqualTo(Arrays.asList(lassitude, null)));
+    assertThat(emotionOf(corrected)).isEqualTo(List.of("joy", lassitude));
+  }
+
+  @Test
+  void chainedTagMergesEndOnTheLastTargetWhateverTheDeliveryOrder() throws Exception {
+    UUID perso = createTag("perso");
+    UUID famille = createTag("famille");
+    UUID proches = createTag("proches");
+    UUID onPerso = entry("note", "Dîner du dimanche", 1, List.of("perso"), null);
+    UUID onFamille = entry("note", "Appel de la sœur", 2, List.of("famille"), null);
+    send(
+            MockMvcRequestBuilders.put("/api/patients/{id}/tags", patient),
+            Map.of("tags", List.of("perso")))
+        .andExpect(status().isOk());
+    awaitPatientEventsSettled();
+
+    // Deux fusions enchaînées sans attendre : leurs abonnés peuvent passer dans les deux ordres.
+    send(
+            MockMvcRequestBuilders.post("/api/tags/{id}/merge", perso),
+            Map.of("targetId", famille.toString()))
+        .andExpect(status().isOk());
+    send(
+            MockMvcRequestBuilders.post("/api/tags/{id}/merge", famille),
+            Map.of("targetId", proches.toString()))
+        .andExpect(status().isOk());
+
+    eventually(
+        () -> {
+          assertThat(tagsOf(onPerso)).containsExactly(proches);
+          assertThat(tagsOf(onFamille)).containsExactly(proches);
+          assertThat(patientTags()).containsExactly(proches);
+        });
+    assertThat(patientTagLabels()).containsExactly("proches");
+    eventually(() -> assertThat(found("proches")).containsExactlyInAnyOrder(onPerso, onFamille));
+  }
+
+  // ---- événements
 
   @Test
   void anEmotionMergeAndItsUndoPublishTheirEvents() throws Exception {
@@ -316,15 +362,7 @@ class VocabularyMergeIT {
     assertThat(events.stream(TagsMerged.class)).isEmpty();
   }
 
-  // ---- attendus
-
-  /** Recherche et vue d'ensemble suivent les cibles des deux fusions du premier test. */
-  private void assertFollowsMerge(UUID feeling1, UUID feeling2, UUID noteSource, UUID noteBoth)
-      throws Exception {
-    assertEmotionServed("tristesse", "lassitude", "sadness", feeling1, feeling2);
-    assertThat(found("travail")).containsExactlyInAnyOrder(noteSource, noteBoth);
-    assertThat(found("boulot")).isEmpty();
-  }
+  // ---- attendus partagés
 
   /**
    * La recherche trouve les ressentis par {@code shown} et plus par {@code gone} ; l'émotion
@@ -335,17 +373,6 @@ class VocabularyMergeIT {
     assertThat(found(shown)).containsExactlyInAnyOrder(feelings);
     assertThat(found(gone)).isEmpty();
     assertThat(topEmotionCodes()).containsExactly(topCode);
-  }
-
-  /**
-   * Ce que feront les abonnés des modules propriétaires (partie 3) : recalcul du vecteur de
-   * recherche des entrées du patient et décalage de {@code clinical_rev}, qui périme la vue
-   * d'ensemble.
-   */
-  private void simulateOwnerSubscribers() {
-    jdbc.queryForList(
-        "select entry_search_vector_refresh(id) from entry where patient_id = ?", patient);
-    jdbc.update("update patient set clinical_rev = clinical_rev + 1 where id = ?", patient);
   }
 
   // ---- données
@@ -408,7 +435,20 @@ class VocabularyMergeIT {
                     == 0);
   }
 
+  /** Attend qu'un attendu asynchrone (abonnés des fusions) se vérifie. */
+  private static void eventually(ThrowingRunnable assertion) {
+    await("propagation de la fusion")
+        .atMost(Duration.ofSeconds(60))
+        .pollInterval(Duration.ofMillis(200))
+        .untilAsserted(assertion);
+  }
+
   // ---- lectures
+
+  private List<UUID> patientTags() {
+    return jdbc.queryForList(
+        "select tag_id from patient_tag where patient_id = ?", UUID.class, patient);
+  }
 
   private List<UUID> found(String q) throws Exception {
     MockHttpServletRequestBuilder get =

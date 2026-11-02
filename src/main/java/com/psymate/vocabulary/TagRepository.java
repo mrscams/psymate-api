@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** Accès JPA à {@code tag}. Interne au module ; la fusion de tags (sous-requêtes) est native. */
+/** Accès JPA à {@code tag}. Interne au module ; le compteur d'une fusion de tags est natif. */
 interface TagRepository extends JpaRepository<Tag, UUID>, TagNativeQueries {
 
   @Query(
@@ -30,4 +30,8 @@ interface TagRepository extends JpaRepository<Tag, UUID>, TagNativeQueries {
       "select t from Tag t where t.practitionerId = :p and t.id in :ids"
           + " and t.archivedAt is null")
   List<Tag> findActiveByIds(@Param("p") UUID practitionerId, @Param("ids") Collection<UUID> ids);
+
+  /** Tags du praticien archivés par une fusion ({@code merged_into} renseigné). */
+  @Query("select t from Tag t where t.practitionerId = :p and t.mergedInto is not null")
+  List<Tag> findMerged(@Param("p") UUID practitionerId);
 }

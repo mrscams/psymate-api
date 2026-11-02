@@ -1,5 +1,6 @@
 package com.psymate.directory;
 
+import com.psymate.directory.dto.UpdateProfileRequest;
 import com.psymate.identity.api.CurrentPractitioner;
 import java.time.LocalDate;
 import java.util.List;
@@ -9,22 +10,22 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /** Données de test du module directory : praticien, session, requête de profil complète. */
-final class DirectoryTestFixtures {
+public final class DirectoryTestFixtures {
 
   private final JdbcTemplate jdbc;
   private final UUID tenant = UUID.randomUUID();
 
-  DirectoryTestFixtures(JdbcTemplate jdbc) {
+  public DirectoryTestFixtures(JdbcTemplate jdbc) {
     this.jdbc = jdbc;
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet directory')", tenant);
   }
 
-  UUID tenant() {
+  public UUID tenant() {
     return tenant;
   }
 
   /** Insère un praticien approuvé et retourne son identifiant. */
-  UUID newPractitioner() {
+  public UUID newPractitioner() {
     UUID id = UUID.randomUUID();
     String email = id + "@example.test";
     jdbc.update(
@@ -38,7 +39,7 @@ final class DirectoryTestFixtures {
     return id;
   }
 
-  void loginAs(UUID practitioner) {
+  public void loginAs(UUID practitioner) {
     CurrentPractitioner principal =
         new CurrentPractitioner(
             practitioner,
@@ -53,7 +54,7 @@ final class DirectoryTestFixtures {
   }
 
   /** Profil assez complet pour être publié (ville et un moyen de contact affiché). */
-  static UpdateProfileRequest completeProfile(String bio) {
+  public static UpdateProfileRequest completeProfile(String bio) {
     return new UpdateProfileRequest(
         "  Dr Persistance  ",
         "Psychologue",

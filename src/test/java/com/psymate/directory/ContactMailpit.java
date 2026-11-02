@@ -12,13 +12,13 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /** Lecture des e-mails reçus par Mailpit (l'envoi est asynchrone). */
-final class ContactMailpit {
+public final class ContactMailpit {
 
   private final GenericContainer<?> mailpit;
   private final HttpClient http = HttpClient.newHttpClient();
   private final JsonMapper json = JsonMapper.builder().build();
 
-  ContactMailpit(GenericContainer<?> mailpit) {
+  public ContactMailpit(GenericContainer<?> mailpit) {
     this.mailpit = mailpit;
   }
 
@@ -35,7 +35,7 @@ final class ContactMailpit {
   }
 
   /** Dernier message complet pour ce destinataire ; null après 10 s d'attente. */
-  JsonNode awaitMessage(String to) throws Exception {
+  public JsonNode awaitMessage(String to) throws Exception {
     long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
     while (true) {
       JsonNode found = search(to);
@@ -51,7 +51,7 @@ final class ContactMailpit {
   }
 
   /** Nombre de messages pour ce destinataire, après une courte attente. */
-  int count(String to) throws Exception {
+  public int count(String to) throws Exception {
     Thread.sleep(1500);
     return search(to).path("messages").size();
   }

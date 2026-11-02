@@ -46,6 +46,7 @@ class RoleFolderTests {
           "identity.verification",
           "identity.admin",
           "identity.auth",
+          "clinical",
           "clinical.export",
           "patients",
           "search",

@@ -1,6 +1,6 @@
 package com.psymate.clinical.export.service;
 
-import com.psymate.clinical.domain.TimeSpan;
+import com.psymate.clinical.model.TimeSpan;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;

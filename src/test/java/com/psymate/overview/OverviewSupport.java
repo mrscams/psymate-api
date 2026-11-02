@@ -48,7 +48,7 @@ import tools.jackson.databind.json.JsonMapper;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import({PostgresTestConfig.class, OverviewTestConfig.class})
-abstract class OverviewSupport {
+public abstract class OverviewSupport {
 
   /** Instant courant fixé par {@link OverviewTestConfig}. */
   protected static final Instant NOW = OverviewTestConfig.NOW;

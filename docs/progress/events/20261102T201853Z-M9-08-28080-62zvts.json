@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T20:18:53.322Z",
+  "task": "M9-08",
+  "agent": "claude",
+  "status": "done",
+  "summary": "overview rangé par rôle, OverviewDtos éclaté, FeelingsAssembler devenu FeelingsCalculator ; contrat inchangé, verify vert",
+  "notes": "Règle 3 : OverviewProjector, OverviewPayload, TrendCalculator et FeelingsCalculator dans service (ils portent des DTO) ; repository renvoie RecentEntry. 403 unitaires, 930 IT, 0 échec",
+  "next": "Relecture et fusion par l'utilisateur",
+  "pr": "https://github.com/mrscams/psymate-api/pull/64",
+  "branch": "claude/m9-08-fa7fc9",
+  "checkout": "m9-08-fa7fc9"
+}

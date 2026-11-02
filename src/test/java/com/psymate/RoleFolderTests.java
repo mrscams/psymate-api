@@ -48,6 +48,7 @@ class RoleFolderTests {
           "clinical.export",
           "patients",
           "search",
+          "overview",
           "vocabulary");
 
   /**

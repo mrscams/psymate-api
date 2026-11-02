@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-02T17:15:00.508Z",
+  "task": "M9-03",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Partie 4/4 : CurrentPractitioner de vocabulary supprimé (ARCH-06), G Q42, A5, UC-11, E ; M9-03 complète",
+  "notes": "verify 403 unitaires + 930 IT verts ; contrat inchangé ; aucune migration",
+  "next": "M9-10 (restructurer vocabulary) débloquée après fusion",
+  "pr": "https://github.com/mrscams/psymate-api/pull/59",
+  "branch": "claude/m9-03-p4",
+  "checkout": "m9-04-40f9c7"
+}

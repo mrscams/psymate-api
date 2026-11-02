@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T11:36:13.346Z",
+  "task": "M9-01",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 48 fusionnee dans main (c3e344d) : documentation alignee sur G Q31 a Q38, plan C8 (M8, M9), E9",
+  "next": "M9-04 et M9-02 peuvent demarrer",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

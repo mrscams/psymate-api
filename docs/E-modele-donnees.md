@@ -14,6 +14,7 @@ Mis à jour le 29 octobre 2026 : renommages et décisions de docs/G-decisions.md
 - **E6** : les tables réservées (V2 et compagnon) et les tables conditionnelles (V1.1 et hors V1), avec leur DDL prêt mais sans numéro de migration.
 - **E7** : les décisions ouvertes, toutes tranchées le 29 octobre 2026 (G).
 - **E8** : les écarts entre ce document et A / C / les fiches, avec la règle retenue.
+- **E9** : la liste fermée des suppressions physiques autorisées (G Q37).
 
 Marquages : **[À valider pilotes]** = contenu clinique livré avec les valeurs par défaut (G Q10), à confirmer avec les premiers praticiens une fois l'application utilisable ; **[Décision E-n]** = choix fait ici, listé en E7 ou E8 ; **[Réservé]** = table ou colonne vide en V1, jamais remplie par du code V1.
 
@@ -935,7 +936,7 @@ Ce que ce plan change par rapport à C (reporté en E8) : M0-03 crée `practitio
 ### Vérifications en CI (M0-03, puis chaque migration)
 
 - Flyway applique toutes les migrations sur un PostgreSQL 16 vierge (Testcontainers, image `pgvector/pgvector:pg16`).
-- Un test lit `information_schema` et compare la liste des tables et colonnes à une liste de référence extraite de ce document (fichier `expected-schema.yaml` dans `src/test/resources`, mis à jour par la tâche qui ajoute une table).
+- Un test lit `information_schema` et compare la liste des tables et colonnes à une liste de référence extraite de ce document (fichier `src/test/resources/expected-schema-v01.yaml`, qui couvre malgré son nom tous les objets de V01 à V11, mis à jour par la tâche qui ajoute une table).
 - Un test vérifie que les tables réservées sont vides et que `entry.author_type` ne contient que `'practitioner'` (M7-05, R13).
 - Un test tente un `UPDATE` sur `verification_decision` et `entry_version` avec le rôle `psymate_app` et attend un refus : ces tables reçoivent `REVOKE UPDATE, DELETE ON … FROM psymate_app` dans la migration qui les crée (le rôle applicatif est créé par le script d'init du conteneur Compose / par l'hébergeur, jamais par Flyway ; G Q9).
 
@@ -1174,3 +1175,18 @@ CREATE UNIQUE INDEX ux_appointment_google ON appointment(google_event_id) WHERE 
 | F, C, D (28 octobre) | rôle `clinic_app`, dépôt `clinic-api`, package `fr.app` | `psymate_app`, `psymate-api`, `com.psymate` (G Q1, Q2, Q9) | Renommage du 29 octobre |
 
 Les lignes de ce tableau ont été reportées dans A (A4, A10) et C (M0-03, M1-10, M1-03) le 29 octobre 2026 ; en cas de divergence résiduelle, **E prévaut** pour la base, **G** pour les décisions.
+
+## E9. Suppressions physiques autorisées (G Q37, 2 novembre 2026)
+
+Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `entry_version`, `link` et les tables de détail courantes s'archivent (`archived_at`, statut `superseded`). Ce tableau est la liste fermée de ce qui peut l'être ; une tâche qui ajoute une suppression physique ajoute sa ligne ici. Le test d'appartenance des tables (C8, M9-02) refuse tout `DELETE` sur une table clinique.
+
+| Table ou fichier | Ce qui est supprimé | Par qui | Raison |
+| --- | --- | --- | --- |
+| `entry_tag` | La ligne d'association, quand un tag est retiré d'une entrée ou lors d'une fusion de tags | clinical (et vocabulary jusqu'à M9-03) | Association sans historique propre : l'historique de l'entrée est dans `entry_version.payload` |
+| `patient_tag` | La ligne d'association, quand un tag est retiré d'un patient ou lors d'une fusion | patients (et vocabulary jusqu'à M9-03) | Idem, l'historique du patient est dans `patient_version` |
+| `contact_request` | La ligne, à `purge_after` (30 jours) | directory, `ContactPurgeJob` | Trace anti-spam seulement, jamais liée à un dossier (minimisation) |
+| `spring_session`, `spring_session_attributes` | Les sessions expirées ou révoquées | identity | Données techniques de connexion |
+| `event_publication` | Les publications terminées depuis plus de `app.events.completed-retention` (30 jours) | events, `EventPublicationPurgeJob` | Outbox : seules les publications inachevées comptent |
+| Fichiers des justificatifs (`verification_document`) | Le **fichier** chiffré, à `purge_after` ou quand le praticien retire la pièce ; **la ligne reste** (`purged_at`, marque de retrait) | identity.verification | Minimisation des pièces d'identité ; la trace reste auditable |
+| Fichiers d'export (`export_job`) | Le **fichier**, à `expires_at` (7 jours) ; **la ligne reste** (`purged_at`) | clinical.export, `ExportPurgeJob` | Le lien expire ; la trace de l'export reste |
+| Photos de profil (`practitioner_profile`) | L'ancien fichier, quand la photo est remplacée ou retirée | directory | Seule la photo courante est publiée |

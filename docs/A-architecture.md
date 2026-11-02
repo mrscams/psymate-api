@@ -144,7 +144,7 @@ Exigences ajoutées le 24 octobre 2026 (annuaire public) :
 | UC-02 | Créer / modifier / archiver un patient | Praticien | Clique « Nouveau patient » ou ouvre un profil | Connecté | 1. Saisit identité et contexte (seul le nom affiché est obligatoire) 2. Enregistre 3. Arrive sur la vue d'ensemble vide | A1 Archivage → patient masqué de la liste, données conservées. A2 Nom dupliqué → avertissement non bloquant | Patient créé ou mis à jour ; séance d'accueil créée ; `PatientCreated` et `EntryCreated` émis | V1 |
 | UC-03 | Ajouter une note / événement / situation / ressenti / médicament | Praticien | Touche `N` ou bouton « + » sur une vue patient | Patient ouvert ; une séance est présélectionnée (en cours, sinon la dernière), modifiable en un clic | 1. Choisit le type (ou tape `/evt`, `/res`) 2. Remplit les champs minimaux (type, texte ou émotion, date par défaut = maintenant) 3. Enregistre | A1 Mode capture → brouillon enregistré, à compléter plus tard. A2 Séance ouverte → `session_id` prérempli. A3 Ressenti → propose les 5 événements/situations récents à lier | Entrée en version 1, `EntryCreated` émis, projections mises à jour | V1 |
 | UC-04 | Enregistrer une séance et ses entrées | Praticien | Clique « Démarrer une séance » | Patient ouvert | 1. Séance créée avec `occurred_from = maintenant` 2. Toutes les entrées saisies pendant portent `session_id` 3. Clôture : durée et compte rendu | A1 Séance saisie a posteriori avec date passée. A2 Clôture oubliée → rappel à la prochaine ouverture du patient | Séance avec compte rendu, entrées regroupées | V1 |
-| UC-05 | Corriger une entrée | Praticien | Ouvre une entrée, clique « Modifier » | Entrée existante non archivée | 1. Modifie les champs 2. Indique un motif optionnel 3. Enregistre | A1 Consulte l'historique et restaure une version → nouvelle version identique à l'ancienne. A2 Règle de grâce : même auteur, moins de 5 minutes après la création, entrée sans lien ni version → modification en place, aucune version créée | Nouvelle `entry_version`, `EntryCorrected` émis, texte de recherche réindexé | V1 |
+| UC-05 | Corriger une entrée | Praticien | Ouvre une entrée, clique « Modifier » | Entrée existante non archivée | 1. Modifie les champs 2. Indique un motif optionnel 3. Enregistre | A1 Consulte l'historique et restaure une version → nouvelle version identique à l'ancienne. A2 Règle de grâce : même auteur, moins de 1 h 15 après la création (G Q31), entrée sans lien ni version → modification en place, aucune version créée | Nouvelle `entry_version`, `EntryCorrected` émis, texte de recherche réindexé | V1 |
 | UC-06 | Lier deux entrées | Praticien | Glisser-déposer dans le graphe, bouton « Lier » ou raccourci `L` | Deux entrées du même patient | 1. Choisit la cible (recherche ou liste récente) 2. Choisit le type de lien 3. Ajoute une justification optionnelle 4. Enregistre | A1 Lien déjà existant → propose de le modifier. A2 Auto-lien → refusé | `link` en `manual` / `accepted`, `LinkAccepted` émis | V1 |
 | UC-07 | Parcourir la timeline | Praticien | Onglet Timeline | Patient ouvert | 1. Timeline chargée sur les 12 derniers mois 2. Zoom, défilement, filtres 3. Clic sur une entrée → panneau de détail | A1 Historique de 10 ans → chargement par fenêtre, virtualisation | Aucune | V1 |
 | UC-08 | Explorer le graphe | Praticien | Onglet Graphe ou « Voir dans le graphe » depuis une entrée | Patient avec au moins un lien | 1. Graphe centré (patient ou entrée) à profondeur 2 2. Développe un nœud, filtre par type de lien 3. Clic → détail, double-clic → recentrer | A1 Plus de 150 nœuds → regroupement par type et par période | Aucune | V1 |
@@ -169,7 +169,7 @@ UC-11 et UC-12 sont ajoutés parce que les tags cohérents et l'historique consu
 
 ## A3. Modèle de domaine
 
-Huit contextes bornés en V1 (plus l'IA en V2), chacun un module Spring Modulith, communiquant par événements ou par des API Java publiques étroites ; aucun module ne lit les tables d'un autre.
+Huit contextes bornés en V1 (plus l'IA en V2), chacun un module Spring Modulith, communiquant par événements ou par des API Java publiques étroites ; aucun module n'écrit dans les tables d'un autre. Seuls les modules de projection (Search, Overview) lisent en SQL les tables d'autres modules, en lecture seule (G Q34).
 
 ### Contextes bornés et agrégats
 
@@ -209,7 +209,7 @@ flowchart LR
   style AI stroke-dasharray: 5 5
 ```
 
-Les flèches pleines sont des dépendances de compilation (API publique du module), les pointillés des flux d'événements. `Search` et `Overview` ne dépendent de personne à la compilation : ils reconstruisent leurs projections depuis les événements.
+Les flèches pleines sont des dépendances de compilation (API publique du module), les pointillés des flux d'événements. `Search` et `Overview` sont déclenchés par les événements, mais ils dépendent aussi à la compilation de l'API de `patients` (garde de propriété), d'`identity` et de `clinical`, et ils lisent en SQL les tables de `clinical`, `patients` et `linking` pour construire leurs projections (G Q34, voir A5).
 
 ### Diagramme de classes du domaine
 
@@ -289,7 +289,7 @@ classDiagram
 
 ### Correspondance avec les modules Spring Boot
 
-**Décision** : Spring Modulith avec un package racine par contexte (`com.psymate.identity`, `com.psymate.patients`, `com.psymate.clinical`, `com.psymate.vocabulary`, `com.psymate.linking`, `com.psymate.search`, `com.psymate.overview`, `com.psymate.events`, `com.psymate.ai`), organisation package-par-fonctionnalité à l'intérieur, hexagonal léger.
+**Décision** : Spring Modulith avec un package racine par contexte (`com.psymate.identity`, `com.psymate.patients`, `com.psymate.clinical`, `com.psymate.vocabulary`, `com.psymate.linking`, `com.psymate.search`, `com.psymate.overview`, `com.psymate.events`, `com.psymate.ai`), organisation par rôle à l'intérieur (`api / controller / dto / service / repository / model / config`, G Q33).
 
 | Critère | Spring Modulith | Package par couche classique | Hexagonal strict par module |
 | --- | --- | --- | --- |
@@ -299,19 +299,33 @@ classDiagram
 | Événements de domaine et outbox | Fournis (`@ApplicationModuleListener`, event publication registry) | À construire | À construire |
 | Extraction future en service séparé | Possible module par module | Difficile | Possible |
 
-**Recommandation** : Spring Modulith. **Pourquoi** : les frontières sont testées automatiquement, ce qui est la protection principale contre un agent qui « corrige » un module en en cassant un autre. **Alternatives rejetées** : hexagonal strict (trop de fichiers par fonctionnalité pour un solo), couches classiques (aucune frontière). **Conséquences** : chaque module expose un package `api` (DTO, interfaces, événements) et garde tout le reste en package-private. **Impact V2** : le module `ai` s'ajoute comme un module de plus, abonné aux événements, sans modifier les autres.
+**Recommandation** : Spring Modulith. **Pourquoi** : les frontières sont testées automatiquement, ce qui est la protection principale contre un agent qui « corrige » un module en en cassant un autre. **Alternatives rejetées** : hexagonal strict (trop de fichiers par fonctionnalité pour un solo), couches classiques (aucune frontière). **Conséquences** : chaque module expose un package `api` (façades, vues, événements, exceptions publiques). Le reste est interne au module : ses classes sont publiques entre dossiers du même module, la frontière entre modules est vérifiée par Modulith et celle entre dossiers par ArchUnit (G Q33). **Impact V2** : le module `ai` s'ajoute comme un module de plus, abonné aux événements, sans modifier les autres.
 
-Structure d'un module :
+Structure d'un module (G Q33, décidée le 2 novembre 2026 ; chaque module y passe par sa tâche M9 du plan C8) :
 
 ```
-com/psymate/clinical/
-  api/            EntryFacade, EntryDto, EntryCreated (événement)
-  domain/         Entry, EntryVersion, TimeSpan, règles métier
-  application/    EntryService, commandes, validation
-  persistence/    EntryRepository : JPA (Spring Data) pour le CRUD, JdbcClient pour les projections et requêtes natives (G Q32)
-  web/            EntryController (REST)
-  package-info.java  @ApplicationModule(allowedDependencies = {"patients", "vocabulary", "events"})
+com/psymate/<module>/
+  package-info.java   @ApplicationModule(allowedDependencies = {"patients :: api", "events :: api", "shared"})
+  api/                ce que les autres modules voient : EntryFacade, EntrySummary, EntryCreated (événement), exceptions publiques
+  controller/         points d'entrée HTTP : EntryController, gestionnaire d'erreurs du module
+  dto/                ce qui entre et sort en JSON : EntryDto, CreateEntryRequest (un fichier par DTO, G Q35), EntryMapper (MapStruct), *Assembler (mapping écrit à la main)
+  service/            la logique : EntryService, commandes, implémentations des façades et ports, listeners, jobs
+  repository/         l'accès à la base : repositories Spring Data, fragments *NativeQueries, requêtes JdbcClient (G Q32, Q38)
+  model/              les objets métier : Entry, EntryVersion (entités JPA ou records), TimeSpan, règles, exceptions métier
+  config/             configuration Spring : sécurité, filtres, propriétés
 ```
+
+| Dossier | Suffixes attendus |
+| --- | --- |
+| `api/` | `*Facade`, `*View`, `*Port`, événements au passé |
+| `controller/` | `*Controller`, `*ExceptionHandler`, `*Advice`, `*Messages` |
+| `dto/` | `*Dto`, `*Request`, `*Mapper`, `*Assembler` |
+| `service/` | `*Service`, `*FacadeImpl`, `*Adapter`, `*Listener`, `*Job`, `*Mailer` |
+| `repository/` | `*Repository`, `*Queries`, `*NativeQueries`, `*Row` |
+| `model/` | pas de suffixe imposé (`*Exception`, `*Policy`, `*Rules`) |
+| `config/` | `*Config`, `*Configuration`, `*Properties`, `*Filter` |
+
+Règles : un dossier n'existe que s'il contient une classe ; un module ou sous-domaine de moins de 8 classes reste plat ; sous-domaines admis seulement dans identity (`auth`, `admin`, `verification`, `preferences`) et clinical (`export`), avec les mêmes dossiers. Sens des dépendances : `controller → service, dto` ; `dto → model` (seuls les `*Mapper` et `*Assembler` touchent aux entités) ; `service → repository, model` ; `repository → model` ; `model` ne dépend que de `model` et `api` ; personne ne dépend de `controller`.
 
 ## A4. Architecture des données
 
@@ -459,9 +473,9 @@ Colonne `visibility text NOT NULL DEFAULT 'clinical' CHECK (visibility IN ('priv
 | Comparaison de versions | Reconstruction depuis l'audit | Deux lignes à comparer |
 | Réindexation IA après correction | À déclencher à la main | `EntryCorrected` porte les deux versions |
 
-Schéma : `entry` garde les colonnes stables (type, patient, temps, visibilité, statut) et un pointeur `current_version_id` ; `entry_version` porte `version`, `title`, `body`, `payload`, `reason`, `author_id`, `created_at`. Les tables de détail suivent la version courante (réécrites à chaque correction, historisées dans `payload` de la version). Suppression = `archived_at` sur `entry` ; les liens d'une entrée archivée passent en `superseded`. Une purge physique n'existe pas en V1.
+Schéma : `entry` garde les colonnes stables (type, patient, temps, visibilité, statut) et un pointeur `current_version_id` ; `entry_version` porte `version`, `title`, `body`, `payload`, `reason`, `author_id`, `created_at`. Les tables de détail suivent la version courante (réécrites à chaque correction, historisées dans `payload` de la version). Suppression = `archived_at` sur `entry` ; les liens d'une entrée archivée passent en `superseded`. Aucune donnée clinique n'est purgée physiquement ; seules les tables listées en E « Suppressions physiques autorisées » le sont (tables d'association, purges planifiées, sessions : G Q37).
 
-**Règle de grâce (pas de version pour une coquille)** : une modification faite par le même auteur, moins de 5 minutes après la création de l'entrée, alors que l'entrée n'a encore aucun lien, aucune autre version et n'a pas été consultée par l'IA, est appliquée en place sans créer de version ; seul `updated_at` change. Dès qu'une de ces conditions tombe, toute modification crée une version. La règle est un paramètre de configuration (`versioning.grace-period = 5m`), désactivable par tenant. Elle évite d'encombrer l'historique de corrections triviales sans ouvrir de brèche : une entrée liée ou âgée reste intégralement tracée.
+**Règle de grâce (pas de version pour une coquille)** : une modification faite par le même auteur, moins de 1 h 15 après la création de l'entrée (G Q31), alors que l'entrée n'a encore aucun lien, aucune autre version et n'a pas été consultée par l'IA, est appliquée en place sans créer de version ; seul `updated_at` change. Dès qu'une de ces conditions tombe, toute modification crée une version. La règle est un paramètre de configuration (`versioning.grace-period = 75m`), désactivable par tenant. Elle évite d'encombrer l'historique de corrections triviales sans ouvrir de brèche : une entrée liée ou âgée reste intégralement tracée.
 
 ### A4.9 Hooks de préparation V2
 
@@ -598,21 +612,21 @@ Un seul déployable backend, une seule SPA, une seule base : la complexité est 
 
 | Module | Responsabilité | Peut dépendre de | Expose |
 | --- | --- | --- | --- |
-| `identity` | Comptes, tenants, sessions, mots de passe | — | `CurrentPractitioner`, `PractitionerFacade` |
-| `patients` | Profils, propriété, archivage | `identity` | `PatientFacade`, `PatientOwnershipGuard`, `PatientCreated` |
-| `vocabulary` | Émotions, types de liens, tags | `identity` | `EmotionCatalog`, `LinkTypeCatalog`, `TagFacade` |
-| `clinical` | Entrées, versions, séances, brouillons | `patients`, `vocabulary`, `events` | `EntryFacade`, `EntryCreated`, `EntryCorrected`, `EntryArchived` |
-| `linking` | Liens, cycle de vie, graphe | `clinical`, `vocabulary`, `events` | `LinkFacade`, `GraphQueryFacade`, `LinkAccepted`, `LinkRejected` |
-| `search` | Index, requêtes, facettes | `events` (écoute), `patients` (garde) | `SearchFacade` |
-| `overview` | Projection vue d'ensemble | `events` (écoute), `patients` (garde) | `OverviewFacade` |
-| `events` | Outbox, republication, abonnés | — | `DomainEventPublisher` |
+| `identity` | Comptes, tenants, sessions, mots de passe, vérification, administration | `events` | `CurrentPractitioner`, `PractitionerFacade`, `EncryptedStorageFacade`, `SuspendedAccountAuthenticator`, `PractitionerRegistered`, `PractitionerApproved`, `PractitionerRejected`, `PractitionerSuspended`, `PreferencesChanged`, `VerificationSubmitted` |
+| `patients` | Profils, propriété, archivage | `identity`, `vocabulary`, `events` | `PatientFacade`, `PatientOwnershipGuard`, `PatientRef`, `PatientCreated`, `PatientUpdated`, `PatientArchived` |
+| `vocabulary` | Émotions, types de liens, tags | `identity` | `EmotionCatalog`, `LinkTypeCatalog`, `TagFacade` et leurs vues |
+| `clinical` | Entrées, versions, séances, brouillons, export | `identity`, `patients`, `vocabulary`, `events` | `EntryFacade`, `EntryLinksPort`, `EntryLinksReadPort`, `EntrySummary`, `EntryCreated`, `EntryCorrected`, `EntryArchived` |
+| `linking` | Liens, cycle de vie, graphe | `clinical`, `vocabulary`, `events`, `identity`, `patients` | `LinkFacade`, `GraphQueryFacade` et ses vues, `LinkAccepted`, `LinkRejected` |
+| `search` | Index, requêtes, facettes | `events` (écoute), `patients` (garde), `identity`, `clinical` ; lecture SQL des tables cliniques (G Q34) | aucun package `api` : endpoint REST seulement |
+| `overview` | Projection vue d'ensemble | `events` (écoute), `patients` (garde), `identity`, `clinical`, `linking` ; lecture SQL (G Q34) | aucun package `api` : endpoint REST seulement |
+| `events` | Outbox, republication, abonnés | — | `DomainEvent`, `DomainEventPublisher`, `EventDeduplicator` |
 | `ai` (V2) | Suggestions, motifs, questions | `events`, `clinical` (lecture), `linking` (écriture `proposed`) | `SuggestionFacade` |
 | `companion` (réservé, A11) | Appairage d'appareils patients, réception des lots | `patients`, `clinical` (dépôt d'entrées `author_type = patient`), `events` ; jamais `identity.admin`, `directory` | `SubmissionReceived`, `SubmissionAttached` |
-| `shared` | Types communs : `TenantId`, `PatientId`, erreurs, i18n des messages | — | types seulement, aucune logique |
+| `shared` | Outils transverses : erreurs RFC 9457 (`ProblemException`), limitation de débit, i18n des messages | — (ne dépend d'aucun module) | types et outils techniques, sans accès aux tables (l'écriture d'audit actuelle passe dans `identity`, tâche M9-05) |
 
-Règle vérifiée par `ApplicationModules.of(App.class).verify()` dans la CI : toute dépendance hors de cette table fait échouer le build.
+Règle vérifiée par `ApplicationModules.of(App.class).verify()` dans la CI : toute dépendance hors des `package-info.java` fait échouer le build. Chaque dépendance passe par le package `api` du module cible (`"patients :: api"`) ; `shared` est autorisé partout. La référence est le `package-info.java` de chaque module ; ce tableau en est l'état au 2 novembre 2026, et il sera généré par `Documenter` (tâche M9-02).
 
-Module ajouté le 24 octobre 2026 — `directory` : annuaire public et profils ; peut dépendre de `identity` et `events` ; expose `DirectoryFacade`, `ProfileFacade`, `ProfilePublished`, `ProfileUnpublished`. Ses contrôleurs sous `/api/public/**` sont exclus de l'authentification dans la configuration Spring Security et soumis à une limitation de débit par adresse (Bucket4j, G Q24).
+Module ajouté le 24 octobre 2026 — `directory` : annuaire public et profils ; peut dépendre de `identity` et `events` ; expose `DirectoryFacade`, `ProfileFacade`, `ProfilePublished`, `ProfileUnpublished` (les deux façades n'ont pas de consommateur en production ; leur sort est réglé par M9-06). Ses contrôleurs sous `/api/public/**` sont exclus de l'authentification dans la configuration Spring Security et soumis à une limitation de débit par adresse (Bucket4j, G Q24).
 
 ### C4 niveau 1 : contexte
 
@@ -666,7 +680,7 @@ flowchart LR
   LS --> ES
 ```
 
-`LinkService` appelle `EntryFacade` pour vérifier que les deux entrées appartiennent au même patient du praticien courant ; c'est la seule dépendance synchrone entre modules métier.
+`LinkService` appelle `EntryFacade` pour vérifier que les deux entrées appartiennent au même patient du praticien courant. Les autres dépendances synchrones entre modules métier : `clinical → patients` (`PatientFacade.touchClinicalRev`, garde de propriété), `linking → patients` (garde), `linking → clinical` (`EntryFacade.adjustLinkCount`), `clinical.export → identity` (`EncryptedStorageFacade`, `SuspendedAccountAuthenticator`).
 
 ### Style d'API
 

@@ -18,22 +18,23 @@ Pour la base de données, docs/E-modele-donnees.md fait autorité sur A et C. Po
 
 ## Architecture (règles non négociables)
 - Un module Spring Modulith par contexte : identity, patients, vocabulary, clinical, linking, search, overview, events, directory. Packages réservés et vides : ai, companion.
-- Un module ne lit jamais les tables ni les classes internes d'un autre ; il passe par la façade du package `api` ou par un événement.
+- Un module n'écrit jamais dans les tables d'un autre et ne référence jamais ses classes internes ; il passe par la façade du package `api` ou par un événement. Seuls search et overview (modules de projection) lisent en SQL les tables d'autres modules, en lecture seule (G Q34).
+- Structure d'un module par rôle (G Q33) : `api / controller / dto / service / repository / model / config`, le suffixe d'une classe donne son dossier, un fichier par DTO (G Q35). Un module garde sa structure actuelle jusqu'à la fusion de sa tâche de restructuration (C8, M9-07 à M9-18) ; d'ici là, un nouveau fichier suit la structure existante de son module.
 - Dépendances autorisées : voir package-info.java de chaque module (ApplicationModules.verify() les vérifie).
 - directory ne dépend que d'identity et events, et ne touche jamais aux données patient. identity.admin ne dépend d'aucun module clinique.
-- Toute entrée appartient à une séance ; toute correction crée une version (sauf règle de grâce 1 h 15) ; rien n'est supprimé physiquement.
+- Toute entrée appartient à une séance ; toute correction crée une version (sauf règle de grâce 1 h 15) ; aucune donnée clinique n'est supprimée physiquement ; seules les tables listées en E « Suppressions physiques autorisées » le sont (G Q37).
 - Les liens sont des lignes de `link` avec provenance et statut ; jamais de clé étrangère "lien" dans `entry`.
 - Une migration Flyway fusionnée ne se modifie jamais : on en ajoute une. Les numéros sont réservés dans docs/E-modele-donnees.md E4.
 - L'IA V2 n'existe pas en V1 : ne pas écrire de code IA, mais ne pas casser les hooks (outbox, tables vides).
 - Le compagnon patient n'existe pas en V1 (A11) : `entry.author_type` vaut toujours 'practitioner', `entry.submission_id` toujours NULL, `patient_device` et `patient_submission` restent vides, le package `companion` reste vide. Ne jamais les supprimer, ne jamais les remplir, ne jamais exposer `authorType` en écriture.
 - L'agenda Google (fiches 15, 15b) est hors V1 (G, Q25) : aucun module scheduling.
-- Accès aux données (G Q32) : JPA pour les modules CRUD (patients, vocabulary, directory, identity, clinical.export), `JdbcClient` pour search, overview, graphe, timeline et keyset admin. Gardes ArchUnit : `@Immutable` sur les tables append-only, `@DynamicUpdate` sur `entry_version`, aucune association JPA entre modules (UUID nus), jamais d'entité dans un DTO ni dans `web` ; `open-in-view=false`, Flyway seul maître du DDL (`ddl-auto=validate` en test).
+- Accès aux données (G Q32) : JPA pour les modules CRUD (patients, vocabulary, directory, identity, clinical.export), `JdbcClient` pour search, overview, graphe, timeline et la recherche publique de l'annuaire ; dans un module JPA, le SQL natif (dont le keyset admin) passe par des fragments Spring Data `*NativeQueries` (G Q38). Gardes ArchUnit : `@Immutable` sur les tables append-only, `@DynamicUpdate` sur `entry_version`, aucune association JPA entre modules (UUID nus), jamais d'entité dans un DTO ni dans un contrôleur ; `open-in-view=false`, Flyway seul maître du DDL (`ddl-auto=validate` en test).
 
 ## Versions
 Spring Boot 4.1.x, Spring Modulith 2.1.2, Java 21 : ne jamais rétrograder, ne jamais ajouter une dépendance de la ligne Boot 3 / Jackson 2 (`com.fasterxml.jackson.*` est Jackson 2 ; Jackson 3 vit sous `tools.jackson.*`). Les noms de starters sont ceux de la ligne 4 : vérifie dans la documentation officielle, pas de mémoire. Toute version est figée dans pom.xml, jamais une plage.
 
 ## Conventions
-REST JSON camelCase, erreurs RFC 9457 (application/problem+json) avec errors[] par champ, pagination par curseur, dates UTC ISO 8601, MapStruct pour les DTO, Jakarta Validation.
+REST JSON camelCase, erreurs RFC 9457 (application/problem+json) avec errors[] par champ, pagination par curseur, dates UTC ISO 8601, MapStruct pour les DTO (`*Mapper` ; un mapping écrit à la main s'appelle `*Assembler`), un fichier par DTO, Jakarta Validation.
 Textes utilisateur et e-mails : français d'abord (messages_fr.properties obligatoire, messages_en.properties si tu peux, jamais bloquant). Nom du produit : constante i18n app.name = PsyMate.
 Tests : unitaires pour le domaine, *IT.java Testcontainers (image pgvector/pgvector:pg16) pour chaque endpoint, jamais de mock de la base.
 Nommage : EntryService, EntryRepository, EntryController, EntryDto / CreateEntryRequest ; événements au passé (EntryCreated).

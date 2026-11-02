@@ -14,7 +14,7 @@ Les prompts renvoient aux documents copiés dans `docs/` du dépôt : `docs/A-ar
 | **A10** | Section de A ajoutée le 25 octobre : préférences par compte, vérification des praticiens (dossier professionnel), administration. |
 | **A11** | Section de A sur le « compagnon patient » (future app mobile) : rien n'est construit, mais des colonnes et tables vides sont réservées. |
 | **M0 … M7** | Les huit jalons du plan C : M0 socle technique, M1 patients et entrées, M2 liens et graphe, M3 timeline, M4 recherche et vue d'ensemble, M5 annuaire public, M6 capture rapide et finitions, M7 durcissement avant la bêta. |
-| **M1-03**, **M4-01a**… | Une tâche : jalon, tiret, numéro. La ligne correspondante est dans C2 ou C6 (document C). `M4-01a` est une tâche ajoutée par D (D6-A1). |
+| **M1-03**, **M4-01a**… | Une tâche : jalon, tiret, numéro. La ligne correspondante est dans C2, C6 ou C8 (document C). `M4-01a` est une tâche ajoutée par D (D6-A1). |
 | **V0 … V9** | Les « vagues » de D3 : un groupe de tâches dont toutes les dépendances sont fusionnées, donc lançables ensemble. |
 | **Couloir** | Un module Spring (identity, patients, clinical…). Un seul agent à la fois par couloir. |
 | **UC-01 … UC-19** | Cas d'usage (A2, A10) : un scénario utilisateur numéroté. |
@@ -92,6 +92,8 @@ mkdir -p docs/design .claude/agents
 ```
 
 ## 2.3 Créer `CLAUDE.md` à la racine (copier tel quel)
+
+> Version d'origine, pour l'historique. Le fichier `CLAUDE.md` du dépôt fait foi : il a évolué depuis (règle de grâce de 1 h 15, G Q31 ; accès aux données, G Q32 ; structure par rôle, lecture des projections, suppressions autorisées et SQL natif, G Q33 à Q38).
 
 ```markdown
 # psymate-api
@@ -182,7 +184,7 @@ Tu implémentes exactement la tâche donnée, dans le module donné, et rien d'a
 
 Avant d'écrire une ligne :
 1. Lis CLAUDE.md.
-2. Lis la ligne de ta tâche dans docs/C-plan.md (sections C2 ou C6) et les sections de docs/A-architecture.md citées dans sa colonne « Lire ».
+2. Lis la ligne de ta tâche dans docs/C-plan.md (sections C2, C6 ou C8) et les sections de docs/A-architecture.md ou de la revue (docs/etudes/revue-architecture-2026-11-01.md, tâches M9) citées dans sa colonne « Lire ».
 3. Lis docs/D-orchestration-backend.md D1 et D5 pour savoir ce qui existe déjà sur main et ce que tu n'as pas le droit de toucher.
 4. Si ta tâche crée ou modifie une table, lis docs/E-modele-donnees.md : le DDL est déjà écrit, copie-le, ne le réinvente pas.
 5. Si ton prompt cite une décision « Qn », lis sa ligne dans docs/G-decisions.md et applique-la même si A, C ou E disent autre chose.
@@ -294,7 +296,7 @@ Objectif : un projet Spring Boot 4.1.x Maven (groupId com.psymate, artifactId ps
 
 Versions : tu lis la documentation officielle de Spring Boot 4.1 pour les noms exacts des starters et des artefacts (plusieurs ont été renommés depuis la ligne 3). Tu figes chaque version dans pom.xml. Aucune dépendance Jackson 2 (com.fasterxml.jackson). Tu listes dans la PR chaque dépendance ajoutée avec sa version et le lien vers sa page de documentation.
 
-Périmètre : pom.xml, mvnw, .mvn/, Makefile, docker-compose.yml, src/main/java/com/psymate/App.java, src/main/resources/application.yml (profils local et test ; app.name=PsyMate ; app.mail.from=test@gmail.com en local ; versioning.grace-period=5m ; spring.modulith.events.jdbc.schema-initialization.enabled=false), src/test/java/com/psymate/AppIT.java, .github/workflows/ci.yml, README.md court (commandes). Aucun module, aucune migration, aucune entité : c'est M0-02 et M0-03.
+Périmètre : pom.xml, mvnw, .mvn/, Makefile, docker-compose.yml, src/main/java/com/psymate/App.java, src/main/resources/application.yml (profils local et test ; app.name=PsyMate ; app.mail.from=test@gmail.com en local ; versioning.grace-period=5m, devenu 75m avec G Q31 ; spring.modulith.events.jdbc.schema-initialization.enabled=false), src/test/java/com/psymate/AppIT.java, .github/workflows/ci.yml, README.md court (commandes). Aucun module, aucune migration, aucune entité : c'est M0-02 et M0-03.
 
 Critères d'acceptation (C2 M0-01) :
 - ./mvnw verify vert en local et en CI ;

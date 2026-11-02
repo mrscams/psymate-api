@@ -254,7 +254,7 @@
 
 <!-- ============================================================ -->
 <h2 id="s4">4. Anatomie d'un module</h2>
-<p>Tous les modules suivent le même plan de packages. Voici <code>clinical</code>, le plus complet :</p>
+<p>Tous les modules suivent le même plan de packages, <strong>un dossier par rôle</strong> (G Q33, 2 novembre 2026) : le suffixe d'une classe dit dans quel dossier elle va. Les modules y passent un par un (tâches M9 du plan C8) ; tant que la tâche d'un module n'est pas fusionnée, il garde sa structure actuelle. Voici la cible pour <code>clinical</code>, le plus complet :</p>
 <pre class="code"><code>com.psymate.clinical
 ├── package-info.java        @ApplicationModule(allowedDependencies = {...})
 ├── api/                     @NamedInterface("api") — la SEULE chose visible des autres modules
@@ -262,10 +262,12 @@
 │   ├── EntryCreated.java        événements (records, au passé)
 │   ├── EntryLinksPort.java      port implémenté par linking (M2-02)
 │   └── SessionView.java         vues en lecture
-├── domain/                  objets métier purs, sans Spring : Entry, TimeSpan, GraceRule…
-├── application/             services @Transactional : EntryService, SessionService, listeners
-├── persistence/             EntryRepository (JdbcClient, SQL explicite)
-└── web/                     EntryController, EntryDtos, EntryMapper (MapStruct), handler d'erreurs</code></pre>
+├── controller/              EntryController, SessionController, gestionnaire d'erreurs du module
+├── dto/                     EntryDto, CreateEntryRequest (un fichier par DTO, G Q35), EntryMapper (MapStruct)
+├── service/                 services @Transactional : EntryService, SessionService, listeners, jobs
+├── repository/              EntryRepository (JdbcClient, SQL explicite ; JPA dans les modules CRUD, G Q32)
+└── model/                   objets métier : Entry, TimeSpan, GraceRule…</code></pre>
+<p>Sens des dépendances : <code>controller → service, dto</code> ; <code>service → repository, model</code> ; <code>model</code> ne dépend que de <code>model</code> et <code>api</code> ; personne ne dépend de <code>controller</code>. Les classes sont publiques entre dossiers d'un même module ; Modulith garde la frontière entre modules, ArchUnit celle entre dossiers.</p>
 
 <h3>Déclarer ses dépendances</h3>
 <pre class="code"><code>// src/main/java/com/psymate/clinical/package-info.java
@@ -383,11 +385,11 @@ class EntryService {
   </g>
   <g stroke="var(--muted)" stroke-width="1.3" fill="none" marker-end="url(#a6)"><path d="M230,65 L300,65"/><path d="M230,185 L300,185"/></g>
 </svg>
-<figcaption>La garantie « rien n'est supprimé, l'historique est immuable » est portée par Postgres lui-même, pas seulement par le code. <code>FlywayMigrationIT</code> tente les UPDATE/DELETE sous <code>psymate_app</code> et attend un refus.</figcaption>
+<figcaption>La garantie « aucune donnée clinique n'est supprimée, l'historique est immuable » (G Q37 ; liste des suppressions autorisées en E9) est portée par Postgres lui-même, pas seulement par le code. <code>FlywayMigrationIT</code> tente les UPDATE/DELETE sous <code>psymate_app</code> et attend un refus.</figcaption>
 </figure>
 
-<h3>Accès aux données : JdbcClient, pas JPA</h3>
-<p>Le projet écrit son SQL. <code>JdbcClient</code> (Spring 7) avec paramètres nommés, jamais de concaténation ; les colonnes jsonb (<code>payload</code>, <code>preferences</code>, <code>details</code>) sont lues et écrites via Jackson 3 (<code>tools.jackson.*</code>). Un index non trivial est documenté dans E et créé par la migration de la tâche qui en a besoin.</p>
+<h3>Accès aux données : JPA pour le CRUD, JdbcClient pour les projections</h3>
+<p><strong>Depuis G Q32 (1er novembre 2026)</strong>, les modules CRUD (patients, vocabulary, directory, identity, clinical.export) passent par Spring Data JPA ; leur SQL natif passe par des fragments <code>*NativeQueries</code> sur l'<code>EntityManager</code> (G Q38). Les projections et requêtes lourdes (search, overview, graphe, timeline, recherche publique de l'annuaire) gardent <code>JdbcClient</code>, décrit ci-dessous. Le projet écrit son SQL. <code>JdbcClient</code> (Spring 7) avec paramètres nommés, jamais de concaténation ; les colonnes jsonb (<code>payload</code>, <code>preferences</code>, <code>details</code>) sont lues et écrites via Jackson 3 (<code>tools.jackson.*</code>). Un index non trivial est documenté dans E et créé par la migration de la tâche qui en a besoin.</p>
 <pre class="code"><code>// EntryRepository — extrait simplifié
 UUID id = jdbc.sql("""
     insert into entry (id, tenant_id, patient_id, session_id, type, status, visibility,
@@ -606,7 +608,7 @@ Content-Type: application/problem+json
 <tr><th>Décision</th><th>Pourquoi</th><th>Où</th></tr>
 <tr><td>Monolithe modulaire (Spring Modulith) plutôt que microservices</td><td>une équipe réduite, une base, des transactions simples ; les frontières sont tout de même vérifiées par le build, donc extractibles plus tard</td><td>A5, A3</td></tr>
 <tr><td>Spring Boot 4.1 / Framework 7 / Jackson 3, versions figées</td><td>ligne la plus récente ; <code>com.fasterxml.jackson</code> (Jackson 2) interdit pour ne pas mélanger deux lignes</td><td>Q3, CLAUDE.md</td></tr>
-<tr><td>SQL explicite via JdbcClient, pas d'ORM</td><td>le modèle (versions, jsonb, tstzrange, triggers, index trigram) est trop « Postgres » pour JPA ; le SQL est relu en revue</td><td>E, A4</td></tr>
+<tr><td>JPA pour les modules CRUD, JdbcClient pour les projections (révisé le 1er novembre 2026)</td><td>d'abord tout en JdbcClient (modèle très « Postgres ») ; JPA réduit le code répétitif du CRUD, et le SQL explicite reste là où il compte : recherche, vue d'ensemble, graphe, timeline</td><td>G Q32, Q38</td></tr>
 <tr><td>Flyway avec numéros réservés par tâche</td><td>plusieurs agents en parallèle ne doivent jamais se disputer un numéro</td><td>E4</td></tr>
 <tr><td>Deux rôles Postgres et REVOKE sur l'append-only</td><td>l'immuabilité de l'historique est garantie par la base, pas par la discipline</td><td>Q9, O11</td></tr>
 <tr><td>Transactional outbox Modulith sur <code>event_publication</code></td><td>un événement ne peut pas être perdu ni publié sans sa donnée ; rejeu au redémarrage ; les projections (search, overview, V2 IA) s'y abonnent</td><td>A4.9, M4-01</td></tr>

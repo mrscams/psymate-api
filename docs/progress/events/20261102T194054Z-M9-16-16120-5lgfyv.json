@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T19:40:54.895Z",
+  "task": "M9-16",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 63 fusionnee dans main (39116f1) : identity.admin range par role, decision Q44 (regle ArchUnit conservee)",
+  "next": "M9-17 (identity.auth) peut demarrer",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

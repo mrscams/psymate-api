@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-02T19:40:54.377Z",
+  "task": "M9-09",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 62 fusionnee dans main (c14338a) : patients range par role, PatientDtos eclate, PatientArchived @Reserved",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

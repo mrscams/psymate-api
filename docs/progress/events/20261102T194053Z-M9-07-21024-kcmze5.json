@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T19:40:53.671Z",
+  "task": "M9-07",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 61 fusionnee dans main (81cb32e) : search range par role, SearchDtos eclate",
+  "next": "M9-08 (overview) peut demarrer",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

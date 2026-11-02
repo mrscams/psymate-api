@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-02T22:22:34.765Z",
+  "task": "M9-13",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 68 fusionnee dans main (ce54acc) : clinical range par role, EntryDtos et TimelineDtos eclates, EntryLinkAssembler",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

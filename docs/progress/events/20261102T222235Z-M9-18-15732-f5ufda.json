@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T22:22:35.096Z",
+  "task": "M9-18",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 67 fusionnee dans main (c989f12) : entites et repositories communs d identity en model et repository, decision Q3, evenements @Reserved",
+  "next": "Tous les modules sont ranges par role ; restent M9-19 et M9-20",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

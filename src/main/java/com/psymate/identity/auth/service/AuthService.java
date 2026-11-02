@@ -13,10 +13,12 @@ import com.psymate.identity.auth.model.PasswordPolicyException;
 import com.psymate.identity.auth.model.PasswordUnchangedException;
 import com.psymate.identity.auth.model.PhoneNumbers;
 import com.psymate.identity.auth.model.PractitionerRow;
-import com.psymate.identity.auth.repository.AuthTokenRepository;
 import com.psymate.identity.auth.repository.PractitionerRepository;
 import com.psymate.identity.auth.repository.PractitionerRepository.Contact;
-import com.psymate.identity.persistence.UniqueViolations;
+import com.psymate.identity.model.AuthToken;
+import com.psymate.identity.repository.AuthTokenJpaRepository;
+import com.psymate.identity.repository.UniqueViolations;
+import com.psymate.shared.time.Timestamps;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -64,7 +66,7 @@ public class AuthService {
   private static final String PREFS_PSYCHIATRIST = "{\"entryTypes.medicationVisible\":true}";
 
   private final PractitionerRepository practitioners;
-  private final AuthTokenRepository tokens;
+  private final AuthTokenJpaRepository tokens;
   private final PasswordEncoder encoder;
   private final AuthMailer mailer;
   private final TaskExecutor mailExecutor;
@@ -77,7 +79,7 @@ public class AuthService {
 
   AuthService(
       PractitionerRepository practitioners,
-      AuthTokenRepository tokens,
+      AuthTokenJpaRepository tokens,
       PasswordEncoder encoder,
       AuthMailer mailer,
       TaskExecutor mailExecutor,
@@ -282,13 +284,11 @@ public class AuthService {
     }
     PractitionerRow p = found.get();
     Instant now = clock.instant();
-    if (tokens.countCreatedSince(p.id(), KIND_EMAIL_CONFIRM, now.minus(RESEND_MIN_INTERVAL)) > 0
-        || tokens.countCreatedSince(p.id(), KIND_EMAIL_CONFIRM, now.minus(Duration.ofDays(1)))
-            >= RESEND_MAX_PER_DAY) {
+    if (resendLimitReached(p.id(), now)) {
       return;
     }
     String token = newToken();
-    tokens.consumeActive(p.id(), KIND_EMAIL_CONFIRM, now);
+    tokens.consumeActive(p.id(), KIND_EMAIL_CONFIRM, Timestamps.utc(now));
     issueConfirmationToken(p.id(), token, now);
     Locale locale = Locale.forLanguageTag(p.locale());
     afterCommit(
@@ -342,9 +342,7 @@ public class AuthService {
   private void doChangeEmail(PractitionerRow p, String newEmail) {
     UUID id = p.id();
     Instant now = clock.instant();
-    if (tokens.countCreatedSince(id, KIND_EMAIL_CONFIRM, now.minus(RESEND_MIN_INTERVAL)) > 0
-        || tokens.countCreatedSince(id, KIND_EMAIL_CONFIRM, now.minus(Duration.ofDays(1)))
-            >= RESEND_MAX_PER_DAY) {
+    if (resendLimitReached(id, now)) {
       return;
     }
     String normalized = normalizeEmail(newEmail);
@@ -356,14 +354,31 @@ public class AuthService {
     }
     practitioners.updateEmail(id, newEmail.trim(), normalized, now);
     String token = newToken();
-    tokens.consumeActive(id, KIND_EMAIL_CONFIRM, now);
+    tokens.consumeActive(id, KIND_EMAIL_CONFIRM, Timestamps.utc(now));
     issueConfirmationToken(id, token, now);
     afterCommit(
         "confirmation e-mail", () -> mailer.sendEmailConfirmation(newEmail.trim(), token, locale));
   }
 
+  /** Limites de renvoi du lien : 1 par minute, 5 par jour (jetons consommés ou non). */
+  private boolean resendLimitReached(UUID id, Instant now) {
+    return tokens.countCreatedSince(
+                id, KIND_EMAIL_CONFIRM, Timestamps.utc(now.minus(RESEND_MIN_INTERVAL)))
+            > 0
+        || tokens.countCreatedSince(
+                id, KIND_EMAIL_CONFIRM, Timestamps.utc(now.minus(Duration.ofDays(1))))
+            >= RESEND_MAX_PER_DAY;
+  }
+
   private void issueConfirmationToken(UUID practitionerId, String token, Instant now) {
-    tokens.insert(practitionerId, KIND_EMAIL_CONFIRM, sha256(token), now.plus(CONFIRM_TTL), now);
+    tokens.save(
+        new AuthToken(
+            UUID.randomUUID(),
+            practitionerId,
+            KIND_EMAIL_CONFIRM,
+            sha256(token),
+            now.plus(CONFIRM_TTL),
+            now));
   }
 
   private String newToken() {
@@ -384,8 +399,15 @@ public class AuthService {
     PractitionerRow p = found.get();
     Instant now = clock.instant();
     String token = newToken();
-    tokens.consumeActive(p.id(), KIND_PASSWORD_RESET, now);
-    tokens.insert(p.id(), KIND_PASSWORD_RESET, sha256(token), now.plus(RESET_TTL), now);
+    tokens.consumeActive(p.id(), KIND_PASSWORD_RESET, Timestamps.utc(now));
+    tokens.save(
+        new AuthToken(
+            UUID.randomUUID(),
+            p.id(),
+            KIND_PASSWORD_RESET,
+            sha256(token),
+            now.plus(RESET_TTL),
+            now));
     Locale locale = Locale.forLanguageTag(p.locale());
     afterCommit("password reset e-mail", () -> mailer.sendPasswordReset(p.email(), token, locale));
   }

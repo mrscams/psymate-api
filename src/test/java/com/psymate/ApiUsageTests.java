@@ -48,14 +48,6 @@ class ApiUsageTests {
       Map.of(
           "com.psymate.clinical.api.SessionView",
           "M9-13 : ne sert plus qu'à clinical depuis M9-06, à déplacer hors d'api",
-          "com.psymate.identity.api.PractitionerRegistered",
-          "M9-18 : événement sans abonné, à annoter @Reserved (G Q40)",
-          "com.psymate.identity.api.PractitionerApproved",
-          "M9-18 : événement sans abonné, à annoter @Reserved (G Q40)",
-          "com.psymate.identity.api.VerificationSubmitted",
-          "M9-18 : événement sans abonné, à annoter @Reserved (G Q40)",
-          "com.psymate.identity.api.PreferencesChanged",
-          "M9-18 : événement sans abonné, à annoter @Reserved (G Q40)",
           "com.psymate.vocabulary.api.EntryTypeView",
           "M9-10 : lu par aucun autre module, à sortir d'api");
 

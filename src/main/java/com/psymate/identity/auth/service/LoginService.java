@@ -7,9 +7,8 @@ import com.psymate.identity.auth.model.EmailNotConfirmedException;
 import com.psymate.identity.auth.model.InvalidCredentialsException;
 import com.psymate.identity.auth.model.PasswordChangeRequiredException;
 import com.psymate.identity.auth.model.PractitionerRow;
+import com.psymate.identity.auth.model.TotpState;
 import com.psymate.identity.auth.repository.PractitionerRepository;
-import com.psymate.identity.auth.repository.TotpRepository;
-import com.psymate.identity.auth.repository.TotpRepository.TotpState;
 import com.psymate.identity.auth.service.LoginAttemptLimiter.State;
 import com.psymate.identity.auth.service.OtpVerifier.Kind;
 import java.time.Clock;
@@ -46,7 +45,6 @@ public class LoginService {
   }
 
   private final PractitionerRepository practitioners;
-  private final TotpRepository totp;
   private final OtpVerifier otp;
   private final LoginAttemptLimiter limiter;
   private final PasswordEncoder encoder;
@@ -55,13 +53,11 @@ public class LoginService {
 
   LoginService(
       PractitionerRepository practitioners,
-      TotpRepository totp,
       OtpVerifier otp,
       LoginAttemptLimiter limiter,
       PasswordEncoder encoder,
       Clock clock) {
     this.practitioners = practitioners;
-    this.totp = totp;
     this.otp = otp;
     this.limiter = limiter;
     this.encoder = encoder;
@@ -144,7 +140,7 @@ public class LoginService {
       throw new PasswordChangeRequiredException();
     }
 
-    TotpState state = totp.find(row.id());
+    TotpState state = otp.state(row.id());
     boolean recoveryUsed = false;
     if (state.enabled()) {
       if (otpInput == null || otpInput.isBlank()) {

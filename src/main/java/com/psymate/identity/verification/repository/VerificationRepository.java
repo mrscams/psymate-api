@@ -1,14 +1,14 @@
 package com.psymate.identity.verification.repository;
 
-import com.psymate.identity.persistence.DocumentAccessLog;
-import com.psymate.identity.persistence.DocumentAccessLogJpaRepository;
-import com.psymate.identity.persistence.Practitioner;
-import com.psymate.identity.persistence.PractitionerJpaRepository;
-import com.psymate.identity.persistence.SecurityEvent;
-import com.psymate.identity.persistence.SecurityEventJpaRepository;
-import com.psymate.identity.persistence.VerificationDecisionJpaRepository;
-import com.psymate.identity.persistence.VerificationDocument;
-import com.psymate.identity.persistence.VerificationDocumentJpaRepository;
+import com.psymate.identity.model.DocumentAccessLog;
+import com.psymate.identity.model.Practitioner;
+import com.psymate.identity.model.SecurityEvent;
+import com.psymate.identity.model.VerificationDocument;
+import com.psymate.identity.repository.DocumentAccessLogJpaRepository;
+import com.psymate.identity.repository.PractitionerJpaRepository;
+import com.psymate.identity.repository.SecurityEventJpaRepository;
+import com.psymate.identity.repository.VerificationDecisionJpaRepository;
+import com.psymate.identity.repository.VerificationDocumentJpaRepository;
 import com.psymate.shared.time.Timestamps;
 import com.psymate.shared.web.IpAddresses;
 import java.time.Instant;

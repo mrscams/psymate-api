@@ -1,8 +1,11 @@
 package com.psymate.identity.auth.service;
 
 import com.psymate.identity.auth.model.Totp;
-import com.psymate.identity.auth.repository.TotpRepository;
-import com.psymate.identity.auth.repository.TotpRepository.TotpState;
+import com.psymate.identity.auth.model.TotpState;
+import com.psymate.identity.model.TotpRecoveryCode;
+import com.psymate.identity.repository.PractitionerJpaRepository;
+import com.psymate.identity.repository.TotpRecoveryCodeJpaRepository;
+import com.psymate.shared.time.Timestamps;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -31,16 +34,30 @@ class OtpVerifier {
   static final int RECOVERY_CODES = 10;
   private static final String RECOVERY_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-  private final TotpRepository totp;
+  private final PractitionerJpaRepository practitioners;
+  private final TotpRecoveryCodeJpaRepository recoveryCodes;
   private final TotpSecretCipher cipher;
   private final Clock clock;
   private final Map<UUID, Long> lastStep = new ConcurrentHashMap<>();
   private final SecureRandom random = new SecureRandom();
 
-  OtpVerifier(TotpRepository totp, TotpSecretCipher cipher, Clock clock) {
-    this.totp = totp;
+  OtpVerifier(
+      PractitionerJpaRepository practitioners,
+      TotpRecoveryCodeJpaRepository recoveryCodes,
+      TotpSecretCipher cipher,
+      Clock clock) {
+    this.practitioners = practitioners;
+    this.recoveryCodes = recoveryCodes;
     this.cipher = cipher;
     this.clock = clock;
+  }
+
+  /** Secret chiffré et activation de la 2FA du praticien ; aucune 2FA si le compte n'existe pas. */
+  TotpState state(UUID id) {
+    return practitioners
+        .findTotp(id)
+        .map(v -> new TotpState(v.secret(), Timestamps.instant(v.enabledAt())))
+        .orElse(new TotpState(null, null));
   }
 
   /**
@@ -57,7 +74,10 @@ class OtpVerifier {
       return consumeTotp(id, state, code) ? Kind.TOTP : Kind.NONE;
     }
     String hash = AuthService.sha256(normalizeRecovery(input));
-    return totp.consumeRecoveryCode(id, hash, clock.instant()) ? Kind.RECOVERY : Kind.NONE;
+    // Mise à jour atomique : 1 une seule fois, 0 ensuite.
+    return recoveryCodes.consumeRecoveryCode(id, hash, Timestamps.utc(clock.instant())) == 1
+        ? Kind.RECOVERY
+        : Kind.NONE;
   }
 
   /**
@@ -89,7 +109,7 @@ class OtpVerifier {
   /** 10 nouveaux codes de secours en clair (renvoyés une seule fois) ; seuls les hachés restent. */
   List<String> issueRecoveryCodes(UUID id) {
     var now = clock.instant();
-    totp.retireRecoveryCodes(id, now);
+    recoveryCodes.retireRecoveryCodes(id, Timestamps.utc(now));
     List<String> codes = new ArrayList<>(RECOVERY_CODES);
     for (int i = 0; i < RECOVERY_CODES; i++) {
       StringBuilder sb = new StringBuilder(11);
@@ -100,7 +120,9 @@ class OtpVerifier {
         sb.append(RECOVERY_ALPHABET.charAt(random.nextInt(RECOVERY_ALPHABET.length())));
       }
       String code = sb.toString();
-      totp.insertRecoveryCode(id, AuthService.sha256(normalizeRecovery(code)), now);
+      recoveryCodes.save(
+          new TotpRecoveryCode(
+              UUID.randomUUID(), id, AuthService.sha256(normalizeRecovery(code)), now));
       codes.add(code);
     }
     return codes;

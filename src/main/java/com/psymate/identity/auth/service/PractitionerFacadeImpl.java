@@ -2,8 +2,8 @@ package com.psymate.identity.auth.service;
 
 import com.psymate.identity.api.PractitionerFacade;
 import com.psymate.identity.auth.repository.PractitionerRepository;
-import com.psymate.identity.persistence.PractitionerJpaRepository;
 import com.psymate.identity.preferences.Preferences;
+import com.psymate.identity.repository.PractitionerJpaRepository;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;

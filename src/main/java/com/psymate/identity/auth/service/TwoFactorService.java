@@ -5,11 +5,13 @@ import com.psymate.identity.auth.model.InvalidCredentialsException;
 import com.psymate.identity.auth.model.InvalidSecondFactorException;
 import com.psymate.identity.auth.model.PractitionerRow;
 import com.psymate.identity.auth.model.Totp;
+import com.psymate.identity.auth.model.TotpState;
 import com.psymate.identity.auth.model.TwoFactorStateException;
 import com.psymate.identity.auth.repository.PractitionerRepository;
-import com.psymate.identity.auth.repository.TotpRepository;
-import com.psymate.identity.auth.repository.TotpRepository.TotpState;
 import com.psymate.identity.auth.service.OtpVerifier.Kind;
+import com.psymate.identity.repository.PractitionerJpaRepository;
+import com.psymate.identity.repository.TotpRecoveryCodeJpaRepository;
+import com.psymate.shared.time.Timestamps;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -33,7 +35,8 @@ public class TwoFactorService {
   public record Enrollment(String secret, String otpauthUri) {}
 
   private final PractitionerRepository practitioners;
-  private final TotpRepository totp;
+  private final PractitionerJpaRepository jpa;
+  private final TotpRecoveryCodeJpaRepository recoveryCodes;
   private final TotpSecretCipher cipher;
   private final OtpVerifier otp;
   private final LoginAttemptLimiter limiter;
@@ -42,14 +45,16 @@ public class TwoFactorService {
 
   TwoFactorService(
       PractitionerRepository practitioners,
-      TotpRepository totp,
+      PractitionerJpaRepository jpa,
+      TotpRecoveryCodeJpaRepository recoveryCodes,
       TotpSecretCipher cipher,
       OtpVerifier otp,
       LoginAttemptLimiter limiter,
       PasswordEncoder encoder,
       Clock clock) {
     this.practitioners = practitioners;
-    this.totp = totp;
+    this.jpa = jpa;
+    this.recoveryCodes = recoveryCodes;
     this.cipher = cipher;
     this.otp = otp;
     this.limiter = limiter;
@@ -59,25 +64,26 @@ public class TwoFactorService {
 
   /** Vrai si la 2FA du praticien est active (garde de /api/admin/**, AdminTwoFactorFilter). */
   public boolean isEnabled(UUID id) {
-    return totp.find(id).enabled();
+    return otp.state(id).enabled();
   }
 
   /** Génère un secret en attente d'activation (rappel possible tant qu'il n'est pas vérifié). */
   @Transactional
   public Enrollment enable(UUID id) {
     PractitionerRow row = practitioners.findById(id).orElseThrow(InvalidCredentialsException::new);
-    if (totp.find(id).enabled()) {
+    if (otp.state(id).enabled()) {
       throw new TwoFactorStateException(ALREADY_ENABLED);
     }
     byte[] secret = Totp.newSecret();
-    totp.setPendingSecret(id, cipher.encrypt(secret, id), clock.instant());
+    byte[] encrypted = cipher.encrypt(secret, id);
+    jpa.findById(id).ifPresent(p -> p.startTotpEnrollment(encrypted, clock.instant()));
     return new Enrollment(Totp.base32(secret), Totp.otpauthUri(ISSUER, row.email(), secret));
   }
 
   /** Vérifie le premier code, active la 2FA et renvoie les 10 codes de secours (une fois). */
   @Transactional
   public List<String> verify(UUID id, String code, String ip) {
-    TotpState state = totp.find(id);
+    TotpState state = otp.state(id);
     if (state.enabled()) {
       throw new TwoFactorStateException(ALREADY_ENABLED);
     }
@@ -92,7 +98,7 @@ public class TwoFactorService {
     }
     limiter.reset(key);
     Instant now = clock.instant();
-    totp.activate(id, now);
+    jpa.findById(id).ifPresent(p -> p.activateTotp(now));
     List<String> codes = otp.issueRecoveryCodes(id);
     practitioners.insertSecurityEvent(id, "2fa_enabled", ip, null, now);
     return codes;
@@ -106,7 +112,7 @@ public class TwoFactorService {
     if ("admin".equals(row.role())) {
       throw new TwoFactorStateException(ADMIN_REQUIRED);
     }
-    TotpState state = totp.find(id);
+    TotpState state = otp.state(id);
     if (!state.enabled()) {
       throw new TwoFactorStateException(NOT_ENABLED);
     }
@@ -122,8 +128,9 @@ public class TwoFactorService {
     }
     limiter.reset(key);
     Instant now = clock.instant();
-    totp.clear(id, now);
-    totp.retireRecoveryCodes(id, now);
+    jpa.findById(id).ifPresent(p -> p.clearTotp(now));
+    // Les codes de secours restants sont marqués utilisés (rien n'est supprimé).
+    recoveryCodes.retireRecoveryCodes(id, Timestamps.utc(now));
     otp.forget(id);
     practitioners.insertSecurityEvent(id, "2fa_disabled", ip, null, now);
   }
@@ -131,7 +138,7 @@ public class TwoFactorService {
   /** Remplace les codes de secours par 10 nouveaux ; les anciens ne fonctionnent plus. */
   @Transactional
   public List<String> regenerateRecoveryCodes(UUID id, String ip) {
-    if (!totp.find(id).enabled()) {
+    if (!otp.state(id).enabled()) {
       throw new TwoFactorStateException(NOT_ENABLED);
     }
     List<String> codes = otp.issueRecoveryCodes(id);

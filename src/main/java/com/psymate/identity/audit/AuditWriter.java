@@ -1,6 +1,6 @@
 package com.psymate.identity.audit;
 
-import com.psymate.identity.persistence.SecurityEventJpaRepository;
+import com.psymate.identity.repository.SecurityEventJpaRepository;
 import com.psymate.shared.web.IpAddresses;
 import jakarta.annotation.PreDestroy;
 import java.time.ZoneOffset;

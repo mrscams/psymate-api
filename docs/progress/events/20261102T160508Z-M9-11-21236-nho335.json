@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-02T16:05:08.220Z",
+  "task": "M9-11",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 56 fusionnee dans main (0708c40) : directory range par role, DTO eclates",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

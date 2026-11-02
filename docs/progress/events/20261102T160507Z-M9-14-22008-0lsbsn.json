@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-02T16:05:07.178Z",
+  "task": "M9-14",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 54 fusionnee dans main (406395e) : linking range par role, DTO eclates, decision Q41",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

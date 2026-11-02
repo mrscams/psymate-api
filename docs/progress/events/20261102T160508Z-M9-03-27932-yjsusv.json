@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-02T16:05:08.804Z",
+  "task": "M9-03",
+  "agent": "claude",
+  "status": "in-progress",
+  "summary": "Partie 2/4 fusionnee (PR 55, 4ae45d0) : evenements de fusion dans vocabulary.api ; partie 3 en cours",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

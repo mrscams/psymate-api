@@ -1,6 +1,5 @@
 package com.psymate.identity.auth.service;
 
-import com.psymate.identity.auth.config.EmailConfirmationFilter;
 import com.psymate.identity.auth.model.AccountLockedException;
 import com.psymate.identity.auth.model.AccountNotSuspendedException;
 import com.psymate.identity.auth.model.AccountSuspendedException;
@@ -128,7 +127,7 @@ public class LoginService {
     }
 
     // Mot de passe correct : les états du compte peuvent maintenant être révélés.
-    if (EmailConfirmationFilter.PENDING.equals(row.verificationStatus())) {
+    if (PractitionerRow.EMAIL_PENDING.equals(row.verificationStatus())) {
       throw new EmailNotConfirmedException();
     }
     if (mode == Mode.APPEAL) {

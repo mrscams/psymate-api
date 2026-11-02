@@ -23,8 +23,8 @@ public class LoginAttemptLimiter {
   private static final int CLEANUP_THRESHOLD = 10_000;
 
   /** État d'une clé : échecs dans la fenêtre courante, fin de verrou éventuelle. */
-  public record State(int failures, Instant windowStart, Instant lockedUntil) {
-    public boolean locked(Instant now) {
+  record State(int failures, Instant windowStart, Instant lockedUntil) {
+    boolean locked(Instant now) {
       return lockedUntil != null && now.isBefore(lockedUntil);
     }
   }
@@ -32,12 +32,12 @@ public class LoginAttemptLimiter {
   private final Map<String, State> states = new ConcurrentHashMap<>();
   private final Clock clock;
 
-  public LoginAttemptLimiter(Clock clock) {
+  LoginAttemptLimiter(Clock clock) {
     this.clock = clock;
   }
 
   /** Durée restante du verrou si la clé est verrouillée. */
-  public Optional<Duration> remainingLock(String key) {
+  Optional<Duration> remainingLock(String key) {
     Instant now = clock.instant();
     State s = states.get(key);
     if (s == null) {
@@ -53,7 +53,7 @@ public class LoginAttemptLimiter {
   }
 
   /** Enregistre un échec et retourne l'état résultant. */
-  public State recordFailure(String key) {
+  State recordFailure(String key) {
     Instant now = clock.instant();
     if (states.size() > CLEANUP_THRESHOLD) {
       states.values().removeIf(s -> expired(s, now));

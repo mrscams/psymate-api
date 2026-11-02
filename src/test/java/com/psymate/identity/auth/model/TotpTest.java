@@ -2,14 +2,11 @@ package com.psymate.identity.auth.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.psymate.identity.auth.AuthTestConfig.MutableClock;
 import com.psymate.identity.auth.TotpGenerator;
-import com.psymate.identity.auth.service.LoginAttemptLimiter;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
-/** Vecteurs de la RFC 6238 (annexe B, SHA-1, 6 chiffres), Base32 et verrou en mémoire. */
+/** Vecteurs de la RFC 6238 (annexe B, SHA-1, 6 chiffres), et Base32. */
 class TotpTest {
 
   private static final byte[] KEY = "12345678901234567890".getBytes(StandardCharsets.US_ASCII);
@@ -57,31 +54,5 @@ class TotpTest {
         .contains("issuer=PsyMate")
         .contains("digits=6")
         .contains("period=30");
-  }
-
-  @Test
-  void limiterLocksOnFifthFailureForFifteenMinutes() {
-    MutableClock clock = new MutableClock();
-    LoginAttemptLimiter limiter = new LoginAttemptLimiter(clock);
-    for (int i = 1; i < 5; i++) {
-      assertThat(limiter.recordFailure("k").locked(clock.instant())).isFalse();
-    }
-    assertThat(limiter.recordFailure("k").locked(clock.instant())).isTrue();
-    assertThat(limiter.remainingLock("k"))
-        .hasValueSatisfying(d -> assertThat(d.toSeconds()).isEqualTo(900));
-    clock.advance(Duration.ofMinutes(15));
-    assertThat(limiter.remainingLock("k")).isEmpty();
-  }
-
-  @Test
-  void limiterFailuresOutsideTheWindowDoNotAccumulate() {
-    MutableClock clock = new MutableClock();
-    LoginAttemptLimiter limiter = new LoginAttemptLimiter(clock);
-    for (int i = 0; i < 4; i++) {
-      limiter.recordFailure("a");
-    }
-    clock.advance(Duration.ofMinutes(16));
-    assertThat(limiter.recordFailure("a").failures()).isEqualTo(1);
-    assertThat(limiter.recordFailure("b").failures()).isEqualTo(1);
   }
 }

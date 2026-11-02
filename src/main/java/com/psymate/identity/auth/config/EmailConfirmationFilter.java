@@ -26,8 +26,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
  */
 public class EmailConfirmationFilter extends OncePerRequestFilter {
 
-  public static final String PENDING = "email_pending";
-
   private final AuthService authService;
   private final SecurityContextRepository contextRepository;
 
@@ -47,9 +45,11 @@ public class EmailConfirmationFilter extends OncePerRequestFilter {
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws ServletException, IOException {
     Optional<CurrentPractitioner> current = CurrentPractitioner.get();
-    if (current.isPresent() && PENDING.equals(current.get().verificationStatus())) {
+    if (current.isPresent()
+        && PractitionerRow.EMAIL_PENDING.equals(current.get().verificationStatus())) {
       Optional<PractitionerRow> fresh = authService.find(current.get().id());
-      if (fresh.isPresent() && !PENDING.equals(fresh.get().verificationStatus())) {
+      if (fresh.isPresent()
+          && !PractitionerRow.EMAIL_PENDING.equals(fresh.get().verificationStatus())) {
         refresh(fresh.get(), contextRepository, request, response);
       } else {
         response.setStatus(HttpStatus.FORBIDDEN.value());

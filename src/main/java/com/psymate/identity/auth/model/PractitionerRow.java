@@ -15,4 +15,8 @@ public record PractitionerRow(
     String profession,
     String role,
     String verificationStatus,
-    Map<String, Object> preferences) {}
+    Map<String, Object> preferences) {
+
+  /** Statut d'un compte dont l'adresse e-mail n'est pas confirmée (fiche 25). */
+  public static final String EMAIL_PENDING = "email_pending";
+}

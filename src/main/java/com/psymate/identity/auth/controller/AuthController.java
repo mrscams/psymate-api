@@ -341,7 +341,7 @@ class AuthController {
         row.displayName(),
         row.profession(),
         row.verificationStatus(),
-        !EmailConfirmationFilter.PENDING.equals(row.verificationStatus()));
+        !PractitionerRow.EMAIL_PENDING.equals(row.verificationStatus()));
   }
 
   @PostMapping("/login")

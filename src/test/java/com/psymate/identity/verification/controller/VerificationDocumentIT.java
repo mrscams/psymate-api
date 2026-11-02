@@ -1,4 +1,4 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
@@ -12,6 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.identity.verification.VerificationTestConfig;
+import com.psymate.identity.verification.service.DocumentSanitizerTest;
+import com.psymate.identity.verification.service.StorageService;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;

@@ -1,11 +1,12 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.controller;
 
 import com.psymate.identity.api.CurrentPractitioner;
-import com.psymate.identity.verification.VerificationDtos.DocumentDto;
-import com.psymate.identity.verification.VerificationDtos.ProfessionalInfoDto;
-import com.psymate.identity.verification.VerificationDtos.ProfessionalInfoRequest;
-import com.psymate.identity.verification.VerificationDtos.SignedUrlDto;
-import com.psymate.identity.verification.VerificationDtos.VerificationDto;
+import com.psymate.identity.verification.dto.DocumentDto;
+import com.psymate.identity.verification.dto.ProfessionalInfoDto;
+import com.psymate.identity.verification.dto.ProfessionalInfoRequest;
+import com.psymate.identity.verification.dto.SignedUrlDto;
+import com.psymate.identity.verification.dto.VerificationDto;
+import com.psymate.identity.verification.service.VerificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;

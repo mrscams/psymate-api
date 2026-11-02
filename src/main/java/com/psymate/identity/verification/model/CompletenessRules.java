@@ -1,4 +1,4 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.model;
 
 import java.util.Collection;
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.Map;
  * ADELI/RPPS (type {@code registration}) est recommandée pour les psychologues et les psychiatres,
  * une certification pour les coachs ; une pièce recommandée n'est jamais bloquante.
  */
-final class CompletenessRules {
+public final class CompletenessRules {
 
   /** Types obligatoires pour toutes les professions (G Q14). */
   static final List<String> REQUIRED = List.of("diploma", "identity");
@@ -26,12 +26,12 @@ final class CompletenessRules {
   private CompletenessRules() {}
 
   /** Types obligatoires absents du dossier, dans l'ordre de {@link #REQUIRED}. */
-  static List<String> missing(String profession, Collection<String> presentTypes) {
+  public static List<String> missing(String profession, Collection<String> presentTypes) {
     return REQUIRED.stream().filter(t -> !presentTypes.contains(t)).toList();
   }
 
   /** Types recommandés absents du dossier (affichés en encart « conseillé »). */
-  static List<String> recommended(String profession, Collection<String> presentTypes) {
+  public static List<String> recommended(String profession, Collection<String> presentTypes) {
     return RECOMMENDED.getOrDefault(profession, List.of()).stream()
         .filter(t -> !presentTypes.contains(t))
         .toList();

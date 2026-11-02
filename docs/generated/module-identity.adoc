@@ -14,7 +14,7 @@ _Services_
 
 _Others_
 
-* `c.p.i.api.EncryptedStorageFacade` (via `c.p.i.verification.EncryptedStorageFacadeImpl`)
+* `c.p.i.api.EncryptedStorageFacade` (via `c.p.i.verification.service.EncryptedStorageFacadeImpl`)
 |Bean references
 |* `c.p.e.api.DomainEventPublisher` (in Events)
 |===

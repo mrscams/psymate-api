@@ -1,5 +1,7 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.controller;
 
+import com.psymate.identity.verification.model.VerificationException;
+import com.psymate.identity.verification.service.VerificationMessages;
 import com.psymate.shared.problem.AdviceOrder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

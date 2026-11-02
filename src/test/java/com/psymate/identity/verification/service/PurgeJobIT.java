@@ -1,7 +1,8 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.psymate.identity.verification.VerificationTestConfig;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Duration;

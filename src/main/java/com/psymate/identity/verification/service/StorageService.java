@@ -1,4 +1,4 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.service;
 
 /**
  * Stockage d'objets opaques (déjà chiffrés par l'appelant). Dev : disque local ; bêta : décidé avec

@@ -1,4 +1,4 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.service;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;

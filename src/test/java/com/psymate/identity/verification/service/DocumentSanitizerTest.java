@@ -1,8 +1,9 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.psymate.identity.verification.model.VerificationException;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -10,9 +11,9 @@ import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
-class DocumentSanitizerTest {
+public class DocumentSanitizerTest {
 
-  static byte[] jpegWithExif() throws Exception {
+  public static byte[] jpegWithExif() throws Exception {
     BufferedImage img = new BufferedImage(40, 30, BufferedImage.TYPE_INT_RGB);
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     ImageIO.write(img, "jpeg", out);

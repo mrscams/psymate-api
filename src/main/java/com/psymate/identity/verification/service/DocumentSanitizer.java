@@ -1,5 +1,6 @@
-package com.psymate.identity.verification;
+package com.psymate.identity.verification.service;
 
+import com.psymate.identity.verification.model.VerificationException;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

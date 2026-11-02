@@ -20,7 +20,7 @@ import java.util.UUID;
  * courante, elle détecte une fiche modifiée sans que {@code clinical_rev} bouge. {@code facts},
  * {@code activeSituations} et {@code drafts} ne dépendent pas de la fenêtre ; {@code windows}
  * porte, pour chacune des clés {@code 30d}, {@code 90d} et {@code 12m}, la tendance et les émotions
- * dominantes. Le contrôleur en extrait la fenêtre demandée.
+ * dominantes. Le service en extrait la fenêtre demandée.
  *
  * <p>M4-06 ajoute, indépendamment de la fenêtre : {@code narrativeFacts} (données du résumé, jamais
  * de phrase : le texte se compose à la lecture dans la langue de la requête), {@code feelingPoints}

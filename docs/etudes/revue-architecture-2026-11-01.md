@@ -626,10 +626,11 @@ search/
 overview/
   controller/   OverviewController, OverviewExceptionHandler, OverviewMessages, OverviewRequestException
   dto/          OverviewDto et ses 19 blocs, un fichier par record (ex-OverviewDtos)
-  service/      OverviewService, OverviewListener, NarrativeComposer, OverviewProjector (il lit le SQL et
-                construit les DTO ; à scinder plus tard s'il le faut), OverviewPayload, TrendCalculator,
-                FeelingsCalculator (ex-FeelingsAssembler : il calcule un bloc de la projection, ce n'est pas un DTO)
-                (M9-08, règle 3 : ils construisent ou portent des DTO, que model ne peut pas référencer)
+  service/      OverviewService, OverviewListener, NarrativeComposer
+                + OverviewProjector, OverviewPayload, TrendCalculator, FeelingsCalculator (M9-08, règle 3 : ils
+                construisent ou portent des DTO, que model ne peut pas référencer ; OverviewProjector lit aussi
+                le SQL, à scinder plus tard s'il le faut ; FeelingsCalculator, ex-FeelingsAssembler, calcule un
+                bloc de la projection, ce n'est pas un DTO)
   repository/   OverviewRepository (l'activité récente sort en RecentEntry, le service en fait le DTO)
   model/        OverviewWindow, NarrativeFacts, NarrativeCalculator
 ```

@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-02T13:02:06.452Z",
+  "task": "M9-02",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 50 fusionnee dans main (3b5798c) : gardes par annotation, technologie, tables, dossiers par role, DTO, Documenter, it-slices en **",
+  "notes": "CI main verte apres les fusions de 49 et 50",
+  "next": "M9-03, M9-05, M9-06, M9-07 et M9-12 peuvent demarrer",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

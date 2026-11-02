@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T13:02:05.877Z",
+  "task": "M9-04",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 49 fusionnee dans main (42d669b) : PatientAccessException, FieldProblem unique, garde ApiBoundaryTests",
+  "next": "M9-09 (patients) et M9-13 (clinical) debloquees",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

@@ -8,6 +8,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.vocabulary.api.EmotionMergeReverted;
+import com.psymate.vocabulary.api.EmotionsMerged;
+import com.psymate.vocabulary.api.TagsMerged;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -27,6 +30,8 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -42,13 +47,14 @@ import tools.jackson.databind.json.JsonMapper;
  * production, pour que l'index de recherche et la vue d'ensemble soient calculés par leurs abonnés
  * avant la fusion.
  *
- * <p>État au 2 novembre 2026 (partie 1/4) : les tables sont réécrites en SQL natif par vocabulary,
- * mais sans événement ni décalage de {@code clinical_rev} ; la recherche et la vue d'ensemble
- * restent périmées. Les assertions attendues sont en commentaire « ATTENDU », remplacées par une
- * assertion « ÉTAT ACTUEL » qui sera inversée à la partie 3 (abonnés des modules propriétaires).
- * Elles sont regroupées dans {@code assertFollowsMerge} et {@code assertEmotionServed}, déjà
- * exécutées une fois après {@code simulateOwnerSubscribers} pour prouver qu'elles sont
- * atteignables.
+ * <p>État au 2 novembre 2026 (partie 2/4) : vocabulary publie {@code EmotionsMerged}, {@code
+ * EmotionMergeReverted} et {@code TagsMerged}, sans abonné encore ; les tables sont toujours
+ * réécrites en SQL natif par vocabulary, sans décalage de {@code clinical_rev} ; la recherche et la
+ * vue d'ensemble restent périmées. Les assertions attendues sont en commentaire « ATTENDU »,
+ * remplacées par une assertion « ÉTAT ACTUEL » qui sera inversée à la partie 3 (abonnés des modules
+ * propriétaires). Elles sont regroupées dans {@code assertFollowsMerge} et {@code
+ * assertEmotionServed}, déjà exécutées une fois après {@code simulateOwnerSubscribers} pour prouver
+ * qu'elles sont atteignables.
  *
  * <p>La vue d'ensemble suit l'horloge réelle : si minuit UTC tombait entre deux lectures, la
  * projection serait recalculée et une assertion « ÉTAT ACTUEL » échouerait (risque accepté,
@@ -58,12 +64,14 @@ import tools.jackson.databind.json.JsonMapper;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(VocabularyTestConfig.class)
+@RecordApplicationEvents
 class VocabularyMergeIT {
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
+  @Autowired private ApplicationEvents events;
 
   private RequestPostProcessor auth;
   private UUID tenant;
@@ -210,6 +218,97 @@ class VocabularyMergeIT {
     // justes par accident, car rien n'a été recalculé depuis la création de l'entrée.
     assertThat(clinicalRev()).isEqualTo(revAfterMerge);
     assertEmotionServed("lassitude", "tristesse", lassitude, feeling);
+  }
+
+  // ---- événements (partie 2/4)
+
+  @Test
+  void anEmotionMergeAndItsUndoPublishTheirEvents() throws Exception {
+    String lassitude = createEmotion("Lassitude", "sadness");
+    String merge =
+        body(
+            send(
+                    MockMvcRequestBuilders.post("/api/me/emotions/{code}/merge", lassitude),
+                    Map.of("targetCode", "sadness"))
+                .andExpect(status().isOk()));
+    UUID mergeId = UUID.fromString(JsonPath.read(merge, "$.id"));
+
+    assertThat(events.stream(EmotionsMerged.class))
+        .singleElement()
+        .satisfies(
+            e -> {
+              assertThat(e.getTenantId()).isEqualTo(tenant);
+              assertThat(e.getMergeId()).isEqualTo(mergeId);
+              assertThat(e.getPractitionerId()).isEqualTo(me);
+              assertThat(e.getSourceCode()).isEqualTo(lassitude);
+              assertThat(e.getTargetCode()).isEqualTo("sadness");
+            });
+    assertThat(events.stream(EmotionMergeReverted.class)).isEmpty();
+
+    send(MockMvcRequestBuilders.post("/api/me/emotions/merges/{id}/undo", mergeId), Map.of())
+        .andExpect(status().isOk());
+
+    assertThat(events.stream(EmotionMergeReverted.class))
+        .singleElement()
+        .satisfies(
+            e -> {
+              assertThat(e.getTenantId()).isEqualTo(tenant);
+              assertThat(e.getMergeId()).isEqualTo(mergeId);
+              assertThat(e.getPractitionerId()).isEqualTo(me);
+              assertThat(e.getSourceCode()).isEqualTo(lassitude);
+              assertThat(e.getTargetCode()).isEqualTo("sadness");
+            });
+    assertThat(events.stream(EmotionsMerged.class)).hasSize(1);
+  }
+
+  @Test
+  void aTagMergePublishesTagsMerged() throws Exception {
+    UUID boulot = createTag("boulot");
+    UUID travail = createTag("travail");
+    send(
+            MockMvcRequestBuilders.post("/api/tags/{id}/merge", boulot),
+            Map.of("targetId", travail.toString()))
+        .andExpect(status().isOk());
+
+    assertThat(events.stream(TagsMerged.class))
+        .singleElement()
+        .satisfies(
+            e -> {
+              assertThat(e.getTenantId()).isEqualTo(tenant);
+              assertThat(e.getPractitionerId()).isEqualTo(me);
+              assertThat(e.getSourceTagId()).isEqualTo(boulot);
+              assertThat(e.getTargetTagId()).isEqualTo(travail);
+            });
+  }
+
+  @Test
+  void refusedMergesAndUndosPublishNothing() throws Exception {
+    String lassitude = createEmotion("Lassitude", "sadness");
+    UUID boulot = createTag("boulot");
+    send(
+            MockMvcRequestBuilders.post("/api/me/emotions/{code}/merge", lassitude),
+            Map.of("targetCode", "inexistante"))
+        .andExpect(status().isNotFound());
+    send(
+            MockMvcRequestBuilders.post("/api/tags/{id}/merge", boulot),
+            Map.of("targetId", boulot.toString()))
+        .andExpect(status().is4xxClientError());
+    String merge =
+        body(
+            send(
+                    MockMvcRequestBuilders.post("/api/me/emotions/{code}/merge", lassitude),
+                    Map.of("targetCode", "sadness"))
+                .andExpect(status().isOk()));
+    String mergeId = JsonPath.read(merge, "$.id");
+    jdbc.update(
+        "update emotion_merge set undo_until = now() - interval '1 second' where id = ?::uuid",
+        mergeId);
+    send(MockMvcRequestBuilders.post("/api/me/emotions/merges/{id}/undo", mergeId), Map.of())
+        .andExpect(status().isConflict());
+
+    assertThat(events.stream(EmotionsMerged.class)).hasSize(1);
+    assertThat(events.stream(EmotionMergeReverted.class)).isEmpty();
+    assertThat(events.stream(TagsMerged.class)).isEmpty();
   }
 
   // ---- attendus

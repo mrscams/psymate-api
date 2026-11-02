@@ -24,8 +24,8 @@ public class ExportJob implements Persistable<UUID> {
 
   public static final String QUEUED = "queued";
   public static final String RUNNING = "running";
-  public static final String DONE = "done";
-  public static final String FAILED = "failed";
+  static final String DONE = "done";
+  static final String FAILED = "failed";
 
   @Id private UUID id;
 

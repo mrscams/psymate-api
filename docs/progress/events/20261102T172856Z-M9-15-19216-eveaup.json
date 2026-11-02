@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T17:28:56.070Z",
+  "task": "M9-15",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 58 fusionnee dans main (c530bcc) : identity.verification range par role",
+  "next": "M9-16 (identity.admin) peut demarrer",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

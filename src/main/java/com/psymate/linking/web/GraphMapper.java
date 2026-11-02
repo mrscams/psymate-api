@@ -1,6 +1,6 @@
 package com.psymate.linking.web;
 
-import com.psymate.linking.api.GraphView;
+import com.psymate.linking.application.GraphView;
 import com.psymate.linking.web.GraphDtos.GraphDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;

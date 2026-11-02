@@ -1,4 +1,4 @@
-package com.psymate.linking.api;
+package com.psymate.linking.application;
 
 import java.util.UUID;
 

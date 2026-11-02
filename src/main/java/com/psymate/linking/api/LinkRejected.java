@@ -1,6 +1,7 @@
 package com.psymate.linking.api;
 
 import com.psymate.events.api.DomainEvent;
+import com.psymate.shared.Reserved;
 import java.util.UUID;
 
 /**
@@ -12,6 +13,9 @@ import java.util.UUID;
  * {@code superseded} et n'émet aucun événement. La classe existe dès la V1 pour que l'outbox et les
  * abonnés futurs (A4.9, M7-05) disposent du type d'événement.
  */
+@Reserved(
+    consumer = "V2, suggestions de l'IA (module ai)",
+    reason = "Type d'événement prêt pour l'outbox ; jamais publié en V1")
 public class LinkRejected extends DomainEvent {
 
   private UUID linkId;

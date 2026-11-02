@@ -1,9 +1,5 @@
 package com.psymate.linking.application;
 
-import com.psymate.linking.api.GraphEdge;
-import com.psymate.linking.api.GraphNode;
-import com.psymate.linking.api.GraphSuperNode;
-import com.psymate.linking.api.GraphView;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;

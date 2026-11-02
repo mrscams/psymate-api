@@ -705,22 +705,17 @@ class EntryServiceIT {
   void facadeAnswersForOwnedEntries() {
     UUID id = service.create(patient, note("facade"));
     UUID otherPatient = fx.newPatient(null);
-    UUID otherSession = service.create(otherPatient, sessionCommand());
     assertThat(facade.exists(id)).isTrue();
     assertThat(facade.exists(UUID.randomUUID())).isFalse();
     assertThat(facade.belongsToPatient(id, patient)).isTrue();
     assertThat(facade.belongsToPatient(id, otherPatient)).isFalse();
     assertThat(facade.typeOf(id)).contains("note");
-    assertThat(facade.sameOwnedPatient(id, session)).isTrue();
-    assertThat(facade.sameOwnedPatient(id, otherSession)).isFalse();
     assertThat(facade.currentVersionOf(id))
         .hasValueSatisfying(
             v -> {
               assertThat(v.version()).isEqualTo(1);
               assertThat(v.body()).isEqualTo("facade");
             });
-    fx.authenticate(fx.newPractitioner());
-    assertThat(facade.sameOwnedPatient(id, session)).as("autre praticien").isFalse();
   }
 
   @Test
@@ -731,7 +726,6 @@ class EntryServiceIT {
     assertThat(facade.belongsToPatient(id, patient)).isFalse();
     assertThat(facade.typeOf(id)).isEmpty();
     assertThat(facade.currentVersionOf(id)).isEmpty();
-    assertThat(facade.sameOwnedPatient(id, session)).isFalse();
     SecurityContextHolder.clearContext();
     assertThat(facade.exists(id)).as("sans principal").isFalse();
   }

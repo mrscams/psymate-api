@@ -3,7 +3,6 @@ package com.psymate.clinical.application;
 import com.psymate.clinical.api.EntryFacade;
 import com.psymate.clinical.api.EntrySummary;
 import com.psymate.clinical.api.EntryVersionView;
-import com.psymate.clinical.api.SessionView;
 import com.psymate.clinical.domain.Entry;
 import com.psymate.clinical.domain.EntryType;
 import com.psymate.clinical.persistence.EntryRepository;
@@ -43,21 +42,6 @@ class EntryFacadeService implements EntryFacade {
     return repo.patientOf(entryId).filter(p -> patients.ownedBy(p, me.get().id()));
   }
 
-  /** Le patient appartient au praticien courant. */
-  private boolean ownedByMe(UUID patientId) {
-    return CurrentPractitioner.get().filter(me -> patients.ownedBy(patientId, me.id())).isPresent();
-  }
-
-  @Override
-  public Optional<SessionView> currentSession(UUID patientId) {
-    return ownedByMe(patientId) ? repo.currentSession(patientId) : Optional.empty();
-  }
-
-  @Override
-  public Optional<SessionView> openSessionOf(UUID patientId) {
-    return ownedByMe(patientId) ? repo.openSession(patientId) : Optional.empty();
-  }
-
   @Override
   public boolean exists(UUID entryId) {
     return ownedPatientOf(entryId).isPresent();
@@ -71,12 +55,6 @@ class EntryFacadeService implements EntryFacade {
   @Override
   public Optional<String> typeOf(UUID entryId) {
     return ownedPatientOf(entryId).flatMap(p -> repo.typeOf(entryId)).map(EntryType::code);
-  }
-
-  @Override
-  public boolean sameOwnedPatient(UUID entryA, UUID entryB) {
-    Optional<UUID> a = ownedPatientOf(entryA);
-    return a.isPresent() && a.equals(ownedPatientOf(entryB));
   }
 
   @Override

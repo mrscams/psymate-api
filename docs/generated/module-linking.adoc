@@ -2,11 +2,6 @@
 |===
 |Base package
 |`com.psymate.linking`
-|Spring components
-|_Services_
-
-* `c.p.l.api.GraphQueryFacade` (via `c.p.l.application.GraphQueryService`)
-* `c.p.l.api.LinkFacade` (via `c.p.l.application.LinkFacadeService`)
 |Bean references
 |* `c.p.c.api.EntryFacade` (in Clinical)
 * `c.p.e.api.DomainEventPublisher` (in Events)

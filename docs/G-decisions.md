@@ -1,6 +1,6 @@
 # Document G – Décisions prises sur les questions ouvertes
 
-29 octobre 2026 · Version 1.1 (complétée le 1er novembre 2026, puis le 2 novembre 2026) · Ce document tranche les 30 questions de la Partie 1 du runbook F (Q1–Q28) et de E7 (Q29, Q30), complétées ensuite par Q31 (G3), Q32 (G6) et Q33–Q38 (G7, revue d'architecture du 1er novembre 2026). Chaque agent applique ces décisions ; quand un autre document dit autre chose, **G l'emporte**. Les documents A, B, C, D, E et F ont été écrits avant ces décisions : les écarts connus sont listés en G5.
+29 octobre 2026 · Version 1.1 (complétée le 1er novembre 2026, puis le 2 novembre 2026) · Ce document tranche les 30 questions de la Partie 1 du runbook F (Q1–Q28) et de E7 (Q29, Q30), complétées ensuite par Q31 (G3), Q32 (G6) et Q33–Q40 (G7, revue d'architecture du 1er novembre 2026). Chaque agent applique ces décisions ; quand un autre document dit autre chose, **G l'emporte**. Les documents A, B, C, D, E et F ont été écrits avant ces décisions : les écarts connus sont listés en G5.
 
 ## G1. Identité du produit et des dépôts
 
@@ -77,7 +77,7 @@
 
 ## G7. Architecture interne et règles révisées (2 novembre 2026)
 
-Décisions prises sur la revue d'architecture du 1er novembre 2026 (remises en cause R1 à R6, questions Q6 et Q7 de la revue). Elles s'appliquent par les tâches M9 du plan (C8).
+Décisions prises sur la revue d'architecture du 1er novembre 2026 (remises en cause R1 à R6, questions Q6 et Q7 de la revue), puis Q2 et Q9 de la revue (Q39, Q40) pour M9-06. Elles s'appliquent par les tâches M9 du plan (C8).
 
 | # | Décision |
 | --- | --- |
@@ -87,3 +87,5 @@ Décisions prises sur la revue d'architecture du 1er novembre 2026 (remises en c
 | Q36 | **Calendrier.** Tout le plan de restructuration (M9-01 à M9-20) est lancé maintenant, avant la V1 web. Pendant la restructuration d'un module, aucune tâche backend fonctionnelle ne touche ce module. M9-02 (motifs `**` des tranches d'IT) est fusionnée avant le premier déplacement de fichier. |
 | Q37 | **Suppression physique.** Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `entry_version`, `link` et les tables de détail courantes. Peuvent l'être : les tables d'association (`entry_tag`, `patient_tag`), les purges planifiées (`contact_request`, `spring_session`, fichiers d'export et justificatifs, dont les lignes restent) et les sessions. Chaque table concernée est listée en E (« Suppressions physiques autorisées »). Précise la règle « rien n'est supprimé physiquement » de CLAUDE.md et A4.8. |
 | Q38 | **SQL natif dans un module JPA.** Il passe par des fragments Spring Data (`*NativeQueries` + `EntityManager`), pour garder une seule unité de travail par module ; un `UPDATE` natif suivi d'une lecture JPA impose un `refresh`. `JdbcClient` est réservé aux modules et sous-domaines non JPA : search, overview, graphe et timeline (linking, clinical), et la recherche publique de l'annuaire (directory). Précise Q32, dont le « keyset admin » reste en `EntityManager` natif. |
+| Q39 | **`GraphQueryFacade`** (revue Q2, ARCH-07 ; tranchée le 2 novembre 2026, M9-06). Ni overview ni l'IA V2 ne la consomment : l'IA écrit des liens `proposed` dans `link` et lit les événements. La façade est supprimée et `GraphQueryService` reste interne à linking, avec ses records `Graph*`. Si la V2 a besoin de lire le graphe, elle ouvrira une façade étroite dans `linking.api` à ce moment. |
+| Q40 | **Événements sans abonné** (revue Q9, ARCH-19 ; tranchée le 2 novembre 2026, M9-06). `PractitionerRegistered`, `PractitionerApproved`, `VerificationSubmitted`, `PreferencesChanged`, `PatientArchived`, `ProfilePublished` et `ProfileUnpublished` **restent publiés dès la V1** comme points d'ancrage pour la V2 (A4.9, CLAUDE.md : ne pas casser les hooks), et sont annotés `@Reserved` (`shared.Reserved`). `LinkRejected`, jamais publié en V1, l'est aussi. M9-06 annote ceux de directory et de linking ; ceux d'identity (M9-18) et de patients (M9-09) sont annotés par la tâche de restructuration de leur module, d'ici là ils figurent dans la liste d'exceptions de la garde `ApiUsageTests`. |

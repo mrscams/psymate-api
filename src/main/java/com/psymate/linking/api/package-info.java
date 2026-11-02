@@ -1,4 +1,4 @@
-/** API publique du module linking : façade de lecture des liens et événements de lien. */
+/** API publique du module linking : événements de lien. Le graphe reste interne (G Q39). */
 @NamedInterface("api")
 package com.psymate.linking.api;
 

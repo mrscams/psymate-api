@@ -5,9 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.psymate.PostgresTestConfig;
 import com.psymate.clinical.application.EntryService;
 import com.psymate.clinical.domain.EntryType;
-import com.psymate.linking.api.GraphQuery;
-import com.psymate.linking.api.GraphQueryFacade;
-import com.psymate.linking.api.GraphView;
+import com.psymate.linking.application.GraphQuery;
+import com.psymate.linking.application.GraphQueryService;
+import com.psymate.linking.application.GraphView;
 import com.psymate.linking.persistence.GraphRepository;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,7 +49,7 @@ class GraphPerfIT {
   private static final long HARD_LIMIT_MS = 5_000;
   private static final String[] LINK_TYPES = {"triggers", "co_occurs", "follows"};
 
-  @Autowired private GraphQueryFacade graph;
+  @Autowired private GraphQueryService graph;
   @Autowired private GraphRepository graphRepository;
   @Autowired private EntryService entries;
   @Autowired private JdbcTemplate jdbc;

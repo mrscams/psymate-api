@@ -13,7 +13,6 @@ import com.psymate.clinical.application.EntryService;
 import com.psymate.clinical.domain.EntryType;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.linking.api.LinkAccepted;
-import com.psymate.linking.api.LinkFacade;
 import com.psymate.linking.api.LinkRejected;
 import com.psymate.linking.application.LinkService;
 import com.psymate.linking.domain.Link;
@@ -75,7 +74,6 @@ class LinkServiceIT {
   }
 
   @Autowired private LinkService links;
-  @Autowired private LinkFacade linkFacade;
   @Autowired private EntryService entries;
   @Autowired private JdbcTemplate jdbc;
   @Autowired private DomainEventPublisher publisher;
@@ -160,18 +158,18 @@ class LinkServiceIT {
   }
 
   @Test
-  void createdLinksAreReadableThroughTheFacade() {
+  void createdLinksAreReadableThroughTheService() {
     Link link = links.create(event, feeling, "triggers", null);
 
-    assertThat(linkFacade.countFor(event)).isEqualTo(1);
-    assertThat(linkFacade.acceptedLinksOf(feeling))
+    assertThat(links.acceptedLinksOf(event)).hasSize(1);
+    assertThat(links.acceptedLinksOf(feeling))
         .singleElement()
         .satisfies(
             v -> {
               assertThat(v.id()).isEqualTo(link.id());
               assertThat(v.sourceId()).isEqualTo(event);
               assertThat(v.targetId()).isEqualTo(feeling);
-              assertThat(v.provenance()).isEqualTo("manual");
+              assertThat(v.provenance().code()).isEqualTo("manual");
               assertThat(v.authorId()).isEqualTo(fx.practitioner);
             });
   }
@@ -285,8 +283,6 @@ class LinkServiceIT {
     assertThat(linkRows()).isZero();
     assertThat(fx.linkCount(strangerEntry)).isZero();
     assertThat(fx.linkCount(event)).isZero();
-    assertThat(linkFacade.countFor(strangerEntry)).isZero();
-    assertThat(linkFacade.acceptedLinksOf(strangerEntry)).isEmpty();
   }
 
   @Test
@@ -375,7 +371,7 @@ class LinkServiceIT {
     assertThat(fx.linkCount(feeling)).isEqualTo(1);
     assertThat(fx.clinicalRev(patient)).isEqualTo(revBefore + 1);
     assertThat(publications(LinkAccepted.class, replacement.id())).isEqualTo(1);
-    assertThat(linkFacade.acceptedLinksOf(event))
+    assertThat(links.acceptedLinksOf(event))
         .extracting(v -> v.id())
         .containsExactly(replacement.id());
   }
@@ -485,7 +481,7 @@ class LinkServiceIT {
     assertThat(fx.linkCount(event)).isZero();
     assertThat(fx.linkCount(feeling)).isZero();
     assertThat(fx.clinicalRev(patient)).isEqualTo(revBefore + 1);
-    assertThat(linkFacade.acceptedLinksOf(event)).isEmpty();
+    assertThat(links.acceptedLinksOf(event)).isEmpty();
     // Rien n'est supprimé physiquement, et LinkRejected est réservé à l'IA (V2).
     assertThat(linkRows()).isEqualTo(1);
     assertThat(publications(LinkRejected.class, link.id())).isZero();

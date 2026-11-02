@@ -111,16 +111,6 @@ public class LinkRepository {
         .list();
   }
 
-  /** Nombre de liens acceptés dont l'entrée est source ou cible. */
-  public int countAccepted(UUID entryId) {
-    return jdbc.sql(
-            "select count(*) from link where status = 'accepted'"
-                + " and (source_id = :e or target_id = :e)")
-        .param("e", entryId)
-        .query(Integer.class)
-        .single();
-  }
-
   /** Liens vivants (proposed ou accepted) de l'entrée, verrouillés, dans un ordre stable. */
   public List<Link> activeLinksOfForUpdate(UUID entryId) {
     return jdbc.sql(

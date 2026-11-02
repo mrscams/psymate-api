@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.psymate.clinical.ClinicalTestConfig.MutableClock;
 import com.psymate.clinical.api.EntryCorrected;
 import com.psymate.clinical.api.EntryCreated;
-import com.psymate.clinical.api.EntryFacade;
 import com.psymate.clinical.api.SessionView;
 import com.psymate.clinical.application.CloseSessionCommand;
 import com.psymate.clinical.application.ContactCommand;
@@ -19,6 +18,7 @@ import com.psymate.clinical.domain.ClinicalError;
 import com.psymate.clinical.domain.ClinicalException;
 import com.psymate.clinical.domain.EntryType;
 import com.psymate.clinical.domain.TimeSpec;
+import com.psymate.clinical.persistence.EntryRepository;
 import com.psymate.patients.api.PatientAccessException;
 import java.time.Duration;
 import java.time.Instant;
@@ -56,7 +56,7 @@ class SessionServiceIT {
 
   @Autowired private SessionService sessions;
   @Autowired private EntryService entries;
-  @Autowired private EntryFacade facade;
+  @Autowired private EntryRepository repo;
   @Autowired private JdbcTemplate jdbc;
   @Autowired private MutableClock clock;
   @Autowired private ApplicationEvents events;
@@ -274,7 +274,7 @@ class SessionServiceIT {
     assertThat(view.occurredFrom()).isEqualTo(T0.plus(Duration.ofDays(1)));
     assertThat(view.closedAt()).isNull();
     assertThat(view.durationMin()).isNull();
-    assertThat(facade.openSessionOf(patient)).map(SessionView::id).contains(open);
+    assertThat(repo.openSession(patient)).map(SessionView::id).contains(open);
   }
 
   @Test
@@ -291,7 +291,7 @@ class SessionServiceIT {
     assertThat(view.id()).isEqualTo(later);
     assertThat(view.closedAt()).isNotNull();
     assertThat(view.durationMin()).isEqualTo(50);
-    assertThat(facade.openSessionOf(patient)).isEmpty();
+    assertThat(repo.openSession(patient)).isEmpty();
 
     // un contact plus récent qu'une séance est renvoyé
     UUID contact =
@@ -312,14 +312,14 @@ class SessionServiceIT {
     assertThat(intake.kind()).isEqualTo("intake");
     assertThat(intake.closedAt()).isNull();
     assertThat(intake.occurredFrom()).isEqualTo(intakeAt);
-    assertThat(facade.openSessionOf(patient)).as("l'accueil n'est jamais ouverte").isEmpty();
+    assertThat(repo.openSession(patient)).as("l'accueil n'est jamais ouverte").isEmpty();
 
     // l'accueil, ouvert par construction, ne bloque pas le démarrage d'une séance
     UUID session = start();
     SessionView view = sessions.current(patient).orElseThrow();
     assertThat(view.id()).isEqualTo(session);
     assertThat(view.kind()).isEqualTo("session");
-    assertThat(facade.openSessionOf(patient)).map(SessionView::id).contains(session);
+    assertThat(repo.openSession(patient)).map(SessionView::id).contains(session);
 
     // une fois la séance clôturée, elle prime encore sur l'accueil
     sessions.close(session, new CloseSessionCommand(40, null));
@@ -329,7 +329,6 @@ class SessionServiceIT {
   @Test
   void currentIsEmptyWhenThePatientHasNoSessionAtAll() {
     assertThat(sessions.current(patient)).isEmpty();
-    assertThat(facade.currentSession(patient)).isEmpty();
   }
 
   // ---- clôturer
@@ -511,7 +510,7 @@ class SessionServiceIT {
     sessions.contact(patient, new ContactCommand("phone", T0, "Appel", null));
 
     assertThat(sessions.current(patient)).map(SessionView::id).contains(open);
-    assertThat(facade.openSessionOf(patient)).map(SessionView::id).contains(open);
+    assertThat(repo.openSession(patient)).map(SessionView::id).contains(open);
     assertThat(
             jdbc.queryForObject(
                 "select closed_at from entry_session where entry_id = ?", Object.class, open))
@@ -556,7 +555,7 @@ class SessionServiceIT {
     entries.archive(open);
 
     assertThat(sessions.current(patient)).map(SessionView::id).contains(closed);
-    assertThat(facade.openSessionOf(patient)).isEmpty();
+    assertThat(repo.openSession(patient)).isEmpty();
     UUID again = startAt(T0.plus(Duration.ofDays(2)));
     assertThat(sessions.current(patient)).map(SessionView::id).contains(again);
     // une note sans sessionId ne va jamais à la séance archivée
@@ -606,21 +605,6 @@ class SessionServiceIT {
             () -> sessions.contact(patient, new ContactCommand("phone", T0, "Appel", null)))
         .isInstanceOf(PatientAccessException.class);
     assertThatThrownBy(() -> sessions.current(patient)).isInstanceOf(PatientAccessException.class);
-  }
-
-  @Test
-  void facadeCurrentSessionIsEmptyForAnotherPractitioner() {
-    UUID session = start();
-    assertThat(facade.currentSession(patient)).map(SessionView::id).contains(session);
-    assertThat(facade.openSessionOf(patient)).map(SessionView::id).contains(session);
-
-    fx.authenticate(fx.newPractitioner());
-    assertThat(facade.currentSession(patient)).isEmpty();
-    assertThat(facade.openSessionOf(patient)).isEmpty();
-
-    SecurityContextHolder.clearContext();
-    assertThat(facade.currentSession(patient)).isEmpty();
-    assertThat(facade.openSessionOf(patient)).isEmpty();
   }
 
   @Test

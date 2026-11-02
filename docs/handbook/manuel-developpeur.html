@@ -258,7 +258,7 @@
 <pre class="code"><code>com.psymate.clinical
 ├── package-info.java        @ApplicationModule(allowedDependencies = {...})
 ├── api/                     @NamedInterface("api") — la SEULE chose visible des autres modules
-│   ├── EntryFacade.java         exists, belongsToPatient, sameOwnedPatient, adjustLinkCount…
+│   ├── EntryFacade.java         exists, belongsToPatient, patientOf, adjustLinkCount…
 │   ├── EntryCreated.java        événements (records, au passé)
 │   ├── EntryLinksPort.java      port implémenté par linking (M2-02)
 │   └── SessionView.java         vues en lecture

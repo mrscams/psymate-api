@@ -1,8 +1,9 @@
-package com.psymate.search;
+package com.psymate.search.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.jayway.jsonpath.DocumentContext;
+import com.psymate.search.SearchSupport;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;

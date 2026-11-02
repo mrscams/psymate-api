@@ -40,7 +40,7 @@ class RoleFolderTests {
    * identity, ajouter les sous-domaines un par un ({@code identity.auth}…), puis {@code identity}.
    */
   static final Set<String> ROLE_FOLDER_MODULES =
-      Set.of("directory", "linking", "identity.verification", "clinical.export");
+      Set.of("directory", "linking", "identity.verification", "clinical.export", "search");
 
   /**
    * Modules et sous-domaines de moins de 8 classes qui restent plats (G Q33, regle 1 ; revue §4.1)

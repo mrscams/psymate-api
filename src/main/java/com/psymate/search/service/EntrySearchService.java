@@ -1,15 +1,19 @@
-package com.psymate.search;
+package com.psymate.search.service;
 
-import com.psymate.search.EntrySearchRepository.Filter;
-import com.psymate.search.EntrySearchRepository.Hit;
-import com.psymate.search.QuerySyntax.Parsed;
-import com.psymate.search.SearchDtos.EntrySearchEmotionFacetDto;
-import com.psymate.search.SearchDtos.EntrySearchFacetsDto;
-import com.psymate.search.SearchDtos.EntrySearchItemDto;
-import com.psymate.search.SearchDtos.EntrySearchQueryDto;
-import com.psymate.search.SearchDtos.EntrySearchResultDto;
-import com.psymate.search.SearchDtos.EntrySearchTagFacetDto;
-import com.psymate.search.SearchDtos.EntrySearchTypeFacetDto;
+import com.psymate.search.dto.EntrySearchEmotionFacetDto;
+import com.psymate.search.dto.EntrySearchFacetsDto;
+import com.psymate.search.dto.EntrySearchItemDto;
+import com.psymate.search.dto.EntrySearchQueryDto;
+import com.psymate.search.dto.EntrySearchResultDto;
+import com.psymate.search.dto.EntrySearchTagFacetDto;
+import com.psymate.search.dto.EntrySearchTypeFacetDto;
+import com.psymate.search.model.QuerySyntax;
+import com.psymate.search.model.QuerySyntax.Parsed;
+import com.psymate.search.model.SearchRequestException;
+import com.psymate.search.model.SnippetBuilder;
+import com.psymate.search.repository.EntrySearchRepository;
+import com.psymate.search.repository.EntrySearchRepository.Filter;
+import com.psymate.search.repository.EntrySearchRepository.Hit;
 import com.psymate.shared.problem.FieldProblem;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -35,7 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
  * aucune entrée, sans erreur.
  */
 @Service
-class EntrySearchService {
+public class EntrySearchService {
 
   static final int MAX_QUERY_LENGTH = 200;
 
@@ -51,7 +55,7 @@ class EntrySearchService {
   static final int APPROXIMATE_BELOW = 3;
 
   /** Paramètres bruts de la requête HTTP. */
-  record Request(
+  public record Request(
       String q,
       List<String> types,
       List<String> emotions,
@@ -69,7 +73,7 @@ class EntrySearchService {
   }
 
   @Transactional(readOnly = true)
-  EntrySearchResultDto search(UUID tenant, UUID me, UUID patient, Request r) {
+  public EntrySearchResultDto search(UUID tenant, UUID me, UUID patient, Request r) {
     long started = System.nanoTime();
     List<FieldProblem> problems = new ArrayList<>();
     String q = r.q() == null ? "" : r.q();

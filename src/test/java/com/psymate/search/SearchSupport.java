@@ -44,7 +44,7 @@ import tools.jackson.databind.json.JsonMapper;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(PostgresTestConfig.class)
-abstract class SearchSupport {
+public abstract class SearchSupport {
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
@@ -59,7 +59,7 @@ abstract class SearchSupport {
   protected RequestPostProcessor auth;
 
   @BeforeEach
-  void baseSetUp() throws Exception {
+  protected void baseSetUp() throws Exception {
     SecurityContextHolder.clearContext();
     tenant = UUID.randomUUID();
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
@@ -70,7 +70,7 @@ abstract class SearchSupport {
   }
 
   @AfterEach
-  void clearSecurity() {
+  protected void clearSecurity() {
     SecurityContextHolder.clearContext();
   }
 

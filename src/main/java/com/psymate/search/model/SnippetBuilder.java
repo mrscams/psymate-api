@@ -1,4 +1,4 @@
-package com.psymate.search;
+package com.psymate.search.model;
 
 import java.text.Normalizer;
 import java.util.HashSet;
@@ -12,12 +12,12 @@ import java.util.regex.Pattern;
  * PostgreSQL surligne avec des délimiteurs neutres ({@link #OPEN}, {@link #CLOSE}) que cette classe
  * convertit ; {@code ts_headline} n'échappe rien lui-même.
  */
-final class SnippetBuilder {
+public final class SnippetBuilder {
 
   /** Délimiteurs passés à {@code ts_headline} (StartSel / StopSel), retirés du texte avant. */
-  static final String OPEN = "⟦";
+  public static final String OPEN = "⟦";
 
-  static final String CLOSE = "⟧";
+  public static final String CLOSE = "⟧";
 
   /** Séparateur de fragments de ts_headline (FragmentDelimiter par défaut). */
   private static final String FRAGMENT_DELIMITER = " ... ";
@@ -31,7 +31,7 @@ final class SnippetBuilder {
 
   private SnippetBuilder() {}
 
-  static String escape(String s) {
+  public static String escape(String s) {
     StringBuilder sb = new StringBuilder(s.length() + 16);
     for (int i = 0; i < s.length(); i++) {
       char c = s.charAt(i);
@@ -65,7 +65,7 @@ final class SnippetBuilder {
    * d'origine ; si l'alignement est impossible (le texte comporte des balises, des ligatures...),
    * le premier est renvoyé tel quel, sans surlignage.
    */
-  static String highlight(String original, String marked, String markedFolded) {
+  public static String highlight(String original, String marked, String markedFolded) {
     if (marked == null || marked.contains(OPEN) || original == null || markedFolded == null) {
       return fromMarked(marked);
     }
@@ -117,7 +117,7 @@ final class SnippetBuilder {
   }
 
   /** Début du texte, tronqué à environ 200 caractères sur une limite de mot ; null si vide. */
-  static String plain(String text) {
+  public static String plain(String text) {
     if (text == null || text.isBlank()) {
       return null;
     }
@@ -133,7 +133,7 @@ final class SnippetBuilder {
    * Extrait d'un résultat approché : le mot du texte le plus proche (trigrammes) de la requête,
    * entouré de son contexte et surligné. À défaut de mot assez proche, le début du texte.
    */
-  static String around(String body, String query) {
+  public static String around(String body, String query) {
     if (body == null || body.isBlank()) {
       return null;
     }

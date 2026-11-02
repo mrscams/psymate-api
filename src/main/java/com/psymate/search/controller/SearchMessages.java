@@ -1,4 +1,4 @@
-package com.psymate.search;
+package com.psymate.search.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Locale;

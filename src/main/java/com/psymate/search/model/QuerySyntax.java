@@ -1,4 +1,4 @@
-package com.psymate.search;
+package com.psymate.search.model;
 
 import java.text.Normalizer;
 import java.time.DateTimeException;
@@ -23,10 +23,10 @@ import java.util.regex.Pattern;
  * donne « à partir du 1er juillet 2026 » (strictement après la période), {@code après:2026-06-15}
  * donne « à partir du 16 juin ».
  */
-final class QuerySyntax {
+public final class QuerySyntax {
 
   /** Résultat de l'analyse ; {@code before} est exclusif, {@code after} inclusif. */
-  record Parsed(
+  public record Parsed(
       String text,
       List<String> tags,
       List<String> emotions,
@@ -38,7 +38,7 @@ final class QuerySyntax {
 
   private QuerySyntax() {}
 
-  static Parsed parse(String q) {
+  public static Parsed parse(String q) {
     String s = q == null ? "" : q;
     StringBuilder text = new StringBuilder();
     List<String> tags = new ArrayList<>();

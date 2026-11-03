@@ -18,13 +18,16 @@ class AuthMailer {
   private final String from;
   private final String appName;
   private final String webBaseUrl;
+  private final String supportEmail;
 
   AuthMailer(
       JavaMailSender sender,
       AuthMessages messages,
       @Value("${app.mail.from}") String from,
       @Value("${app.name}") String appName,
-      @Value("${app.web.base-url}") String webBaseUrl) {
+      @Value("${app.web.base-url}") String webBaseUrl,
+      @Value("${app.support.email}") String supportEmail) {
+    this.supportEmail = supportEmail;
     this.sender = sender;
     this.messages = messages;
     this.from = from;
@@ -56,6 +59,32 @@ class AuthMailer {
         to,
         messages.get("mail.exists.subject", locale, appName),
         messages.get("mail.exists.body", locale, appName, link));
+  }
+
+  /** Lien de confirmation envoyé à la NOUVELLE adresse (changement d'e-mail, 24 h). */
+  void sendEmailChange(String to, String token, Locale locale) {
+    String link = webBaseUrl + "/confirmer-email/" + token;
+    send(
+        to,
+        messages.get("mail.change.subject", locale, appName),
+        messages.get("mail.change.body", locale, appName, link, 24));
+  }
+
+  /** Information envoyée à l'ANCIENNE adresse une fois le changement confirmé. */
+  void sendEmailChanged(String to, String newEmail, Locale locale) {
+    send(
+        to,
+        messages.get("mail.changed.subject", locale, appName),
+        messages.get("mail.changed.body", locale, appName, newEmail, supportEmail));
+  }
+
+  /** Information envoyée quand un changement d'e-mail vise une adresse déjà utilisée. */
+  void sendChangeTargetExists(String to, Locale locale) {
+    String link = webBaseUrl + "/connexion";
+    send(
+        to,
+        messages.get("mail.changeExists.subject", locale, appName),
+        messages.get("mail.changeExists.body", locale, appName, link));
   }
 
   private void send(String to, String subject, String text) {

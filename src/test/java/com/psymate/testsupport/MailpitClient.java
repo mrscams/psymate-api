@@ -58,9 +58,12 @@ public final class MailpitClient {
     }
   }
 
-  /** Texte du dernier e-mail pour ce destinataire et ce sujet ; null après 10 s d'attente. */
+  /**
+   * Texte du dernier e-mail pour ce destinataire et ce sujet ; null après 30 s d'attente (la file
+   * d'envoi est partagée par toute la JVM de tests et peut être chargée par les autres classes).
+   */
   public String lastText(String to, String subject) throws Exception {
-    return lastText(to, subject, Duration.ofSeconds(10));
+    return lastText(to, subject, Duration.ofSeconds(30));
   }
 
   /** Comme lastText, avec une attente maximale choisie (envoi lent ou file d'envoi chargée). */

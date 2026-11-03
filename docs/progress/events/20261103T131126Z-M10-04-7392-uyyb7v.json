@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-03T13:11:26.781Z",
+  "task": "M10-04",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Changement d'e-mail d'un compte confirmé : jeton email_change 24 h, lien à la nouvelle adresse, bascule et révocation des sessions à la confirmation",
+  "notes": "Aucune migration (auth_token.payload existe), aucune dépendance. Mot de passe faux avec session : 422 INVALID_PASSWORD (décision à relire). Suite complète jouée par la CI.",
+  "next": "Relecture puis fusion ; bump de contrat et tag v0.10.0 après le lot M10",
+  "pr": "https://github.com/mrscams/psymate-api/pull/77",
+  "branch": "claude/m10-04",
+  "checkout": "agent-ad45f074b22229aa3"
+}

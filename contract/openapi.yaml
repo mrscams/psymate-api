@@ -2087,7 +2087,7 @@ components:
           type: integer
       type: object
     Facets:
-      description: Facettes calculées sur le lot filtré (500 fiches au plus), chacune triée par nombre décroissant ; la facette specialties ignore le filtre specialties.
+      description: Facettes calculées sur le lot filtré, chacune triée par nombre décroissant ; la facette specialties ignore le filtre specialties. Les compteurs de toutes les facettes sont exacts jusqu'à 500 fiches examinées ; au-delà, ils portent sur les 500 premières dans l'ordre du tri (G Q48).
       properties:
         audiences:
           description: Répartition par public accueilli.
@@ -4080,7 +4080,7 @@ components:
           example: anxiety
           type: string
         count:
-          description: Nombre de fiches qui auraient ce code seul, tous les autres filtres appliqués sauf specialties.
+          description: Nombre de fiches qui auraient ce code seul, tous les autres filtres appliqués sauf specialties. Exact jusqu'à 500 fiches examinées ; au-delà, il porte sur les 500 premières dans l'ordre du tri (G Q48).
           example: 12
           format: int64
           type: integer
@@ -10223,7 +10223,7 @@ paths:
       - Patients
   /api/public/directory:
     get:
-      description: 'Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). Ne rend que les profils publiés. Les filtres se cumulent ; pour specialties, modalities, audiences et languages une fiche est retenue si elle a au moins une des valeurs demandées. Réponse paginée par page de 20 (page, totalPages) ; au plus 500 fiches sont examinées avant pagination, total et facettes portent sur ce lot, sauf la facette specialties qui ignore le filtre specialties (compteur d''un code = résultats qu''il donnerait seul). 200 avec Cache-Control: max-age=60, public.'
+      description: 'Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). Ne rend que les profils publiés d''un praticien approuvé (suspendu, clos ou rejeté : ni listé, ni trouvé par q, ni compté). Les filtres se cumulent ; pour specialties, modalities, audiences et languages une fiche est retenue si elle a au moins une des valeurs demandées. Réponse paginée par page de 20 (page, totalPages) ; au plus 500 fiches sont examinées avant pagination : total et compteurs de toutes les facettes sont exacts jusqu''à 500 fiches, au-delà ils portent sur les 500 premières dans l''ordre du tri (G Q48). La facette specialties ignore le filtre specialties (compteur d''un code = résultats qu''il donnerait seul). 200 avec Cache-Control: max-age=60, public.'
       operationId: searchPublicDirectory
       parameters:
       - description: 'Texte libre, 100 caractères au plus : tous les mots doivent correspondre, dans le nom, les codes de spécialités (ex. anxiety), la ville ou la présentation, sans tenir compte des accents ; un nom proche est aussi retenu. Absent : pas de filtre texte.'

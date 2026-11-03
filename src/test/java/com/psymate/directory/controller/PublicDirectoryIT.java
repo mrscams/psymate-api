@@ -413,7 +413,22 @@ class PublicDirectoryIT {
       boolean published,
       String profession,
       String specialties) {
-    UUID id = practitioner(name, "approved", null);
+    return specialtyProfile(tag, name, city, published, profession, specialties, "approved", null);
+  }
+
+  /**
+   * Comme ci-dessus, avec l'état de vérification du praticien et une position (point) en option.
+   */
+  private String specialtyProfile(
+      String tag,
+      String name,
+      String city,
+      boolean published,
+      String profession,
+      String specialties,
+      String verificationStatus,
+      String geoPoint) {
+    UUID id = practitioner(name, verificationStatus, null);
     jdbc.update("update practitioner set profession = ? where id = ?", profession, id);
     String slug = name.toLowerCase() + "-" + tag;
     profile(
@@ -423,7 +438,10 @@ class PublicDirectoryIT {
         published,
         "Suivi",
         city,
-        "update practitioner_profile set specialties = '" + specialties + "'");
+        "update practitioner_profile set specialties = '"
+            + specialties
+            + "'"
+            + (geoPoint == null ? "" : ", geo = point(" + geoPoint + ")"));
     return slug;
   }
 
@@ -604,5 +622,148 @@ class PublicDirectoryIT {
         .andExpect(jsonPath("$.total").value(0))
         .andExpect(jsonPath("$.facets.specialties[0].code").value("burnout"))
         .andExpect(jsonPath("$.facets.specialties[0].count").value(1));
+  }
+
+  @Test
+  void secondPageWithSpecialtyFilterKeepsFacetOnTheWholeBase() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    String city = "Pages" + tag;
+    for (int i = 0; i < 22; i++) {
+      specialtyProfile(tag, "Anx" + i, city, true, "psychologist", "{anxiety}");
+    }
+    specialtyProfile(tag, "Bur0", city, true, "psychologist", "{burnout}");
+    specialtyProfile(tag, "Bur1", city, true, "psychologist", "{burnout}");
+    String base = "/api/public/directory?sort=name&city=" + city + "&specialties=anxiety";
+
+    mvc.perform(anon(base + "&page=1"))
+        .andExpect(jsonPath("$.total").value(22))
+        .andExpect(jsonPath("$.totalPages").value(2))
+        .andExpect(jsonPath("$.items.length()").value(20));
+    mvc.perform(anon(base + "&page=2"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.page").value(2))
+        .andExpect(jsonPath("$.total").value(22))
+        .andExpect(jsonPath("$.items.length()").value(2))
+        .andExpect(
+            jsonPath("$.items[*].specialties[*]")
+                .value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is("anxiety"))))
+        // La facette porte sur toutes les pages et ignore le filtre de spécialité.
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'anxiety')].count").value(22))
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'burnout')].count").value(2));
+    // Page au-delà de la dernière : vide, sans erreur.
+    mvc.perform(anon(base + "&page=3"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(0))
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'burnout')].count").value(2));
+  }
+
+  @Test
+  void specialtyFilterAndFacetFollowTheRadius() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    // Position isolée (Polynésie) pour ne croiser aucune autre donnée de la base partagée.
+    String near =
+        specialtyProfile(
+            tag,
+            "Proche",
+            "Papeete",
+            true,
+            "psychologist",
+            "{anxiety}",
+            "approved",
+            "-150.0, -20.0");
+    specialtyProfile(
+        tag,
+        "Loin",
+        "Papeete",
+        true,
+        "psychologist",
+        "{anxiety,burnout}",
+        "approved",
+        "-149.0, -20.0");
+    specialtyProfile(
+        tag, "Autre", "Papeete", true, "psychologist", "{burnout}", "approved", "-150.0, -20.0");
+    String base = "/api/public/directory?lat=-20&lng=-150&sort=distance";
+
+    String json = body(base + "&radiusKm=50&specialties=anxiety");
+    assertThat(slugs(json)).containsExactly(near);
+    assertThat(JsonPath.<Number>read(json, "$.items[0].distanceKm")).isNotNull();
+    // La facette ignore specialties mais garde le rayon : « Loin » (hors rayon) n'est pas compté.
+    mvc.perform(anon(base + "&specialties=anxiety"))
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'anxiety')].count").value(1))
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'burnout')].count").value(1));
+    mvc.perform(anon(base + "&radiusKm=200&specialties=burnout"))
+        .andExpect(jsonPath("$.total").value(2))
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'anxiety')].count").value(2));
+  }
+
+  @Test
+  void emptyValueInSpecialtyListGives422NotAServerError() throws Exception {
+    for (String qs :
+        new String[] {"specialties=anxiety,", "specialties=,anxiety", "specialties=,"}) {
+      mvc.perform(anon("/api/public/directory?" + qs))
+          .andExpect(status().isUnprocessableEntity())
+          .andExpect(jsonPath("$.errors[0].field").value("specialties"))
+          .andExpect(jsonPath("$.errors[0].code").value("INVALID_VALUE"));
+    }
+  }
+
+  @Test
+  void relevanceSortWithQAndSpecialties() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    String city = "Rel" + tag;
+    String word = "zorglub" + tag;
+    String a = specialtyProfile(tag, "Alpha", city, true, "psychologist", "{anxiety}");
+    String b = specialtyProfile(tag, "Bravo", city, true, "psychologist", "{anxiety,burnout}");
+    String c = specialtyProfile(tag, "Charlie", city, true, "psychologist", "{burnout}");
+    jdbc.update("update practitioner_profile set bio = ? where slug in (?, ?, ?)", word, a, b, c);
+    String base = "/api/public/directory?sort=relevance&city=" + city + "&q=" + word;
+
+    mvc.perform(anon(base)).andExpect(jsonPath("$.total").value(3));
+    String json = body(base + "&specialties=anxiety");
+    assertThat(slugs(json)).containsExactlyInAnyOrder(a, b);
+    // Sans q : « relevance » classe par publication la plus récente, sans erreur.
+    mvc.perform(anon("/api/public/directory?sort=relevance&city=" + city + "&specialties=burnout"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(2));
+    assertThat(JsonPath.<List<String>>read(json, "$.facets.specialties[*].code"))
+        .containsExactlyInAnyOrder("anxiety", "burnout");
+  }
+
+  @Test
+  void onlyApprovedPractitionersAreListedFoundAndCounted() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    String city = "Appr" + tag;
+    String ok = specialtyProfile(tag, "Alpha", city, true, "psychologist", "{anxiety}");
+    String suspended =
+        specialtyProfile(
+            tag, "Suspendu", city, true, "psychologist", "{anxiety}", "suspended", null);
+    String closed =
+        specialtyProfile(tag, "Clos", city, true, "psychologist", "{anxiety,emdr}", "closed", null);
+    String rejected =
+        specialtyProfile(tag, "Rejete", city, true, "coach", "{anxiety}", "rejected", null);
+    String base = "/api/public/directory?city=" + city;
+
+    // Liste, avec et sans filtre de spécialité.
+    assertThat(slugs(body(base))).containsExactly(ok);
+    assertThat(slugs(body(base + "&specialties=anxiety"))).containsExactly(ok);
+    mvc.perform(anon(base))
+        .andExpect(jsonPath("$.total").value(1))
+        .andExpect(jsonPath("$.totalPages").value(1))
+        // Aucun compteur ne compte les non approuvés, facettes existantes comprises.
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'anxiety')].count").value(1))
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'emdr')]").isEmpty())
+        .andExpect(jsonPath("$.facets.professions[?(@.code == 'coach')]").isEmpty())
+        .andExpect(jsonPath("$.facets.modalities[0].count").value(1));
+    // Mot-clé : ni le nom ni le filtre de spécialité ne retrouvent un praticien non approuvé.
+    for (String name : new String[] {"Suspendu", "Clos", "Rejete"}) {
+      mvc.perform(anon(base + "&q=" + name))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.total").value(0))
+          .andExpect(jsonPath("$.facets.specialties").isEmpty());
+    }
+    mvc.perform(anon(base + "&q=Alpha&specialties=anxiety"))
+        .andExpect(jsonPath("$.items[0].slug").value(ok))
+        .andExpect(jsonPath("$.items[0].verified").value(true));
+    assertThat(List.of(suspended, closed, rejected)).doesNotContainAnyElementsOf(slugs(body(base)));
   }
 }

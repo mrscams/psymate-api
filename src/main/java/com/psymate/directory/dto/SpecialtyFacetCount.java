@@ -16,6 +16,7 @@ public record SpecialtyFacetCount(
     @Schema(
             description =
                 "Nombre de fiches qui auraient ce code seul, tous les autres filtres appliqués"
-                    + " sauf specialties.",
+                    + " sauf specialties. Exact jusqu'à 500 fiches examinées ; au-delà, il porte"
+                    + " sur les 500 premières dans l'ordre du tri (G Q48).",
             example = "12")
         long count) {}

@@ -267,7 +267,8 @@ class OpenApiConfig {
         new StringSchema()
             .description(
                 "Code stable de l'erreur de champ, à tester par le client : INVALID_FIELD,"
-                    + " REQUIRED, OUT_OF_RANGE, TOO_LONG, UNKNOWN_EMOTION… (liste sur chaque"
+                    + " REQUIRED, OUT_OF_RANGE, TOO_LONG, INVALID_VALUE, INVALID_DATE,"
+                    + " INVALID_FORMAT, UNKNOWN_FIELD, UNKNOWN_EMOTION… (liste sur chaque"
                     + " opération). Absent dans les modules vocabulary (tags, émotions) et"
                     + " directory (profil, annuaire public, contact), dont les erreurs de champ ne"
                     + " portent que field et message.")

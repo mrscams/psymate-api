@@ -149,7 +149,9 @@ class PatientController {
             "VALIDATION_FAILED : errors[] {field, code, message} avec field = displayName"
                 + " (REQUIRED si absent ou vide, TOO_LONG au-delà de 120 caractères), firstName et"
                 + " lastName (TOO_LONG au-delà de 120 caractères), birthDate (INVALID_DATE : future"
-                + " ou de plus de 120 ans), pronoun (INVALID_VALUE : hors elle, il, iel, neutre),"
+                + " ou de plus de 120 ans ; INVALID_FORMAT : date illisible), pronoun"
+                + " (INVALID_VALUE : hors elle, il, iel, neutre, casse tolérée et enregistrée en"
+                + " minuscules),"
                 + " flags[i].kind (REQUIRED si absente, INVALID_VALUE si inconnue),"
                 + " flags[i].reason (REQUIRED pour watch), tags[i] (REQUIRED si libellé vide) ;"
                 + " TAG_IS_EMOTION : un libellé de tags correspond à une émotion (même code dans"
@@ -246,7 +248,9 @@ class PatientController {
             "VALIDATION_FAILED : errors[] {field, code, message} avec field = nom de la clé"
                 + " inconnue ou non modifiable (UNKNOWN_FIELD), displayName (REQUIRED si vide,"
                 + " TOO_LONG au-delà de 120 caractères), firstName et lastName (TOO_LONG), pronoun"
-                + " (INVALID_VALUE : hors elle, il, iel, neutre), birthDate (INVALID_FORMAT si"
+                + " (INVALID_VALUE : hors elle, il, iel, neutre, casse tolérée et enregistrée en"
+                + " minuscules ; ces quatre champs ne sont pas revalidés quand la valeur envoyée"
+                + " est celle de la fiche), birthDate (INVALID_FORMAT si"
                 + " illisible, INVALID_DATE si future ou de plus de 120 ans), context ou followUp"
                 + " (INVALID_FORMAT : objet attendu).",
         content =

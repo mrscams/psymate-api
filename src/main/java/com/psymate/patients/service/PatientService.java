@@ -43,7 +43,9 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -314,7 +316,7 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
     checkText("firstName", r.firstName(), problems);
     checkText("lastName", r.lastName(), problems);
     LocalDate birth = checkBirthDate(r.birthDate(), problems);
-    checkPronoun(r.pronoun(), problems);
+    String pronoun = checkPronoun(normalizePronoun(r.pronoun()), problems);
     List<FlagRequest> flags = r.flags() == null ? List.of() : r.flags();
     for (int i = 0; i < flags.size(); i++) {
       checkFlag(flags.get(i), "flags[" + i + "]", problems);
@@ -339,7 +341,7 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
             blankToNull(r.firstName()),
             blankToNull(r.lastName()),
             birth,
-            blankToNull(r.pronoun()),
+            pronoun,
             blankToNull(r.phone()),
             blankToNull(r.email()),
             r.context(),
@@ -369,18 +371,30 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
                 key, PatientFieldCode.UNKNOWN_FIELD, "Champ non modifiable ou inconnu."));
       }
     }
+    // Une valeur renvoyée à l'identique n'est pas revalidée (G Q47) : une fiche enregistrée avant
+    // les limites reste modifiable par un client qui renvoie la fiche entière.
     String displayName = cur.getDisplayName();
     if (body.containsKey("displayName")) {
-      displayName = requireName(asString(body.get("displayName")), problems);
+      String sent = asString(body.get("displayName"));
+      if (sent == null || !sent.trim().equals(cur.getDisplayName())) {
+        displayName = requireName(sent, problems);
+      }
     }
-    if (body.containsKey("firstName")) {
-      checkText("firstName", asString(body.get("firstName")), problems);
+    for (String key : List.of("firstName", "lastName")) {
+      if (body.containsKey(key)) {
+        String sent = asString(body.get(key));
+        String current = "firstName".equals(key) ? cur.getFirstName() : cur.getLastName();
+        if (!Objects.equals(blankToNull(sent), current)) {
+          checkText(key, sent, problems);
+        }
+      }
     }
-    if (body.containsKey("lastName")) {
-      checkText("lastName", asString(body.get("lastName")), problems);
-    }
+    String pronoun = cur.getPronoun();
     if (body.containsKey("pronoun")) {
-      checkPronoun(asString(body.get("pronoun")), problems);
+      String sent = normalizePronoun(asString(body.get("pronoun")));
+      if (!Objects.equals(sent, normalizePronoun(cur.getPronoun()))) {
+        pronoun = checkPronoun(sent, problems);
+      }
     }
     for (String key : List.of("context", "followUp")) {
       Object v = body.get(key);
@@ -409,7 +423,7 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
             text(body, "firstName", cur.getFirstName()),
             text(body, "lastName", cur.getLastName()),
             birth,
-            text(body, "pronoun", cur.getPronoun()),
+            pronoun,
             text(body, "phone", cur.getPhone()),
             text(body, "email", cur.getEmail()),
             merge(body, "context", cur.getContext()),
@@ -596,15 +610,25 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
     }
   }
 
-  /** Pronom : vide ou null = non renseigné, sinon l'une des valeurs de {@link #PRONOUNS}. */
-  private static void checkPronoun(String pronoun, List<FieldProblem> problems) {
-    if (pronoun != null && !pronoun.isBlank() && !PRONOUNS.contains(pronoun.trim())) {
+  /** Pronom saisi : blancs de bord retirés, minuscules ; vide ou null = non renseigné (null). */
+  private static String normalizePronoun(String pronoun) {
+    String trimmed = blankToNull(pronoun);
+    return trimmed == null ? null : trimmed.toLowerCase(Locale.ROOT);
+  }
+
+  /**
+   * Pronom normalisé : null (non renseigné) ou l'une des valeurs de {@link #PRONOUNS} ; sinon
+   * INVALID_VALUE. Renvoie la valeur à enregistrer.
+   */
+  private static String checkPronoun(String pronoun, List<FieldProblem> problems) {
+    if (pronoun != null && !PRONOUNS.contains(pronoun)) {
       problems.add(
           new FieldProblem(
               "pronoun",
               PatientFieldCode.INVALID_VALUE,
               "Pronom inconnu : elle, il, iel ou neutre."));
     }
+    return pronoun;
   }
 
   private static LocalDate checkBirthDate(LocalDate d, List<FieldProblem> problems) {

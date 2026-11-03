@@ -909,7 +909,7 @@ components:
           example: '0102030405'
           type: string
         pronoun:
-          description: 'Pronom d''adresse : elle, il, iel ou neutre (422 INVALID_VALUE sinon) ; vide ou null = non renseigné.'
+          description: 'Pronom d''adresse : elle, il, iel ou neutre (422 INVALID_VALUE sinon). La casse et les espaces de bord sont tolérés ("Elle" est accepté) ; la valeur est enregistrée en minuscules. Vide ou null = non renseigné.'
           enum:
           - elle
           - il
@@ -2210,7 +2210,7 @@ components:
       description: Une erreur de champ dans errors[] (422, 400 de paramètre, 409 ENTRY_ARCHIVED des liens).
       properties:
         code:
-          description: 'Code stable de l''erreur de champ, à tester par le client : INVALID_FIELD, REQUIRED, OUT_OF_RANGE, TOO_LONG, UNKNOWN_EMOTION… (liste sur chaque opération). Absent dans les modules vocabulary (tags, émotions) et directory (profil, annuaire public, contact), dont les erreurs de champ ne portent que field et message.'
+          description: 'Code stable de l''erreur de champ, à tester par le client : INVALID_FIELD, REQUIRED, OUT_OF_RANGE, TOO_LONG, INVALID_VALUE, INVALID_DATE, INVALID_FORMAT, UNKNOWN_FIELD, UNKNOWN_EMOTION… (liste sur chaque opération). Absent dans les modules vocabulary (tags, émotions) et directory (profil, annuaire public, contact), dont les erreurs de champ ne portent que field et message.'
           example: REQUIRED
           type: string
         field:
@@ -8657,7 +8657,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED : errors[] {field, code, message} avec field = displayName (REQUIRED si absent ou vide, TOO_LONG au-delà de 120 caractères), firstName et lastName (TOO_LONG au-delà de 120 caractères), birthDate (INVALID_DATE : future ou de plus de 120 ans), pronoun (INVALID_VALUE : hors elle, il, iel, neutre), flags[i].kind (REQUIRED si absente, INVALID_VALUE si inconnue), flags[i].reason (REQUIRED pour watch), tags[i] (REQUIRED si libellé vide) ; TAG_IS_EMOTION : un libellé de tags correspond à une émotion (même code dans errors[0]) ; TAG_UNKNOWN : un libellé de tags n''existe pas encore (créer le tag d''abord ; même code dans errors[0]).'
+          description: 'VALIDATION_FAILED : errors[] {field, code, message} avec field = displayName (REQUIRED si absent ou vide, TOO_LONG au-delà de 120 caractères), firstName et lastName (TOO_LONG au-delà de 120 caractères), birthDate (INVALID_DATE : future ou de plus de 120 ans ; INVALID_FORMAT : date illisible), pronoun (INVALID_VALUE : hors elle, il, iel, neutre, casse tolérée et enregistrée en minuscules), flags[i].kind (REQUIRED si absente, INVALID_VALUE si inconnue), flags[i].reason (REQUIRED pour watch), tags[i] (REQUIRED si libellé vide) ; TAG_IS_EMOTION : un libellé de tags correspond à une émotion (même code dans errors[0]) ; TAG_UNKNOWN : un libellé de tags n''existe pas encore (créer le tag d''abord ; même code dans errors[0]).'
         '429':
           content:
             application/problem+json:
@@ -8830,7 +8830,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED : errors[] {field, code, message} avec field = nom de la clé inconnue ou non modifiable (UNKNOWN_FIELD), displayName (REQUIRED si vide, TOO_LONG au-delà de 120 caractères), firstName et lastName (TOO_LONG), pronoun (INVALID_VALUE : hors elle, il, iel, neutre), birthDate (INVALID_FORMAT si illisible, INVALID_DATE si future ou de plus de 120 ans), context ou followUp (INVALID_FORMAT : objet attendu).'
+          description: 'VALIDATION_FAILED : errors[] {field, code, message} avec field = nom de la clé inconnue ou non modifiable (UNKNOWN_FIELD), displayName (REQUIRED si vide, TOO_LONG au-delà de 120 caractères), firstName et lastName (TOO_LONG), pronoun (INVALID_VALUE : hors elle, il, iel, neutre, casse tolérée et enregistrée en minuscules ; ces quatre champs ne sont pas revalidés quand la valeur envoyée est celle de la fiche), birthDate (INVALID_FORMAT si illisible, INVALID_DATE si future ou de plus de 120 ans), context ou followUp (INVALID_FORMAT : objet attendu).'
         '429':
           content:
             application/problem+json:

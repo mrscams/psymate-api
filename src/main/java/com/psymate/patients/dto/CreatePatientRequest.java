@@ -36,8 +36,9 @@ public record CreatePatientRequest(
         LocalDate birthDate,
     @Schema(
             description =
-                "Pronom d'adresse : elle, il, iel ou neutre (422 INVALID_VALUE sinon) ; vide ou"
-                    + " null = non renseigné.",
+                "Pronom d'adresse : elle, il, iel ou neutre (422 INVALID_VALUE sinon). La casse et"
+                    + " les espaces de bord sont tolérés (\"Elle\" est accepté) ; la valeur est"
+                    + " enregistrée en minuscules. Vide ou null = non renseigné.",
             allowableValues = {"elle", "il", "iel", "neutre"},
             example = "elle")
         String pronoun,

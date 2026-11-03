@@ -1,5 +1,6 @@
 package com.psymate.patients.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -47,12 +48,15 @@ class PatientValidationIT {
   @Autowired private JdbcTemplate jdbc;
 
   private RequestPostProcessor auth;
+  private UUID tenant;
+  private UUID practitionerId;
 
   @BeforeEach
   void practitioner() {
-    UUID tenant = UUID.randomUUID();
+    tenant = UUID.randomUUID();
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet validation')", tenant);
     UUID id = UUID.randomUUID();
+    practitionerId = id;
     String email = id + "@example.test";
     jdbc.update(
         "insert into practitioner (id, tenant_id, email, email_normalized, password_hash,"
@@ -153,6 +157,18 @@ class PatientValidationIT {
                 "INVALID_DATE",
                 "La date de naissance doit être passée et de moins de 120 ans."),
             new Case(
+                "birthDate illisible",
+                "{\"displayName\":\"A\",\"birthDate\":\"demain\"}",
+                "birthDate",
+                "INVALID_FORMAT",
+                "Valeur invalide."),
+            new Case(
+                "tags qui n'est pas une liste",
+                "{\"displayName\":\"A\",\"tags\":{\"a\":1}}",
+                "tags",
+                "INVALID_FORMAT",
+                "Valeur invalide."),
+            new Case(
                 "pronoun hors liste",
                 "{\"displayName\":\"A\",\"pronoun\":\"ielle\"}",
                 "pronoun",
@@ -234,6 +250,12 @@ class PatientValidationIT {
                 "firstName trop long",
                 json("firstName", "\"" + x300 + "\""),
                 "firstName",
+                "TOO_LONG",
+                "Limité à 120 caractères."),
+            new Case(
+                "lastName trop long",
+                json("lastName", "\"" + x300 + "\""),
+                "lastName",
                 "TOO_LONG",
                 "Limité à 120 caractères."),
             new Case(
@@ -325,6 +347,103 @@ class PatientValidationIT {
     send(patch("/api/patients/" + id), "{\"pronoun\":null,\"birthDate\":null}")
         .andExpect(status().isOk());
     send(patch("/api/patients/" + id), "{\"pronoun\":\"\"}").andExpect(status().isOk());
+  }
+
+  @Test
+  void pronounCaseAndSpacesAreToleratedAndStoredInLowerCase() throws Exception {
+    String body = "{\"displayName\":\"Casse\",\"pronoun\":\" ELLE \"}";
+    String res =
+        send(post("/api/patients"), body)
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.pronoun").value("elle"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String id = res.replaceAll(".*?\"id\":\"([^\"]+)\".*", "$1");
+    send(post("/api/patients"), "{\"displayName\":\"Casse 2\",\"pronoun\":\"Neutre\"}")
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.pronoun").value("neutre"));
+    send(patch("/api/patients/" + id), "{\"pronoun\":\"Iel\"}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.pronoun").value("iel"));
+    send(patch("/api/patients/" + id), "{\"pronoun\":\" IL \"}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.pronoun").value("il"));
+    Integer stored =
+        jdbc.queryForObject(
+            "select count(*) from patient where id = ? and pronoun = 'il'",
+            Integer.class,
+            UUID.fromString(id));
+    assertThat(stored).isEqualTo(1);
+  }
+
+  @Test
+  void unreadableBodyWithoutAFieldStaysA400() throws Exception {
+    send(post("/api/patients"), "{\"displayName\":")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("MALFORMED_JSON"));
+  }
+
+  /** Patient enregistré avant les limites de G Q47 : pronom hors liste, noms de 130 caractères. */
+  private String legacyPatient() {
+    UUID id = UUID.randomUUID();
+    jdbc.update(
+        "insert into patient (id, tenant_id, owner_id, display_name, first_name, last_name,"
+            + " pronoun) values (?, ?, ?, ?, ?, ?, 'ielle')",
+        id,
+        tenant,
+        practitionerId,
+        "d".repeat(130),
+        "f".repeat(130),
+        "l".repeat(130));
+    return id.toString();
+  }
+
+  @Test
+  void aLegacyPatientStaysReadableAndEditable() throws Exception {
+    String id = legacyPatient();
+    mvc.perform(get("/api/patients/" + id).with(auth))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.pronoun").value("ielle"))
+        .andExpect(jsonPath("$.displayName").value("d".repeat(130)));
+    send(patch("/api/patients/" + id), "{\"phone\":\"0102030405\"}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.phone").value("0102030405"))
+        .andExpect(jsonPath("$.pronoun").value("ielle"))
+        .andExpect(jsonPath("$.firstName").value("f".repeat(130)));
+  }
+
+  @Test
+  void patchResendingUnchangedLegacyValuesIsNotRevalidated() throws Exception {
+    String id = legacyPatient();
+    String whole =
+        "{\"displayName\":\""
+            + "d".repeat(130)
+            + "\",\"firstName\":\""
+            + "f".repeat(130)
+            + "\",\"lastName\":\""
+            + "l".repeat(130)
+            + "\",\"pronoun\":\"ielle\","
+            + "\"phone\":\"0102\"}";
+    send(patch("/api/patients/" + id), whole)
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.phone").value("0102"))
+        .andExpect(jsonPath("$.pronoun").value("ielle"));
+    // Dès qu'une valeur change, la règle s'applique de nouveau.
+    send(patch("/api/patients/" + id), "{\"pronoun\":\"madame\"}")
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.errors[0].code").value("INVALID_VALUE"));
+    send(patch("/api/patients/" + id), "{\"lastName\":\"" + "m".repeat(130) + "\"}")
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.errors[0].code").value("TOO_LONG"));
+    send(patch("/api/patients/" + id), "{\"displayName\":\"" + "e".repeat(130) + "\"}")
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.errors[0].code").value("TOO_LONG"));
+    // Un nom ou un pronom valide remplace sans difficulté la valeur héritée.
+    send(patch("/api/patients/" + id), "{\"pronoun\":\"Elle\",\"displayName\":\"Court\"}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.pronoun").value("elle"))
+        .andExpect(jsonPath("$.displayName").value("Court"));
   }
 
   @Test

@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-03T10:06:26.790Z",
+  "task": "M9-20",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "Fusionnée (PR 71, CI verte) ; plan M9 terminé (20 tâches)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/71",
+  "branch": "claude/m9-suivi",
+  "checkout": "m9-19-cb33b1"
+}

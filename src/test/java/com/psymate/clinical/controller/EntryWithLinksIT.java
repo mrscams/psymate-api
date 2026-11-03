@@ -101,9 +101,12 @@ class EntryWithLinksIT extends ClinicalWebSupport {
         type.getName(), "%" + entryId + "%");
   }
 
+  /** Publications du patient du test : EntryCreated et LinkAccepted portent son identifiant. */
   private int publications() {
     return count(
-        "select count(*) from event_publication where listener_id like '%OutboxListeners%'");
+        "select count(*) from event_publication where listener_id like '%OutboxListeners%'"
+            + " and serialized_event::text like ?",
+        "%" + patient + "%");
   }
 
   /**

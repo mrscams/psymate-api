@@ -427,7 +427,8 @@ class AdminJournalIT extends AbstractAccountsIT {
             .isInstanceOf(SQLException.class);
         assertThatThrownBy(() -> statement.execute("delete from admin_journal_v"))
             .isInstanceOf(SQLException.class);
-        statement.execute("select count(*) from admin_journal_v");
+        // La lecture est permise ; « where false » ne lit aucune ligne des autres tests.
+        statement.execute("select count(*) from admin_journal_v where false");
       } finally {
         statement.execute("reset role");
       }

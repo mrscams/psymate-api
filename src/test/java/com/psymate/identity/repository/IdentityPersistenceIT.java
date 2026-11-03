@@ -147,7 +147,8 @@ class IdentityPersistenceIT {
     String email = newEmail();
     UUID otherTenant = newTenant();
     UUID otherId = UUID.randomUUID();
-    int tenantsBefore = count("select count(*) from tenant");
+    // Nom de famille propre au test : le tenant de l'inscription porte le nom affiché.
+    String lastName = "Kaddour" + UUID.randomUUID().toString().replaceAll("[^a-f]", "");
 
     MvcResult result;
     try (Connection pending = dataSource.getConnection()) {
@@ -161,7 +162,7 @@ class IdentityPersistenceIT {
       }
       ExecutorService pool = Executors.newSingleThreadExecutor();
       try {
-        Future<MvcResult> call = pool.submit(() -> register(email));
+        Future<MvcResult> call = pool.submit(() -> register(email, lastName));
         awaitOneBackendWaitingOnALock();
         pending.commit();
         result = call.get(30, TimeUnit.SECONDS);
@@ -186,7 +187,8 @@ class IdentityPersistenceIT {
             count("select count(*) from security_event where practitioner_id = '" + otherId + "'"))
         .isZero();
     // Un seul tenant ajouté : celui du compte annexe (le tenant de l'inscription est annulé).
-    assertThat(count("select count(*) from tenant")).isEqualTo(tenantsBefore);
+    assertThat(count("select count(*) from tenant where id = '" + otherTenant + "'")).isEqualTo(1);
+    assertThat(count("select count(*) from tenant where name = 'Maya " + lastName + "'")).isZero();
     // L'adresse reçoit l'e-mail « compte existant », pas de confirmation.
     List<String> subjects = subjectsReceivedBy(email);
     assertThat(subjects).hasSize(1);
@@ -194,11 +196,15 @@ class IdentityPersistenceIT {
   }
 
   private MvcResult register(String email) throws Exception {
+    return register(email, "Kaddour");
+  }
+
+  private MvcResult register(String email, String lastName) throws Exception {
     Map<String, Object> p = new LinkedHashMap<>();
     p.put("email", email);
     p.put("password", "Zebre-Tournesol-42");
     p.put("firstName", "Maya");
-    p.put("lastName", "Kaddour");
+    p.put("lastName", lastName);
     p.put("profession", "psychologist");
     p.put("phone", "06 12 34 56 78");
     p.put("address", Map.of("street", "12 rue des Lilas", "postalCode", "69003", "city", "Lyon"));

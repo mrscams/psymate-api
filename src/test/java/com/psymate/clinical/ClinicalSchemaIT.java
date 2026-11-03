@@ -68,11 +68,12 @@ class ClinicalSchemaIT {
 
   @Test
   void reservedV2TablesAreEmpty() {
-    for (String table : List.of("entry_embedding", "entry_chunk")) {
-      assertThat(jdbc.queryForObject("select count(*) from " + table, Integer.class))
-          .as(table)
-          .isZero();
-    }
+    assertThat(jdbc.queryForObject("select count(*) from entry_embedding", Integer.class))
+        .as("entry_embedding")
+        .isZero();
+    assertThat(jdbc.queryForObject("select count(*) from entry_chunk", Integer.class))
+        .as("entry_chunk")
+        .isZero();
   }
 
   @Test

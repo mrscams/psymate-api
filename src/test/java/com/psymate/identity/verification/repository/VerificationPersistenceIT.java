@@ -247,22 +247,30 @@ class VerificationPersistenceIT {
     UUID purged = document(p, "registration", base.plusSeconds(50), base);
     UUID later = document(p, "certification", now.plusSeconds(3600), null);
     UUID undecided = document(p, "professional_card", null, null);
+    try {
+      List<DuePurge> two = repo.duePurges(now, 2);
+      assertThat(two).extracting(DuePurge::id).containsExactly(first, second);
 
-    List<DuePurge> two = repo.duePurges(now, 2);
-    assertThat(two).extracting(DuePurge::id).containsExactly(first, second);
+      List<UUID> all = repo.duePurges(now, 100_000).stream().map(DuePurge::id).toList();
+      assertThat(all).contains(first, second, third);
+      assertThat(all.indexOf(first)).isLessThan(all.indexOf(second));
+      assertThat(all.indexOf(second)).isLessThan(all.indexOf(third));
+      assertThat(all).doesNotContain(purged, later, undecided);
+      assertThat(repo.duePurges(now, 2).get(0).storageKey())
+          .isEqualTo("verification/" + p + "/" + first + ".bin");
 
-    List<UUID> all = repo.duePurges(now, 100_000).stream().map(DuePurge::id).toList();
-    assertThat(all).contains(first, second, third);
-    assertThat(all.indexOf(first)).isLessThan(all.indexOf(second));
-    assertThat(all.indexOf(second)).isLessThan(all.indexOf(third));
-    assertThat(all).doesNotContain(purged, later, undecided);
-    assertThat(repo.duePurges(now, 2).get(0).storageKey())
-        .isEqualTo("verification/" + p + "/" + first + ".bin");
-
-    // Comparaison stricte : la ligne dont purge_after vaut exactement « maintenant » n'est pas due.
-    assertThat(repo.duePurges(base.plusSeconds(100), 100_000))
-        .extracting(DuePurge::id)
-        .doesNotContain(first, second, third);
+      // Comparaison stricte : la ligne dont purge_after vaut exactement « maintenant » n'est pas
+      // due.
+      assertThat(repo.duePurges(base.plusSeconds(100), 100_000))
+          .extracting(DuePurge::id)
+          .doesNotContain(first, second, third);
+    } finally {
+      // Aucune ligne échue laissée à la purge d'un autre test (revue A-19, B3).
+      jdbc.update(
+          "update verification_document set purged_at = now()"
+              + " where practitioner_id = ? and purged_at is null and purge_after is not null",
+          p);
+    }
   }
 
   // ---- (c) la soumission verrouille la ligne praticien

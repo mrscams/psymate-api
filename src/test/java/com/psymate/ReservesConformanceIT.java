@@ -276,16 +276,22 @@ class ReservesConformanceIT {
   void v2TablesExistAndAreEmpty() {
     for (String table : List.of("entry_embedding", "entry_chunk")) {
       assertThat(tableExists(table)).as(table + " existe").isTrue();
-      assertThat(count("select count(*) from " + table)).as(table + " est vide").isZero();
     }
+    assertThat(count("select count(*) from entry_embedding"))
+        .as("entry_embedding est vide")
+        .isZero();
+    assertThat(count("select count(*) from entry_chunk")).as("entry_chunk est vide").isZero();
   }
 
   @Test
   void companionTablesExistAndAreEmpty() {
     for (String table : List.of("patient_device", "patient_submission")) {
       assertThat(tableExists(table)).as(table + " existe").isTrue();
-      assertThat(count("select count(*) from " + table)).as(table + " est vide").isZero();
     }
+    assertThat(count("select count(*) from patient_device")).as("patient_device est vide").isZero();
+    assertThat(count("select count(*) from patient_submission"))
+        .as("patient_submission est vide")
+        .isZero();
   }
 
   @Test
@@ -298,7 +304,9 @@ class ReservesConformanceIT {
 
   @Test
   void everyEntryIsAuthoredByPractitionerWithoutSubmission() {
-    assertThat(count("select count(*) from entry")).as("des entrées existent").isGreaterThan(0);
+    assertThat(count("select count(*) from entry where patient_id = ?", patient))
+        .as("des entrées existent")
+        .isGreaterThan(0);
     assertThat(
             count(
                 "select count(*) from entry"

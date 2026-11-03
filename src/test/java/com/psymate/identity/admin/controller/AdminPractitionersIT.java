@@ -423,9 +423,13 @@ class AdminPractitionersIT extends AbstractAccountsIT {
         },
         target);
     try {
-      jdbc.update(
-          "update practitioner set verification_status = 'closed' where role = 'admin' and id <> ?",
-          target);
+      // Seuls les administrateurs actifs sont écartés : un compte déjà suspendu le reste.
+      others
+          .keySet()
+          .forEach(
+              id ->
+                  jdbc.update(
+                      "update practitioner set verification_status = 'closed' where id = ?", id));
       // L'acteur n'est plus un administrateur actif en base (session périmée) : la cible est la
       // dernière.
       MvcResult last = suspend(actor, target, REASON);

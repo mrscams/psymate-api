@@ -496,7 +496,13 @@ class AuthIT {
                 .getStatus())
         .isEqualTo(202);
     assertThat(lastMailText(email)).isNull();
-    assertThat(jdbc.queryForObject("select count(*) from auth_token", Integer.class)).isNotNull();
+    // Aucun compte (donc aucun jeton) n'est créé pour l'adresse inconnue.
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from practitioner where email_normalized = ?",
+                Integer.class,
+                email))
+        .isZero();
   }
 
   @Test

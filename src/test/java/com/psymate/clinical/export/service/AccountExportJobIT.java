@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import com.psymate.clinical.export.ExportTestSupport;
+import com.psymate.clinical.export.repository.ExportJobRepository;
+import com.psymate.clinical.export.repository.ExportJobRepository.ExportJobView;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -44,6 +46,7 @@ class AccountExportJobIT extends ExportTestSupport {
 
   @Autowired private ExportJobService jobs;
   @Autowired private ExportPurgeJob purgeJob;
+  @Autowired private ExportJobRepository exportJobs;
 
   @Value("${app.storage.dir}")
   private String storageDir;
@@ -134,6 +137,11 @@ class AccountExportJobIT extends ExportTestSupport {
 
   private String shortId(UUID id) {
     return id.toString().substring(0, 8);
+  }
+
+  private Timestamp purgedAt(String jobId) {
+    return jdbc.queryForObject(
+        "select purged_at from export_job where id = ?::uuid", Timestamp.class, jobId);
   }
 
   private Path storedFile(String jobId) {
@@ -429,8 +437,11 @@ class AccountExportJobIT extends ExportTestSupport {
     String downloadUrl = done.status().str("downloadUrl");
     assertThat(Files.exists(storedFile(done.jobId()))).isTrue();
 
-    // Avant l'échéance : rien à purger, le lien sert.
-    assertThat(jobs.purgeDue()).isZero();
+    // Avant l'échéance : la purge ne touche pas ce job, le lien sert. La base est partagée : on
+    // regarde la ligne et le fichier du test, pas le total purgé.
+    jobs.purgeDue();
+    assertThat(purgedAt(done.jobId())).isNull();
+    assertThat(Files.exists(storedFile(done.jobId()))).isTrue();
     get(downloadUrl, null).andExpect(status().isOk());
 
     // Après 7 jours : 410, plus de lien dans le statut ; le fichier existe encore jusqu'à la purge.
@@ -456,8 +467,13 @@ class AccountExportJobIT extends ExportTestSupport {
                 done.jobId()))
         .isEqualTo(1);
     get(downloadUrl, null).andExpect(status().isGone());
-    // Idempotent.
-    assertThat(jobs.purgeDue()).isZero();
+    // Idempotent : le job purgé n'est plus échu, et une seconde purge ne retouche pas la ligne.
+    assertThat(exportJobs.dueForPurge(clock.instant()))
+        .extracting(ExportJobView::id)
+        .doesNotContain(UUID.fromString(done.jobId()));
+    Timestamp purgedAt = purgedAt(done.jobId());
+    jobs.purgeDue();
+    assertThat(purgedAt(done.jobId())).isEqualTo(purgedAt);
   }
 
   @Test

@@ -63,8 +63,13 @@ class AdminBootstrapIT {
     runner.run(new DefaultApplicationArguments("--create-admin=" + email));
   }
 
-  private int practitioners() {
-    return jdbc.queryForObject("select count(*) from practitioner", Integer.class);
+  /**
+   * Administrateurs en base. Le lanceur ne crée que des administrateurs, et seuls les tests en
+   * créent, l'un après l'autre : aucun listener ni planificateur n'écrit dans {@code practitioner}.
+   */
+  private int admins() {
+    return jdbc.queryForObject(
+        "select count(*) from practitioner where role = 'admin'", Integer.class);
   }
 
   private int rows(String email) {
@@ -256,25 +261,28 @@ class AdminBootstrapIT {
 
   @Test
   void runnerDoesNothingWithoutTheOption(CapturedOutput output) {
-    int before = practitioners();
+    int before = admins();
 
     runner.run(new DefaultApplicationArguments());
     runner.run(new DefaultApplicationArguments("--spring.profiles.active=test", "autre"));
 
     assertThat(exits.codes).isEmpty();
-    assertThat(practitioners()).isEqualTo(before);
+    assertThat(admins()).isEqualTo(before);
+    assertThat(rows("autre")).isZero();
     assertThat(output.getOut()).doesNotContain("Mot de passe :");
   }
 
   @Test
   void invalidEmailExitsWithOneAndCreatesNothing(CapturedOutput output) {
-    int before = practitioners();
+    int before = admins();
 
     runner.run(new DefaultApplicationArguments("--create-admin=pas-un-email"));
     runner.run(new DefaultApplicationArguments("--create-admin"));
 
     assertThat(exits.codes).containsExactly(1, 1);
-    assertThat(practitioners()).isEqualTo(before);
+    assertThat(admins()).isEqualTo(before);
+    assertThat(rows("pas-un-email")).isZero();
+    assertThat(rows("")).isZero();
     assertThat(output.getErr()).contains("invalide");
     assertThat(output.getOut()).doesNotContain("Mot de passe :");
   }

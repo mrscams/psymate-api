@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-02T22:42:09.601Z",
+  "task": "M9-19",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant(s), 5 à corriger, 6 remarque(s)",
+  "notes": "aucun bloquant ; à corriger : EntryWithLinksIT publications() global, AccountExportJobIT idempotence affaiblie, AuthIT assertion vide, AdminPersistenceIT/AdminVerificationIT mutent les admins/dossiers des autres, trous du scanner (%s, count(1), clé/valeur republish)",
+  "branch": "claude/m9-19-cb33b1",
+  "checkout": "m9-19-cb33b1"
+}

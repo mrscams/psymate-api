@@ -1,6 +1,6 @@
 # Document F – Mode opératoire des agents · Backend `psymate-api`
 
-28 octobre 2026 · @Hayes · Version 1.1 (29 octobre 2026 : questions tranchées, noms PsyMate) · Ce document est fait pour être **suivi**, pas lu. Partie 1 : les décisions prises sur les questions ouvertes (détail dans `docs/G-decisions.md`). Partie 2 : ce qu'il faut créer une fois avant le premier agent. Partie 3 : les lots, dans l'ordre, avec pour chaque tâche l'explication en clair, l'agent à lancer, les commandes à taper et le prompt exact à coller.
+28 octobre 2026 · @Hayes · Version 1.2 (29 octobre 2026 : questions tranchées, noms PsyMate ; 2 novembre 2026 : lot 10, compléments du contrat pour la V1 web) · Ce document est fait pour être **suivi**, pas lu. Partie 1 : les décisions prises sur les questions ouvertes (détail dans `docs/G-decisions.md`). Partie 2 : ce qu'il faut créer une fois avant le premier agent. Partie 3 : les lots, dans l'ordre, avec pour chaque tâche l'explication en clair, l'agent à lancer, les commandes à taper et le prompt exact à coller.
 
 Les prompts renvoient aux documents copiés dans `docs/` du dépôt : `docs/A-architecture.md` (étude d'architecture), `docs/B-ux.md` (expérience utilisateur), `docs/C-plan.md` (plan et tâches), `docs/D-orchestration-backend.md` (ordre et dépendances), `docs/E-modele-donnees.md` (base de données), `docs/G-decisions.md` (décisions sur les questions ouvertes), `docs/design/*.md` (fiches par écran). Quand C et E se contredisent sur la base de données, E l'emporte (E8). Quand G contredit un autre document, G l'emporte.
 
@@ -1463,3 +1463,219 @@ Le backend V1 est complet. Les anciennes questions « à trancher » sont closes
 | Étude hébergement HDS / RGPD (Q16, Q17, Q19) | Après le backend V1 | M7-06 prépare la passation |
 
 Le même document pour le frontend `psymate-web` (**document H**) suivra le même plan : préparation, lots alignés sur les tags de contrat (`v0.1.0` → auth, `v0.2.0` → identité étendue, `v0.3.0` → patients et entrées, …), un prompt par écran à partir des fiches `docs/design/`.
+
+---
+
+## Lot 10 — Compléments du contrat pour la V1 web (M10, ajouté le 2 novembre 2026)
+
+Les fiches design écrites le 2 novembre (`docs/design/03, 05, 08, 18, 19, 28, 29`) ont révélé sept écarts entre ce que les écrans doivent afficher et ce que le contrat `contract-v0.9.0` expose. Ils sont décrits dans `docs/C-plan.md` **C9** (tâches M10-01 à M10-07) et `docs/couverture-ecrans.md` §4. Les lots M8 (migration JPA) et M9 (restructuration) n'ont pas de prompt ici : ils suivent `docs/etudes/revue-architecture-2026-11-01.md`.
+
+**Avant de lancer** : G Q36 interdit toute tâche fonctionnelle dans un module pendant sa restructuration M9. Donc, par couloir : `directory` (M10-01, M10-02) attend **M9-11** ; `identity.auth` (M10-03, M10-04) attend **M9-17** ; `patients` (M10-05) attend **M9-09** (M9-04 est déjà fusionnée). Si le lot 3 web (annuaire) arrive avant M9-11, trancher dans G (nouvelle ligne) que M10-01 et M10-02 passent avant, puis lancer.
+**Agents** : 3 couloirs en parallèle ; dans chaque couloir, les deux tâches sont séquentielles. M10-06 et M10-07 sont V1.1 : après la V1 web.
+**Contrat** : chaque tâche regénère `contract/openapi.yaml` (`make contract`) **sans** changer `app.contract.version` ; après la fusion de M10-05 (dernière des cinq), vous faites le commit « Contrat v0.10.0 » (bump de `app.contract.version` dans `application.yml`, `make contract`) puis `tools/tag-contract.sh 0.10.0 && git push --tags`, comme pour les tags précédents.
+**Structure** : « respecte la structure du module telle qu'elle est sur `main` » veut dire : dossiers par rôle (`api / controller / dto / service / repository / model / config`, G Q33, Q35) si la tâche M9 du module est fusionnée, sinon la structure existante.
+
+### Couloir `directory` · Agent 1 · tâche M10-01 — Vocabulaire de l'annuaire en accès public
+
+**En clair** : les pages publiques de l'annuaire (fiche 08) doivent afficher les libellés des spécialités, publics, modalités et langues, mais `GET /api/vocabulary/directory` exige une session praticien. On ajoute le même contenu sous `/api/public/`, sans session, avec la limite de débit publique.
+
+```bash
+claude --worktree M10-01
+```
+
+```text
+Tâche M10-01 — Vocabulaire de l'annuaire en accès public (dépôt psymate-api, module directory). Utilise l'agent backend-module-dev.
+
+Contexte : lis CLAUDE.md, docs/C-plan.md C9 ligne M10-01, docs/G-decisions.md Q15 (liste fermée) et Q24 (limites de débit), docs/A-architecture.md A4.10, docs/design/08-annuaire-public.md (sections « Route & module » et « Écarts avec la maquette »). Le code : DirectoryVocabularyController (GET /api/vocabulary/directory, réponse DirectoryVocabularyDto), le service qu'il appelle, PublicSecurityConfig (chaîne /api/public/** sans session ni CSRF), la règle de débit app.rate-limits.rules.public-directory (/api/public/**, 60 par minute et par IP) dans application.yml. Respecte la structure du module telle qu'elle est sur main.
+
+Objectif : GET /api/public/directory/vocabulary, sans authentification, qui renvoie exactement le même DTO que GET /api/vocabulary/directory (spécialités et publics actifs, modalités, langues, mêmes codes, mêmes libellés FR/EN, listes complètes non paginées), servi par le même service (aucune duplication de requête). L'endpoint praticien est conservé tel quel. Documentation springdoc complète (summary, description « Public : sans session… », réponses 200 et 429) comme les autres endpoints publics. Vérifie que la chaîne PublicSecurityConfig et la règle public-directory couvrent le nouveau chemin sans modification ; si ce n'est pas le cas, explique dans la PR ce que tu as dû ajouter.
+
+Périmètre : src/main/java/com/psymate/directory/** (un contrôleur public ou une méthode de PublicDirectoryController, selon la structure), tests src/test/java/com/psymate/directory/**, contract/openapi.yaml regénéré. Aucune migration, aucune modification de identity.
+
+Critères d'acceptation (C9 M10-01) :
+- sans cookie de session, GET /api/public/directory/vocabulary répond 200 avec les mêmes codes et libellés que GET /api/vocabulary/directory appelé avec une session ;
+- une spécialité désactivée par l'admin (PATCH /api/admin/vocabulary/directory/specialty/{code}) n'apparaît dans aucune des deux réponses ;
+- au-delà de 60 requêtes par minute depuis la même IP, 429 avec Retry-After (test avec la règle abaissée dans le profil test, comme PublicDirectoryIT le fait déjà) ;
+- aucune donnée patient ni praticien hors vocabulaire dans la réponse (ArchitectureTests reste vert).
+
+Tests : PublicDirectoryVocabularyIT (Testcontainers) ; cas ajouté dans DirectoryVocabularyAdminIT pour la désactivation vue côté public.
+
+Interdits : dupliquer la requête du vocabulaire ; toucher à identity ; changer app.contract.version (le bump et le tag sont faits après M10-05) ; dépendance Maven.
+
+Livrable : PR « M10-01 Vocabulaire de l'annuaire public », ./mvnw verify vert, contrat regénéré, make log.
+```
+
+### Couloir `directory` · Agent 1 (à la suite) · tâche M10-02 — Filtre et facette `specialties` dans l'annuaire public
+
+**En clair** : la fiche 08 filtre les praticiens par spécialité, mais `GET /api/public/directory` n'a que `q`, `city`, `lat/lng/radiusKm`, `professions`, `modalities`, `audiences`, `languages`, `accepting`, `sort`, `page`. On ajoute `specialties` et sa facette avec compteurs.
+
+```bash
+claude --worktree M10-02
+```
+
+```text
+Tâche M10-02 — Filtre et facette specialties dans l'annuaire public (dépôt psymate-api, module directory). Utilise l'agent backend-module-dev. Dépend de M10-01 fusionnée.
+
+Contexte : lis CLAUDE.md, docs/C-plan.md C9 ligne M10-02, docs/B-ux.md « Écran 8 », docs/design/08-annuaire-public.md, docs/A-architecture.md A4.10, docs/E-modele-donnees.md E3 (table practitioner_profile : colonne des spécialités, et directory_vocabulary). Le code : PublicDirectoryController (GET /api/public/directory, paramètres et DTO de réponse avec ses facettes), PublicDirectoryService, PublicDirectoryRepository (recherche publique native, G Q32 : JdbcClient ou fragment *NativeQueries selon l'état du module), PublicDirectoryIT. Regarde comment les facettes existantes (professions, audiences, modalities, languages) sont calculées et fais pareil.
+
+Objectif : paramètre de requête specialties (répétable : ?specialties=anxiety&specialties=burnout, codes de la liste fermée), filtre « au moins une des spécialités demandées » sur les profils publiés ; facette specialties dans la réponse (code, libellé, compteur), calculée sans le filtre de spécialité, comme les autres facettes ; un code inconnu ou désactivé → 422 VALIDATION_FAILED avec errors[{field: "specialties", code: "INVALID_VALUE"}] ; q continue de fonctionner indépendamment. Index : si le filtre a besoin d'un index (GIN sur la colonne des spécialités), c'est une migration numérotée selon E4, annoncée dans la PR ; sinon aucune migration.
+
+Périmètre : src/main/java/com/psymate/directory/**, tests, éventuellement une migration (E4), contract/openapi.yaml regénéré.
+
+Critères d'acceptation (C9 M10-02) :
+- specialties=anxiety ne renvoie que les profils publiés et approuvés portant ce code ;
+- les compteurs de la facette specialties correspondent aux résultats que donnerait chaque code seul, sans le filtre de spécialité ;
+- un code hors liste → 422 avec le champ nommé ;
+- la latence de GET /api/public/directory ne se dégrade pas (mesure avant/après dans la PR sur le seed small, make seed).
+
+Tests : PublicDirectoryIT (cas ajoutés : filtre, facette, code inconnu, combinaison avec professions et q).
+
+Interdits : saisie libre (les codes viennent de directory_vocabulary, G Q15) ; toucher à identity ; changer app.contract.version ; dépendance Maven.
+
+Livrable : PR « M10-02 Filtre specialties annuaire public », ./mvnw verify vert, contrat regénéré, make log.
+```
+
+### Couloir `identity.auth` · Agent 2 · tâche M10-03 — `GET /api/auth/me` enrichi pour le shell web
+
+**En clair** : le shell Angular doit savoir, dès le chargement, si le compte est administrateur, si la 2FA est active et si un changement de mot de passe est imposé (compte créé par `make admin`). Aujourd'hui `MeResponse` ne dit rien de tout cela et le web devrait le déduire d'erreurs 403.
+
+```bash
+claude --worktree M10-03
+```
+
+```text
+Tâche M10-03 — GET /api/auth/me enrichi : role, twoFactorEnabled, passwordChangeRequired (dépôt psymate-api, module identity, sous-package identity.auth). Utilise l'agent backend-module-dev.
+
+Contexte : lis CLAUDE.md, docs/C-plan.md C9 ligne M10-03, docs/A-architecture.md A10.4, docs/G-decisions.md Q5 (premier admin : mot de passe à usage unique, changement obligatoire, 2FA obligatoire) et A11 (rien en écriture), docs/design/18-compte-securite.md (sections « Route & module » et « Écarts avec la maquette » : le web attend ces trois champs). Le code : le DTO MeResponse (AuthDtos ou son fichier propre selon la structure du module), AuthController (GET /api/auth/me), AuthService, la table practitioner (colonne role, E3.2), TotpRepository / TwoFactorService (comment on sait que la 2FA est active), identity.admin.bootstrap (M7-08 : comment le « changement de mot de passe obligatoire » est mémorisé), AdminTwoFactorFilter (les 403 TWO_FACTOR_REQUIRED et PASSWORD_CHANGE_REQUIRED, s'ils existent déjà).
+
+Objectif : trois champs ajoutés à MeResponse, documentés springdoc : role ("practitioner" | "admin"), twoFactorEnabled (booléen), passwordChangeRequired (booléen : vrai pour un compte créé par make admin tant que POST /api/auth/password/change n'a pas été appelé ; faux sinon). Aucun de ces champs n'existe dans un DTO d'écriture. Si le flag « changement obligatoire » n'est stocké nulle part aujourd'hui (seulement déduit), stocke-le proprement : colonne dans practitioner via une migration numérotée selon E4, annoncée dans la PR ; sinon aucune migration.
+
+Périmètre : src/main/java/com/psymate/identity/auth/** (et identity/persistence si une colonne est ajoutée), tests src/test/java/com/psymate/identity/auth/**, contract/openapi.yaml regénéré. Respecte la structure du module telle qu'elle est sur main.
+
+Critères d'acceptation (C9 M10-03) :
+- un administrateur créé par make admin lit passwordChangeRequired=true, puis false après POST /api/auth/password/change ;
+- un praticien qui a activé la 2FA (POST /api/me/2fa/enable puis /verify) lit twoFactorEnabled=true, false après /disable ;
+- role vaut "admin" pour l'admin, "practitioner" pour les autres ; aucun des trois champs n'est accepté en écriture (un body qui les contient est ignoré ou refusé 422, test) ;
+- ContractIT vert après make contract.
+
+Tests : AuthMeIT (Testcontainers), cas ajoutés dans l'IT de M7-08 (bootstrap admin).
+
+Interdits : toucher à identity.admin hors lecture ; exposer le secret TOTP ; changer app.contract.version ; dépendance Maven.
+
+Livrable : PR « M10-03 GET /api/auth/me enrichi », ./mvnw verify vert, contrat regénéré, make log.
+```
+
+### Couloir `identity.auth` · Agent 2 (à la suite) · tâche M10-04 — Changement d'e-mail d'un compte confirmé
+
+**En clair** : `POST /api/auth/email/change` ne sert aujourd'hui qu'à corriger l'adresse d'un compte **non confirmé**. L'écran Compte et sécurité (fiche 18) doit permettre à un praticien confirmé de changer son e-mail de connexion, avec confirmation sur la nouvelle adresse.
+
+```bash
+claude --worktree M10-04
+```
+
+```text
+Tâche M10-04 — Changement d'e-mail d'un compte confirmé (dépôt psymate-api, module identity, sous-package identity.auth). Utilise l'agent backend-module-dev. Dépend de M10-03 fusionnée.
+
+Contexte : lis CLAUDE.md, docs/C-plan.md C9 ligne M10-04, docs/A-architecture.md A10.4, docs/design/18-compte-securite.md (carte « E-mail de connexion ») et docs/design/25-confirmation-email.md (lien 24 h, usage unique, anti-énumération), docs/E-modele-donnees.md E3.2 (auth_token : kinds et colonnes ; security_event), docs/G-decisions.md Q4 (expéditeur), Q23 (textes FR d'abord). Le code : AuthController POST /api/auth/email/change (variante publique actuelle : email + password, compte email_pending seulement) et POST /api/auth/email/confirm, AuthService, AuthTokenRepository, AuthMailer et messages_fr/en.properties, SecurityEvent.
+
+Objectif : la même route POST /api/auth/email/change accepte, avec une session, un corps { newEmail, password } pour un compte email_confirmed, under_review, needs_more ou approved : vérification du mot de passe (les échecs comptent dans le verrou de LoginAttemptLimiter), jeton auth_token kind='email_change' (24 h, haché, usage unique) portant la nouvelle adresse, e-mail envoyé à la NOUVELLE adresse (Mailpit, texte FR obligatoire, EN si possible), réponse 202 dans tous les cas (nouvelle adresse déjà prise : 202 identique + e-mail « vous avez déjà un compte » à cette adresse, comme l'inscription). POST /api/auth/email/confirm { token } avec un jeton email_change : bascule practitioner.email, écrit security_event kind='email_changed', révoque les autres sessions (même mécanisme que /api/auth/sessions/revoke-others), e-mail d'information à l'ANCIENNE adresse. Un jeton expiré ou consommé → 410. La variante publique existante (compte email_pending) reste inchangée. Si auth_token n'a pas de colonne pour stocker la nouvelle adresse, migration numérotée selon E4, annoncée dans la PR.
+
+Périmètre : src/main/java/com/psymate/identity/auth/**, messages_fr/en.properties, éventuellement une migration (E4), tests src/test/java/com/psymate/identity/auth/**, contract/openapi.yaml regénéré.
+
+Critères d'acceptation (C9 M10-04) :
+- l'ancien e-mail reste valide pour se connecter jusqu'à la confirmation ; après confirmation, seul le nouveau fonctionne ;
+- jeton expiré (horloge contrôlée, 24 h + 1 min) → 410 ; jeton réutilisé → 410 ;
+- une adresse déjà utilisée par un autre compte ne fuit pas (202 identique, corps identique, délai comparable) ;
+- les autres sessions sont révoquées à la confirmation ; security_event email_changed présent ;
+- deux e-mails visibles dans Mailpit (nouvelle adresse : lien ; ancienne : information).
+
+Tests : EmailChangeIT (Testcontainers + Mailpit), test unitaire du jeton (expiration, usage unique).
+
+Interdits : changer l'adresse sans confirmation ; message différent selon l'existence du compte ; changer app.contract.version ; dépendance Maven.
+
+Livrable : PR « M10-04 Changement d'e-mail d'un compte confirmé », ./mvnw verify vert, contrat regénéré, make log.
+```
+
+### Couloir `patients` · Agent 3 · tâche M10-05 — `errors[].code` dans le module patients
+
+**En clair** : les erreurs 422 du module `patients` renvoient `errors[{field, message}]` sans `code`, alors que les autres modules renvoient `{field, code, message}`. Le composant « état » du web (planche 29) affiche les messages par champ à partir du `code` ; on harmonise.
+
+```bash
+claude --worktree M10-05
+```
+
+```text
+Tâche M10-05 — errors[].code dans le module patients (dépôt psymate-api, module patients). Utilise l'agent backend-module-dev. Dépend de M9-04 (fusionnée) et M9-09.
+
+Contexte : lis CLAUDE.md, docs/C-plan.md C9 ligne M10-05 et C3 « Conventions » (ligne API : erreurs RFC 9457 avec errors[] par champ), docs/design/29-etats.md section « Correspondance avec le contrat », docs/design/16-fiche-patient.md (règles de validation de la fiche patient). Le code : shared/problem (FieldProblem(field, code, message) unique depuis M9-04, ErrorCode, GlobalExceptionHandler, Problems), PatientException et PatientExceptionHandler (leur FieldError sans code), PatientController et PatientService (où les 422 sont construits), et, pour les codes à réutiliser, la façon dont clinical et identity produisent REQUIRED, INVALID_FORMAT, TOO_LONG, OUT_OF_RANGE, INVALID_VALUE, INVALID_DATE (grep dans src/main/java).
+
+Objectif : toutes les réponses 422 du module patients renvoient errors[] composé de FieldProblem {field, code, message} avec les mêmes codes que les autres modules ; FieldError propre à patients supprimé ; aucune nouvelle valeur de code sans la lister dans la PR. Les messages restent en français (messages_fr.properties). Le schéma OpenAPI des 422 de patients référence le même schéma FieldProblem que les autres modules (vérifie dans contract/openapi.yaml après make contract).
+
+Périmètre : src/main/java/com/psymate/patients/**, tests src/test/java/com/psymate/patients/**, contract/openapi.yaml regénéré. Aucune migration. Respecte la structure du module telle qu'elle est sur main (dossiers par rôle si M9-09 est fusionnée).
+
+Critères d'acceptation (C9 M10-05) :
+- POST /api/patients sans displayName → 422, errors[0] = {field: "displayName", code: "REQUIRED", message en français} ;
+- birthDate dans le futur → code INVALID_DATE ; displayName de 300 caractères → TOO_LONG ; pronoun hors liste → INVALID_VALUE ;
+- PATCH /api/patients/{id} suit les mêmes règles ; les IT existants de patients restent verts ;
+- ContractIT vert après make contract, et le diff du contrat ne montre que l'ajout de code dans le schéma des 422 de patients.
+
+Tests : PatientValidationIT (table de cas), cas ajoutés dans l'IT de M1-01.
+
+Interdits : changer la sémantique d'un 403/404 (c'est M9-04) ; toucher à shared/problem autrement qu'en lecture ; changer app.contract.version ; dépendance Maven.
+
+Livrable : PR « M10-05 errors[].code dans patients », ./mvnw verify vert, contrat regénéré, make log.
+```
+
+**Après fusion des cinq** : `git checkout main && git pull`, bump `app.contract.version` à `0.10.0` dans `application.yml`, `make contract`, commit « Contrat v0.10.0 : compléments pour la V1 web (M10-01 à M10-05) », `tools/tag-contract.sh 0.10.0 && git push --tags`. Puis côté web : `CONTRACT_TAG=contract-v0.10.0`, copie du contrat dans `docs/contract/openapi.yaml`, regénération de `docs/api-reference.md`.
+
+### V1.1 · tâche M10-06 — `GET /api/me/security` : sessions actives et dernière connexion
+
+**En clair** : la carte « Sessions actives » et la carte « Dernière connexion » de la fiche 18 n'ont pas d'API. À lancer après la V1 web, dans le couloir `identity.auth`.
+
+```bash
+claude --worktree M10-06
+```
+
+```text
+Tâche M10-06 — GET /api/me/security : sessions actives, dernière connexion, révocation d'une session (dépôt psymate-api, module identity, sous-package identity.auth). Utilise l'agent backend-module-dev. V1.1 : après la V1 web. Dépend de M10-03.
+
+Contexte : lis CLAUDE.md, docs/C-plan.md C9 ligne M10-06, docs/design/18-compte-securite.md (cartes Sessions actives et Dernière connexion, section « Écarts avec la maquette »), docs/E-modele-donnees.md E3.2 (spring_session, spring_session_attributes, security_event), docs/G-decisions.md Q6 (durées de session), docs/A-architecture.md A9 R7 (pas d'IP complète exposée). Le code : SessionNativeQueries (identity.persistence), POST /api/auth/sessions/revoke-others, IpAddresses (troncature), SecurityEvent (kinds de connexion).
+
+Objectif : GET /api/me/security → { sessions: [{ id (opaque, pas l'id de session HTTP brut), createdAt, expiresAt, lastAccessAt, current, device (déduit de l'User-Agent stocké en attribut de session : navigateur + système, jamais la chaîne brute), city (déduite de l'IP tronquée si une table de géolocalisation existe, sinon null) }], lastLogin: { at, device, city } (dernier security_event de connexion réussie) } ; POST /api/me/sessions/{id}/revoke → 204, ferme cette session (404 si elle n'appartient pas au praticien, 409 si c'est la session courante : utiliser logout). Si l'User-Agent n'est pas encore stocké à la création de session, ajoute-le (attribut Spring Session, pas de migration) et documente que les sessions antérieures auront device = null.
+
+Périmètre : src/main/java/com/psymate/identity/auth/**, identity/persistence (requêtes de session), tests, contract/openapi.yaml regénéré (bump à 0.11.0 décidé au moment du lancement).
+
+Critères d'acceptation (C9 M10-06) : la session courante est marquée current ; révoquer une autre session la rend invalide en moins d'une minute (test : requête avec l'ancien cookie → 401) ; aucune IP complète ni User-Agent brut dans la réponse ; un praticien ne voit jamais les sessions d'un autre.
+
+Tests : MeSecurityIT.
+
+Interdits : exposer l'id de session HTTP ; toucher à identity.admin ; dépendance Maven.
+
+Livrable : PR « M10-06 GET /api/me/security », ./mvnw verify vert, contrat regénéré, make log.
+```
+
+### V1.1 · tâche M10-07 — Filtre par spécialité sur `GET /api/admin/practitioners`
+
+**En clair** : quand l'admin ne peut pas désactiver une spécialité utilisée (`409 VOCABULARY_IN_USE`, fiche 28), il doit pouvoir voir quels profils publiés la portent. À lancer après la V1 web, dans le couloir `identity.admin`.
+
+```bash
+claude --worktree M10-07
+```
+
+```text
+Tâche M10-07 — Filtre specialty sur GET /api/admin/practitioners (dépôt psymate-api, module identity, sous-package identity.admin, via la façade directory.api). Utilise l'agent backend-module-dev. V1.1 : après la V1 web. Dépend de M9-16.
+
+Contexte : lis CLAUDE.md, docs/C-plan.md C9 ligne M10-07 et C6 ligne M1-14b, docs/design/28-admin-vocabulaire.md (état B et « Écarts avec la maquette »), docs/design/21-admin-praticiens.md (paramètres de GET /api/admin/practitioners), docs/A-architecture.md A5 (identity.admin ne dépend d'aucun module clinique ; directory expose une façade) et A10.1. Le code : le contrôleur et les requêtes keyset de GET /api/admin/practitioners (identity.admin), la façade de directory.api utilisée par M1-14b pour le vocabulaire, DirectoryVocabularyUsageQueries (compteur usedByPublishedProfiles), ArchitectureTests.
+
+Objectif : paramètre specialty (code de la liste fermée) sur GET /api/admin/practitioners, qui restreint la liste aux comptes dont le profil publié porte cette spécialité ; la liste des ids correspondants est obtenue par une méthode ajoutée à la façade directory.api (identity.admin ne lit jamais practitioner_profile directement), compatible avec le curseur keyset existant ; code inconnu → 422 INVALID_VALUE ; la réponse 409 VOCABULARY_IN_USE de PATCH /api/admin/vocabulary/directory/{kind}/{code} gagne un champ practitionersUrl ("/api/admin/practitioners?specialty=<code>") pour le lien de l'écran 28.
+
+Périmètre : identity/admin/**, directory/api (une méthode de façade et son implémentation), tests, contract/openapi.yaml regénéré (bump décidé au lancement).
+
+Critères d'acceptation (C9 M10-07) : le nombre de comptes renvoyés par specialty=X égale usedByPublishedProfiles du 409 pour X ; un profil dépublié n'apparaît plus ; aucun champ patient dans la réponse ; ArchitectureTests (identity.admin sans module clinique) et ModularityTests restent verts.
+
+Tests : AdminPractitionersIT (cas ajouté), DirectoryVocabularyAdminIT (champ practitionersUrl).
+
+Interdits : lire practitioner_profile depuis identity.admin ; dépendance Maven.
+
+Livrable : PR « M10-07 Filtre specialty admin », ./mvnw verify vert, contrat regénéré, make log.
+```

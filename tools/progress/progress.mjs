@@ -53,7 +53,7 @@ function add(args) {
   const status = normalizeStatus(args.status);
   const summary = (args.summary || "").trim();
   const problems = [];
-  if (!/^(M\d-\d{2}[A-Z]?|PROJET)$/.test(task)) problems.push("--task doit être un ID de tâche (ex. M0-02) ou PROJET");
+  if (!/^(M\d{1,2}-\d{2}[A-Z]?|PROJET)$/.test(task)) problems.push("--task doit être un ID de tâche (ex. M0-02) ou PROJET");
   if (!agent) problems.push("--agent est obligatoire (ex. backend-module-dev, reviewer, claude)");
   if (!status) problems.push(`--status doit être l'un de : ${STATUSES.join(", ")}`);
   if (!summary) problems.push("--summary est obligatoire");
@@ -163,13 +163,13 @@ function collectEvents() {
 function loadPlan() {
   const tasks = new Map();
   const cells = (line) => line.split("|").slice(1, -1).map((c) => c.trim());
-  const isTaskRow = (line) => /^\| M\d-\d{2}[a-z]? \|/i.test(line);
+  const isTaskRow = (line) => /^\| M\d{1,2}-\d{2}[a-z]? \|/i.test(line);
   const clean = (s) => s.replace(/\*\*/g, "").replace(/`/g, "");
 
   const plan = readDoc("docs/C-plan.md");
   let milestoneTitle = "";
   for (const line of plan.split("\n")) {
-    const h = line.match(/^### (M\d) (.+)$/);
+    const h = line.match(/^### (M\d{1,2}) (.+)$/);
     if (h) milestoneTitle = `${h[1]} ${h[2]}`;
     if (!isTaskRow(line)) continue;
     const c = cells(line);
@@ -178,7 +178,7 @@ function loadPlan() {
     if (tasks.has(id)) continue;
     tasks.set(id, {
       id, title: clean(c[1]), scope: clean(c[2]), read: clean(c[3]), criteria: clean(c[5]),
-      tests: clean(c[6]), dependsOn: clean(c[7]), milestone: id.slice(0, 2), milestoneTitle,
+      tests: clean(c[6]), dependsOn: clean(c[7]), milestone: id.split("-")[0], milestoneTitle,
     });
   }
   const orch = readDoc("docs/D-orchestration-backend.md");
@@ -187,17 +187,17 @@ function loadPlan() {
     if (/^## D9/.test(line)) inD9 = true;
     else if (/^## D\d/.test(line)) inD9 = false;
     if (inD9) {
-      const m = line.match(/^\| (V\d+) \| (M\d-\d{2}[a-z]?) \| ([^|]*) \| ([^|]*) \|/i);
+      const m = line.match(/^\| (V\d+) \| (M\d{1,2}-\d{2}[a-z]?) \| ([^|]*) \| ([^|]*) \|/i);
       if (m) {
         const id = m[2].toUpperCase();
-        if (!tasks.has(id)) tasks.set(id, { id, title: "", scope: "", milestone: id.slice(0, 2), milestoneTitle: "" });
+        if (!tasks.has(id)) tasks.set(id, { id, title: "", scope: "", milestone: id.split("-")[0], milestoneTitle: "" });
         Object.assign(tasks.get(id), { wave: m[1], lane: clean(m[3].trim()), planned: clean(m[4].trim()) });
       }
     } else if (isTaskRow(line)) {
       const c = cells(line);
       const id = c[0].toUpperCase();
       if (c.length >= 4 && !tasks.has(id)) {
-        tasks.set(id, { id, title: clean(c[1]), scope: clean(c[2]), dependsOn: clean(c[3]), milestone: id.slice(0, 2), milestoneTitle: "" });
+        tasks.set(id, { id, title: clean(c[1]), scope: clean(c[2]), dependsOn: clean(c[3]), milestone: id.split("-")[0], milestoneTitle: "" });
       } else if (tasks.has(id) && !tasks.get(id).title) tasks.get(id).title = clean(c[1]);
     }
   }
@@ -339,7 +339,7 @@ const rows = DATA.tasks.map((t) => {
   return { ...t, status: e?.status || "todo", agent: e?.agent || "", at: e?.at || "", pr: e?.pr || "", branch: e?.branch || "", last: e };
 });
 for (const [id, e] of latest) if (!rows.some((r) => r.id === id) && id !== "PROJET") {
-  rows.push({ id, title: "(hors plan)", lane: "", wave: "", milestone: id.slice(0, 2), status: e.status, agent: e.agent, at: e.at, pr: e.pr || "", last: e });
+  rows.push({ id, title: "(hors plan)", lane: "", wave: "", milestone: id.split("-")[0], status: e.status, agent: e.agent, at: e.at, pr: e.pr || "", last: e });
 }
 const byTask = new Map();
 for (const e of DATA.events) (byTask.get(e.task) || byTask.set(e.task, []).get(e.task)).push(e);

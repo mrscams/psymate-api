@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-03T10:33:03.959Z",
+  "task": "PROJET",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Lot M10 préparé : écarts du contrat révélés par les fiches web (C9), briefs d'agents du lot 10 (F), fiches design 00 à 29, suivi des ID à deux chiffres",
+  "next": "M10-01, M10-03 et M10-05 en parallèle (couloirs directory, identity.auth, patients)",
+  "branch": "claude/m10-preparation",
+  "checkout": "m9-19-cb33b1"
+}

@@ -39,7 +39,21 @@ Chaque écran est livré en trois fichiers du même nom :
 | 26 | Mot de passe oublié (demande + nouveau mot de passe) | — | `identity` | `auth` |
 | 27 | Compte suspendu / refusé (lecture seule, export, recours) | — | `identity`, `identity.verification` (recours : M1-14b ; export : M6-05) | `auth` |
 
-Encore à maquetter : 3 Timeline (canevas Nordique existant, à ajouter au pack), 5 saisie en séance et 8 annuaire (à repasser en Nordique), historique des versions, planche d'états vides/erreur, admin › Vocabulaire de l'annuaire (liste fermée des spécialités et publics, M1-14b), déclinaison mobile.
+Ajoutés le 2 novembre 2026 (maquettes HTML écrites à la main depuis B, C et le contrat, `.png` à produire) :
+
+| N° | Écran | Doc B | Module(s) backend | Feature Angular |
+|---|---|---|---|---|
+| 03 | Timeline (chronologique, par séance, vue décennie) | écran 3 | `clinical` (M3-01) | `patient-timeline` |
+| 05 | Éditeur d'entrée (panneau six types, historique des versions, place de la barre de commande) | écran 5, B5 | `clinical` (M1-05), `vocabulary` | `entries` |
+| 08 | Annuaire public (résultats, filtres, aucun résultat) | écran 8 | `directory` (M5-02) | `public-directory` |
+| 18 | Compte et sécurité (2FA, mot de passe, e-mail, sessions ; premier login admin) | — | `identity` (M1-11, M7-08) — tâche web **M1-17** à ajouter | `account-security` |
+| 19 | Données et export (export patient, export du compte) | — | `clinical` (M6-05) — tâche web **M6-06** à ajouter | `account-data` |
+| 28 | Admin · Vocabulaire de l'annuaire (liste fermée, désactivation) | — | `identity.admin` (M1-14b, G Q15) | `admin` |
+| 29 | Planche d'états : vide, chargement, erreurs, notifications, aide des raccourcis | flux 1, B7 | — (composant partagé `shared/ui/state`) | `shared` |
+
+| 00 | Composants partagés (barre d'application, en-tête patient, navigation Mon compte, layout public, barre admin, panneau latéral, composant « état ») — pas de maquette propre | B2, B7 | — | `shared`, `core` (M1-07, M0-07, M7-07) |
+
+Encore à faire : déclinaison mobile (après V1). Les sept fiches du 2 novembre n'ont pas de `.png` (la maquette `.html` suffit). Les écarts avec le contrat relevés par ces fiches sont les tâches **M10** de `C-plan.md` C9. Les anciens canevas de `UI/` (timeline, saisie en séance, annuaire) sont remplacés par 03, 05 et 08.
 
 ## Parcours praticien (décision du 25 oct.)
 `12 Inscription` (ouverte à tous, G Q21) → e-mail confirmé → `13 Dossier professionnel` (accès à l'outil clinique **ouvert** dès cette étape) → `20 Validation admin` → `approved` → `10 Profil public` peut être publié → `09 Fiche publique` visible. Étape e-mail : `25 Confirmation`. Refus ou suspension : `27 Compte suspendu` (lecture seule + recours), piloté depuis `21 Praticiens` ; signalements d'une fiche : `23` (V1.1). États et verrous : tableau dans `13-dossier-professionnel.md`.

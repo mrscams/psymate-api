@@ -67,7 +67,7 @@ app:
     email: ${APP_SUPPORT_EMAIL:support@example.test}
   contract:
     # Version du contrat OpenAPI publie ; a bumper avant de poser un tag contract-vX.Y.Z.
-    version: 0.10.0
+    version: 0.11.0
   # Limitation de debit (G Q24, Bucket4j, shared.ratelimit). Une regle = un motif de chemin (decode),
   # des methodes optionnelles (toutes si absent), la cle de comptage (ip : IPv6 regroupee en /64 ;
   # session : id de session HTTP, les requetes sans session ne sont pas comptees), un nombre de

@@ -1471,7 +1471,7 @@ Le même document pour le frontend `psymate-web` (**document H**) suivra le mêm
 Les fiches design écrites le 2 novembre (`docs/design/03, 05, 08, 18, 19, 28, 29`) ont révélé sept écarts entre ce que les écrans doivent afficher et ce que le contrat `contract-v0.9.0` expose. Ils sont décrits dans `docs/C-plan.md` **C9** (tâches M10-01 à M10-07) et `docs/couverture-ecrans.md` §4. Les lots M8 (migration JPA) et M9 (restructuration) n'ont pas de prompt ici : ils suivent `docs/etudes/revue-architecture-2026-11-01.md`.
 
 **Avant de lancer** : G Q36 interdit toute tâche fonctionnelle dans un module pendant sa restructuration M9. Donc, par couloir : `directory` (M10-01, M10-02) attend **M9-11** ; `identity.auth` (M10-03, M10-04) attend **M9-17** ; `patients` (M10-05) attend **M9-09** (M9-04 est déjà fusionnée). Si le lot 3 web (annuaire) arrive avant M9-11, trancher dans G (nouvelle ligne) que M10-01 et M10-02 passent avant, puis lancer.
-**Agents** : 3 couloirs en parallèle ; dans chaque couloir, les deux tâches sont séquentielles. M10-06 et M10-07 sont V1.1 : après la V1 web.
+**Agents** : 3 couloirs en parallèle ; dans chaque couloir, les deux tâches sont séquentielles. M10-07 est V1.1 : après la V1 web ; M10-06 a été avancée en V1 le 3 novembre 2026 (contrat `v0.11.0`).
 **Contrat** : chaque tâche regénère `contract/openapi.yaml` (`make contract`) **sans** changer `app.contract.version` ; après la fusion de M10-05 (dernière des cinq), vous faites le commit « Contrat v0.10.0 » (bump de `app.contract.version` dans `application.yml`, `make contract`) puis `tools/tag-contract.sh 0.10.0 && git push --tags`, comme pour les tags précédents.
 **Structure** : « respecte la structure du module telle qu'elle est sur `main` » veut dire : dossiers par rôle (`api / controller / dto / service / repository / model / config`, G Q33, Q35) si la tâche M9 du module est fusionnée, sinon la structure existante.
 
@@ -1628,7 +1628,7 @@ Livrable : PR « M10-05 errors[].code dans patients », ./mvnw verify vert, cont
 
 **Après fusion des cinq** : `git checkout main && git pull`, bump `app.contract.version` à `0.10.0` dans `application.yml`, `make contract`, commit « Contrat v0.10.0 : compléments pour la V1 web (M10-01 à M10-05) », `tools/tag-contract.sh 0.10.0 && git push --tags`. Puis côté web : `CONTRACT_TAG=contract-v0.10.0`, copie du contrat dans `docs/contract/openapi.yaml`, regénération de `docs/api-reference.md`.
 
-### V1.1 · tâche M10-06 — `GET /api/me/security` : sessions actives et dernière connexion
+### Avancée en V1 le 3 novembre 2026 · tâche M10-06 — `GET /api/me/security` : sessions actives et dernière connexion
 
 **En clair** : la carte « Sessions actives » et la carte « Dernière connexion » de la fiche 18 n'ont pas d'API. À lancer après la V1 web, dans le couloir `identity.auth`.
 

@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-03T07:19:17.035Z",
+  "task": "M9-19",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Partie 1/2 : assertions B1 et B3 centrées sur les données du test, SharedDatabaseHygieneTest et sa fixture ; bases encore séparées",
+  "notes": "verify vert (407 unitaires, 931 IT) ; verify-fast 9 min 04, 43 conteneurs pgvector démarrés dont 31 vivants au pic, 249 Mo libres au minimum ; 5 tables de réserve (entry_embedding, entry_chunk en plus) ; AdminVerificationIT garde son écartement global (file sans filtre)",
+  "next": "Partie 2 (SharedPostgres, SharedDatabaseIsolationIT, ordre aléatoire) après fusion de la PR 69",
+  "pr": "https://github.com/mrscams/psymate-api/pull/69",
+  "branch": "claude/m9-19-cb33b1",
+  "checkout": "m9-19-cb33b1"
+}

@@ -62,8 +62,9 @@ class PatientController {
     @ApiResponse(
         responseCode = "422",
         description =
-            "VALIDATION_FAILED : paramètre invalide, errors[] {field, message} avec field = sort"
-                + " (valeur autre que name, created, updated) ou cursor (curseur illisible).",
+            "VALIDATION_FAILED : paramètre invalide, errors[] {field, code, message} avec field ="
+                + " sort (INVALID_VALUE : valeur autre que name, created, updated) ou cursor"
+                + " (INVALID_FORMAT : curseur illisible).",
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -145,11 +146,15 @@ class PatientController {
     @ApiResponse(
         responseCode = "422",
         description =
-            "VALIDATION_FAILED : errors[] {field, message} avec field = displayName (obligatoire),"
-                + " birthDate (future ou de plus de 120 ans), flags[i].kind (nature inconnue),"
-                + " flags[i].reason (obligatoire pour watch), tags[i] (libellé vide) ;"
-                + " TAG_IS_EMOTION : un libellé de tags correspond à une émotion ; TAG_UNKNOWN :"
-                + " un libellé de tags n'existe pas encore (créer le tag d'abord).",
+            "VALIDATION_FAILED : errors[] {field, code, message} avec field = displayName"
+                + " (REQUIRED si absent ou vide, TOO_LONG au-delà de 120 caractères), firstName et"
+                + " lastName (TOO_LONG au-delà de 120 caractères), birthDate (INVALID_DATE : future"
+                + " ou de plus de 120 ans), pronoun (INVALID_VALUE : hors elle, il, iel, neutre),"
+                + " flags[i].kind (REQUIRED si absente, INVALID_VALUE si inconnue),"
+                + " flags[i].reason (REQUIRED pour watch), tags[i] (REQUIRED si libellé vide) ;"
+                + " TAG_IS_EMOTION : un libellé de tags correspond à une émotion (même code dans"
+                + " errors[0]) ; TAG_UNKNOWN : un libellé de tags n'existe pas encore (créer le tag"
+                + " d'abord ; même code dans errors[0]).",
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -238,9 +243,12 @@ class PatientController {
     @ApiResponse(
         responseCode = "422",
         description =
-            "VALIDATION_FAILED : errors[] {field, message} avec field = nom de la clé inconnue ou"
-                + " non modifiable, displayName (vide), birthDate (format invalide, future ou de"
-                + " plus de 120 ans), context ou followUp (objet attendu).",
+            "VALIDATION_FAILED : errors[] {field, code, message} avec field = nom de la clé"
+                + " inconnue ou non modifiable (UNKNOWN_FIELD), displayName (REQUIRED si vide,"
+                + " TOO_LONG au-delà de 120 caractères), firstName et lastName (TOO_LONG), pronoun"
+                + " (INVALID_VALUE : hors elle, il, iel, neutre), birthDate (INVALID_FORMAT si"
+                + " illisible, INVALID_DATE si future ou de plus de 120 ans), context ou followUp"
+                + " (INVALID_FORMAT : objet attendu).",
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -405,8 +413,8 @@ class PatientController {
     @ApiResponse(
         responseCode = "422",
         description =
-            "VALIDATION_FAILED : errors[] {field, message} avec field = flag.kind (nature"
-                + " inconnue ou absente) ou flag.reason (obligatoire pour watch).",
+            "VALIDATION_FAILED : errors[] {field, code, message} avec field = flag.kind (REQUIRED"
+                + " si absente, INVALID_VALUE si inconnue) ou flag.reason (REQUIRED pour watch).",
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -460,8 +468,8 @@ class PatientController {
     @ApiResponse(
         responseCode = "422",
         description =
-            "VALIDATION_FAILED : errors[] {field, message} avec field = kind (nature de drapeau"
-                + " inconnue).",
+            "VALIDATION_FAILED : errors[] {field, code, message} avec field = kind (INVALID_VALUE :"
+                + " nature de drapeau inconnue).",
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -521,9 +529,10 @@ class PatientController {
     @ApiResponse(
         responseCode = "422",
         description =
-            "VALIDATION_FAILED : libellé vide, errors[] {field, message} avec field = tags[i] ;"
-                + " TAG_IS_EMOTION : le libellé correspond à une émotion (utiliser l'émotion) ;"
-                + " TAG_UNKNOWN : le tag n'existe pas (le créer d'abord par POST /api/tags).",
+            "VALIDATION_FAILED : libellé vide, errors[] {field, code, message} avec field = tags[i]"
+                + " et code REQUIRED ; TAG_IS_EMOTION : le libellé correspond à une émotion"
+                + " (utiliser l'émotion) ; TAG_UNKNOWN : le tag n'existe pas (le créer d'abord par"
+                + " POST /api/tags) ; errors[0] porte alors le même code.",
         content =
             @Content(
                 mediaType = "application/problem+json",

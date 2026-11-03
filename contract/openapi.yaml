@@ -868,7 +868,7 @@ components:
       description: Création d'un patient dans le cabinet du praticien connecté.
       properties:
         birthDate:
-          description: Date de naissance AAAA-MM-JJ ; doit être passée et de moins de 120 ans (422 VALIDATION_FAILED sinon).
+          description: Date de naissance AAAA-MM-JJ ; doit être passée et de moins de 120 ans (422 INVALID_DATE sinon).
           example: 1990-04-02T00:00:00Z
           format: date
           type: string
@@ -877,16 +877,18 @@ components:
           description: 'Contexte de vie : objet JSON libre ; null = objet vide.'
           type: object
         displayName:
-          description: Nom affiché ; obligatoire, non vide après suppression des espaces.
+          description: Nom affiché ; obligatoire (422 REQUIRED), non vide après suppression des espaces, 120 caractères au plus (422 TOO_LONG).
           example: Marie D.
+          maxLength: 120
           type: string
         email:
           description: Adresse e-mail, texte libre ; vide ou null = non renseignée.
           example: marie.d@example.org
           type: string
         firstName:
-          description: Prénom ; vide ou null = non renseigné.
+          description: Prénom ; vide ou null = non renseigné ; 120 caractères au plus (422 TOO_LONG).
           example: Marie
+          maxLength: 120
           type: string
         flags:
           description: Drapeaux à poser dès la création ; un seul par nature (409 FLAG_ALREADY_ACTIVE sinon) ; null = aucun.
@@ -898,15 +900,21 @@ components:
           description: 'Cadre du suivi : objet JSON libre ; null = objet vide.'
           type: object
         lastName:
-          description: Nom de famille ; vide ou null = non renseigné.
+          description: Nom de famille ; vide ou null = non renseigné ; 120 caractères au plus (422 TOO_LONG).
           example: Dupont
+          maxLength: 120
           type: string
         phone:
           description: Téléphone, texte libre ; vide ou null = non renseigné.
           example: '0102030405'
           type: string
         pronoun:
-          description: Pronom d'adresse libre ; vide ou null = non renseigné.
+          description: 'Pronom d''adresse : elle, il, iel ou neutre (422 INVALID_VALUE sinon) ; vide ou null = non renseigné.'
+          enum:
+          - elle
+          - il
+          - iel
+          - neutre
           example: elle
           type: string
         tags:
@@ -2202,7 +2210,7 @@ components:
       description: Une erreur de champ dans errors[] (422, 400 de paramètre, 409 ENTRY_ARCHIVED des liens).
       properties:
         code:
-          description: 'Code stable de l''erreur de champ, à tester par le client : INVALID_FIELD, REQUIRED, OUT_OF_RANGE, TOO_LONG, UNKNOWN_EMOTION… (liste sur chaque opération). Absent dans les modules patients, vocabulary (tags, émotions) et directory (profil, annuaire public, contact), dont les erreurs de champ ne portent que field et message.'
+          description: 'Code stable de l''erreur de champ, à tester par le client : INVALID_FIELD, REQUIRED, OUT_OF_RANGE, TOO_LONG, UNKNOWN_EMOTION… (liste sur chaque opération). Absent dans les modules vocabulary (tags, émotions) et directory (profil, annuaire public, contact), dont les erreurs de champ ne portent que field et message.'
           example: REQUIRED
           type: string
         field:
@@ -2242,7 +2250,7 @@ components:
       description: Drapeau à poser sur un patient (à la création ou via POST /flags).
       properties:
         kind:
-          description: 'Nature du drapeau : watch = à surveiller, risk = risque, shared_care = suivi partagé. Toute autre valeur est refusée (422 VALIDATION_FAILED).'
+          description: 'Nature du drapeau : watch = à surveiller, risk = risque, shared_care = suivi partagé. Toute autre valeur est refusée (422 INVALID_VALUE), l''absence aussi (422 REQUIRED).'
           enum:
           - watch
           - risk
@@ -8594,7 +8602,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED : paramètre invalide, errors[] {field, message} avec field = sort (valeur autre que name, created, updated) ou cursor (curseur illisible).'
+          description: 'VALIDATION_FAILED : paramètre invalide, errors[] {field, code, message} avec field = sort (INVALID_VALUE : valeur autre que name, created, updated) ou cursor (INVALID_FORMAT : curseur illisible).'
         '429':
           content:
             application/problem+json:
@@ -8649,7 +8657,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED : errors[] {field, message} avec field = displayName (obligatoire), birthDate (future ou de plus de 120 ans), flags[i].kind (nature inconnue), flags[i].reason (obligatoire pour watch), tags[i] (libellé vide) ; TAG_IS_EMOTION : un libellé de tags correspond à une émotion ; TAG_UNKNOWN : un libellé de tags n''existe pas encore (créer le tag d''abord).'
+          description: 'VALIDATION_FAILED : errors[] {field, code, message} avec field = displayName (REQUIRED si absent ou vide, TOO_LONG au-delà de 120 caractères), firstName et lastName (TOO_LONG au-delà de 120 caractères), birthDate (INVALID_DATE : future ou de plus de 120 ans), pronoun (INVALID_VALUE : hors elle, il, iel, neutre), flags[i].kind (REQUIRED si absente, INVALID_VALUE si inconnue), flags[i].reason (REQUIRED pour watch), tags[i] (REQUIRED si libellé vide) ; TAG_IS_EMOTION : un libellé de tags correspond à une émotion (même code dans errors[0]) ; TAG_UNKNOWN : un libellé de tags n''existe pas encore (créer le tag d''abord ; même code dans errors[0]).'
         '429':
           content:
             application/problem+json:
@@ -8822,7 +8830,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED : errors[] {field, message} avec field = nom de la clé inconnue ou non modifiable, displayName (vide), birthDate (format invalide, future ou de plus de 120 ans), context ou followUp (objet attendu).'
+          description: 'VALIDATION_FAILED : errors[] {field, code, message} avec field = nom de la clé inconnue ou non modifiable (UNKNOWN_FIELD), displayName (REQUIRED si vide, TOO_LONG au-delà de 120 caractères), firstName et lastName (TOO_LONG), pronoun (INVALID_VALUE : hors elle, il, iel, neutre), birthDate (INVALID_FORMAT si illisible, INVALID_DATE si future ou de plus de 120 ans), context ou followUp (INVALID_FORMAT : objet attendu).'
         '429':
           content:
             application/problem+json:
@@ -9061,7 +9069,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED : errors[] {field, message} avec field = flag.kind (nature inconnue ou absente) ou flag.reason (obligatoire pour watch).'
+          description: 'VALIDATION_FAILED : errors[] {field, code, message} avec field = flag.kind (REQUIRED si absente, INVALID_VALUE si inconnue) ou flag.reason (REQUIRED pour watch).'
         '429':
           content:
             application/problem+json:
@@ -9137,7 +9145,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED : errors[] {field, message} avec field = kind (nature de drapeau inconnue).'
+          description: 'VALIDATION_FAILED : errors[] {field, code, message} avec field = kind (INVALID_VALUE : nature de drapeau inconnue).'
         '429':
           content:
             application/problem+json:
@@ -9863,7 +9871,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED : libellé vide, errors[] {field, message} avec field = tags[i] ; TAG_IS_EMOTION : le libellé correspond à une émotion (utiliser l''émotion) ; TAG_UNKNOWN : le tag n''existe pas (le créer d''abord par POST /api/tags).'
+          description: 'VALIDATION_FAILED : libellé vide, errors[] {field, code, message} avec field = tags[i] et code REQUIRED ; TAG_IS_EMOTION : le libellé correspond à une émotion (utiliser l''émotion) ; TAG_UNKNOWN : le tag n''existe pas (le créer d''abord par POST /api/tags) ; errors[0] porte alors le même code.'
         '429':
           content:
             application/problem+json:

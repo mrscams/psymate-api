@@ -18,6 +18,7 @@ import com.psymate.patients.dto.VersionDto;
 import com.psymate.patients.model.NameFilter;
 import com.psymate.patients.model.Patient;
 import com.psymate.patients.model.PatientException;
+import com.psymate.patients.model.PatientFieldCode;
 import com.psymate.patients.model.PatientFlag;
 import com.psymate.patients.model.PatientTag;
 import com.psymate.patients.model.PatientTagId;
@@ -28,6 +29,7 @@ import com.psymate.patients.repository.PatientOwnership;
 import com.psymate.patients.repository.PatientTagRepository;
 import com.psymate.patients.repository.PatientVersionRepository;
 import com.psymate.shared.problem.ErrorCode;
+import com.psymate.shared.problem.FieldProblem;
 import com.psymate.shared.problem.ProblemException;
 import com.psymate.vocabulary.api.EmotionCatalog;
 import com.psymate.vocabulary.api.TagFacade;
@@ -55,6 +57,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class PatientService implements PatientFacade, PatientOwnershipGuard {
 
   static final Set<String> FLAG_KINDS = Set.of("watch", "risk", "shared_care");
+
+  /** Pronoms admis (fiche 16 : Elle / Il / Iel / Neutre), en minuscules. */
+  static final Set<String> PRONOUNS = Set.of("elle", "il", "iel", "neutre");
+
+  /** Longueur maximale du nom affiché, du prénom et du nom (comme le profil d'annuaire). */
+  static final int MAX_NAME_LENGTH = 120;
+
   private static final Set<String> PATCHABLE =
       Set.of(
           "displayName",
@@ -243,7 +252,10 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
           case "created" -> "created_at desc, id";
           case "updated" -> "updated_at desc, id";
           default ->
-              throw PatientException.invalid("sort", "Tri inconnu : name, created ou updated.");
+              throw PatientException.invalid(
+                  "sort",
+                  PatientFieldCode.INVALID_VALUE,
+                  "Tri inconnu : name, created ou updated.");
         };
     int limit = limitParam == null ? DEFAULT_LIMIT : Math.max(1, Math.min(limitParam, MAX_LIMIT));
     int offset = decodeCursor(cursor);
@@ -299,7 +311,10 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
     CurrentPractitioner me = me();
     List<FieldProblem> problems = new ArrayList<>();
     String displayName = requireName(r.displayName(), problems);
+    checkText("firstName", r.firstName(), problems);
+    checkText("lastName", r.lastName(), problems);
     LocalDate birth = checkBirthDate(r.birthDate(), problems);
+    checkPronoun(r.pronoun(), problems);
     List<FlagRequest> flags = r.flags() == null ? List.of() : r.flags();
     for (int i = 0; i < flags.size(); i++) {
       checkFlag(flags.get(i), "flags[" + i + "]", problems);
@@ -349,12 +364,30 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
     List<FieldProblem> problems = new ArrayList<>();
     for (String key : body.keySet()) {
       if (!PATCHABLE.contains(key)) {
-        problems.add(new FieldProblem(key, "Champ non modifiable ou inconnu."));
+        problems.add(
+            new FieldProblem(
+                key, PatientFieldCode.UNKNOWN_FIELD, "Champ non modifiable ou inconnu."));
       }
     }
     String displayName = cur.getDisplayName();
     if (body.containsKey("displayName")) {
       displayName = requireName(asString(body.get("displayName")), problems);
+    }
+    if (body.containsKey("firstName")) {
+      checkText("firstName", asString(body.get("firstName")), problems);
+    }
+    if (body.containsKey("lastName")) {
+      checkText("lastName", asString(body.get("lastName")), problems);
+    }
+    if (body.containsKey("pronoun")) {
+      checkPronoun(asString(body.get("pronoun")), problems);
+    }
+    for (String key : List.of("context", "followUp")) {
+      Object v = body.get(key);
+      if (v != null && !(v instanceof Map<?, ?>)) {
+        problems.add(
+            new FieldProblem(key, PatientFieldCode.INVALID_FORMAT, "Un objet est attendu."));
+      }
     }
     LocalDate birth = cur.getBirthDate();
     if (body.containsKey("birthDate")) {
@@ -362,7 +395,9 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
       try {
         birth = v == null ? null : checkBirthDate(LocalDate.parse(v.toString()), problems);
       } catch (DateTimeParseException e) {
-        problems.add(new FieldProblem("birthDate", "Date invalide (AAAA-MM-JJ)."));
+        problems.add(
+            new FieldProblem(
+                "birthDate", PatientFieldCode.INVALID_FORMAT, "Date invalide (AAAA-MM-JJ)."));
       }
     }
     throwIfAny(problems);
@@ -449,7 +484,8 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
     CurrentPractitioner me = me();
     requireActive(owned(id));
     if (!FLAG_KINDS.contains(kind)) {
-      throw PatientException.invalid("kind", "Drapeau inconnu : watch, risk ou shared_care.");
+      throw PatientException.invalid(
+          "kind", PatientFieldCode.INVALID_VALUE, "Drapeau inconnu : watch, risk ou shared_care.");
     }
     if (patientFlags.clearActive(id, kind, me.id(), Patient.now()) == 0) {
       throw PatientException.of(
@@ -490,18 +526,21 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
       String label = labels.get(i);
       String field = "tags[" + i + "]";
       if (label == null || label.replace("#", "").isBlank()) {
-        throw PatientException.invalid(field, "Le libellé du tag est obligatoire.");
+        throw PatientException.invalid(
+            field, PatientFieldCode.REQUIRED, "Le libellé du tag est obligatoire.");
       }
       var emotion = emotions.findActiveByLabel(label);
       if (emotion.isPresent()) {
         String fr = emotion.get().labelFr();
         throw new PatientException(
             HttpStatus.UNPROCESSABLE_ENTITY,
-            "TAG_IS_EMOTION",
+            PatientFieldCode.TAG_IS_EMOTION,
             "Ce libellé est déjà une émotion : utilisez « " + fr + " ».",
             List.of(
-                new PatientException.FieldError(
-                    field, "Ce libellé correspond à l'émotion « " + fr + " ».")));
+                new FieldProblem(
+                    field,
+                    PatientFieldCode.TAG_IS_EMOTION,
+                    "Ce libellé correspond à l'émotion « " + fr + " ».")));
       }
       TagView tag =
           tagFacade
@@ -510,52 +549,94 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
                   () ->
                       new PatientException(
                           HttpStatus.UNPROCESSABLE_ENTITY,
-                          "TAG_UNKNOWN",
+                          PatientFieldCode.TAG_UNKNOWN,
                           "Tag inconnu : créez-le d'abord (POST /api/tags).",
-                          List.of(new PatientException.FieldError(field, "Ce tag n'existe pas."))));
+                          List.of(
+                              new FieldProblem(
+                                  field, PatientFieldCode.TAG_UNKNOWN, "Ce tag n'existe pas."))));
       ids.add(tag.id());
     }
     return new ArrayList<>(ids);
   }
 
-  private record FieldProblem(String field, String message) {}
-
   private static void throwIfAny(List<FieldProblem> problems) {
     if (!problems.isEmpty()) {
       throw new PatientException(
           HttpStatus.UNPROCESSABLE_ENTITY,
-          "VALIDATION_FAILED",
+          ErrorCode.VALIDATION_FAILED,
           problems.get(0).message(),
-          problems.stream()
-              .map(p -> new PatientException.FieldError(p.field(), p.message()))
-              .toList());
+          List.copyOf(problems));
     }
   }
 
   private static String requireName(String name, List<FieldProblem> problems) {
     if (name == null || name.isBlank()) {
-      problems.add(new FieldProblem("displayName", "Le nom affiché est obligatoire."));
+      problems.add(
+          new FieldProblem(
+              "displayName", PatientFieldCode.REQUIRED, "Le nom affiché est obligatoire."));
       return null;
     }
-    return name.trim();
+    String trimmed = name.trim();
+    if (trimmed.length() > MAX_NAME_LENGTH) {
+      problems.add(
+          new FieldProblem(
+              "displayName",
+              PatientFieldCode.TOO_LONG,
+              "Le nom affiché est limité à " + MAX_NAME_LENGTH + " caractères."));
+    }
+    return trimmed;
+  }
+
+  /** Prénom ou nom : facultatif, {@value #MAX_NAME_LENGTH} caractères au plus. */
+  private static void checkText(String field, String value, List<FieldProblem> problems) {
+    if (value != null && value.trim().length() > MAX_NAME_LENGTH) {
+      problems.add(
+          new FieldProblem(
+              field, PatientFieldCode.TOO_LONG, "Limité à " + MAX_NAME_LENGTH + " caractères."));
+    }
+  }
+
+  /** Pronom : vide ou null = non renseigné, sinon l'une des valeurs de {@link #PRONOUNS}. */
+  private static void checkPronoun(String pronoun, List<FieldProblem> problems) {
+    if (pronoun != null && !pronoun.isBlank() && !PRONOUNS.contains(pronoun.trim())) {
+      problems.add(
+          new FieldProblem(
+              "pronoun",
+              PatientFieldCode.INVALID_VALUE,
+              "Pronom inconnu : elle, il, iel ou neutre."));
+    }
   }
 
   private static LocalDate checkBirthDate(LocalDate d, List<FieldProblem> problems) {
     if (d != null && (d.isAfter(LocalDate.now()) || d.isBefore(LocalDate.now().minusYears(120)))) {
       problems.add(
           new FieldProblem(
-              "birthDate", "La date de naissance doit être passée et de moins de 120 ans."));
+              "birthDate",
+              PatientFieldCode.INVALID_DATE,
+              "La date de naissance doit être passée et de moins de 120 ans."));
     }
     return d;
   }
 
   private static void checkFlag(FlagRequest f, String field, List<FieldProblem> problems) {
-    if (f == null || f.kind() == null || !FLAG_KINDS.contains(f.kind())) {
+    if (f == null || f.kind() == null || f.kind().isBlank()) {
       problems.add(
-          new FieldProblem(field + ".kind", "Drapeau inconnu : watch, risk ou shared_care."));
+          new FieldProblem(
+              field + ".kind",
+              PatientFieldCode.REQUIRED,
+              "La nature du drapeau est obligatoire (watch, risk ou shared_care)."));
+    } else if (!FLAG_KINDS.contains(f.kind())) {
+      problems.add(
+          new FieldProblem(
+              field + ".kind",
+              PatientFieldCode.INVALID_VALUE,
+              "Drapeau inconnu : watch, risk ou shared_care."));
     } else if ("watch".equals(f.kind()) && (f.reason() == null || f.reason().isBlank())) {
       problems.add(
-          new FieldProblem(field + ".reason", "Une raison est obligatoire pour « à surveiller »."));
+          new FieldProblem(
+              field + ".reason",
+              PatientFieldCode.REQUIRED,
+              "Une raison est obligatoire pour « à surveiller »."));
     }
   }
 
@@ -602,7 +683,7 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
       return Map.of();
     }
     if (!(v instanceof Map<?, ?> patch)) {
-      throw PatientException.invalid(key, "Un objet est attendu.");
+      throw PatientException.invalid(key, PatientFieldCode.INVALID_FORMAT, "Un objet est attendu.");
     }
     Map<String, Object> out = new LinkedHashMap<>(current);
     ((Map<String, Object>) patch)
@@ -635,7 +716,8 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
       }
       return n;
     } catch (IllegalArgumentException | StringIndexOutOfBoundsException e) {
-      throw PatientException.invalid("cursor", "Curseur invalide.");
+      throw PatientException.invalid(
+          "cursor", PatientFieldCode.INVALID_FORMAT, "Curseur invalide.");
     }
   }
 }

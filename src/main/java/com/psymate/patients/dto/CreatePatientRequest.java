@@ -8,22 +8,37 @@ import java.util.Map;
 @Schema(description = "Création d'un patient dans le cabinet du praticien connecté.")
 public record CreatePatientRequest(
     @Schema(
-            description = "Nom affiché ; obligatoire, non vide après suppression des espaces.",
+            description =
+                "Nom affiché ; obligatoire (422 REQUIRED), non vide après suppression des espaces,"
+                    + " 120 caractères au plus (422 TOO_LONG).",
             requiredMode = Schema.RequiredMode.REQUIRED,
+            maxLength = 120,
             example = "Marie D.")
         String displayName,
-    @Schema(description = "Prénom ; vide ou null = non renseigné.", example = "Marie")
+    @Schema(
+            description =
+                "Prénom ; vide ou null = non renseigné ; 120 caractères au plus (422 TOO_LONG).",
+            maxLength = 120,
+            example = "Marie")
         String firstName,
-    @Schema(description = "Nom de famille ; vide ou null = non renseigné.", example = "Dupont")
+    @Schema(
+            description =
+                "Nom de famille ; vide ou null = non renseigné ; 120 caractères au plus (422"
+                    + " TOO_LONG).",
+            maxLength = 120,
+            example = "Dupont")
         String lastName,
     @Schema(
             description =
                 "Date de naissance AAAA-MM-JJ ; doit être passée et de moins de 120 ans"
-                    + " (422 VALIDATION_FAILED sinon).",
+                    + " (422 INVALID_DATE sinon).",
             example = "1990-04-02")
         LocalDate birthDate,
     @Schema(
-            description = "Pronom d'adresse libre ; vide ou null = non renseigné.",
+            description =
+                "Pronom d'adresse : elle, il, iel ou neutre (422 INVALID_VALUE sinon) ; vide ou"
+                    + " null = non renseigné.",
+            allowableValues = {"elle", "il", "iel", "neutre"},
             example = "elle")
         String pronoun,
     @Schema(

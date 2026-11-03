@@ -905,4 +905,56 @@ class ArchitectureTests {
         .hasMessageContaining("BadOccurredRange")
         .hasMessageNotContaining("GoodGeneratedColumns");
   }
+
+  // ---------------------------------------------------------------------------------------------
+  // M9-20
+  // ---------------------------------------------------------------------------------------------
+
+  private static final String MAPPING_FIXTURE_ROOT = "psymatefixture.badmapping";
+
+  /**
+   * Conventions de mapping (G Q46, revue ARCH-20, A-20) : une classe {@code *Mapper} est un
+   * {@code @Mapper} MapStruct ; un mapping ecrit a la main s'appelle {@code *Assembler}.
+   * RoleFolderTests range les deux dans {@code dto/}.
+   */
+  static ArchRule mappersAreMapStruct(String root) {
+    return classes()
+        .that()
+        .resideInAPackage(root + "..")
+        .and()
+        .haveSimpleNameEndingWith("Mapper")
+        .should()
+        .beAnnotatedWith("org.mapstruct.Mapper")
+        .because("un mapping ecrit a la main s'appelle *Assembler (G Q46)");
+  }
+
+  /** L'ancien nom des mappings manuels ({@code *Presenter}, ARCH-20) ne revient pas. */
+  static ArchRule noPresenters(String root) {
+    return noClasses()
+        .that()
+        .resideInAPackage(root + "..")
+        .should()
+        .haveSimpleNameEndingWith("Presenter")
+        .because("un mapping ecrit a la main s'appelle *Assembler (G Q46)");
+  }
+
+  @Test
+  void mappingConventionsHoldInProduction() {
+    mappersAreMapStruct(ROOT).check(MAIN);
+    noPresenters(ROOT).check(MAIN);
+  }
+
+  @Test
+  void mappingRulesDetectAHandWrittenMapperAndAPresenter() {
+    JavaClasses fixtures = new ClassFileImporter().importPackages(MAPPING_FIXTURE_ROOT);
+    assertThatThrownBy(() -> mappersAreMapStruct(MAPPING_FIXTURE_ROOT).check(fixtures))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("ManualMapper")
+        .hasMessageNotContaining("GoodMapper")
+        .hasMessageNotContaining("ThingAssembler");
+    assertThatThrownBy(() -> noPresenters(MAPPING_FIXTURE_ROOT).check(fixtures))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("ThingPresenter")
+        .hasMessageNotContaining("ThingAssembler");
+  }
 }

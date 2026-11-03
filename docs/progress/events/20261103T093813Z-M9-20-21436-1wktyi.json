@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-03T09:38:13.943Z",
+  "task": "M9-20",
+  "agent": "claude",
+  "status": "in-progress",
+  "summary": "Démarrée : recensement des mappings, décision R4 à obtenir",
+  "branch": "claude/m9-20",
+  "checkout": "m9-19-cb33b1"
+}

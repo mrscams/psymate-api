@@ -950,7 +950,7 @@ Ces points touchent à des règles de CLAUDE.md, à des décisions G ou à des A
 - **Argument** : il n'y a qu'une seule unité de travail par module. `TagNativeQueriesImpl.java:42-46` montre le piège d'un UPDATE natif sous un contexte de persistance (le `refresh` est obligatoire). identity l'a déjà fait ainsi (ARCH-11).
 - **Alternative** : garder Q32 telle quelle et remettre le keyset admin en JdbcClient. Ce serait plus cohérent avec la lettre de Q32, mais cela ferait deux technologies dans `identity.persistence`.
 
-**R4 · Remise en cause de la convention CLAUDE.md « MapStruct pour les DTO ».**
+**R4 · Remise en cause de la convention CLAUDE.md « MapStruct pour les DTO ».** **Non retenue le 2026-11-03 (G Q46) : la règle de CLAUDE.md reste, outillée par une garde ArchUnit (M9-20).**
 - **Proposition** : « MapStruct pour les mappings de plus de 5 champs ou avec des collections ; sinon une méthode statique `from(…)` sur le DTO. »
 - **Argument** : 4 mappers MapStruct contre 7 mappings manuels (ARCH-20). Dans les petits modules, MapStruct ajoute du code généré et une configuration de processeur pour un gain nul. La convention actuelle n'est de toute façon pas respectée. Si l'équipe préfère la garder, l'étape A-20 s'en charge.
 
@@ -988,9 +988,10 @@ Ces points touchent à des règles de CLAUDE.md, à des décisions G ou à des A
 | Q6 · DTO | **Un fichier par DTO.** | Les conteneurs `*Dtos` sont éclatés pendant l'étape du module concerné ; A-02 ajoute une garde « pas de record public imbriqué dans `dto/` ». |
 | R2 · Suppression physique | **Interdite pour les données cliniques seulement** (`patient`, `entry`, `entry_version`, `link` et leurs tables de détail courantes). Les tables d'association (`entry_tag`, `patient_tag`), les purges planifiées (`contact_request`, `spring_session`, fichiers d'export, justificatifs) et les sessions peuvent l'être. | A-01 reformule la règle de CLAUDE.md et A4.8, et liste dans E chaque table purgée avec sa raison. A-02 ajoute au test d'appartenance des tables une garde : aucun `DELETE` sur une table clinique. |
 | R3 · SQL natif dans un module JPA | **Fragments Spring Data** (`*NativeQueries` + `EntityManager`), une seule unité de travail par module. `JdbcClient` est réservé à search, overview, graphe, timeline et à la recherche publique de l'annuaire. | A-01 précise G Q32 (Q38). La garde de technologie d'A-02 l'applique : pas de `JdbcClient` dans un module JPA, sauf la recherche publique de l'annuaire, citée nommément. Le keyset admin reste en `EntityManager` natif (ARCH-11). |
+| R4 · MapStruct pour les DTO | **Non retenue (3 novembre, G Q46)** : la règle de CLAUDE.md reste (`*Mapper` MapStruct, `*Assembler` pour un mapping écrit à la main, tous deux dans `dto/`). | A-20 n'ajoute que la garde ArchUnit « une classe `*Mapper` porte `@Mapper` » ; aucune classe de production ne bouge. |
 
 Ces six décisions seront reportées dans `docs/G-decisions.md` (nouvelles lignes Q33 à Q38) par l'étape A-01. Restent ouvertes, à trancher au plus tard à l'étape indiquée :
-- R4 : A-20 ;
+- R4 : A-20 (non retenue le 2026-11-03, G Q46) ;
 - Q1 : A-14 ;
 - Q2 : A-06 ;
 - Q3 : A-18 ;

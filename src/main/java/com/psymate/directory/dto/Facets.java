@@ -5,8 +5,10 @@ import java.util.List;
 
 @Schema(
     description =
-        "Facettes calculées sur le lot filtré (500 fiches au plus), chacune triée par nombre"
-            + " décroissant ; la facette specialties ignore le filtre specialties.")
+        "Facettes calculées sur le lot filtré, chacune triée par nombre décroissant ; la facette"
+            + " specialties ignore le filtre specialties. Les compteurs de toutes les facettes"
+            + " sont exacts jusqu'à 500 fiches examinées ; au-delà, ils portent sur les 500"
+            + " premières dans l'ordre du tri (G Q48).")
 public record Facets(
     @Schema(description = "Répartition par profession (psychologist, psychiatrist, coach).")
         List<FacetCount> professions,

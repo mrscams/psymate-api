@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-03T13:09:51.846Z",
+  "task": "M10-02",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Filtre et facette specialties dans l'annuaire public : paramètre répétable, facette avec libellés calculée sans le filtre, 422 INVALID_VALUE ; contrat regénéré, aucune migration",
+  "notes": "Suite complète par la CI. Mesure de latence sur jeu synthétique (le seed small ne crée aucune fiche d'annuaire), voir la PR.",
+  "next": "Relecture par la session appelante ; bump du contrat et tag v0.10.0 après le lot",
+  "pr": "https://github.com/mrscams/psymate-api/pull/76",
+  "branch": "claude/m10-02",
+  "checkout": "agent-a432e3df573b34a09"
+}

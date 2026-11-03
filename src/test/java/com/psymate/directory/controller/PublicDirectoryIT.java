@@ -1,13 +1,21 @@
 package com.psymate.directory.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
 import com.psymate.testsupport.SharedPostgres;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -383,5 +391,218 @@ class PublicDirectoryIT {
     mvc.perform(anon("/api/public/directory?q=Long " + tag))
         .andExpect(jsonPath("$.items[0].bioExcerpt").value(org.hamcrest.Matchers.endsWith("mot…")))
         .andExpect(jsonPath("$.items[0].photoUrl").doesNotExist());
+  }
+
+  // ---- M10-02 : filtre et facette specialties ----
+
+  /** Codes de vocabulaire créés par le test en cours : désactivés en fin de test. */
+  private final List<String> insertedCodes = new ArrayList<>();
+
+  @AfterEach
+  void deactivateInsertedCodes() {
+    for (String c : insertedCodes) {
+      jdbc.update("update directory_vocabulary set active = false where code = ?", c);
+    }
+  }
+
+  /** Profil publié (ou non) d'une ville marqueur, avec ces spécialités et cette profession. */
+  private String specialtyProfile(
+      String tag,
+      String name,
+      String city,
+      boolean published,
+      String profession,
+      String specialties) {
+    UUID id = practitioner(name, "approved", null);
+    jdbc.update("update practitioner set profession = ? where id = ?", profession, id);
+    String slug = name.toLowerCase() + "-" + tag;
+    profile(
+        id,
+        slug,
+        name,
+        published,
+        "Suivi",
+        city,
+        "update practitioner_profile set specialties = '" + specialties + "'");
+    return slug;
+  }
+
+  private String body(String url) throws Exception {
+    return mvc.perform(anon(url))
+        .andExpect(status().isOk())
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
+  }
+
+  private static List<String> slugs(String body) {
+    return JsonPath.read(body, "$.items[*].slug");
+  }
+
+  @Test
+  void specialtyFilterKeepsOnlyPublishedProfilesWithTheCode() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    String city = "Spec" + tag;
+    String a = specialtyProfile(tag, "Alpha", city, true, "psychologist", "{anxiety}");
+    String b = specialtyProfile(tag, "Bravo", city, true, "psychologist", "{burnout}");
+    String c = specialtyProfile(tag, "Charlie", city, true, "psychologist", "{anxiety,burnout}");
+    specialtyProfile(tag, "Delta", city, false, "psychologist", "{anxiety}");
+    specialtyProfile(tag, "Echo", city, true, "psychologist", "{}");
+    String base = "/api/public/directory?sort=name&city=" + city;
+
+    assertThat(slugs(body(base + "&specialties=anxiety"))).containsExactly(a, c);
+    mvc.perform(anon(base + "&specialties=anxiety"))
+        .andExpect(jsonPath("$.total").value(2))
+        .andExpect(
+            jsonPath("$.items[*].specialties[*]").value(org.hamcrest.Matchers.hasItem("anxiety")));
+    // Au moins une des spécialités demandées : paramètre répété, puis valeurs séparées par virgule.
+    assertThat(slugs(body(base + "&specialties=anxiety&specialties=burnout")))
+        .containsExactly(a, b, c);
+    assertThat(slugs(body(base + "&specialties=anxiety,burnout"))).containsExactly(a, b, c);
+    // Un code sans fiche : liste vide, pas d'erreur.
+    mvc.perform(anon(base + "&specialties=emdr"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(0));
+    // Sans filtre : toutes les fiches publiées de la ville.
+    mvc.perform(anon(base)).andExpect(jsonPath("$.total").value(4));
+  }
+
+  @Test
+  void specialtyFacetCountsEqualWhatEachCodeAloneWouldReturn() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    String city = "Facet" + tag;
+    specialtyProfile(tag, "Alpha", city, true, "psychologist", "{anxiety}");
+    specialtyProfile(tag, "Bravo", city, true, "coach", "{anxiety,burnout}");
+    specialtyProfile(tag, "Charlie", city, true, "psychologist", "{anxiety,emdr}");
+    specialtyProfile(tag, "Delta", city, true, "psychologist", "{burnout}");
+    specialtyProfile(tag, "Echo", city, false, "psychologist", "{anxiety,phobias}");
+    String base = "/api/public/directory?city=" + city;
+
+    // Avec ou sans filtre de spécialité, et avec un autre filtre, la facette ignore specialties.
+    for (String extra : List.of("", "&specialties=burnout", "&professions=psychologist")) {
+      String json = body(base + extra);
+      List<Map<String, Object>> facet = JsonPath.read(json, "$.facets.specialties");
+      assertThat(facet).isNotEmpty();
+      for (Map<String, Object> entry : facet) {
+        String code = (String) entry.get("code");
+        int alone =
+            JsonPath.read(
+                body(base + "&specialties=" + code + extra.replaceAll("&specialties=[^&]*", "")),
+                "$.total");
+        assertThat(((Number) entry.get("count")).intValue())
+            .as("compteur de %s avec %s", code, extra)
+            .isEqualTo(alone);
+        assertThat(entry.get("labelFr")).isNotNull();
+        assertThat(entry.get("labelEn")).isNotNull();
+      }
+    }
+    // Valeurs attendues, filtre actif : total des résultats filtrés, facette sur la base entière.
+    mvc.perform(anon(base + "&specialties=burnout"))
+        .andExpect(jsonPath("$.total").value(2))
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'anxiety')].count").value(3))
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'burnout')].count").value(2))
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'emdr')].count").value(1))
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'phobias')]").isEmpty())
+        .andExpect(jsonPath("$.facets.specialties[0].code").value("anxiety"))
+        .andExpect(jsonPath("$.facets.specialties[0].labelFr").value("Anxiété"))
+        .andExpect(jsonPath("$.facets.specialties[0].labelEn").value("Anxiety"))
+        // Les autres facettes restent calculées sur les résultats filtrés.
+        .andExpect(jsonPath("$.facets.modalities[0].count").value(2));
+    // Le filtre de profession s'applique à la facette : le coach en est exclu.
+    mvc.perform(anon(base + "&professions=psychologist"))
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'anxiety')].count").value(2))
+        .andExpect(jsonPath("$.facets.specialties[?(@.code == 'burnout')].count").value(1));
+  }
+
+  @Test
+  void unknownOrDisabledSpecialtyGives422WithFieldAndCode() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    String code = "spec_" + tag;
+    insertedCodes.add(code);
+    jdbc.update(
+        "insert into directory_vocabulary (kind, code, label_fr, label_en) values"
+            + " ('specialty', ?, 'Test', 'Test')",
+        code);
+    String city = "Inactif" + tag;
+    specialtyProfile(tag, "Alpha", city, true, "psychologist", "{" + code + "}");
+    String base = "/api/public/directory?city=" + city;
+    // Code actif créé pour le test : accepté, et présent dans la facette avec son libellé.
+    mvc.perform(anon(base + "&specialties=" + code))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(1))
+        .andExpect(jsonPath("$.facets.specialties[0].code").value(code))
+        .andExpect(jsonPath("$.facets.specialties[0].labelFr").value("Test"));
+
+    jdbc.update("update directory_vocabulary set active = false where code = ?", code);
+    for (String qs :
+        new String[] {
+          "specialties=" + code, // désactivé
+          "specialties=nexistepas",
+          "specialties=ANXIETY", // casse : les codes sont en minuscules
+          "specialties=anxiety&specialties=nexistepas", // un seul mauvais code suffit
+          "specialties=anxiety,nexistepas"
+        }) {
+      mvc.perform(anon(base + "&" + qs))
+          .andExpect(status().isUnprocessableEntity())
+          .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+          .andExpect(jsonPath("$.status").value(422))
+          .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+          .andExpect(jsonPath("$.errors[0].field").value("specialties"))
+          .andExpect(jsonPath("$.errors[0].code").value("INVALID_VALUE"))
+          .andExpect(jsonPath("$.errors[0].message").isNotEmpty())
+          .andExpect(
+              header()
+                  .string("Cache-Control", org.hamcrest.Matchers.not(containsString("public"))));
+    }
+    // Une fiche publiée qui porterait encore le code désactivé n'apparaît pas dans la facette.
+    mvc.perform(anon(base))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(1))
+        .andExpect(jsonPath("$.facets.specialties").isEmpty());
+  }
+
+  @Test
+  void audienceCodeIsNotASpecialty() throws Exception {
+    mvc.perform(anon("/api/public/directory?specialties=adults"))
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.errors[0].field").value("specialties"))
+        .andExpect(jsonPath("$.errors[0].code").value("INVALID_VALUE"));
+  }
+
+  @Test
+  void tooManySpecialtiesGives400() throws Exception {
+    mvc.perform(
+            anon(
+                "/api/public/directory?specialties="
+                    + String.join(",", java.util.Collections.nCopies(21, "anxiety"))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors[0].field").value("specialties"));
+  }
+
+  @Test
+  void specialtyCombinesWithProfessionsAndQ() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    String city = "Combi" + tag;
+    String psyAnxiety = specialtyProfile(tag, "Alpha", city, true, "psychologist", "{anxiety}");
+    String coachAnxiety = specialtyProfile(tag, "Bravo", city, true, "coach", "{anxiety}");
+    specialtyProfile(tag, "Charlie", city, true, "coach", "{burnout}");
+    String base = "/api/public/directory?sort=name&city=" + city + "&specialties=anxiety";
+
+    assertThat(slugs(body(base))).containsExactly(psyAnxiety, coachAnxiety);
+    assertThat(slugs(body(base + "&professions=coach"))).containsExactly(coachAnxiety);
+    assertThat(slugs(body(base + "&professions=psychologist"))).containsExactly(psyAnxiety);
+    // q reste indépendant : il restreint par nom, et la facette en tient compte.
+    String viaQ = body(base + "&q=Bravo");
+    assertThat(slugs(viaQ)).containsExactly(coachAnxiety);
+    assertThat(JsonPath.<List<String>>read(viaQ, "$.facets.specialties[*].code"))
+        .containsExactly("anxiety");
+    // q seul (sans specialties) continue de fonctionner comme avant.
+    mvc.perform(anon("/api/public/directory?city=" + city + "&q=Charlie"))
+        .andExpect(jsonPath("$.total").value(1));
+    // q qui n'a pas la spécialité demandée : aucun résultat, facette sur le résultat de q.
+    mvc.perform(anon("/api/public/directory?city=" + city + "&specialties=anxiety&q=Charlie"))
+        .andExpect(jsonPath("$.total").value(0))
+        .andExpect(jsonPath("$.facets.specialties[0].code").value("burnout"))
+        .andExpect(jsonPath("$.facets.specialties[0].count").value(1));
   }
 }

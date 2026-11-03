@@ -7,14 +7,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-import com.psymate.directory.DirectoryTestConfig;
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.testsupport.SharedPostgres;
+import com.psymate.testsupport.TestAdmins;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +38,7 @@ import tools.jackson.databind.json.JsonMapper;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(DirectoryTestConfig.class)
+@Import(SharedPostgres.class)
 class DirectoryVocabularyAdminIT {
 
   private static final String BASE = "/api/admin/vocabulary/directory";
@@ -51,6 +53,12 @@ class DirectoryVocabularyAdminIT {
   void setUp() {
     tenant = UUID.randomUUID();
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
+  }
+
+  /** Aucun administrateur actif laissé en base partagée (TestAdmins). */
+  @AfterEach
+  void closeTestAdmins() {
+    TestAdmins.closeInTenant(jdbc, tenant);
   }
 
   // ---- fixtures

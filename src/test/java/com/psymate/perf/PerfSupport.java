@@ -3,7 +3,6 @@ package com.psymate.perf;
 import static org.awaitility.Awaitility.await;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
-import com.psymate.PostgresTestConfig;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.seed.ApiClient.Response;
 import com.psymate.seed.Json;
@@ -11,6 +10,7 @@ import com.psymate.seed.Plan.PatientPlan;
 import com.psymate.seed.SeedException;
 import com.psymate.seed.StepExecutor;
 import com.psymate.seed.StepExecutor.Result;
+import com.psymate.testsupport.SharedPostgres;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
@@ -44,7 +44,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import(SharedPostgres.class)
 abstract class PerfSupport {
 
   @Autowired protected MockMvc mvc;

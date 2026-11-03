@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.DocumentContext;
 import com.psymate.overview.OverviewSupport;
+import com.psymate.testsupport.SharedPostgres;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -23,6 +25,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
  * émotions dominantes, brouillons, fenêtres, erreurs et activité récente. Les données sont créées
  * par l'API de clinical ; chaque lecture passe par GET /api/patients/{id}/overview.
  */
+@Import(SharedPostgres.class)
 class OverviewProjectionIT extends OverviewSupport {
 
   private UUID licenciement;

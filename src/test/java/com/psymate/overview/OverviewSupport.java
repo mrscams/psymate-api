@@ -6,7 +6,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import com.psymate.PostgresTestConfig;
 import com.psymate.identity.api.CurrentPractitioner;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -47,7 +46,7 @@ import tools.jackson.databind.json.JsonMapper;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({PostgresTestConfig.class, OverviewTestConfig.class})
+@Import(OverviewTestConfig.class)
 public abstract class OverviewSupport {
 
   /** Instant courant fixé par {@link OverviewTestConfig}. */

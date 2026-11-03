@@ -13,18 +13,21 @@ import com.psymate.linking.api.LinkAccepted;
 import com.psymate.overview.OverviewSupport;
 import com.psymate.overview.repository.OverviewRepository;
 import com.psymate.patients.api.PatientUpdated;
+import com.psymate.testsupport.SharedPostgres;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 
 /**
  * Abonnés d'événements de la vue d'ensemble : rafraîchissement après chaque événement du dossier,
  * idempotence (deux livraisons du même événement donnent une seule ligne et le même contenu) et
  * refus d'écraser une ligne plus récente.
  */
+@Import(SharedPostgres.class)
 class OverviewListenerIT extends OverviewSupport {
 
   private static final Duration WAIT = Duration.ofSeconds(20);

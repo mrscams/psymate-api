@@ -15,6 +15,8 @@ import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.verification.VerificationTestConfig;
 import com.psymate.identity.verification.service.DocumentSanitizerTest;
 import com.psymate.identity.verification.service.StorageService;
+import com.psymate.testsupport.SharedMailpit;
+import com.psymate.testsupport.TestAdmins;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -25,6 +27,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -62,7 +65,7 @@ class VerificationDocumentIT {
   @Autowired private JdbcTemplate jdbc;
   @Autowired private StorageService storage;
   @Autowired private VerificationTestConfig.Recorder recorder;
-  @Autowired private GenericContainer<?> mailpit;
+  private final GenericContainer<?> mailpit = SharedMailpit.container();
   private final JsonMapper json = JsonMapper.builder().build();
 
   private UUID tenant;
@@ -71,6 +74,12 @@ class VerificationDocumentIT {
   void tenant() {
     tenant = UUID.randomUUID();
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
+  }
+
+  /** Aucun administrateur actif laissé en base partagée (TestAdmins). */
+  @AfterEach
+  void closeTestAdmins() {
+    TestAdmins.closeInTenant(jdbc, tenant);
   }
 
   // ---- fixtures

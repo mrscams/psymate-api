@@ -7,6 +7,8 @@ import com.psymate.identity.model.AuthToken;
 import com.psymate.identity.model.Practitioner;
 import com.psymate.identity.model.SecurityEvent;
 import com.psymate.identity.model.TotpRecoveryCode;
+import com.psymate.testsupport.SharedMailpit;
+import com.psymate.testsupport.SharedPostgres;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -14,7 +16,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -36,23 +37,15 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.utility.MountableFile;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -64,46 +57,14 @@ import tools.jackson.databind.json.JsonMapper;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(IdentityPersistenceIT.Containers.class)
+@Import({SharedPostgres.class, SharedMailpit.class})
 class IdentityPersistenceIT {
-
-  /** Postgres (pgvector, rôle psymate_app) et Mailpit, comme AuthTestConfig. */
-  @TestConfiguration(proxyBeanMethods = false)
-  static class Containers {
-    @Bean
-    @ServiceConnection
-    PostgreSQLContainer postgres() {
-      return new PostgreSQLContainer(
-              DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"))
-          .withDatabaseName("psymate")
-          .withUsername("psymate")
-          .withPassword("psymate")
-          .withCopyFileToContainer(
-              MountableFile.forHostPath(Path.of("docker/postgres/init/01-app-role.sql")),
-              "/docker-entrypoint-initdb.d/01-app-role.sql");
-    }
-
-    @Bean
-    GenericContainer<?> mailpit() {
-      return new GenericContainer<>(DockerImageName.parse("axllent/mailpit:v1.32.0"))
-          .withExposedPorts(1025, 8025)
-          .waitingFor(Wait.forHttp("/api/v1/info").forPort(8025));
-    }
-
-    @Bean
-    DynamicPropertyRegistrar mailProperties(GenericContainer<?> mailpit) {
-      return registry -> {
-        registry.add("spring.mail.host", mailpit::getHost);
-        registry.add("spring.mail.port", () -> mailpit.getMappedPort(1025));
-      };
-    }
-  }
 
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
   @Autowired private DataSource dataSource;
   @Autowired private TransactionTemplate tx;
-  @Autowired private GenericContainer<?> mailpit;
+  private final GenericContainer<?> mailpit = SharedMailpit.container();
   @Autowired private PractitionerJpaRepository practitioners;
   @Autowired private SecurityEventJpaRepository securityEvents;
   @Autowired private AuthTokenJpaRepository authTokens;

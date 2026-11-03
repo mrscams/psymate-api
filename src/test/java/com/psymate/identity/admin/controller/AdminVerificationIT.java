@@ -7,11 +7,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-import com.psymate.identity.admin.AdminMailpit;
 import com.psymate.identity.admin.AdminTestConfig;
 import com.psymate.identity.admin.service.AdminVerificationService;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.PractitionerFacade;
+import com.psymate.testsupport.MailpitClient;
+import com.psymate.testsupport.SharedMailpit;
+import com.psymate.testsupport.TestAdmins;
 import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
@@ -23,6 +25,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,23 +68,29 @@ class AdminVerificationIT {
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
   @Autowired private AdminTestConfig.Recorder recorder;
-  @Autowired private GenericContainer<?> mailpit;
+  private final GenericContainer<?> mailpit = SharedMailpit.container();
   @Autowired private PractitionerFacade facade;
   @Autowired private AdminVerificationService service;
   private final JsonMapper json = JsonMapper.builder().build();
-  private AdminMailpit mails;
+  private MailpitClient mails;
 
   private UUID tenant;
 
   @BeforeEach
   void setUp() {
-    mails = new AdminMailpit(mailpit);
+    mails = new MailpitClient(mailpit);
     tenant = UUID.randomUUID();
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
     // Isolation : les dossiers laissés en attente par les autres tests sortent de la file.
     jdbc.update(
         "update practitioner set verification_status = 'closed' where role <> 'admin'"
             + " and verification_status in ('under_review', 'needs_more')");
+  }
+
+  /** Aucun administrateur actif laissé en base partagée (TestAdmins). */
+  @AfterEach
+  void closeTestAdmins() {
+    TestAdmins.closeInTenant(jdbc, tenant);
   }
 
   // ---- fixtures

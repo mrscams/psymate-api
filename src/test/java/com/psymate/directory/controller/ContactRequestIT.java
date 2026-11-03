@@ -8,8 +8,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.psymate.directory.ContactMailpit;
-import com.psymate.directory.ContactTestConfig;
+import com.psymate.testsupport.MailpitClient;
+import com.psymate.testsupport.SharedMailpit;
+import com.psymate.testsupport.SharedPostgres;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -36,7 +37,7 @@ import tools.jackson.databind.json.JsonMapper;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(ContactTestConfig.class)
+@Import({SharedPostgres.class, SharedMailpit.class})
 class ContactRequestIT {
 
   private static final AtomicInteger IP = new AtomicInteger();
@@ -44,14 +45,14 @@ class ContactRequestIT {
 
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
-  @Autowired private GenericContainer<?> mailpit;
+  private final GenericContainer<?> mailpit = SharedMailpit.container();
 
-  private ContactMailpit mails;
+  private MailpitClient mails;
   private UUID tenant;
 
   @BeforeEach
   void setUp() {
-    mails = new ContactMailpit(mailpit);
+    mails = new MailpitClient(mailpit);
     tenant = UUID.randomUUID();
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
   }

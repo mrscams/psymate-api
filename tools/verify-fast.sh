@@ -16,7 +16,8 @@
 #   tools/verify-fast.sh                      lance tout (make verify-fast)
 #   tools/verify-fast.sh --patterns <tranche> affiche les motifs -Dit.test d'une tranche (ci.yml)
 #   tools/verify-fast.sh --check              verifie it-slices.txt : chaque *IT.java hors perf dans
-#                                             exactement une tranche, ci.yml liste ces tranches
+#                                             exactement une tranche, un SharedDatabaseIsolationIT par
+#                                             tranche, ci.yml liste ces tranches
 #
 # `./mvnw verify` reste la commande de reference avant toute PR : ce script ne change ni les tests,
 # ni leur selection, ni la configuration Maven ; il ne fait que les repartir.
@@ -90,8 +91,16 @@ check() {
     if [ "$count" -eq 0 ]; then echo "non couvert par it-slices.txt : $path" >&2; errors=1
     elif [ "$count" -gt 1 ]; then echo "dans plusieurs tranches ($where ) : $path" >&2; errors=1; fi
   done < <(cd "$root/src/test/java" && find . -name '*IT.java' -not -path '*/perf/*' | sed 's#^\./##' | sort)
+  # 3. chaque tranche a son SharedDatabaseIsolationIT (M9-19 : la base est partagee par JVM, donc par tranche).
+  for name in $names; do
+    count=0
+    while IFS= read -r path; do
+      if matches_slice "$path" "$(slice_patterns "$name")"; then count=$((count + 1)); fi
+    done < <(cd "$root/src/test/java" && find . -name 'SharedDatabaseIsolationIT.java' | sed 's#^\./##')
+    if [ "$count" -eq 0 ]; then echo "tranche $name sans SharedDatabaseIsolationIT (testsupport.SharedDatabaseIsolationScenarios)" >&2; errors=1; fi
+  done
   if [ "$errors" -ne 0 ]; then echo "verify-fast --check : KO" >&2; exit 1; fi
-  echo "verify-fast --check : OK ($(printf '%s\n' "$names" | wc -l | tr -d ' ') tranches, chaque *IT.java hors perf dans exactement une tranche, ci.yml coherent)"
+  echo "verify-fast --check : OK ($(printf '%s\n' "$names" | wc -l | tr -d ' ') tranches, chaque *IT.java hors perf dans exactement une tranche, un SharedDatabaseIsolationIT par tranche, ci.yml coherent)"
 }
 
 # --- lancement ------------------------------------------------------------------------------------

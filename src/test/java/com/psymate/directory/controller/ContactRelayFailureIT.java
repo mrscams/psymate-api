@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.psymate.directory.DirectoryTestConfig;
 import com.psymate.directory.service.ContactRequestService;
+import com.psymate.testsupport.SharedPostgres;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -36,7 +36,7 @@ import tools.jackson.databind.json.JsonMapper;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({DirectoryTestConfig.class, ContactRelayFailureIT.UnreachableSmtp.class})
+@Import({SharedPostgres.class, ContactRelayFailureIT.UnreachableSmtp.class})
 class ContactRelayFailureIT {
 
   @TestConfiguration(proxyBeanMethods = false)

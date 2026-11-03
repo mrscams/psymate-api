@@ -9,12 +9,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.psymate.directory.DirectoryTestConfig;
 import com.psymate.directory.api.ProfileUnpublished;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.PractitionerRejected;
 import com.psymate.identity.api.PractitionerSuspended;
+import com.psymate.testsupport.SharedPostgres;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
@@ -44,7 +44,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({DirectoryTestConfig.class, PublicationGateIT.UnpublishedSink.class})
+@Import({SharedPostgres.class, PublicationGateIT.UnpublishedSink.class})
 class PublicationGateIT {
 
   private static final AtomicInteger IP = new AtomicInteger();

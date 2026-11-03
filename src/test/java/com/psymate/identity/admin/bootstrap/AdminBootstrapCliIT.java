@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.psymate.App;
 import com.psymate.identity.admin.bootstrap.BootstrapTestConfig.ExitRecorder;
+import com.psymate.testsupport.TestAdmins;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -25,7 +27,9 @@ import org.springframework.web.context.WebApplicationContext;
 @ExtendWith(OutputCaptureExtension.class)
 class AdminBootstrapCliIT {
 
-  private static final String EMAIL = "cli-admin@example.org";
+  /** Adresse propre à l'exécution : la base est partagée par la tranche. */
+  private static final String EMAIL =
+      "cli-admin-" + UUID.randomUUID().toString().substring(0, 8) + "@example.org";
 
   @Test
   void cliProfileStartsWithoutWebServer_migratesAndCreatesTheAdmin(CapturedOutput output) {
@@ -47,6 +51,7 @@ class AdminBootstrapCliIT {
                   "select role from practitioner where email_normalized = ?", String.class, EMAIL))
           .isEqualTo("admin");
       assertThat(output.getOut()).contains("Compte administrateur créé").contains(EMAIL);
+      TestAdmins.closeByEmail(jdbc, EMAIL);
     }
   }
 }

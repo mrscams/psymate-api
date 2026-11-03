@@ -12,6 +12,8 @@ import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.model.DocumentAccessLog;
 import com.psymate.identity.model.SecurityEvent;
 import com.psymate.identity.model.VerificationDecision;
+import com.psymate.testsupport.AppRolePostgres;
+import com.psymate.testsupport.SharedMailpit;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.servlet.http.Cookie;
 import java.net.InetAddress;
@@ -21,7 +23,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -38,26 +39,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.utility.MountableFile;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -70,51 +65,9 @@ import tools.jackson.databind.json.JsonMapper;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(IdentityAppRoleIT.AppRoleConfig.class)
+@Import({AppRolePostgres.class, SharedMailpit.class})
+@DirtiesContext
 class IdentityAppRoleIT {
-
-  /** Postgres (pgvector, init du rôle psymate_app), datasource sous psymate_app, et Mailpit. */
-  @TestConfiguration(proxyBeanMethods = false)
-  static class AppRoleConfig {
-    @Bean(destroyMethod = "stop", initMethod = "start")
-    PostgreSQLContainer postgres() {
-      return new PostgreSQLContainer(
-              DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"))
-          .withDatabaseName("psymate")
-          .withUsername("psymate")
-          .withPassword("psymate")
-          .withCopyFileToContainer(
-              MountableFile.forHostPath(Path.of("docker/postgres/init/01-app-role.sql")),
-              "/docker-entrypoint-initdb.d/01-app-role.sql");
-    }
-
-    @Bean
-    DynamicPropertyRegistrar roles(PostgreSQLContainer c) {
-      return registry -> {
-        registry.add("spring.datasource.url", c::getJdbcUrl);
-        registry.add("spring.datasource.username", () -> "psymate_app");
-        registry.add("spring.datasource.password", () -> "psymate_app");
-        registry.add("spring.flyway.url", c::getJdbcUrl);
-        registry.add("spring.flyway.user", () -> "psymate");
-        registry.add("spring.flyway.password", () -> "psymate");
-      };
-    }
-
-    @Bean
-    GenericContainer<?> mailpit() {
-      return new GenericContainer<>(DockerImageName.parse("axllent/mailpit:v1.32.0"))
-          .withExposedPorts(1025, 8025)
-          .waitingFor(Wait.forHttp("/api/v1/info").forPort(8025));
-    }
-
-    @Bean
-    DynamicPropertyRegistrar mailProperties(GenericContainer<?> mailpit) {
-      return registry -> {
-        registry.add("spring.mail.host", mailpit::getHost);
-        registry.add("spring.mail.port", () -> mailpit.getMappedPort(1025));
-      };
-    }
-  }
 
   private static final String PASSWORD = "Zebre-Tournesol-42";
   private static final String REASON =
@@ -129,7 +82,7 @@ class IdentityAppRoleIT {
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
   @Autowired private TransactionTemplate tx;
-  @Autowired private GenericContainer<?> mailpit;
+  private final GenericContainer<?> mailpit = SharedMailpit.container();
   @Autowired private EntityManagerFactory emf;
   @Autowired private SecurityEventJpaRepository securityEvents;
   @Autowired private VerificationDecisionJpaRepository decisions;

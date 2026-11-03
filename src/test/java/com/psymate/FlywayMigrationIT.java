@@ -3,6 +3,7 @@ package com.psymate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.psymate.testsupport.DedicatedPostgres;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -16,12 +17,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.yaml.snakeyaml.Yaml;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import(DedicatedPostgres.class)
+@DirtiesContext
 class FlywayMigrationIT {
 
   @Autowired private DataSource dataSource;
@@ -121,6 +124,20 @@ class FlywayMigrationIT {
     assertThat(jdbc().queryForObject("select count(*) from entry_type", Integer.class))
         .isEqualTo(6);
     assertThat(jdbc().queryForObject("select count(*) from link_type", Integer.class)).isEqualTo(8);
+  }
+
+  /**
+   * Compte exact des publics du seed V04 (ProfileIT ne vérifie que leurs codes : dans la base
+   * partagée, DirectoryVocabularyAdminIT en ajoute par l'API admin).
+   */
+  @Test
+  void v04SeedsExactlyFiveAudiences() {
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select count(*) from directory_vocabulary where kind = 'audience'",
+                    Integer.class))
+        .isEqualTo(5);
   }
 
   @Test

@@ -10,9 +10,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.psymate.directory.DirectoryTestConfig;
 import com.psymate.directory.service.PhotoStorage;
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.testsupport.SharedPostgres;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,7 +38,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({DirectoryTestConfig.class, ProfileIT.Recording.class})
+@Import({SharedPostgres.class, ProfileIT.Recording.class})
 class ProfileIT {
 
   @Autowired private MockMvc mvc;
@@ -231,7 +231,13 @@ class ProfileIT {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.specialties.length()").value(org.hamcrest.Matchers.greaterThan(19)))
         .andExpect(jsonPath("$.specialties[?(@.code=='emdr')].labelFr").value("EMDR"))
-        .andExpect(jsonPath("$.audiences.length()").value(5))
+        // Les 5 publics du seed V04 ; d'autres tests en ajoutent par l'API admin dans la base
+        // partagée, le compte exact du seed est vérifié par FlywayMigrationIT (base dédiée).
+        .andExpect(
+            jsonPath("$.audiences[*].code")
+                .value(
+                    org.hamcrest.Matchers.hasItems(
+                        "adults", "young_adults", "adolescents", "children", "couples_families")))
         .andExpect(jsonPath("$.modalities.length()").value(3))
         .andExpect(jsonPath("$.languages[?(@.code=='fr')].labelFr").value("français"));
   }

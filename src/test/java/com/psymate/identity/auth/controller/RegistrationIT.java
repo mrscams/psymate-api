@@ -5,9 +5,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.psymate.identity.api.PractitionerRegistered;
 import com.psymate.identity.auth.AuthTestConfig;
-import com.psymate.identity.auth.MailpitClient;
 import com.psymate.identity.auth.RegistrationFixtures;
 import com.psymate.identity.auth.service.AuthService;
+import com.psymate.testsupport.MailpitClient;
+import com.psymate.testsupport.SharedMailpit;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,7 +56,7 @@ class RegistrationIT {
 
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
-  @Autowired private GenericContainer<?> mailpit;
+  private final GenericContainer<?> mailpit = SharedMailpit.container();
   private final JsonMapper json = JsonMapper.builder().build();
 
   private static String newEmail() {

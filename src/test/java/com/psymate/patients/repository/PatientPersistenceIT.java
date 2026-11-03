@@ -3,7 +3,6 @@ package com.psymate.patients.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.psymate.patients.PatientServiceFixtures;
-import com.psymate.patients.PatientTestConfig;
 import com.psymate.patients.dto.CreatePatientRequest;
 import com.psymate.patients.dto.FlagRequest;
 import com.psymate.patients.dto.PatientDto;
@@ -11,6 +10,7 @@ import com.psymate.patients.dto.PatientPage;
 import com.psymate.patients.dto.VersionDto;
 import com.psymate.patients.model.PatientException;
 import com.psymate.patients.service.PatientService;
+import com.psymate.testsupport.SharedPostgres;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +39,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(PatientTestConfig.class)
+@Import(SharedPostgres.class)
 class PatientPersistenceIT {
 
   @Autowired private PatientService service;

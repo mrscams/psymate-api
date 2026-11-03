@@ -10,7 +10,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.psymate.clinical.api.EntriesRelabeled;
 import com.psymate.clinical.service.EntryRelabelService;
 import com.psymate.identity.api.CurrentPractitioner;
-import com.psymate.vocabulary.VocabularyTestConfig;
+import com.psymate.testsupport.SharedPostgres;
 import com.psymate.vocabulary.api.EmotionMergeReverted;
 import com.psymate.vocabulary.api.EmotionsMerged;
 import com.psymate.vocabulary.api.TagsMerged;
@@ -64,7 +64,7 @@ import tools.jackson.databind.json.JsonMapper;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(VocabularyTestConfig.class)
+@Import(SharedPostgres.class)
 @RecordApplicationEvents
 class VocabularyMergeIT {
 

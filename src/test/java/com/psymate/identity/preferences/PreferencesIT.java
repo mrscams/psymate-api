@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.PractitionerFacade;
 import com.psymate.identity.api.PreferencesChanged;
+import com.psymate.testsupport.SharedPostgres;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +36,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({PreferencesTestConfig.class, PreferencesIT.ListenerConfig.class})
+@Import({SharedPostgres.class, PreferencesIT.ListenerConfig.class})
 class PreferencesIT {
 
   /** Un abonné transactionnel : c'est lui qui fait écrire la publication dans le registre. */

@@ -4,8 +4,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
-import com.psymate.PostgresTestConfig;
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.testsupport.SharedPostgres;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Clock;
@@ -46,7 +46,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({PostgresTestConfig.class, ExportTestSupport.ClockConfig.class})
+@Import({SharedPostgres.class, ExportTestSupport.ClockConfig.class})
 public abstract class ExportTestSupport {
 
   protected static final String PASSWORD = "Zebre-Tournesol-42";

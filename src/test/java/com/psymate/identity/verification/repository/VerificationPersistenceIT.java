@@ -10,6 +10,7 @@ import com.psymate.identity.verification.VerificationTestConfig;
 import com.psymate.identity.verification.model.VerificationException;
 import com.psymate.identity.verification.repository.VerificationRepository.DuePurge;
 import com.psymate.identity.verification.service.VerificationService;
+import com.psymate.testsupport.TestAdmins;
 import java.net.InetAddress;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -24,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +56,12 @@ class VerificationPersistenceIT {
   void tenant() {
     tenant = UUID.randomUUID();
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
+  }
+
+  /** Aucun administrateur actif laissé en base partagée (TestAdmins). */
+  @AfterEach
+  void closeTestAdmins() {
+    TestAdmins.closeInTenant(jdbc, tenant);
   }
 
   private UUID practitioner(String role, String status) {

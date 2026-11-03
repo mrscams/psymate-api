@@ -1,4 +1,4 @@
-package com.psymate.identity.admin.bootstrap;
+package com.psymate.testsupport;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -6,12 +6,15 @@ import java.time.Instant;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-/** Générateur TOTP de test (RFC 6238, HMAC-SHA1), indépendant du code de production. */
-final class BootstrapTotp {
+/**
+ * Générateur TOTP de test (RFC 6238, HMAC-SHA1, 6 chiffres, pas de 30 s), indépendant du code de
+ * production.
+ */
+public final class TotpGenerator {
 
-  private BootstrapTotp() {}
+  private TotpGenerator() {}
 
-  private static byte[] base32Decode(String s) {
+  public static byte[] base32Decode(String s) {
     String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     int buffer = 0;
@@ -28,11 +31,11 @@ final class BootstrapTotp {
     return out.toByteArray();
   }
 
-  static String code(String base32Secret, Instant at) {
+  public static String code(byte[] key, long epochSeconds) {
     try {
       Mac mac = Mac.getInstance("HmacSHA1");
-      mac.init(new SecretKeySpec(base32Decode(base32Secret), "HmacSHA1"));
-      byte[] h = mac.doFinal(ByteBuffer.allocate(8).putLong(at.getEpochSecond() / 30).array());
+      mac.init(new SecretKeySpec(key, "HmacSHA1"));
+      byte[] h = mac.doFinal(ByteBuffer.allocate(8).putLong(epochSeconds / 30).array());
       int o = h[19] & 0xf;
       int bin =
           ((h[o] & 0x7f) << 24)
@@ -43,5 +46,9 @@ final class BootstrapTotp {
     } catch (Exception e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  public static String code(String base32Secret, Instant at) {
+    return code(base32Decode(base32Secret), at.getEpochSecond());
   }
 }

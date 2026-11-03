@@ -9,7 +9,7 @@ import com.psymate.directory.dto.PatchRequest;
 import com.psymate.directory.dto.ProfileDto;
 import com.psymate.directory.model.ContactRequest;
 import com.psymate.directory.repository.ContactRequestRepository;
-import java.nio.file.Path;
+import com.psymate.testsupport.AppRolePostgres;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -17,17 +17,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.utility.MountableFile;
 
 /**
  * Le module directory tourne ici avec le rôle psymate_app (Flyway avec le propriétaire) : les
@@ -36,35 +31,9 @@ import org.testcontainers.utility.MountableFile;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(DirectoryAppRoleIT.AppRoleConfig.class)
+@Import(AppRolePostgres.class)
+@DirtiesContext
 class DirectoryAppRoleIT {
-
-  @TestConfiguration(proxyBeanMethods = false)
-  static class AppRoleConfig {
-    @Bean(destroyMethod = "stop", initMethod = "start")
-    PostgreSQLContainer postgres() {
-      return new PostgreSQLContainer(
-              DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"))
-          .withDatabaseName("psymate")
-          .withUsername("psymate")
-          .withPassword("psymate")
-          .withCopyFileToContainer(
-              MountableFile.forHostPath(Path.of("docker/postgres/init/01-app-role.sql")),
-              "/docker-entrypoint-initdb.d/01-app-role.sql");
-    }
-
-    @Bean
-    DynamicPropertyRegistrar roles(PostgreSQLContainer c) {
-      return registry -> {
-        registry.add("spring.datasource.url", c::getJdbcUrl);
-        registry.add("spring.datasource.username", () -> "psymate_app");
-        registry.add("spring.datasource.password", () -> "psymate_app");
-        registry.add("spring.flyway.url", c::getJdbcUrl);
-        registry.add("spring.flyway.user", () -> "psymate");
-        registry.add("spring.flyway.password", () -> "psymate");
-      };
-    }
-  }
 
   @Autowired private ProfileService profiles;
   @Autowired private DirectoryVocabularyAdminService vocabulary;

@@ -20,6 +20,7 @@ import com.psymate.linking.model.Link;
 import com.psymate.linking.service.LinkService;
 import com.psymate.patients.PatientTestSupport;
 import com.psymate.patients.api.PatientCreated;
+import com.psymate.testsupport.SharedPostgres;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -70,7 +71,7 @@ import org.yaml.snakeyaml.Yaml;
  */
 @SpringBootTest(properties = "versioning.grace-period=0s")
 @ActiveProfiles("test")
-@Import({PostgresTestConfig.class, ReservesConformanceIT.ListenerConfig.class})
+@Import({SharedPostgres.class, ReservesConformanceIT.ListenerConfig.class})
 @ExtendWith(ReservesConformanceIT.ConformanceReport.class)
 class ReservesConformanceIT {
 

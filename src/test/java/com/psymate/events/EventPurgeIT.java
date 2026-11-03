@@ -2,7 +2,7 @@ package com.psymate.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.psymate.PostgresTestConfig;
+import com.psymate.testsupport.SharedPostgres;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
@@ -16,7 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import(SharedPostgres.class)
 class EventPurgeIT {
 
   @Autowired private JdbcTemplate jdbc;

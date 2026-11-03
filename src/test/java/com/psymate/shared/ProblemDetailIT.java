@@ -16,11 +16,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
-import com.psymate.PostgresTestConfig;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.shared.problem.ErrorCode;
 import com.psymate.shared.problem.FieldProblem;
 import com.psymate.shared.problem.ProblemException;
+import com.psymate.testsupport.SharedPostgres;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -59,7 +59,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({PostgresTestConfig.class, ProblemDetailIT.Endpoints.class})
+@Import({SharedPostgres.class, ProblemDetailIT.Endpoints.class})
 class ProblemDetailIT {
 
   static final String SECRET = "secret-internal-message-do-not-leak";

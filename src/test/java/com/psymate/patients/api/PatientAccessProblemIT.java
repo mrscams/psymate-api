@@ -6,7 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.psymate.identity.api.CurrentPractitioner;
-import com.psymate.patients.PatientTestConfig;
+import com.psymate.testsupport.SharedPostgres;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +34,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(PatientTestConfig.class)
+@Import(SharedPostgres.class)
 class PatientAccessProblemIT {
 
   @Autowired private MockMvc mvc;

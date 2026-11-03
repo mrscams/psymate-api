@@ -3,7 +3,8 @@ package com.psymate.identity.auth.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.psymate.identity.auth.AbstractLoginIT;
-import com.psymate.identity.auth.TotpGenerator;
+import com.psymate.testsupport.TestAdmins;
+import com.psymate.testsupport.TotpGenerator;
 import jakarta.servlet.http.Cookie;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -249,6 +250,7 @@ class TotpIT extends AbstractLoginIT {
     assertThat(r.getResponse().getStatus()).isEqualTo(409);
     assertThat(body(r).path("code").asString()).isEqualTo("TWO_FACTOR_REQUIRED_FOR_ADMIN");
     assertThat(events(e.email(), "2fa_disabled")).isZero();
+    TestAdmins.closeByEmail(jdbc, e.email());
     assertThat(
             jdbc.queryForObject(
                 "select totp_secret_enc is not null and totp_enabled_at is not null from"

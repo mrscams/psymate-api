@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
-import com.psymate.directory.DirectoryTestConfig;
 import com.psymate.directory.DirectoryTestFixtures;
 import com.psymate.directory.api.ProfilePublished;
 import com.psymate.directory.api.ProfileUnpublished;
@@ -17,6 +16,7 @@ import com.psymate.directory.model.DirectoryVocabularyException;
 import com.psymate.directory.service.ContactRequestService;
 import com.psymate.directory.service.DirectoryVocabularyAdminService;
 import com.psymate.directory.service.ProfileService;
+import com.psymate.testsupport.SharedPostgres;
 import jakarta.persistence.EntityManagerFactory;
 import java.time.Duration;
 import java.util.List;
@@ -53,7 +53,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @ActiveProfiles("test")
-@Import({DirectoryTestConfig.class, DirectoryPersistenceIT.EventSink.class})
+@Import({SharedPostgres.class, DirectoryPersistenceIT.EventSink.class})
 class DirectoryPersistenceIT {
 
   /** Collecte les événements du module au moment où ils sont publiés. */

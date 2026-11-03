@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.psymate.identity.auth.AbstractLoginIT;
-import com.psymate.identity.auth.TotpGenerator;
+import com.psymate.testsupport.TotpGenerator;
 import jakarta.servlet.http.Cookie;
 import java.time.Duration;
 import java.util.LinkedHashMap;

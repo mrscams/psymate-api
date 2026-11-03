@@ -2,7 +2,8 @@ package com.psymate.directory.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.psymate.directory.ContactTestConfig;
+import com.psymate.testsupport.SharedMailpit;
+import com.psymate.testsupport.SharedPostgres;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(ContactTestConfig.class)
+@Import({SharedPostgres.class, SharedMailpit.class})
 class ContactPurgeIT {
 
   @Autowired private JdbcTemplate jdbc;

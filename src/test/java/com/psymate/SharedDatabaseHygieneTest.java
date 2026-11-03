@@ -1,7 +1,15 @@
 package com.psymate;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
+import com.tngtech.archunit.lang.ArchRule;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -18,6 +26,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.convert.DurationStyle;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Hygiène d'une base partagée entre les tests (M9-19, revue §5 A-19, « Base partagée : risques et
@@ -52,7 +61,8 @@ class SharedDatabaseHygieneTest {
 
   /**
    * Tests à base dédiée (B2, B5, B6) : liste fermée, toute addition se justifie dans la PR. Elle
-   * sera aussi celle de la garde ArchUnit sur {@code PostgreSQLContainer} (M9-19, partie 2).
+   * est aussi celle de la garde ArchUnit sur {@code PostgreSQLContainer} ({@link
+   * #postgresContainersComeFromTestSupport()}).
    */
   static final Set<String> DEDICATED_DATABASE_TESTS =
       Set.of(
@@ -320,6 +330,65 @@ class SharedDatabaseHygieneTest {
     assertThat(violationsIn("EventRepublicationIT.java", republication))
         .extracting(Violation::rule)
         .contains("republish-older-than sous 1h (B2)");
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Garde ArchUnit : un conteneur Postgres vient de testsupport, sauf pour une base dédiée
+  // ---------------------------------------------------------------------------------------------
+
+  private static final String TEST_SUPPORT = "com.psymate.testsupport";
+
+  /**
+   * Nom simple de la classe de premier niveau ({@code IdentityAppRoleIT$Config} →
+   * IdentityAppRoleIT).
+   */
+  private static String topLevelName(JavaClass c) {
+    String name = c.getName().substring(c.getPackageName().length() + 1);
+    int nested = name.indexOf('$');
+    return nested < 0 ? name : name.substring(0, nested);
+  }
+
+  /**
+   * Aucune classe hors de {@code support} et des tests à base dédiée ne dépend de {@code
+   * PostgreSQLContainer} : les autres tests passent par la base partagée ({@code SharedPostgres}).
+   */
+  static ArchRule postgresContainersOnlyInTestSupport(String support, Predicate<String> dedicated) {
+    return noClasses()
+        .that()
+        .resideOutsideOfPackage(support + "..")
+        .and(
+            DescribedPredicate.describe(
+                "hors des tests à base dédiée",
+                (JavaClass c) ->
+                    !dedicated.test(topLevelName(c))
+                        && !topLevelName(c)
+                            .equals(SharedDatabaseHygieneTest.class.getSimpleName())))
+        .should()
+        .dependOnClassesThat()
+        .areAssignableTo(PostgreSQLContainer.class)
+        .because("la base est partagée par JVM (M9-19) ; une base dédiée se justifie dans la PR");
+  }
+
+  @Test
+  void postgresContainersComeFromTestSupport() {
+    JavaClasses tests =
+        new ClassFileImporter()
+            .withImportOption(ImportOption.Predefined.ONLY_INCLUDE_TESTS)
+            .importPackages("com.psymate");
+    postgresContainersOnlyInTestSupport(TEST_SUPPORT, SharedDatabaseHygieneTest::dedicated)
+        .check(tests);
+  }
+
+  @Test
+  void containerGuardDetectsAStrayContainer() {
+    JavaClasses fixtures = new ClassFileImporter().importPackages("psymatefixture.shareddb");
+    ArchRule rule =
+        postgresContainersOnlyInTestSupport(
+            "psymatefixture.shareddb.support", "DedicatedBase"::equals);
+    assertThatThrownBy(() -> rule.check(fixtures))
+        .hasMessageContaining("StrayContainer")
+        .hasMessageNotContaining("FixtureContainers")
+        .hasMessageNotContaining("DedicatedBase");
   }
 
   @Test

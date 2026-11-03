@@ -2,12 +2,12 @@ package com.psymate.linking.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.psymate.PostgresTestConfig;
 import com.psymate.clinical.model.EntryType;
 import com.psymate.clinical.service.EntryService;
 import com.psymate.linking.LinkingFixtures;
 import com.psymate.linking.model.GraphView;
 import com.psymate.linking.repository.GraphRepository;
+import com.psymate.testsupport.SharedPostgres;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -35,7 +35,7 @@ import org.springframework.test.context.ActiveProfiles;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import(SharedPostgres.class)
 class GraphPerfIT {
 
   private static final Logger log = LoggerFactory.getLogger(GraphPerfIT.class);

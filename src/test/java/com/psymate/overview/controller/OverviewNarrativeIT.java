@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.psymate.overview.OverviewSupport;
+import com.psymate.testsupport.SharedPostgres;
 import java.text.Normalizer;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -15,12 +16,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 /**
  * M4-06 : résumé rédigé par règles et payload enrichi. Données créées par l'API de clinical,
  * Postgres réel (Testcontainers), horloge fixée à 2026-10-29T12:00Z.
  */
+@Import(SharedPostgres.class)
 class OverviewNarrativeIT extends OverviewSupport {
 
   private static final List<String> FORBIDDEN =

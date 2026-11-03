@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.psymate.overview.OverviewSupport;
+import com.psymate.testsupport.SharedPostgres;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -11,11 +12,13 @@ import java.util.Map;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 /** Schéma de V09 : la table patient_overview de E3.9, ses contraintes et les droits applicatifs. */
+@Import(SharedPostgres.class)
 class OverviewSchemaIT extends OverviewSupport {
 
   @Test

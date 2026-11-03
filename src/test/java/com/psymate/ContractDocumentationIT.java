@@ -3,6 +3,7 @@ package com.psymate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+import com.psymate.testsupport.SharedPostgres;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ import org.yaml.snakeyaml.Yaml;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import(SharedPostgres.class)
 class ContractDocumentationIT {
 
   private static final Set<String> HTTP_METHODS =

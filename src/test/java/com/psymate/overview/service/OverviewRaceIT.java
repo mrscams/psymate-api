@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.psymate.overview.OverviewSupport;
+import com.psymate.testsupport.SharedPostgres;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 /**
@@ -24,6 +26,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
  * écriture, avant que l'abonné asynchrone ait tourné, reflète déjà l'écriture, et sourceRev vaut
  * patient.clinical_rev.
  */
+@Import(SharedPostgres.class)
 class OverviewRaceIT extends OverviewSupport {
 
   @Test

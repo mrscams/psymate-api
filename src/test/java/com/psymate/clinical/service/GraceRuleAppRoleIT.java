@@ -7,7 +7,7 @@ import com.psymate.clinical.ClinicalFixtures;
 import com.psymate.clinical.ClinicalTestConfig.MutableClock;
 import com.psymate.clinical.model.EntryType;
 import com.psymate.clinical.model.SessionDetail;
-import java.nio.file.Path;
+import com.psymate.testsupport.AppRolePostgres;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -23,11 +23,9 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.utility.MountableFile;
 
 /**
  * L'application tourne ici avec le rôle psymate_app (Flyway avec le propriétaire) : la correction
@@ -35,7 +33,8 @@ import org.testcontainers.utility.MountableFile;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(GraceRuleAppRoleIT.AppRoleConfig.class)
+@Import({AppRolePostgres.class, GraceRuleAppRoleIT.ClockConfig.class})
+@DirtiesContext
 class GraceRuleAppRoleIT {
 
   /** Fenêtre de grâce : 1 h 15 (versioning.grace-period = 75m). */
@@ -43,32 +42,9 @@ class GraceRuleAppRoleIT {
 
   private static final Duration AFTER_GRACE = Duration.ofMinutes(76);
 
+  /** Horloge pilotable partagée par l'application et le test. */
   @TestConfiguration(proxyBeanMethods = false)
-  static class AppRoleConfig {
-    @Bean(destroyMethod = "stop", initMethod = "start")
-    PostgreSQLContainer postgres() {
-      return new PostgreSQLContainer(
-              DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"))
-          .withDatabaseName("psymate")
-          .withUsername("psymate")
-          .withPassword("psymate")
-          .withCopyFileToContainer(
-              MountableFile.forHostPath(Path.of("docker/postgres/init/01-app-role.sql")),
-              "/docker-entrypoint-initdb.d/01-app-role.sql");
-    }
-
-    @Bean
-    DynamicPropertyRegistrar roles(PostgreSQLContainer c) {
-      return registry -> {
-        registry.add("spring.datasource.url", c::getJdbcUrl);
-        registry.add("spring.datasource.username", () -> "psymate_app");
-        registry.add("spring.datasource.password", () -> "psymate_app");
-        registry.add("spring.flyway.url", c::getJdbcUrl);
-        registry.add("spring.flyway.user", () -> "psymate");
-        registry.add("spring.flyway.password", () -> "psymate");
-      };
-    }
-
+  static class ClockConfig {
     @Bean
     @Primary
     MutableClock testClock() {

@@ -4,13 +4,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.psymate.identity.admin.bootstrap.BootstrapTestConfig.ExitRecorder;
 import com.psymate.identity.admin.bootstrap.BootstrapTestConfig.MutableClock;
+import com.psymate.testsupport.TestAdmins;
+import com.psymate.testsupport.TotpGenerator;
 import jakarta.servlet.http.Cookie;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,9 +55,17 @@ class AdminBootstrapIT {
   @Autowired MockMvc mvc;
   private final JsonMapper json = JsonMapper.builder().build();
 
+  /** Adresses des administrateurs créés par le test, fermés à la fin (TestAdmins). */
+  private final List<String> created = new ArrayList<>();
+
   @BeforeEach
   void clearExits() {
     exits.codes.clear();
+  }
+
+  @AfterEach
+  void closeCreatedAdmins() {
+    created.forEach(email -> TestAdmins.closeByEmail(jdbc, email));
   }
 
   private static String newEmail() {
@@ -60,6 +73,7 @@ class AdminBootstrapIT {
   }
 
   private void create(String email) {
+    created.add(email);
     runner.run(new DefaultApplicationArguments("--create-admin=" + email));
   }
 
@@ -242,7 +256,7 @@ class AdminBootstrapIT {
     MvcResult verify =
         post(
             "/api/me/2fa/verify",
-            Map.of("code", BootstrapTotp.code(secret, clock.instant())),
+            Map.of("code", TotpGenerator.code(secret, clock.instant())),
             session);
     assertThat(verify.getResponse().getStatus()).isEqualTo(200);
     assertThat(body(verify).path("recoveryCodes")).hasSize(10);
@@ -253,7 +267,7 @@ class AdminBootstrapIT {
     MvcResult needOtp = login(email, NEW_PASSWORD, null);
     assertThat(needOtp.getResponse().getStatus()).isEqualTo(202);
     assertThat(body(needOtp).path("otpRequired").asBoolean()).isTrue();
-    MvcResult withOtp = login(email, NEW_PASSWORD, BootstrapTotp.code(secret, clock.instant()));
+    MvcResult withOtp = login(email, NEW_PASSWORD, TotpGenerator.code(secret, clock.instant()));
     assertThat(withOtp.getResponse().getStatus()).isEqualTo(200);
     MvcResult allowed = adminList(withOtp.getResponse().getCookie("SESSION"));
     assertThat(allowed.getResponse().getStatus()).isEqualTo(200);

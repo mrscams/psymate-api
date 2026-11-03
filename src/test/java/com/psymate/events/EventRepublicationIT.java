@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import com.psymate.App;
-import com.psymate.PostgresTestConfig;
 import com.psymate.events.api.DomainEvent;
 import com.psymate.events.api.DomainEventPublisher;
+import com.psymate.testsupport.DedicatedPostgres;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
 import java.util.UUID;
@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.IncompleteEventPublications;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -34,7 +35,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @SpringBootTest(properties = "app.events.republish-older-than=0s")
 @ActiveProfiles("test")
-@Import({PostgresTestConfig.class, EventRepublicationIT.ReplayConfig.class})
+@Import({DedicatedPostgres.class, EventRepublicationIT.ReplayConfig.class})
+@DirtiesContext
 class EventRepublicationIT {
 
   static class ReplayEvent extends DomainEvent {

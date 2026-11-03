@@ -1,4 +1,4 @@
-package com.psymate.identity.auth;
+package com.psymate.testsupport;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -13,7 +13,10 @@ import org.testcontainers.containers.GenericContainer;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Lecture des e-mails reçus par Mailpit dans les tests (l'envoi est asynchrone). */
+/**
+ * Lecture des e-mails reçus par Mailpit (API HTTP), par destinataire : le Mailpit est partagé par
+ * toute la tranche ({@link SharedMailpit}), chaque test ne regarde que ses adresses.
+ */
 public final class MailpitClient {
 
   private final GenericContainer<?> mailpit;
@@ -30,20 +33,23 @@ public final class MailpitClient {
         .body();
   }
 
-  private JsonNode search(String to, String subject) throws Exception {
-    String query = "to:" + to + " subject:\"" + subject + "\"";
+  private JsonNode search(String query) throws Exception {
     return json.readTree(
         get("/api/v1/search?query=" + URLEncoder.encode(query, StandardCharsets.UTF_8)));
   }
 
-  /** Texte du dernier e-mail pour ce destinataire et ce sujet ; null après 10 s d'attente. */
-  public String lastText(String to, String subject) throws Exception {
-    long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
+  private static String query(String to, String subject) {
+    return "to:" + to + " subject:\"" + subject + "\"";
+  }
+
+  /** Dernier message complet trouvé par la requête ; null après l'attente. */
+  private JsonNode awaitFirst(String query, Duration wait) throws Exception {
+    long deadline = System.nanoTime() + wait.toNanos();
     while (true) {
-      JsonNode found = search(to, subject);
+      JsonNode found = search(query);
       if (!found.path("messages").isEmpty()) {
         String id = found.path("messages").get(0).path("ID").asString();
-        return json.readTree(get("/api/v1/message/" + id)).path("Text").asString();
+        return json.readTree(get("/api/v1/message/" + id));
       }
       if (System.nanoTime() > deadline) {
         return null;
@@ -52,10 +58,32 @@ public final class MailpitClient {
     }
   }
 
+  /** Texte du dernier e-mail pour ce destinataire et ce sujet ; null après 10 s d'attente. */
+  public String lastText(String to, String subject) throws Exception {
+    return lastText(to, subject, Duration.ofSeconds(10));
+  }
+
+  /** Comme lastText, avec une attente maximale choisie (envoi lent ou file d'envoi chargée). */
+  public String lastText(String to, String subject, Duration wait) throws Exception {
+    JsonNode message = awaitFirst(query(to, subject), wait);
+    return message == null ? null : message.path("Text").asString();
+  }
+
+  /** Dernier message complet pour ce destinataire ; null après 10 s d'attente. */
+  public JsonNode awaitMessage(String to) throws Exception {
+    return awaitFirst("to:" + to, Duration.ofSeconds(10));
+  }
+
   /** Nombre d'e-mails correspondants, après une courte attente pour laisser partir l'asynchrone. */
   public int count(String to, String subject) throws Exception {
     Thread.sleep(1500);
-    return search(to, subject).path("messages").size();
+    return search(query(to, subject)).path("messages").size();
+  }
+
+  /** Nombre de messages pour ce destinataire, après une courte attente. */
+  public int count(String to) throws Exception {
+    Thread.sleep(1500);
+    return search("to:" + to).path("messages").size();
   }
 
   /** Dernier jeton de confirmation (lien /confirmer-email/{token}) reçu par l'adresse. */

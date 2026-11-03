@@ -4,10 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
-import com.psymate.PostgresTestConfig;
 import com.psymate.events.api.DomainEvent;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.events.api.EventDeduplicator;
+import com.psymate.testsupport.SharedPostgres;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -25,7 +25,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import({PostgresTestConfig.class, EventDeduplicationIT.DedupConfig.class})
+@Import({SharedPostgres.class, EventDeduplicationIT.DedupConfig.class})
 class EventDeduplicationIT {
 
   static class DedupEvent extends DomainEvent {

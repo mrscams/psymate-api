@@ -6,6 +6,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.testsupport.MailpitClient;
+import com.psymate.testsupport.SharedMailpit;
+import com.psymate.testsupport.TestAdmins;
 import jakarta.servlet.http.Cookie;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -16,6 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -55,21 +59,27 @@ public abstract class AbstractAccountsIT {
   @Autowired protected MockMvc mvc;
   @Autowired protected JdbcTemplate jdbc;
   @Autowired protected AdminTestConfig.Recorder recorder;
-  @Autowired protected GenericContainer<?> mailpit;
+  protected final GenericContainer<?> mailpit = SharedMailpit.container();
   @Autowired protected PasswordEncoder encoder;
   protected final JsonMapper json = JsonMapper.builder().build();
-  protected AdminMailpit mails;
+  protected MailpitClient mails;
   protected UUID tenant;
   private static String passwordHash;
 
   @BeforeEach
   protected void setUpAccounts() {
-    mails = new AdminMailpit(mailpit);
+    mails = new MailpitClient(mailpit);
     tenant = UUID.randomUUID();
     jdbc.update("insert into tenant (id, name) values (?, 'Cabinet test')", tenant);
     if (passwordHash == null) {
       passwordHash = encoder.encode(PASSWORD);
     }
+  }
+
+  /** Aucun administrateur actif laissé en base partagée (TestAdmins). */
+  @AfterEach
+  void closeTestAdmins() {
+    TestAdmins.closeInTenant(jdbc, tenant);
   }
 
   // ---- comptes

@@ -3,6 +3,7 @@ package com.psymate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+import com.psymate.testsupport.SharedPostgres;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -29,7 +30,7 @@ import org.yaml.snakeyaml.Yaml;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import(SharedPostgres.class)
 class ContractIT {
 
   private static final Path CONTRACT = Path.of("contract", "openapi.yaml");

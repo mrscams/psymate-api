@@ -8,15 +8,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.DocumentContext;
 import com.psymate.search.SearchSupport;
+import com.psymate.testsupport.SharedPostgres;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 
 /** GET /api/patients/{id}/search (M4-02) : filtres, classement, repli, facettes, erreurs. */
+@Import(SharedPostgres.class)
 class SearchIT extends SearchSupport {
 
   private static final Instant NOW = Instant.now();

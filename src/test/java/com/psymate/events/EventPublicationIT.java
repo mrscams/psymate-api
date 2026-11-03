@@ -3,9 +3,9 @@ package com.psymate.events;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import com.psymate.PostgresTestConfig;
 import com.psymate.events.api.DomainEvent;
 import com.psymate.events.api.DomainEventPublisher;
+import com.psymate.testsupport.SharedPostgres;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -23,7 +23,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import({PostgresTestConfig.class, EventPublicationIT.DemoConfig.class})
+@Import({SharedPostgres.class, EventPublicationIT.DemoConfig.class})
 class EventPublicationIT {
 
   static class TestEvent extends DomainEvent {

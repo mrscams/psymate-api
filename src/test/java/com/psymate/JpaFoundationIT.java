@@ -2,6 +2,7 @@ package com.psymate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.psymate.testsupport.SharedPostgres;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
@@ -24,7 +25,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import(SharedPostgres.class)
 class JpaFoundationIT {
 
   @Autowired private EntityManagerFactory entityManagerFactory;

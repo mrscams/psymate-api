@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-03T07:26:52.796Z",
+  "task": "M9-19",
+  "agent": "claude",
+  "status": "in-progress",
+  "summary": "Partie 1/2 fusionnée (PR 69, CI verte) ; partie 2 démarrée : conteneur Postgres partagé, SharedDatabaseIsolationIT, ordre aléatoire",
+  "pr": "https://github.com/mrscams/psymate-api/pull/69",
+  "branch": "claude/m9-19-part2",
+  "checkout": "m9-19-cb33b1"
+}

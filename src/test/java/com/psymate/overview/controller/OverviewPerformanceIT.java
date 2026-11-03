@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.psymate.overview.OverviewSupport;
+import com.psymate.testsupport.DedicatedPostgres;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,12 +19,16 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
 
 /**
  * Ouverture de la vue d'ensemble d'un patient de 2 000 entrées (A6 : cible 200 ms). La cible n'est
  * pas bloquante (la machine de test varie) : l'assertion ne vérifie que l'absence de dérive grave,
  * la mesure est journalisée et écrite dans target/overview-perf.txt.
  */
+@Import(DedicatedPostgres.class)
+@DirtiesContext
 class OverviewPerformanceIT extends OverviewSupport {
 
   private static final Logger LOG = LoggerFactory.getLogger(OverviewPerformanceIT.class);

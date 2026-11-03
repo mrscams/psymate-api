@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.psymate.identity.admin.AbstractAccountsIT;
-import com.psymate.identity.admin.AdminTotp;
+import com.psymate.testsupport.TotpGenerator;
 import jakarta.servlet.http.Cookie;
 import java.net.URI;
 import java.time.Duration;
@@ -342,7 +342,7 @@ class AppealIT extends AbstractAccountsIT {
                 post("/api/me/2fa/verify")
                     .cookie(session)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"code\":\"" + AdminTotp.code(secret, activation) + "\"}"))
+                    .content("{\"code\":\"" + TotpGenerator.code(secret, activation) + "\"}"))
             .andReturn();
     assertThat(status(verified)).isIn(200, 204);
     suspend(admin, p);
@@ -358,7 +358,7 @@ class AppealIT extends AbstractAccountsIT {
     // Le pas de l'activation est déjà consommé : le code du pas suivant est accepté. Il est
     // calculé depuis l'instant de l'activation, pas depuis maintenant, pour rester dans la fenêtre
     // de tolérance même si la frontière des 30 secondes a été franchie entre-temps.
-    String next = AdminTotp.code(secret, activation.plus(Duration.ofSeconds(30)));
+    String next = TotpGenerator.code(secret, activation.plus(Duration.ofSeconds(30)));
     MvcResult ok = submit(emailOf(p), PASSWORD, next, MESSAGE, freshIp());
     assertThat(status(ok)).isEqualTo(201);
     assertThat(count("select count(*) from practitioner_appeal where practitioner_id = ?", p))

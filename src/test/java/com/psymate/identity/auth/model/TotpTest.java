@@ -2,7 +2,7 @@ package com.psymate.identity.auth.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.psymate.identity.auth.TotpGenerator;
+import com.psymate.testsupport.TotpGenerator;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 

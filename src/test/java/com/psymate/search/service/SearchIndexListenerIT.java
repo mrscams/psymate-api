@@ -7,6 +7,7 @@ import com.psymate.clinical.api.EntryCorrected;
 import com.psymate.clinical.api.EntryCreated;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.search.SearchSupport;
+import com.psymate.testsupport.SharedPostgres;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -14,12 +15,14 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 /**
  * Maintenance du search_vector : triggers de V08 (création, nouvelle version, correction en grâce)
  * et abonnés EntryCreated / EntryCorrected (tags et émotion, écrits hors de la version).
  */
+@Import(SharedPostgres.class)
 class SearchIndexListenerIT extends SearchSupport {
 
   @Autowired private DomainEventPublisher publisher;

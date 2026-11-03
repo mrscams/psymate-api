@@ -9,12 +9,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.psymate.PostgresTestConfig;
 import com.psymate.clinical.model.EntryType;
 import com.psymate.clinical.service.EntryService;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.linking.LinkingFixtures;
 import com.psymate.linking.service.LinkService;
+import com.psymate.testsupport.SharedPostgres;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
@@ -45,7 +45,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import(SharedPostgres.class)
 class GraphControllerIT {
 
   @Autowired private MockMvc mvc;

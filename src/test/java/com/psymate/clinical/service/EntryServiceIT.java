@@ -380,8 +380,14 @@ class EntryServiceIT {
 
   @Test
   void valenceAndArousalAreCopiedWhenTheEmotionHasThemAndNullOtherwise() {
+    // L'émotion est globale et la base partagée : la valeur du seed (null) est rétablie aussitôt.
     jdbc.update("update emotion set valence = -1, arousal = 3 where code = 'anxiety'");
-    UUID withAffect = service.create(patient, of(EntryType.FEELING, session));
+    UUID withAffect;
+    try {
+      withAffect = service.create(patient, of(EntryType.FEELING, session));
+    } finally {
+      jdbc.update("update emotion set valence = null, arousal = null where code = 'anxiety'");
+    }
     assertThat(
             jdbc.queryForMap(
                 "select valence, arousal from entry_feeling where entry_id = ?", withAffect))

@@ -8,8 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.psymate.PostgresTestConfig;
 import com.psymate.shared.ratelimit.RateLimiter;
+import com.psymate.testsupport.SharedPostgres;
 import jakarta.servlet.http.Cookie;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,7 +34,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import(SharedPostgres.class)
 class RateLimitIT {
 
   private static final AtomicInteger IP = new AtomicInteger();

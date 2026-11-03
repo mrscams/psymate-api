@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.awaitility.Awaitility.await;
 
-import com.psymate.PostgresTestConfig;
 import com.psymate.clinical.api.EntryArchived;
 import com.psymate.clinical.model.EntryType;
 import com.psymate.clinical.service.CorrectEntryCommand;
@@ -19,6 +18,7 @@ import com.psymate.linking.model.Link;
 import com.psymate.linking.model.LinkError;
 import com.psymate.linking.model.LinkException;
 import com.psymate.patients.api.PatientAccessException;
+import com.psymate.testsupport.SharedPostgres;
 import com.psymate.vocabulary.api.LinkTypeView;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Import({PostgresTestConfig.class, LinkServiceIT.ListenerConfig.class})
+@Import({SharedPostgres.class, LinkServiceIT.ListenerConfig.class})
 class LinkServiceIT {
 
   /**

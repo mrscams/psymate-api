@@ -28,6 +28,10 @@
 		<!-- Rapports failsafe : tools/verify-fast.sh donne un dossier par tranche d IT lancee en parallele (-Dfailsafe.reportsDirectory) ;
 		     la valeur par defaut est celle du plugin, ./mvnw verify ne change pas -->
 		<failsafe.reportsDirectory>${project.build.directory}/failsafe-reports</failsafe.reportsDirectory>
+		<!-- M9-19 : JVM de test (surefire et failsafe, repertoire de travail = racine du projet) ; affiche la
+		     graine de l ordre aleatoire des classes (src/test/resources/junit-platform.properties). Un autre
+		     argument de JVM de test (agent Mockito, JaCoCo) s ajoute ici, sans remplacer celui-ci -->
+		<argLine>-Djava.util.logging.config.file=src/test/resources/junit-logging.properties</argLine>
 	</properties>
 
 	<dependencyManagement>

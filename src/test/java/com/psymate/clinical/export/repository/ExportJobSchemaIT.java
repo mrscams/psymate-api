@@ -3,7 +3,7 @@ package com.psymate.clinical.export.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.psymate.PostgresTestConfig;
+import com.psymate.testsupport.SharedPostgres;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,7 @@ import org.springframework.test.context.ActiveProfiles;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import(SharedPostgres.class)
 class ExportJobSchemaIT {
 
   @Autowired private JdbcTemplate jdbc;

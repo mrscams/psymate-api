@@ -13,8 +13,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
-import com.psymate.PostgresTestConfig;
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.testsupport.SharedPostgres;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -40,7 +40,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import(SharedPostgres.class)
 class AuditIT {
 
   @Autowired private MockMvc mvc;

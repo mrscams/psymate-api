@@ -5,9 +5,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.psymate.identity.auth.AuthTestConfig;
 import com.psymate.identity.auth.AuthTestConfig.MutableClock;
-import com.psymate.identity.auth.MailpitClient;
 import com.psymate.identity.auth.RegistrationFixtures;
 import com.psymate.identity.auth.service.AuthService;
+import com.psymate.testsupport.MailpitClient;
+import com.psymate.testsupport.SharedMailpit;
 import jakarta.servlet.http.Cookie;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -46,7 +47,7 @@ class EmailConfirmationIT {
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
   @Autowired private MutableClock clock;
-  @Autowired private GenericContainer<?> mailpit;
+  private final GenericContainer<?> mailpit = SharedMailpit.container();
   private final JsonMapper json = JsonMapper.builder().build();
   private MailpitClient mails;
 

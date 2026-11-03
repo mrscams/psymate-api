@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.psymate.identity.api.CurrentPractitioner;
-import com.psymate.vocabulary.VocabularyTestConfig;
+import com.psymate.testsupport.SharedPostgres;
 import com.psymate.vocabulary.model.TextNormalizer;
 import java.time.Duration;
 import java.util.List;
@@ -35,7 +35,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(VocabularyTestConfig.class)
+@Import(SharedPostgres.class)
 class VocabularyIT {
 
   @Autowired private MockMvc mvc;

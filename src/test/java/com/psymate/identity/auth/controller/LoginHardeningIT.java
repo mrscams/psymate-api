@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.psymate.identity.auth.AbstractLoginIT;
 import com.psymate.identity.auth.service.LoginAttemptLimiter;
+import com.psymate.testsupport.TestAdmins;
 import jakarta.servlet.http.Cookie;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -220,6 +221,7 @@ class LoginHardeningIT extends AbstractLoginIT {
         mvc.perform(get("/api/admin/verifications").cookie(adminSession)).andReturn();
     assertThat(denied.getResponse().getStatus()).isEqualTo(403);
     assertThat(body(denied).path("code").asString()).isEqualTo("TWO_FACTOR_REQUIRED");
+    TestAdmins.closeByEmail(jdbc, admin);
 
     // Un praticien ordinaire est refusé pour son rôle, avant tout contrôle de 2FA (M1-14).
     Cookie plain = session(account());

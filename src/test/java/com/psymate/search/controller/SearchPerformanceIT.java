@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.psymate.search.SearchSupport;
+import com.psymate.testsupport.DedicatedPostgres;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,12 +20,16 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
 
 /**
  * Recherche sur 5 000 entrées d'un patient (A6 : cible 300 ms au 95e centile). La cible n'est pas
  * bloquante ici (la machine de test varie) : l'assertion ne vérifie que l'absence de dérive grave,
  * la mesure est journalisée et écrite dans target/search-perf.txt.
  */
+@Import(DedicatedPostgres.class)
+@DirtiesContext
 class SearchPerformanceIT extends SearchSupport {
 
   private static final Logger LOG = LoggerFactory.getLogger(SearchPerformanceIT.class);

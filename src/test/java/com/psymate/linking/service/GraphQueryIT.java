@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.awaitility.Awaitility.await;
 
-import com.psymate.PostgresTestConfig;
 import com.psymate.clinical.model.EntryType;
 import com.psymate.clinical.model.TimeSpec;
 import com.psymate.clinical.service.CreateEntryCommand;
@@ -18,6 +17,7 @@ import com.psymate.linking.model.GraphView;
 import com.psymate.linking.model.LinkError;
 import com.psymate.linking.model.LinkException;
 import com.psymate.patients.api.PatientAccessException;
+import com.psymate.testsupport.SharedPostgres;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ import org.springframework.test.context.ActiveProfiles;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(PostgresTestConfig.class)
+@Import(SharedPostgres.class)
 class GraphQueryIT {
 
   private static final Instant D1 = Instant.parse("2025-01-01T10:00:00Z");

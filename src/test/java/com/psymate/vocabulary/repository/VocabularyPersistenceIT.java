@@ -3,7 +3,7 @@ package com.psymate.vocabulary.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import com.psymate.vocabulary.VocabularyTestConfig;
+import com.psymate.testsupport.SharedPostgres;
 import com.psymate.vocabulary.VocabularyTestFixtures;
 import com.psymate.vocabulary.api.EmotionCatalog;
 import com.psymate.vocabulary.api.EmotionView;
@@ -52,7 +52,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(VocabularyTestConfig.class)
+@Import(SharedPostgres.class)
 class VocabularyPersistenceIT {
 
   @Autowired private TagService tags;

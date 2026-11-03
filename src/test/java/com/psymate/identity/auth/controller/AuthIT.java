@@ -11,6 +11,7 @@ import com.psymate.identity.auth.AuthTestConfig;
 import com.psymate.identity.auth.AuthTestConfig.MutableClock;
 import com.psymate.identity.auth.RegistrationFixtures;
 import com.psymate.identity.auth.service.AuthService;
+import com.psymate.testsupport.SharedMailpit;
 import jakarta.servlet.http.Cookie;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -50,7 +51,7 @@ class AuthIT {
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
   @Autowired private MutableClock clock;
-  @Autowired private GenericContainer<?> mailpit;
+  private final GenericContainer<?> mailpit = SharedMailpit.container();
   @Autowired private PractitionerFacade facade;
   private final JsonMapper json = JsonMapper.builder().build();
   private final HttpClient http = HttpClient.newHttpClient();

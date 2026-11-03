@@ -1,8 +1,10 @@
 package com.psymate.directory.controller;
 
+import com.psymate.directory.dto.DirectoryVocabularyDto;
 import com.psymate.directory.dto.PublicProfile;
 import com.psymate.directory.dto.SearchResult;
 import com.psymate.directory.model.PublicDirectoryCriteria;
+import com.psymate.directory.service.DirectoryVocabularyService;
 import com.psymate.directory.service.PublicDirectoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,9 +39,48 @@ class PublicDirectoryController {
       CacheControl.maxAge(Duration.ofSeconds(60)).cachePublic();
 
   private final PublicDirectoryService service;
+  private final DirectoryVocabularyService vocabulary;
 
-  PublicDirectoryController(PublicDirectoryService service) {
+  PublicDirectoryController(PublicDirectoryService service, DirectoryVocabularyService vocabulary) {
     this.service = service;
+    this.vocabulary = vocabulary;
+  }
+
+  @GetMapping("/vocabulary")
+  @Operation(
+      summary = "Liste les valeurs de l'annuaire public (libellés et codes des filtres)",
+      description =
+          """
+          Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). \
+          Même contenu que GET /api/vocabulary/directory (réservé aux praticiens) : spécialités \
+          et publics actifs, modalités et langues, avec leurs libellés français et anglais ; les \
+          codes sont ceux des filtres de GET /api/public/directory. Listes complètes, non \
+          paginées. Aucune donnée de praticien ni de patient. 200 avec Cache-Control: \
+          max-age=60, public.""")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Listes fermées de l'annuaire.",
+        headers =
+            @Header(
+                name = "Cache-Control",
+                description = "max-age=60, public.",
+                schema = @Schema(type = "string"))),
+    @ApiResponse(
+        responseCode = "429",
+        description = "RATE_LIMITED : plus de 60 requêtes par minute depuis cette adresse IP.",
+        headers =
+            @Header(
+                name = "Retry-After",
+                description = "Secondes avant la prochaine requête admise.",
+                schema = @Schema(type = "integer")),
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class)))
+  })
+  ResponseEntity<DirectoryVocabularyDto> getPublicDirectoryVocabulary() {
+    return ResponseEntity.ok().cacheControl(CACHE).body(vocabulary.directoryVocabulary());
   }
 
   @GetMapping

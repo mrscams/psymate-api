@@ -10415,6 +10415,38 @@ paths:
       summary: Envoie un message au praticien (relayé par e-mail, non rattaché à un dossier)
       tags:
       - Contact public
+  /api/public/directory/vocabulary:
+    get:
+      description: 'Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). Même contenu que GET /api/vocabulary/directory (réservé aux praticiens) : spécialités et publics actifs, modalités et langues, avec leurs libellés français et anglais ; les codes sont ceux des filtres de GET /api/public/directory. Listes complètes, non paginées. Aucune donnée de praticien ni de patient. 200 avec Cache-Control: max-age=60, public.'
+      operationId: getPublicDirectoryVocabulary
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DirectoryVocabularyDto'
+          description: Listes fermées de l'annuaire.
+          headers:
+            Cache-Control:
+              description: max-age=60, public.
+              schema:
+                type: string
+              style: simple
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : plus de 60 requêtes par minute depuis cette adresse IP.'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Liste les valeurs de l'annuaire public (libellés et codes des filtres)
+      tags:
+      - Annuaire public
   /api/sessions/{id}/close:
     post:
       description: Session praticien, propriétaire du patient de la séance. La durée (sinon la durée par défaut du praticien, 60 minutes à défaut), l'heure de fin et le compte rendu (summary) sont figés dans une nouvelle version, même dans la fenêtre de grâce de 1 h 15. Une séance ne se clôture qu'une fois. authorType et submissionId sont refusés (UNKNOWN_FIELD). Le corps est obligatoire, un objet vide convient.
@@ -10725,7 +10757,7 @@ paths:
       - Tags
   /api/vocabulary/directory:
     get:
-      description: Session praticien. Rend les spécialités et publics actifs (administrables), les modalités et les langues proposées ; les codes sont ceux à envoyer dans le profil (PUT /api/me/profile) et dans les filtres de l'annuaire public. Listes complètes, non paginées.
+      description: Session praticien. Rend les spécialités et publics actifs (administrables), les modalités et les langues proposées ; les codes sont ceux à envoyer dans le profil (PUT /api/me/profile) et dans les filtres de l'annuaire public. Listes complètes, non paginées. Le même contenu est servi sans session par GET /api/public/directory/vocabulary.
       operationId: get_1
       responses:
         '200':

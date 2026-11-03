@@ -43,6 +43,12 @@ class MeSecurityIT extends AbstractLoginIT {
       "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0";
 
   private Cookie loginWith(String email, String userAgent, boolean rememberMe) throws Exception {
+    return loginWith(email, userAgent, rememberMe, null);
+  }
+
+  /** Connexion qui présente déjà un cookie de session (reconnexion depuis le même navigateur). */
+  private Cookie loginWith(String email, String userAgent, boolean rememberMe, Cookie existing)
+      throws Exception {
     Map<String, Object> body =
         Map.of("email", email, "password", PASSWORD, "rememberMe", rememberMe);
     var request =
@@ -56,6 +62,9 @@ class MeSecurityIT extends AbstractLoginIT {
                 });
     if (userAgent != null) {
       request.header("User-Agent", userAgent);
+    }
+    if (existing != null) {
+      request.cookie(existing);
     }
     MvcResult result = mvc.perform(request).andReturn();
     assertThat(result.getResponse().getStatus()).isEqualTo(200);
@@ -188,9 +197,72 @@ class MeSecurityIT extends AbstractLoginIT {
             OffsetDateTime.ofInstant(
                 clock.instant().truncatedTo(ChronoUnit.MICROS), ZoneOffset.UTC));
 
+    // Le test porte bien sur un ex æquo : deux connexions, un seul instant.
+    OffsetDateTime beforeThird =
+        OffsetDateTime.ofInstant(clock.instant().truncatedTo(ChronoUnit.MICROS), ZoneOffset.UTC);
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from security_event where practitioner_id = ?"
+                    + " and kind = 'login_ok' and occurred_at < ?",
+                Integer.class,
+                idOf(email),
+                beforeThird))
+        .isEqualTo(2);
+    assertThat(
+            jdbc.queryForObject(
+                "select count(distinct occurred_at) from security_event where practitioner_id = ?"
+                    + " and kind = 'login_ok' and occurred_at < ?",
+                Integer.class,
+                idOf(email),
+                beforeThird))
+        .isEqualTo(1);
+
     for (int i = 0; i < 3; i++) {
       assertThat(security(third).path("lastLogin").path("device").asString()).isEqualTo(expected);
     }
+  }
+
+  @Test
+  void aSessionWithoutOpeningInstantHasNoPreviousLoginEvenIfOneExists() throws Exception {
+    String email = account();
+    loginWith(email, CHROME_WINDOWS, false);
+    clock.advance(Duration.ofMinutes(1));
+    Cookie second = loginWith(email, FIREFOX_LINUX, false);
+    assertThat(security(second).path("lastLogin").path("device").asString())
+        .isEqualTo("Chrome · Windows");
+    String secondId = sessionOf(security(second), "Firefox · Linux").path("id").asString();
+
+    // Session ouverte avant M10-06 : l'attribut psymate.openedAt n'existe pas.
+    int removed =
+        jdbc.update(
+            "delete from spring_session_attributes where session_primary_id = ?"
+                + " and attribute_name = 'psymate.openedAt'",
+            secondId);
+
+    assertThat(removed).isEqualTo(1);
+    JsonNode security = security(second);
+    assertThat(security.propertyNames()).contains("lastLogin");
+    assertThat(security.path("lastLogin").isNull()).isTrue();
+    // L'appareil, lui, reste lu.
+    assertThat(sessionOf(security, "Firefox · Linux").path("current").asBoolean()).isTrue();
+  }
+
+  @Test
+  void reconnectingWithAnUnrecognisedUserAgentDropsTheStaleDevice() throws Exception {
+    String email = account();
+    Cookie chrome = loginWith(email, CHROME_WINDOWS, false);
+    assertThat(security(chrome).path("sessions").get(0).path("device").asString())
+        .isEqualTo("Chrome · Windows");
+
+    // Même navigateur (même cookie), nouvel en-tête non reconnu : l'ancien libellé ne survit pas.
+    Cookie again = loginWith(email, "curl/8.5.0", false, chrome);
+    // Anti-fixation : l'identifiant de session change, le cookie est réémis.
+    assertThat(again).isNotNull();
+
+    JsonNode security = security(again);
+    assertThat(security.path("sessions")).hasSize(1);
+    assertThat(security.path("sessions").get(0).path("current").asBoolean()).isTrue();
+    assertThat(security.path("sessions").get(0).path("device").isNull()).isTrue();
   }
 
   @Test

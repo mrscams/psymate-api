@@ -83,16 +83,30 @@ class SessionNativeQueriesImpl implements SessionNativeQueries {
   }
 
   /**
-   * Chaîne sérialisée par Spring Session (sérialisation JDK). Le filtre n'accepte que {@code
-   * java.lang.String} : toute autre classe est refusée avant d'être instanciée. null si l'attribut
-   * est absent ou illisible.
+   * Filtre des attributs lus : une chaîne seule (profondeur 2, 4 références, 4 Ko : nos deux
+   * attributs font moins de 100 octets), aucun tableau (même vide ou de primitifs), aucune autre
+   * classe. Construit une fois.
+   */
+  static final ObjectInputFilter STRING_ONLY =
+      ObjectInputFilter.Config.createFilter(
+          "maxdepth=2;maxrefs=4;maxbytes=4096;maxarray=0;java.lang.String;!*");
+
+  /**
+   * Taille maximale des octets lus. Le filtre JDK ne vérifie pas {@code maxbytes} pour une simple
+   * chaîne : la limite est donc aussi posée ici, avant toute lecture.
+   */
+  private static final int MAX_ATTRIBUTE_BYTES = 4_096;
+
+  /**
+   * Chaîne sérialisée par Spring Session (sérialisation JDK). {@link #STRING_ONLY} refuse toute
+   * autre classe avant qu'elle soit instanciée. null si l'attribut est absent ou illisible.
    */
   static String stringAttribute(byte[] bytes) {
-    if (bytes == null) {
+    if (bytes == null || bytes.length > MAX_ATTRIBUTE_BYTES) {
       return null;
     }
     try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
-      in.setObjectInputFilter(ObjectInputFilter.Config.createFilter("java.lang.String;!*"));
+      in.setObjectInputFilter(STRING_ONLY);
       return in.readObject() instanceof String value ? value : null;
     } catch (IOException | ClassNotFoundException | RuntimeException e) {
       return null;

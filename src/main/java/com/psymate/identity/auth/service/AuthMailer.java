@@ -58,6 +58,33 @@ class AuthMailer {
         messages.get("mail.exists.body", locale, appName, link));
   }
 
+  /** Lien de confirmation envoyé à la NOUVELLE adresse (changement d'e-mail, 24 h). */
+  void sendEmailChange(String to, String token, Locale locale) {
+    String link = webBaseUrl + "/confirmer-email/" + token;
+    send(
+        to,
+        messages.get("mail.change.subject", locale, appName),
+        messages.get("mail.change.body", locale, appName, link, 24));
+  }
+
+  /** Information envoyée à l'ANCIENNE adresse une fois le changement confirmé. */
+  void sendEmailChanged(String to, String newEmail, Locale locale) {
+    String link = webBaseUrl + "/connexion";
+    send(
+        to,
+        messages.get("mail.changed.subject", locale, appName),
+        messages.get("mail.changed.body", locale, appName, newEmail, link));
+  }
+
+  /** Information envoyée quand un changement d'e-mail vise une adresse déjà utilisée. */
+  void sendChangeTargetExists(String to, Locale locale) {
+    String link = webBaseUrl + "/connexion";
+    send(
+        to,
+        messages.get("mail.changeExists.subject", locale, appName),
+        messages.get("mail.changeExists.body", locale, appName, link));
+  }
+
   private void send(String to, String subject, String text) {
     try {
       MimeMessage message = sender.createMimeMessage();

@@ -17,6 +17,7 @@ import com.psymate.identity.auth.dto.RegisterResponse;
 import com.psymate.identity.auth.dto.RevokedSessionsResponse;
 import com.psymate.identity.auth.dto.SessionResponse;
 import com.psymate.identity.auth.model.AccountState;
+import com.psymate.identity.auth.model.FieldValidationException;
 import com.psymate.identity.auth.model.InvalidCredentialsException;
 import com.psymate.identity.auth.model.PractitionerRow;
 import com.psymate.identity.auth.service.AuthMessages;
@@ -38,6 +39,8 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -185,24 +188,31 @@ class AuthController {
 
   @PostMapping("/email/confirm")
   @Operation(
-      summary = "Confirme l'adresse e-mail et ouvre une session",
+      summary = "Confirme un lien reçu par e-mail : adresse du compte ou changement d'adresse",
       description =
           """
-          Public. Consomme le jeton reçu par e-mail (usage unique, valable 24 h) : le compte passe \
-          de email_pending à docs_pending, la confirmation est journalisée et une session est \
-          ouverte (cookie SESSION HttpOnly posé dans la réponse, 12 h d'inactivité). Un jeton \
-          déjà utilisé, expiré, inconnu ou remplacé par un renvoi donne 410.\
+          Public. Consomme le jeton reçu par e-mail (usage unique, valable 24 h). Jeton \
+          d'inscription : le compte passe de email_pending à docs_pending, la confirmation est \
+          journalisée et une session est ouverte (cookie SESSION HttpOnly posé dans la réponse, \
+          12 h d'inactivité). Jeton de changement d'adresse (POST /api/auth/email/change) : \
+          l'adresse de connexion bascule vers la nouvelle (l'ancienne ne permet plus de se \
+          connecter), email_changed est journalisé, les sessions du compte sont révoquées sauf \
+          celle qui porte l'appel si elle appartient à ce compte (aucune session n'est ouverte), \
+          et l'ancienne adresse reçoit un e-mail d'information. Un jeton déjà utilisé, expiré, \
+          inconnu ou remplacé par un renvoi donne 410.\
           """)
   @ApiResponses({
     @ApiResponse(
         responseCode = "204",
-        description = "Adresse confirmée, session ouverte (cookie SESSION).",
+        description =
+            "Adresse confirmée ; pour une inscription, session ouverte (cookie SESSION), pour un"
+                + " changement d'adresse aucune session n'est ouverte.",
         headers =
             @Header(
                 name = "Set-Cookie",
                 description =
                     "Cookie de session SESSION (HttpOnly, Secure, SameSite=Lax), à renvoyer sur"
-                        + " les appels suivants.")),
+                        + " les appels suivants ; seulement pour un jeton d'inscription.")),
     @ApiResponse(
         responseCode = "410",
         description = "TOKEN_INVALID_OR_EXPIRED : jeton inconnu, déjà utilisé, expiré ou remplacé.",
@@ -224,7 +234,24 @@ class AuthController {
       @Valid @RequestBody EmailConfirmRequest r,
       HttpServletRequest request,
       HttpServletResponse response) {
-    PractitionerRow row = service.confirmEmail(r.token(), request.getRemoteAddr());
+    // Session portée par l'appel : conservée si le jeton change l'e-mail de ce même compte.
+    UUID sessionOwner = CurrentPractitioner.get().map(CurrentPractitioner::id).orElse(null);
+    HttpSession existing = request.getSession(false);
+    AuthService.Confirmation outcome =
+        service.confirm(
+            r.token(),
+            request.getRemoteAddr(),
+            existing == null ? null : sessionOwner,
+            existing == null ? null : existing.getId());
+    if (outcome instanceof AuthService.Confirmation.EmailChanged changed) {
+      if (existing != null && changed.practitioner().id().equals(sessionOwner)) {
+        // La session conservée porte l'adresse à jour dès cette réponse.
+        EmailConfirmationFilter.refresh(
+            changed.practitioner(), securityContextRepository, request, response);
+      }
+      return ResponseEntity.noContent().build();
+    }
+    PractitionerRow row = ((AuthService.Confirmation.AccountConfirmed) outcome).practitioner();
     List<GrantedAuthority> authorities =
         List.of(new SimpleGrantedAuthority("ROLE_" + row.role().toUpperCase(Locale.ROOT)));
     startSession(service.toCurrent(row), authorities, false, request, response);
@@ -263,15 +290,25 @@ class AuthController {
 
   @PostMapping("/email/change")
   @Operation(
-      summary = "Corrige l'adresse d'un compte non confirmé",
+      summary = "Change l'e-mail de connexion (session) ou corrige celui d'un compte non confirmé",
       description =
           """
-          Public : sans session, l'appelant prouve son identité par email + password. Réponse 202 \
-          dans tous les cas (compte inconnu, mot de passe faux, compte déjà confirmé, nouvelle \
-          adresse déjà prise, limite atteinte : aucune différence visible). Seul un compte en \
-          email_pending change d'adresse ; un nouveau lien de confirmation part à la nouvelle \
-          adresse (1 changement ou renvoi par minute, 5 par jour). Les mots de passe faux comptent \
-          dans le verrou e-mail + IP du login : 5 échecs, 423 pendant 15 min.\
+          Deux variantes, même route. Avec une session (compte confirmé : docs_pending, \
+          under_review, needs_more ou approved) : corps { newEmail, password }, le compte est celui \
+          de la session (email est ignoré). Le mot de passe est vérifié : faux, il donne 422 \
+          INVALID_PASSWORD et compte dans le verrou e-mail + IP du login (5 échecs, 423 pendant \
+          15 min). Sinon la réponse est 202 dans tous les cas : un lien de confirmation (24 h, \
+          usage unique) part à la NOUVELLE adresse, et si cette adresse appartient déjà à un compte \
+          elle reçoit à la place l'e-mail « vous avez déjà un compte », sans que la réponse \
+          diffère. L'ancienne adresse reste valide pour se connecter jusqu'à la confirmation par \
+          POST /api/auth/email/confirm ; une nouvelle demande invalide le lien précédent (1 par \
+          minute, 5 par jour, au-delà rien ne part). Sans session (variante publique, compte \
+          email_pending) : corps { email, password, newEmail } ; réponse 202 dans tous les cas \
+          (compte inconnu, mot de passe faux, compte déjà confirmé, nouvelle adresse déjà prise, \
+          limite atteinte : aucune différence visible) ; seul un compte en email_pending change \
+          d'adresse, un nouveau lien de confirmation part à la nouvelle adresse (1 changement ou \
+          renvoi par minute, 5 par jour) ; les mots de passe faux comptent dans le verrou e-mail + \
+          IP du login (5 échecs, 423 pendant 15 min).\
           """)
   @ApiResponses({
     @ApiResponse(
@@ -281,8 +318,9 @@ class AuthController {
     @ApiResponse(
         responseCode = "422",
         description =
-            "VALIDATION_FAILED avec errors[] : INVALID_FIELD (email, password ou newEmail absent,"
-                + " newEmail mal formé, champ trop long).",
+            "VALIDATION_FAILED avec errors[] : INVALID_FIELD (password ou newEmail absent, email"
+                + " absent sans session, newEmail mal formé, champ trop long) ; INVALID_PASSWORD"
+                + " (champ password, variante avec session : mot de passe faux).",
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -300,7 +338,16 @@ class AuthController {
   })
   ResponseEntity<Void> changeEmail(
       @Valid @RequestBody EmailChangeRequest r, HttpServletRequest request) {
-    service.changeEmail(r.email(), r.password(), r.newEmail(), request.getRemoteAddr());
+    Optional<CurrentPractitioner> current = CurrentPractitioner.get();
+    if (current.isPresent()) {
+      service.changeEmail(current.get().id(), r.password(), r.newEmail(), request.getRemoteAddr());
+    } else {
+      if (r.email() == null || r.email().isBlank()) {
+        throw new FieldValidationException(
+            List.<String[]>of(new String[] {"email", "INVALID_FIELD", "error.email.required"}));
+      }
+      service.changeEmail(r.email(), r.password(), r.newEmail(), request.getRemoteAddr());
+    }
     return ResponseEntity.accepted().build();
   }
 

@@ -10,14 +10,18 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.domain.Persistable;
 
 /**
  * Jeton à usage unique (table {@code auth_token}) : confirmation d'e-mail, réinitialisation du mot
- * de passe. {@code payload} et {@code created_ip} (nullables) ne sont pas utilisés en V1 et donc
- * pas mappés. La consommation est atomique et passe par {@link AuthTokenNativeQueries#consume}.
+ * de passe, changement d'e-mail (M10-04, {@code payload} = {@code {"newEmail": "…"}}). {@code
+ * created_ip} (nullable) n'est pas utilisé et donc pas mappé. La consommation est atomique et passe
+ * par {@link AuthTokenNativeQueries#consume} ou {@link AuthTokenNativeQueries#consumeWithPayload}.
  */
 @Entity
 @Table(name = "auth_token")
@@ -33,6 +37,10 @@ public class AuthToken implements Persistable<UUID> {
 
   @Column(nullable = false, updatable = false)
   private String tokenHash;
+
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(updatable = false)
+  private Map<String, Object> payload;
 
   @Column(nullable = false, updatable = false)
   private OffsetDateTime expiresAt;
@@ -56,6 +64,19 @@ public class AuthToken implements Persistable<UUID> {
     this.createdAt = Timestamps.utc(now);
   }
 
+  /** Jeton portant une charge utile JSON (changement d'e-mail : la nouvelle adresse). */
+  public AuthToken(
+      UUID id,
+      UUID practitionerId,
+      String kind,
+      String tokenHash,
+      Map<String, Object> payload,
+      Instant expiresAt,
+      Instant now) {
+    this(id, practitionerId, kind, tokenHash, expiresAt, now);
+    this.payload = payload == null ? null : Map.copyOf(payload);
+  }
+
   @Override
   public UUID getId() {
     return id;
@@ -71,6 +92,10 @@ public class AuthToken implements Persistable<UUID> {
 
   public String getTokenHash() {
     return tokenHash;
+  }
+
+  public Map<String, Object> getPayload() {
+    return payload;
   }
 
   public OffsetDateTime getExpiresAt() {

@@ -9,6 +9,7 @@ import com.psymate.identity.auth.model.AccountLockedException;
 import com.psymate.identity.auth.model.AccountState;
 import com.psymate.identity.auth.model.FieldValidationException;
 import com.psymate.identity.auth.model.InvalidCredentialsException;
+import com.psymate.identity.auth.model.InvalidSecondFactorException;
 import com.psymate.identity.auth.model.InvalidTokenException;
 import com.psymate.identity.auth.model.PasswordPolicy;
 import com.psymate.identity.auth.model.PasswordPolicyException;
@@ -19,6 +20,7 @@ import com.psymate.identity.auth.repository.PractitionerRepository;
 import com.psymate.identity.auth.repository.PractitionerRepository.Contact;
 import com.psymate.identity.model.AuthToken;
 import com.psymate.identity.repository.AuthTokenJpaRepository;
+import com.psymate.identity.repository.AuthTokenNativeQueries.ConsumedToken;
 import com.psymate.identity.repository.UniqueViolations;
 import com.psymate.shared.time.Timestamps;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +37,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +59,12 @@ public class AuthService {
   private static final Logger LOG = LoggerFactory.getLogger(AuthService.class);
   static final String KIND_PASSWORD_RESET = "password_reset";
   static final String KIND_EMAIL_CONFIRM = "email_confirm";
+  static final String KIND_EMAIL_CHANGE = "email_change";
+
+  /** Statuts qui peuvent changer d'e-mail avec une session (hors email_pending, refusé, clos). */
+  static final Set<String> EMAIL_CHANGE_STATUSES =
+      Set.of("docs_pending", "under_review", "needs_more", "approved");
+
   static final Duration RESET_TTL = Duration.ofMinutes(30);
   static final Duration CONFIRM_TTL = Duration.ofHours(24);
   static final Duration RESEND_MIN_INTERVAL = Duration.ofMinutes(1);
@@ -270,17 +279,102 @@ public class AuthService {
 
   // --- Confirmation d'e-mail (fiche 25) ---
 
-  /** Consomme le jeton (usage unique, 24 h) : docs_pending, email_confirmed_at, journal. */
-  @Transactional
-  public PractitionerRow confirmEmail(String token, String ip) {
+  /** Résultat de la consommation d'un jeton reçu par e-mail (POST /api/auth/email/confirm). */
+  public sealed interface Confirmation {
+    /**
+     * Première confirmation d'un compte (email_pending vers docs_pending) : une session s'ouvre.
+     */
+    record AccountConfirmed(PractitionerRow practitioner) implements Confirmation {}
+
+    /** Changement d'e-mail confirmé : {@code practitioner} porte déjà la nouvelle adresse. */
+    record EmailChanged(PractitionerRow practitioner, int revokedSessions)
+        implements Confirmation {}
+  }
+
+  /**
+   * Consomme le jeton (usage unique, 24 h). Un jeton d'inscription confirme le compte
+   * (docs_pending, email_confirmed_at, journal). Un jeton de changement d'e-mail (M10-04) bascule
+   * l'adresse, journalise email_changed, révoque les sessions du compte hors celle qui porte
+   * l'appel ({@code sessionOwner} et {@code sessionId}, nuls sans session ou si elle est celle d'un
+   * autre compte) et prévient l'ANCIENNE adresse. Inconnu, expiré, consommé : {@link
+   * InvalidTokenException}.
+   */
+  public Confirmation confirm(String token, String ip, UUID sessionOwner, String sessionId) {
+    String hash = sha256(token);
+    try {
+      return tx.execute(status -> confirmInTransaction(hash, ip, sessionOwner, sessionId));
+    } catch (DataIntegrityViolationException e) {
+      if (!UniqueViolations.isUniqueViolation(e)) {
+        throw e;
+      }
+      // Course : la nouvelle adresse a été prise entre-temps, la transaction est annulée.
+      throw new InvalidTokenException();
+    }
+  }
+
+  private Confirmation confirmInTransaction(
+      String hash, String ip, UUID sessionOwner, String sessionId) {
     Instant now = clock.instant();
-    UUID id =
+    Optional<UUID> confirmed = tokens.consume(KIND_EMAIL_CONFIRM, hash, now);
+    if (confirmed.isPresent()) {
+      UUID id = confirmed.get();
+      practitioners.confirmEmail(id, now);
+      practitioners.insertSecurityEvent(id, "email_confirmed", ip, null, now);
+      return new Confirmation.AccountConfirmed(
+          practitioners.findById(id).orElseThrow(InvalidTokenException::new));
+    }
+    ConsumedToken change =
         tokens
-            .consume(KIND_EMAIL_CONFIRM, sha256(token), now)
+            .consumeWithPayload(KIND_EMAIL_CHANGE, hash, now)
             .orElseThrow(InvalidTokenException::new);
-    practitioners.confirmEmail(id, now);
-    practitioners.insertSecurityEvent(id, "email_confirmed", ip, null, now);
-    return practitioners.findById(id).orElseThrow(InvalidTokenException::new);
+    return applyEmailChange(change, ip, sessionOwner, sessionId, now);
+  }
+
+  private Confirmation applyEmailChange(
+      ConsumedToken change, String ip, UUID sessionOwner, String sessionId, Instant now) {
+    UUID id = change.practitionerId();
+    PractitionerRow before = practitioners.findById(id).orElseThrow(InvalidTokenException::new);
+    String newEmail = newEmailOf(change.payload());
+    String normalized = normalizeEmail(newEmail);
+    Optional<PractitionerRow> other = practitioners.findByEmailNormalized(normalized);
+    if (other.isPresent() && !other.get().id().equals(id)) {
+      throw new InvalidTokenException();
+    }
+    practitioners.updateEmail(id, newEmail, normalized, now);
+    practitioners.insertSecurityEvent(
+        id,
+        "email_changed",
+        ip,
+        JSON.writeValueAsString(Map.of("previousEmail", before.email(), "newEmail", newEmail)),
+        now);
+    boolean keepCurrent = id.equals(sessionOwner) && sessionId != null;
+    int revoked =
+        keepCurrent
+            ? practitioners.deleteOtherSessions(id, sessionId)
+            : practitioners.deleteSessionsCount(id);
+    practitioners.insertSecurityEvent(
+        id,
+        "session_revoked",
+        ip,
+        JSON.writeValueAsString(Map.of("scope", keepCurrent ? "others" : "all", "count", revoked)),
+        now);
+    Locale locale = Locale.forLanguageTag(before.locale());
+    String oldAddress = before.email();
+    afterCommit(
+        "email-changed e-mail", () -> mailer.sendEmailChanged(oldAddress, newEmail, locale));
+    return new Confirmation.EmailChanged(
+        practitioners.findById(id).orElseThrow(InvalidTokenException::new), revoked);
+  }
+
+  private static String newEmailOf(String payload) {
+    if (payload == null) {
+      throw new InvalidTokenException();
+    }
+    String value = JSON.readTree(payload).path("newEmail").asString(null);
+    if (value == null || value.isBlank()) {
+      throw new InvalidTokenException();
+    }
+    return value;
   }
 
   /**
@@ -296,7 +390,7 @@ public class AuthService {
     }
     PractitionerRow p = found.get();
     Instant now = clock.instant();
-    if (resendLimitReached(p.id(), now)) {
+    if (resendLimitReached(p.id(), KIND_EMAIL_CONFIRM, now)) {
       return;
     }
     String token = newToken();
@@ -339,6 +433,76 @@ public class AuthService {
     if (!"email_pending".equals(p.verificationStatus())) {
       return;
     }
+    changePendingEmail(p, newEmail);
+  }
+
+  /**
+   * Changement d'e-mail d'un compte connecté (M10-04). Le mot de passe est vérifié : un échec
+   * compte dans le même verrou e-mail + IP que le login (423 au seuil) et donne 422
+   * INVALID_PASSWORD, la session prouvant déjà l'identité de l'appelant. Ensuite la réponse (202)
+   * ne dépend jamais de la nouvelle adresse : un jeton de 24 h qui porte l'adresse est toujours
+   * créé (les précédents sont invalidés), puis l'adresse reçoit soit le lien de confirmation, soit,
+   * si elle appartient déjà à un autre compte, l'e-mail « vous avez déjà un compte ». Dans ce
+   * second cas le jeton n'est envoyé à personne : il ne peut pas être consommé, et le travail en
+   * base reste identique. L'ancienne adresse reste valide jusqu'à la confirmation. Un compte
+   * email_pending suit la correction publique ; les autres statuts (refusé, suspendu, clos) ne
+   * changent rien.
+   */
+  public void changeEmail(UUID id, String password, String newEmail, String ip) {
+    PractitionerRow p = practitioners.findById(id).orElseThrow(InvalidCredentialsException::new);
+    String key = normalizeEmail(p.email()) + "|" + (ip == null ? "" : ip);
+    limiter
+        .remainingLock(key)
+        .ifPresent(
+            d -> {
+              throw new AccountLockedException(Math.max(1, d.toSeconds()));
+            });
+    if (!encoder.matches(password, p.passwordHash())) {
+      var state = limiter.recordFailure(key);
+      if (state.locked(clock.instant())) {
+        throw new AccountLockedException(
+            Math.max(1, Duration.between(clock.instant(), state.lockedUntil()).toSeconds()));
+      }
+      throw new InvalidSecondFactorException("password");
+    }
+    if (PractitionerRow.EMAIL_PENDING.equals(p.verificationStatus())) {
+      changePendingEmail(p, newEmail);
+      return;
+    }
+    if (!EMAIL_CHANGE_STATUSES.contains(p.verificationStatus())) {
+      return;
+    }
+    tx.executeWithoutResult(status -> requestEmailChange(p, newEmail));
+  }
+
+  private void requestEmailChange(PractitionerRow p, String newEmail) {
+    UUID id = p.id();
+    Instant now = clock.instant();
+    if (resendLimitReached(id, KIND_EMAIL_CHANGE, now)) {
+      return;
+    }
+    String address = newEmail.trim();
+    Locale locale = Locale.forLanguageTag(p.locale());
+    Optional<PractitionerRow> owner = practitioners.findByEmailNormalized(normalizeEmail(address));
+    String token = newToken();
+    tokens.consumeActive(id, KIND_EMAIL_CHANGE, Timestamps.utc(now));
+    tokens.save(
+        new AuthToken(
+            UUID.randomUUID(),
+            id,
+            KIND_EMAIL_CHANGE,
+            sha256(token),
+            Map.of("newEmail", address),
+            now.plus(CONFIRM_TTL),
+            now));
+    if (owner.isEmpty()) {
+      afterCommit("email-change e-mail", () -> mailer.sendEmailChange(address, token, locale));
+    } else if (!owner.get().id().equals(id)) {
+      afterCommit("account-exists e-mail", () -> mailer.sendChangeTargetExists(address, locale));
+    }
+  }
+
+  private void changePendingEmail(PractitionerRow p, String newEmail) {
     try {
       tx.executeWithoutResult(status -> doChangeEmail(p, newEmail));
     } catch (DataIntegrityViolationException e) {
@@ -354,7 +518,7 @@ public class AuthService {
   private void doChangeEmail(PractitionerRow p, String newEmail) {
     UUID id = p.id();
     Instant now = clock.instant();
-    if (resendLimitReached(id, now)) {
+    if (resendLimitReached(id, KIND_EMAIL_CONFIRM, now)) {
       return;
     }
     String normalized = normalizeEmail(newEmail);
@@ -373,12 +537,9 @@ public class AuthService {
   }
 
   /** Limites de renvoi du lien : 1 par minute, 5 par jour (jetons consommés ou non). */
-  private boolean resendLimitReached(UUID id, Instant now) {
-    return tokens.countCreatedSince(
-                id, KIND_EMAIL_CONFIRM, Timestamps.utc(now.minus(RESEND_MIN_INTERVAL)))
-            > 0
-        || tokens.countCreatedSince(
-                id, KIND_EMAIL_CONFIRM, Timestamps.utc(now.minus(Duration.ofDays(1))))
+  private boolean resendLimitReached(UUID id, String kind, Instant now) {
+    return tokens.countCreatedSince(id, kind, Timestamps.utc(now.minus(RESEND_MIN_INTERVAL))) > 0
+        || tokens.countCreatedSince(id, kind, Timestamps.utc(now.minus(Duration.ofDays(1))))
             >= RESEND_MAX_PER_DAY;
   }
 

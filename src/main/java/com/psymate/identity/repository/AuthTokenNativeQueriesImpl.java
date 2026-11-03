@@ -27,4 +27,23 @@ class AuthTokenNativeQueriesImpl implements AuthTokenNativeQueries {
             .getResultList();
     return rows.isEmpty() ? Optional.empty() : Optional.of((UUID) rows.get(0));
   }
+
+  @Override
+  @Transactional
+  public Optional<ConsumedToken> consumeWithPayload(String kind, String tokenHash, Instant now) {
+    List<?> rows =
+        em.createNativeQuery(
+                "update auth_token set consumed_at = :now where token_hash = :h and kind = :k and"
+                    + " consumed_at is null and expires_at > :now returning practitioner_id,"
+                    + " cast(payload as text)")
+            .setParameter("now", Timestamps.utc(now))
+            .setParameter("h", tokenHash)
+            .setParameter("k", kind)
+            .getResultList();
+    if (rows.isEmpty()) {
+      return Optional.empty();
+    }
+    Object[] row = (Object[]) rows.get(0);
+    return Optional.of(new ConsumedToken((UUID) row[0], (String) row[1]));
+  }
 }

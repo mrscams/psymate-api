@@ -4,11 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.psymate.identity.auth.AbstractLoginIT;
 import com.psymate.identity.auth.RegistrationFixtures;
+import com.psymate.identity.auth.dto.MeResponse;
 import com.psymate.testsupport.TestAdmins;
 import com.psymate.testsupport.TotpGenerator;
+import com.tngtech.archunit.core.importer.ClassFileImporter;
 import jakarta.servlet.http.Cookie;
 import java.lang.reflect.RecordComponent;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -162,7 +165,7 @@ class AuthMeIT extends AbstractLoginIT {
   }
 
   @Test
-  void aSignupBodyCarryingTheThreeFieldsCannotElevateOrSkipAnything() throws Exception {
+  void aSignupBodyCarryingTheThreeFieldsIsIgnored() throws Exception {
     String email = newEmail();
     Map<String, Object> payload =
         new LinkedHashMap<>(RegistrationFixtures.payload(email, PASSWORD, "psychologist"));
@@ -170,27 +173,27 @@ class AuthMeIT extends AbstractLoginIT {
     payload.put("twoFactorEnabled", true);
     payload.put("passwordChangeRequired", true);
 
-    MvcResult register = post("/api/auth/register", payload, null, IP);
+    // Jackson ignore les propriétés inconnues : l'inscription réussit, sans aucun effet des trois.
+    assertThat(post("/api/auth/register", payload, null, IP).getResponse().getStatus())
+        .isEqualTo(201);
 
-    // Ignorés (201) ou refusés (422) : jamais pris en compte.
-    assertThat(register.getResponse().getStatus()).isIn(201, 422);
-    if (register.getResponse().getStatus() == 201) {
-      Map<String, Object> row =
-          jdbc.queryForMap(
-              "select role, totp_enabled_at, preferences::text as prefs from practitioner where"
-                  + " email_normalized = ?",
-              email);
-      assertThat(row.get("role")).isEqualTo("practitioner");
-      assertThat(row.get("totp_enabled_at")).isNull();
-      assertThat((String) row.get("prefs")).doesNotContain("mustChangePassword");
-      jdbc.update(
-          "update practitioner set verification_status = 'docs_pending' where email_normalized = ?",
-          email);
-      JsonNode me = me(session(email));
-      assertThat(me.path("role").asString()).isEqualTo("practitioner");
-      assertThat(me.path("twoFactorEnabled").asBoolean(true)).isFalse();
-      assertThat(me.path("passwordChangeRequired").asBoolean(true)).isFalse();
-    }
+    Map<String, Object> row =
+        jdbc.queryForMap(
+            "select role, totp_enabled_at, preferences::text as prefs from practitioner where"
+                + " email_normalized = ?",
+            email);
+    assertThat(row.get("role")).isEqualTo("practitioner");
+    assertThat(row.get("totp_enabled_at")).isNull();
+    assertThat((String) row.get("prefs")).doesNotContain("mustChangePassword");
+    // Le compte est email_pending (e-mail non confirmé, login refusé) : on le passe à docs_pending
+    // à la main, comme AbstractLoginIT.account, pour pouvoir ouvrir une session.
+    jdbc.update(
+        "update practitioner set verification_status = 'docs_pending' where email_normalized = ?",
+        email);
+    JsonNode me = me(session(email));
+    assertThat(me.path("role").asString()).isEqualTo("practitioner");
+    assertThat(me.path("twoFactorEnabled").asBoolean(true)).isFalse();
+    assertThat(me.path("passwordChangeRequired").asBoolean(true)).isFalse();
   }
 
   @Test
@@ -205,39 +208,37 @@ class AuthMeIT extends AbstractLoginIT {
 
     MvcResult r = post("/api/auth/login", body, null, IP);
 
-    assertThat(r.getResponse().getStatus()).isIn(200, 422);
-    if (r.getResponse().getStatus() == 200) {
-      assertThat(body(r).path("role").asString()).isEqualTo("practitioner");
-      assertThat(body(r).path("twoFactorEnabled").asBoolean(true)).isFalse();
-      assertThat(body(r).path("passwordChangeRequired").asBoolean(true)).isFalse();
-    }
+    assertThat(r.getResponse().getStatus()).isEqualTo(200);
+    assertThat(body(r).path("role").asString()).isEqualTo("practitioner");
+    assertThat(body(r).path("twoFactorEnabled").asBoolean(true)).isFalse();
+    assertThat(body(r).path("passwordChangeRequired").asBoolean(true)).isFalse();
+    assertThat(
+            jdbc.queryForObject(
+                "select role from practitioner where email_normalized = ?", String.class, email))
+        .isEqualTo("practitioner");
+    assertThat(me(r.getResponse().getCookie("SESSION")).path("role").asString())
+        .isEqualTo("practitioner");
   }
 
   @Test
-  void noWriteDtoOfTheAuthPackageDeclaresTheThreeFields() throws Exception {
+  void noWriteDtoOfTheAuthPackageDeclaresTheThreeFields() {
+    // Scan de tous les *Request du package : un futur DTO d'écriture (M10-04) est contrôlé aussi.
     List<Class<?>> requests =
-        List.of(
-            com.psymate.identity.auth.dto.RegisterRequest.class,
-            com.psymate.identity.auth.dto.LoginRequest.class,
-            com.psymate.identity.auth.dto.PasswordChangeRequest.class,
-            com.psymate.identity.auth.dto.PasswordResetRequest.class,
-            com.psymate.identity.auth.dto.PasswordResetConfirmRequest.class,
-            com.psymate.identity.auth.dto.EmailChangeRequest.class,
-            com.psymate.identity.auth.dto.EmailConfirmRequest.class,
-            com.psymate.identity.auth.dto.EmailResendRequest.class,
-            com.psymate.identity.auth.dto.TwoFactorVerifyRequest.class,
-            com.psymate.identity.auth.dto.TwoFactorDisableRequest.class);
+        new ClassFileImporter()
+            .importPackages("com.psymate.identity.auth.dto").stream()
+                .filter(c -> c.getSimpleName().endsWith("Request"))
+                .<Class<?>>map(c -> c.reflect())
+                .toList();
+    assertThat(requests).hasSizeGreaterThanOrEqualTo(10);
     for (Class<?> request : requests) {
+      assertThat(request.isRecord()).as("%s est un record", request.getSimpleName()).isTrue();
       for (RecordComponent component : request.getRecordComponents()) {
         assertThat(NEW_FIELDS)
             .as("%s.%s", request.getSimpleName(), component.getName())
             .doesNotContain(component.getName());
       }
     }
-    assertThat(
-            java.util.Arrays.stream(
-                    com.psymate.identity.auth.dto.MeResponse.class.getRecordComponents())
-                .map(RecordComponent::getName))
+    assertThat(Arrays.stream(MeResponse.class.getRecordComponents()).map(RecordComponent::getName))
         .containsAll(NEW_FIELDS);
   }
 }

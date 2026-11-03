@@ -6114,7 +6114,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué) ; INVALID_CREDENTIALS : le compte de la session n''existe plus.'
         '429':
           content:
             application/problem+json:

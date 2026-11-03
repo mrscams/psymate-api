@@ -2,6 +2,7 @@ package com.psymate.identity.auth.service;
 
 import com.psymate.identity.auth.model.AccountLockedException;
 import com.psymate.identity.auth.model.AccountNotSuspendedException;
+import com.psymate.identity.auth.model.AccountState;
 import com.psymate.identity.auth.model.AccountSuspendedException;
 import com.psymate.identity.auth.model.EmailNotConfirmedException;
 import com.psymate.identity.auth.model.InvalidCredentialsException;
@@ -34,7 +35,8 @@ public class LoginService {
 
   /** Résultat d'une tentative qui n'a pas échoué. */
   public sealed interface Outcome {
-    record Authenticated(PractitionerRow practitioner, boolean recoveryCodeUsed)
+    record Authenticated(
+        PractitionerRow practitioner, boolean recoveryCodeUsed, AccountState account)
         implements Outcome {}
 
     /** Mot de passe correct, 2FA active et code absent. */
@@ -159,7 +161,9 @@ public class LoginService {
     if (mode == Mode.LOGIN) {
       practitioners.insertSecurityEvent(row.id(), "login_ok", ip, null, now);
     }
-    return new Outcome.Authenticated(row, recoveryUsed);
+    // Construit depuis ce qui est déjà lu : aucune requête de plus pour la réponse de connexion.
+    AccountState account = new AccountState(row.role(), state.enabled(), row.mustChangePassword());
+    return new Outcome.Authenticated(row, recoveryUsed, account);
   }
 
   /** Échec : compteur par clé, reflet en base, événements ; 423 si le seuil est atteint. */

@@ -25,6 +25,11 @@ public record PractitionerRow(
 
   /** Vrai tant que le mot de passe à usage unique d'un compte de bootstrap n'a pas été changé. */
   public boolean mustChangePassword() {
+    return mustChangePassword(preferences);
+  }
+
+  /** Même lecture du drapeau à partir des seules préférences (projection de GET /api/auth/me). */
+  public static boolean mustChangePassword(Map<String, Object> preferences) {
     return preferences != null
         && preferences.get(MUST_CHANGE_PASSWORD) instanceof Boolean flag
         && flag;

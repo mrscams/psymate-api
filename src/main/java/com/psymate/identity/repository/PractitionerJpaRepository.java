@@ -5,6 +5,7 @@ import jakarta.persistence.LockModeType;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -66,6 +67,13 @@ public interface PractitionerJpaRepository
   /** Secret TOTP chiffré (null = aucune 2FA) et date d'activation (null = en attente). */
   record TotpView(byte[] secret, OffsetDateTime enabledAt) {}
 
+  /**
+   * État de sécurité lu pour GET /api/auth/me : rôle, préférences (drapeau de changement de mot de
+   * passe) et 2FA active, calculée en base. Ni le haché du mot de passe ni le secret TOTP chiffré
+   * ne sont sélectionnés.
+   */
+  record AccountSecurity(String role, boolean twoFactorEnabled, Map<String, Object> preferences) {}
+
   /** Destinataire des notifications d'administration : adresse et langue. */
   record Recipient(String email, String locale) {}
 
@@ -117,6 +125,15 @@ public interface PractitionerJpaRepository
       "select new com.psymate.identity.repository.PractitionerJpaRepository$TotpView("
           + "p.totpSecretEnc, p.totpEnabledAt) from Practitioner p where p.id = :id")
   Optional<TotpView> findTotp(@Param("id") UUID id);
+
+  /**
+   * Un seul SELECT, sans le haché ni le secret TOTP ; la 2FA est active si secret et date existent.
+   */
+  @Query(
+      "select new com.psymate.identity.repository.PractitionerJpaRepository$AccountSecurity("
+          + "p.role, case when p.totpSecretEnc is not null and p.totpEnabledAt is not null"
+          + " then true else false end, p.preferences) from Practitioner p where p.id = :id")
+  Optional<AccountSecurity> accountSecurity(@Param("id") UUID id);
 
   /** Fin de verrou enregistrée en base (second garde, survit à un redémarrage). */
   @Query("select p.lockedUntil from Practitioner p where p.id = :id")

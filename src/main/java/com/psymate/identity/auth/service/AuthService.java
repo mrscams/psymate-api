@@ -68,7 +68,6 @@ public class AuthService {
   private static final String PREFS_PSYCHIATRIST = "{\"entryTypes.medicationVisible\":true}";
 
   private final PractitionerRepository practitioners;
-  private final OtpVerifier otp;
   private final AuthTokenJpaRepository tokens;
   private final PasswordEncoder encoder;
   private final AuthMailer mailer;
@@ -82,7 +81,6 @@ public class AuthService {
 
   AuthService(
       PractitionerRepository practitioners,
-      OtpVerifier otp,
       AuthTokenJpaRepository tokens,
       PasswordEncoder encoder,
       AuthMailer mailer,
@@ -92,7 +90,6 @@ public class AuthService {
       LoginAttemptLimiter limiter,
       PlatformTransactionManager txManager) {
     this.practitioners = practitioners;
-    this.otp = otp;
     this.tokens = tokens;
     this.encoder = encoder;
     this.mailer = mailer;
@@ -246,13 +243,13 @@ public class AuthService {
   }
 
   /**
-   * État de sécurité à jour du compte (GET /api/auth/me, M10-03) : relu en base, car la 2FA et
-   * l'obligation de changement de mot de passe évoluent pendant la session. Le secret TOTP n'est
-   * jamais lu ici, seul son état actif l'est.
+   * État de sécurité à jour du compte (GET /api/auth/me, M10-03) : relu en base par une seule
+   * requête de projection, car la 2FA et l'obligation de changement de mot de passe évoluent
+   * pendant la session. Ni le haché du mot de passe ni le secret TOTP ne sont lus. Le rôle est relu
+   * lui aussi, alors que les autorités de la session sont figées à la connexion.
    */
   public AccountState accountState(UUID id) {
-    PractitionerRow row = practitioners.findById(id).orElseThrow(InvalidCredentialsException::new);
-    return new AccountState(row.role(), otp.state(id).enabled(), row.mustChangePassword());
+    return practitioners.accountState(id).orElseThrow(InvalidCredentialsException::new);
   }
 
   public void recordLogin(UUID id) {

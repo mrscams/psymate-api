@@ -425,13 +425,16 @@ class AuthController {
     if (outcome instanceof LoginService.Outcome.OtpRequired) {
       return ResponseEntity.accepted().body(new OtpRequiredResponse(true));
     }
-    PractitionerRow row = ((LoginService.Outcome.Authenticated) outcome).practitioner();
+    LoginService.Outcome.Authenticated authenticated = (LoginService.Outcome.Authenticated) outcome;
+    PractitionerRow row = authenticated.practitioner();
     List<GrantedAuthority> authorities =
         List.of(new SimpleGrantedAuthority("ROLE_" + row.role().toUpperCase(Locale.ROOT)));
     CurrentPractitioner current = service.toCurrent(row);
+    // Réponse assemblée avant d'ouvrir la session : rien ne peut échouer après startSession.
+    MeResponse me = toMe(current, authenticated.account());
     startSession(current, authorities, Boolean.TRUE.equals(r.rememberMe()), request, response);
     service.recordLogin(current.id());
-    return ResponseEntity.ok(toMe(current, service.accountState(current.id())));
+    return ResponseEntity.ok(me);
   }
 
   /**
@@ -575,8 +578,18 @@ class AuthController {
           authentification est active et si un changement de mot de passe est imposé. Ces trois \
           champs sont en lecture seule : aucun corps de requête ne les accepte.\
           """)
-  @ApiResponses(
-      @ApiResponse(responseCode = "200", description = "Praticien de la session courante."))
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Praticien de la session courante."),
+    @ApiResponse(
+        responseCode = "401",
+        description =
+            "UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué) ;"
+                + " INVALID_CREDENTIALS : le compte de la session n'existe plus.",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class)))
+  })
   MeResponse me(
       @org.springframework.security.core.annotation.AuthenticationPrincipal
           CurrentPractitioner current) {

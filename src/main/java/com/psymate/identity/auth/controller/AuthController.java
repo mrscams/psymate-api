@@ -758,6 +758,10 @@ class AuthController {
     // Attributs de session Spring Session lus par GET /api/me/security, aucune migration.
     if (device != null) {
       session.setAttribute(SessionAttributes.DEVICE, device);
+    } else {
+      // changeSessionId() conserve les attributs : sans cela, une session anonyme ou une
+      // reconnexion garderait un ancien libellé.
+      session.removeAttribute(SessionAttributes.DEVICE);
     }
     session.setAttribute(SessionAttributes.OPENED_AT, openedAt.toString());
     session.setMaxInactiveInterval(

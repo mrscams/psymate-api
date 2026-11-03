@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-03T08:29:23.815Z",
+  "task": "M9-19",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Partie 2/2 : base Postgres partagée par JVM, testsupport (Postgres, Mailpit, TOTP), SharedDatabaseIsolationIT par tranche, ordre aléatoire des classes",
+  "notes": "verify-fast vert : 7 min 04 contre 9 min 04 ; 14 conteneurs Postgres contre 43, 5 vivants au pic contre 31 ; mémoire libre minimale 1 300 Mo contre 249 ; aucune dépendance ajoutée ; ./mvnw verify local arrêté à la demande de l'utilisateur, preuve par la CI",
+  "next": "M9-20",
+  "pr": "https://github.com/mrscams/psymate-api/pull/70",
+  "branch": "claude/m9-19-part2",
+  "checkout": "m9-19-cb33b1"
+}

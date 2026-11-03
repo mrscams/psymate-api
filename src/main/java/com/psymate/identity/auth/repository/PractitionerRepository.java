@@ -1,5 +1,6 @@
 package com.psymate.identity.auth.repository;
 
+import com.psymate.identity.auth.model.AccountState;
 import com.psymate.identity.auth.model.PractitionerRow;
 import com.psymate.identity.model.Practitioner;
 import com.psymate.identity.model.SecurityEvent;
@@ -65,6 +66,21 @@ public class PractitionerRepository {
 
   public Optional<PractitionerRow> findByEmailNormalized(String emailNormalized) {
     return practitioners.findByEmailNormalized(emailNormalized).map(PractitionerRepository::map);
+  }
+
+  /**
+   * État de sécurité du compte en un seul SELECT de projection (rôle, 2FA active, drapeau de
+   * changement de mot de passe) : ni le haché ni le secret TOTP ne sont lus.
+   */
+  public Optional<AccountState> accountState(UUID id) {
+    return practitioners
+        .accountSecurity(id)
+        .map(
+            v ->
+                new AccountState(
+                    v.role(),
+                    v.twoFactorEnabled(),
+                    PractitionerRow.mustChangePassword(v.preferences())));
   }
 
   public Optional<PractitionerRow> findById(UUID id) {

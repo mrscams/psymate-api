@@ -38,4 +38,22 @@ public record MeResponse(
               "closed"
             },
             example = "approved")
-        String verificationStatus) {}
+        String verificationStatus,
+    @Schema(
+            description =
+                "Rôle du compte, relu en base : admin pour un administrateur, practitioner pour"
+                    + " tous les autres. Lecture seule.",
+            allowableValues = {"practitioner", "admin"},
+            example = "practitioner")
+        String role,
+    @Schema(
+            description =
+                "Vrai si la double authentification est active (activation vérifiée par"
+                    + " POST /api/me/2fa/verify, pas encore désactivée). Lecture seule.")
+        boolean twoFactorEnabled,
+    @Schema(
+            description =
+                "Vrai tant que le mot de passe à usage unique d'un compte créé par make admin n'a"
+                    + " pas été remplacé via POST /api/auth/password/change (G Q5) ; faux sinon."
+                    + " Lecture seule.")
+        boolean passwordChangeRequired) {}

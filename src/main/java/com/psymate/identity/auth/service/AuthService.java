@@ -6,7 +6,9 @@ import com.psymate.identity.api.PractitionerRegistered;
 import com.psymate.identity.auth.dto.Address;
 import com.psymate.identity.auth.dto.RegisterRequest;
 import com.psymate.identity.auth.model.AccountLockedException;
+import com.psymate.identity.auth.model.AccountState;
 import com.psymate.identity.auth.model.FieldValidationException;
+import com.psymate.identity.auth.model.InvalidCredentialsException;
 import com.psymate.identity.auth.model.InvalidTokenException;
 import com.psymate.identity.auth.model.PasswordPolicy;
 import com.psymate.identity.auth.model.PasswordPolicyException;
@@ -238,6 +240,16 @@ public class AuthService {
   public CurrentPractitioner toCurrent(PractitionerRow r) {
     return new CurrentPractitioner(
         r.id(), r.tenantId(), r.email(), r.displayName(), r.profession(), r.verificationStatus());
+  }
+
+  /**
+   * État de sécurité à jour du compte (GET /api/auth/me, M10-03) : relu en base par une seule
+   * requête de projection, car la 2FA et l'obligation de changement de mot de passe évoluent
+   * pendant la session. Ni le haché du mot de passe ni le secret TOTP ne sont lus. Le rôle est relu
+   * lui aussi, alors que les autorités de la session sont figées à la connexion.
+   */
+  public AccountState accountState(UUID id) {
+    return practitioners.accountState(id).orElseThrow(InvalidCredentialsException::new);
   }
 
   public void recordLogin(UUID id) {

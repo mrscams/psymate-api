@@ -16,6 +16,7 @@ import com.psymate.identity.auth.dto.RegisterRequest;
 import com.psymate.identity.auth.dto.RegisterResponse;
 import com.psymate.identity.auth.dto.RevokedSessionsResponse;
 import com.psymate.identity.auth.dto.SessionResponse;
+import com.psymate.identity.auth.model.AccountState;
 import com.psymate.identity.auth.model.InvalidCredentialsException;
 import com.psymate.identity.auth.model.PractitionerRow;
 import com.psymate.identity.auth.service.AuthMessages;
@@ -424,13 +425,16 @@ class AuthController {
     if (outcome instanceof LoginService.Outcome.OtpRequired) {
       return ResponseEntity.accepted().body(new OtpRequiredResponse(true));
     }
-    PractitionerRow row = ((LoginService.Outcome.Authenticated) outcome).practitioner();
+    LoginService.Outcome.Authenticated authenticated = (LoginService.Outcome.Authenticated) outcome;
+    PractitionerRow row = authenticated.practitioner();
     List<GrantedAuthority> authorities =
         List.of(new SimpleGrantedAuthority("ROLE_" + row.role().toUpperCase(Locale.ROOT)));
     CurrentPractitioner current = service.toCurrent(row);
+    // Réponse assemblée avant d'ouvrir la session : rien ne peut échouer après startSession.
+    MeResponse me = toMe(current, authenticated.account());
     startSession(current, authorities, Boolean.TRUE.equals(r.rememberMe()), request, response);
     service.recordLogin(current.id());
-    return ResponseEntity.ok(toMe(current));
+    return ResponseEntity.ok(me);
   }
 
   /**
@@ -563,19 +567,33 @@ class AuthController {
 
   @GetMapping("/me")
   @Operation(
-      summary = "Praticien connecté (identité, profession, statut de vérification)",
+      summary = "Praticien connecté (identité, profession, statut, rôle, 2FA)",
       description =
           """
-          Session praticien, y compris tant que l'e-mail n'est pas confirmé. Renvoie les valeurs \
-          mémorisées dans la session, sans relire la base : le statut de vérification peut être \
-          en retard, utiliser GET /api/auth/session pour l'état à jour.\
+          Session praticien, y compris tant que l'e-mail n'est pas confirmé. L'identité et le \
+          statut de vérification sont ceux mémorisés dans la session : le statut peut être en \
+          retard, utiliser GET /api/auth/session pour l'état à jour. Le rôle, \
+          twoFactorEnabled et passwordChangeRequired sont relus en base à chaque appel, pour que \
+          le shell web sache d'emblée si le compte est administrateur, si la double \
+          authentification est active et si un changement de mot de passe est imposé. Ces trois \
+          champs sont en lecture seule : aucun corps de requête ne les accepte.\
           """)
-  @ApiResponses(
-      @ApiResponse(responseCode = "200", description = "Praticien de la session courante."))
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Praticien de la session courante."),
+    @ApiResponse(
+        responseCode = "401",
+        description =
+            "UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué) ;"
+                + " INVALID_CREDENTIALS : le compte de la session n'existe plus.",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class)))
+  })
   MeResponse me(
       @org.springframework.security.core.annotation.AuthenticationPrincipal
           CurrentPractitioner current) {
-    return toMe(current);
+    return toMe(current, service.accountState(current.id()));
   }
 
   @PostMapping("/password-reset/request")
@@ -684,8 +702,16 @@ class AuthController {
     }
   }
 
-  private static MeResponse toMe(CurrentPractitioner c) {
+  private static MeResponse toMe(CurrentPractitioner c, AccountState state) {
     return new MeResponse(
-        c.id(), c.tenantId(), c.email(), c.displayName(), c.profession(), c.verificationStatus());
+        c.id(),
+        c.tenantId(),
+        c.email(),
+        c.displayName(),
+        c.profession(),
+        c.verificationStatus(),
+        state.role(),
+        state.twoFactorEnabled(),
+        state.passwordChangeRequired());
   }
 }

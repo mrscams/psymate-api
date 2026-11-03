@@ -2678,6 +2678,9 @@ components:
           description: Identifiant du praticien.
           format: uuid
           type: string
+        passwordChangeRequired:
+          description: Vrai tant que le mot de passe à usage unique d'un compte créé par make admin n'a pas été remplacé via POST /api/auth/password/change (G Q5) ; faux sinon. Lecture seule.
+          type: boolean
         profession:
           description: 'Profession : psychologist, psychiatrist ou coach.'
           enum:
@@ -2686,10 +2689,20 @@ components:
           - coach
           example: psychologist
           type: string
+        role:
+          description: 'Rôle du compte, relu en base : admin pour un administrateur, practitioner pour tous les autres. Lecture seule.'
+          enum:
+          - practitioner
+          - admin
+          example: practitioner
+          type: string
         tenantId:
           description: Identifiant du cabinet (tenant) du praticien ; toutes ses données y sont rattachées.
           format: uuid
           type: string
+        twoFactorEnabled:
+          description: Vrai si la double authentification est active (activation vérifiée par POST /api/me/2fa/verify, pas encore désactivée). Lecture seule.
+          type: boolean
         verificationStatus:
           description: 'Statut de vérification du praticien lors de l''ouverture de la session : email_pending, docs_pending, under_review, approved, needs_more, rejected, suspended ou closed (GET /api/auth/session le relit à jour).'
           enum:
@@ -6087,7 +6100,7 @@ paths:
       - Authentification
   /api/auth/me:
     get:
-      description: 'Session praticien, y compris tant que l''e-mail n''est pas confirmé. Renvoie les valeurs mémorisées dans la session, sans relire la base : le statut de vérification peut être en retard, utiliser GET /api/auth/session pour l''état à jour.'
+      description: 'Session praticien, y compris tant que l''e-mail n''est pas confirmé. L''identité et le statut de vérification sont ceux mémorisés dans la session : le statut peut être en retard, utiliser GET /api/auth/session pour l''état à jour. Le rôle, twoFactorEnabled et passwordChangeRequired sont relus en base à chaque appel, pour que le shell web sache d''emblée si le compte est administrateur, si la double authentification est active et si un changement de mot de passe est imposé. Ces trois champs sont en lecture seule : aucun corps de requête ne les accepte.'
       operationId: me
       responses:
         '200':
@@ -6101,7 +6114,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué) ; INVALID_CREDENTIALS : le compte de la session n''existe plus.'
         '429':
           content:
             application/problem+json:
@@ -6114,7 +6127,7 @@ paths:
               schema:
                 format: int32
                 type: integer
-      summary: Praticien connecté (identité, profession, statut de vérification)
+      summary: Praticien connecté (identité, profession, statut, rôle, 2FA)
       tags:
       - Authentification
   /api/auth/password-reset/confirm:

@@ -31,7 +31,8 @@ import org.springframework.stereotype.Service;
 /**
  * Recherche et fiche publiques. La profession et la vérification viennent d'identity en un seul
  * appel par lot. Au plus {@link PublicDirectoryRepository#MAX_CANDIDATES} profils sont traités en
- * mémoire avant pagination : total et facettes portent sur ce lot.
+ * mémoire avant pagination : total et facettes portent sur ce lot (G Q48). Seules les fiches
+ * publiées d'un praticien approuvé sont listées, comptées et trouvées par {@code q}.
  */
 @Service
 public class PublicDirectoryService {
@@ -85,7 +86,10 @@ public class PublicDirectoryService {
     return new SearchResult(items, page, PAGE_SIZE, all.size(), totalPages, facets);
   }
 
-  /** Fiches dont le praticien est connu et dont la profession passe le filtre, ordre conservé. */
+  /**
+   * Fiches dont le praticien est connu et approuvé (G Q48) et dont la profession passe le filtre,
+   * ordre conservé.
+   */
   private static List<Card> cards(
       List<Row> rows, Map<UUID, PractitionerView> views, List<String> professions) {
     List<Card> cards = new ArrayList<>();
@@ -93,6 +97,9 @@ public class PublicDirectoryService {
       PractitionerView view = views.get(r.practitionerId());
       if (view == null) {
         continue; // praticien introuvable : jamais listé
+      }
+      if (!"approved".equals(view.verificationStatus())) {
+        continue; // suspendu, clos, rejeté : ni listé, ni compté dans les facettes (G Q48)
       }
       if (!professions.isEmpty() && !professions.contains(view.profession())) {
         continue;
@@ -103,7 +110,7 @@ public class PublicDirectoryService {
               r.displayName(),
               view.profession(),
               r.titleLabel(),
-              "approved".equals(view.verificationStatus()),
+              true,
               PublicProfileAssembler.photoUrl(r.photoAssetKey()),
               PublicProfileAssembler.excerpt(r.bioExcerpt()),
               r.specialties(),

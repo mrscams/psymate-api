@@ -84,12 +84,15 @@ class PublicDirectoryController {
       description =
           """
           Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). \
-          Ne rend que les profils publiés. Les filtres se cumulent ; pour specialties, \
+          Ne rend que les profils publiés d'un praticien approuvé (suspendu, clos ou rejeté : \
+          ni listé, ni trouvé par q, ni compté). Les filtres se cumulent ; pour specialties, \
           modalities, audiences et languages une fiche est retenue si elle a au moins une des \
           valeurs demandées. Réponse paginée par page de 20 (page, totalPages) ; au plus 500 \
-          fiches sont examinées avant pagination, total et facettes portent sur ce lot, sauf la \
-          facette specialties qui ignore le filtre specialties (compteur d'un code = résultats \
-          qu'il donnerait seul). 200 avec Cache-Control: max-age=60, public.""")
+          fiches sont examinées avant pagination : total et compteurs de toutes les facettes \
+          sont exacts jusqu'à 500 fiches, au-delà ils portent sur les 500 premières dans \
+          l'ordre du tri (G Q48). La facette specialties ignore le filtre specialties \
+          (compteur d'un code = résultats qu'il donnerait seul). 200 avec Cache-Control: \
+          max-age=60, public.""")
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",

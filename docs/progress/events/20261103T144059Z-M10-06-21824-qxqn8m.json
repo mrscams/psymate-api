@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-03T14:40:59.232Z",
+  "task": "M10-06",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "GET /api/me/security (sessions actives, dernière connexion) et POST /api/me/sessions/{id}/revoke, avancés de V1.1 ; ville non renseignée en V1 ; contrat 0.11.0",
+  "notes": "12 IT MeSecurityIT + 4 unitaires UserAgents ; suite complète par la CI ; AuthIT reset flaky Mailpit relancé vert",
+  "next": "Relecture, fusion, tag contract-v0.11.0",
+  "pr": "https://github.com/mrscams/psymate-api/pull/80",
+  "branch": "claude/m10-06",
+  "checkout": "agent-ae43bc478a3c803fd"
+}

@@ -7,12 +7,6 @@ package com.psymate.identity.auth.model;
  */
 public final class UserAgents {
 
-  /** Attribut de la session Spring Session qui porte le libellé de l'appareil. */
-  public static final String SESSION_ATTRIBUTE = "psymate.device";
-
-  /** Clé du libellé dans le détail JSON de l'événement {@code login_ok}. */
-  public static final String EVENT_DETAIL = "device";
-
   /** Au-delà, l'en-tête est tronqué avant analyse (un User-Agent réel fait moins de 300). */
   private static final int MAX_LENGTH = 1_000;
 

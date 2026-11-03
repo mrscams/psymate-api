@@ -22,14 +22,18 @@ public interface SessionNativeQueries {
    * interne de la ligne (stable, jamais envoyée au navigateur) ; {@code sessionId} est
    * l'identifiant HTTP de la session (celui que porte le cookie, encodé) : il ne sort jamais de
    * l'API et ne sert qu'à reconnaître la session courante. Les horodatages viennent des colonnes en
-   * millisecondes.
+   * millisecondes. {@code device} et {@code openedAt} sont les attributs PsyMate de la session
+   * ({@link com.psymate.identity.model.SessionAttributes}), null s'ils n'ont pas été posés (session
+   * ouverte avant M10-06).
    */
   record ActiveSessionRow(
       String primaryId,
       String sessionId,
       Instant createdAt,
       Instant lastAccessAt,
-      Instant expiresAt) {}
+      Instant expiresAt,
+      String device,
+      Instant openedAt) {}
 
   /**
    * Sessions du praticien non expirées à {@code now}, les plus récemment utilisées d'abord. Les

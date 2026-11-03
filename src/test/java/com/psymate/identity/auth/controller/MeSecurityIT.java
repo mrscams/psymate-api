@@ -4,15 +4,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.psymate.identity.auth.AbstractLoginIT;
+import com.psymate.identity.auth.RegistrationFixtures;
+import com.psymate.testsupport.MailpitClient;
+import com.psymate.testsupport.SharedMailpit;
 import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
@@ -27,6 +33,8 @@ import tools.jackson.databind.JsonNode;
 class MeSecurityIT extends AbstractLoginIT {
 
   private static final String IP_SECURITY = "198.51.100.150";
+
+  private final MailpitClient mails = new MailpitClient(SharedMailpit.container());
 
   private static final String CHROME_WINDOWS =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
@@ -116,39 +124,113 @@ class MeSecurityIT extends AbstractLoginIT {
   }
 
   @Test
-  void lastLoginIsTheMostRecentSuccessfulLogin() throws Exception {
+  void lastLoginIsThePreviousLoginNotTheCurrentOne() throws Exception {
     String email = account();
-    loginWith(email, CHROME_WINDOWS, false);
+    Instant firstLoginAt = clock.instant();
+    Cookie chrome = loginWith(email, CHROME_WINDOWS, false);
     clock.advance(Duration.ofMinutes(1));
-    Instant secondLoginAt = clock.instant();
     Cookie firefox = loginWith(email, FIREFOX_LINUX, false);
 
+    // La seconde session lit la première connexion.
     JsonNode lastLogin = security(firefox).path("lastLogin");
     assertThat(lastLogin.propertyNames()).containsExactlyInAnyOrder("at", "device", "city");
-    assertThat(lastLogin.path("device").asString()).isEqualTo("Firefox · Linux");
+    assertThat(lastLogin.path("device").asString()).isEqualTo("Chrome · Windows");
     assertThat(lastLogin.path("city").isNull()).isTrue();
     assertThat(Instant.parse(lastLogin.path("at").asString()))
-        .isBetween(secondLoginAt.minusMillis(1), secondLoginAt.plusMillis(1));
+        .isBetween(firstLoginAt.minusMillis(1), firstLoginAt.plusMillis(1));
+    // La première session n'avait aucune connexion avant elle, même si une autre a suivi.
+    assertThat(security(chrome).path("lastLogin").isNull()).isTrue();
+  }
+
+  @Test
+  void firstLoginHasNoPreviousLogin() throws Exception {
+    String email = account();
+    Cookie session = loginWith(email, CHROME_WINDOWS, false);
+
+    JsonNode security = security(session);
+
+    assertThat(security.propertyNames()).contains("lastLogin");
+    assertThat(security.path("lastLogin").isNull()).isTrue();
   }
 
   @Test
   void lastLoginIgnoresFailedAttemptsAndOtherAccounts() throws Exception {
     String email = account();
     String other = account();
-    Cookie session = loginWith(email, CHROME_WINDOWS, false);
+    loginWith(email, CHROME_WINDOWS, false);
     clock.advance(Duration.ofMinutes(1));
     loginWith(other, FIREFOX_LINUX, false);
+    clock.advance(Duration.ofMinutes(1));
     assertThat(login(email, "mauvais-mot-de-passe", null, IP_SECURITY).getResponse().getStatus())
         .isEqualTo(401);
+    clock.advance(Duration.ofMinutes(1));
+    Cookie second = loginWith(email, FIREFOX_LINUX, false);
 
-    JsonNode lastLogin = security(session).path("lastLogin");
+    JsonNode lastLogin = security(second).path("lastLogin");
     assertThat(lastLogin.path("device").asString()).isEqualTo("Chrome · Windows");
+  }
+
+  @Test
+  void loginsAtTheSameInstantAreOrderedDeterministicallyById() throws Exception {
+    String email = account();
+    // Horloge figée : les deux connexions ont exactement le même occurred_at.
+    loginWith(email, CHROME_WINDOWS, false);
+    loginWith(email, FIREFOX_LINUX, false);
+    clock.advance(Duration.ofMinutes(1));
+    Cookie third = loginWith(email, CHROME_WINDOWS, false);
+    String expected =
+        jdbc.queryForObject(
+            "select details->>'device' from security_event where practitioner_id = ?"
+                + " and kind = 'login_ok' and occurred_at < ? order by id desc limit 1",
+            String.class,
+            idOf(email),
+            // Microseconde comme la colonne : l'événement de la troisième connexion est exclu.
+            OffsetDateTime.ofInstant(
+                clock.instant().truncatedTo(ChronoUnit.MICROS), ZoneOffset.UTC));
+
+    for (int i = 0; i < 3; i++) {
+      assertThat(security(third).path("lastLogin").path("device").asString()).isEqualTo(expected);
+    }
+  }
+
+  @Test
+  void aSessionOpenedByEmailConfirmationReadsTheLastLoginBeforeIt() throws Exception {
+    String email = newEmail();
+    assertThat(
+            post(
+                    "/api/auth/register",
+                    RegistrationFixtures.payload(email, PASSWORD, "psychologist"),
+                    null,
+                    IP_SECURITY)
+                .getResponse()
+                .getStatus())
+        .isEqualTo(201);
+    String token = mails.confirmationToken(email);
+    // Connexion antérieure (le compte ne peut pas se connecter avant la confirmation : événement
+    // posé directement). La confirmation ouvre une session sans écrire de login_ok.
+    jdbc.update(
+        "insert into security_event (id, practitioner_id, kind, details, occurred_at)"
+            + " values (?, ?, 'login_ok', cast(? as jsonb), ?)",
+        UUID.randomUUID(),
+        idOf(email),
+        "{\"device\":\"Safari · macOS\"}",
+        OffsetDateTime.ofInstant(clock.instant().minus(Duration.ofDays(2)), ZoneOffset.UTC));
+    clock.advance(Duration.ofMinutes(1));
+
+    MvcResult confirm = post("/api/auth/email/confirm", Map.of("token", token), null, IP_SECURITY);
+    assertThat(confirm.getResponse().getStatus()).isEqualTo(204);
+
+    JsonNode lastLogin = security(confirm.getResponse().getCookie("SESSION")).path("lastLogin");
+    assertThat(lastLogin.path("device").asString()).isEqualTo("Safari · macOS");
+    assertThat(Instant.parse(lastLogin.path("at").asString()))
+        .isBefore(clock.instant().minus(Duration.ofDays(1)));
   }
 
   @Test
   void aSessionWithoutRecognisedUserAgentHasNoDevice() throws Exception {
     String email = account();
     Cookie noHeader = loginWith(email, null, false);
+    clock.advance(Duration.ofMinutes(1));
     Cookie unknown = loginWith(email, "curl/8.5.0", false);
 
     JsonNode security = security(noHeader);
@@ -156,8 +238,11 @@ class MeSecurityIT extends AbstractLoginIT {
     for (JsonNode s : security.path("sessions")) {
       assertThat(s.path("device").isNull()).isTrue();
     }
-    assertThat(security.path("lastLogin").path("device").isNull()).isTrue();
-    assertThat(security(unknown).path("sessions")).hasSize(2);
+    // La seconde session lit la première connexion, dont l'appareil n'est pas connu.
+    JsonNode previous = security(unknown).path("lastLogin");
+    assertThat(previous.isObject()).isTrue();
+    assertThat(previous.path("device").isNull()).isTrue();
+    assertThat(previous.path("city").isNull()).isTrue();
   }
 
   @Test
@@ -212,10 +297,13 @@ class MeSecurityIT extends AbstractLoginIT {
     Cookie firefox = loginWith(email, FIREFOX_LINUX, false);
     String firefoxId = sessionOf(security(chrome), "Firefox · Linux").path("id").asString();
     assertThat(meStatus(firefox)).isEqualTo(200);
+    assertThat(attributeRows(firefoxId)).isPositive();
 
     MvcResult r = revoke(chrome, firefoxId);
 
     assertThat(r.getResponse().getStatus()).isEqualTo(204);
+    // Plus aucune donnée de la session révoquée (contexte de sécurité compris) en base.
+    assertThat(attributeRows(firefoxId)).isZero();
     // L'ancien cookie ne passe plus : 401, tout de suite (suppression de la ligne de session).
     assertThat(meStatus(firefox)).isEqualTo(401);
     assertThat(getSecurity(firefox).getResponse().getStatus()).isEqualTo(401);
@@ -270,10 +358,23 @@ class MeSecurityIT extends AbstractLoginIT {
     aliceView.path("sessions").forEach(s -> aliceIds.add(s.path("id").asString()));
     assertThat(aliceIds).hasSize(1).doesNotContain(bobSessionId);
     assertThat(aliceView.toString()).doesNotContain("Firefox");
-    assertThat(aliceView.path("lastLogin").path("device").asString()).isEqualTo("Chrome · Windows");
+    // Première connexion d'Alice : rien avant elle, et rien de celle de Bob.
+    assertThat(aliceView.path("lastLogin").isNull()).isTrue();
 
-    // Même réponse qu'un id inconnu, et la session de l'autre reste ouverte.
-    assertThat(revoke(aliceChrome, bobSessionId).getResponse().getStatus()).isEqualTo(404);
+    // Même réponse qu'un id inconnu (même code, même détail : rien ne révèle l'existence de la
+    // session de l'autre), et cette session reste ouverte.
+    MvcResult foreign = revoke(aliceChrome, bobSessionId);
+    MvcResult unknown = revoke(aliceChrome, "11111111-2222-3333-4444-555555555555");
+    assertThat(foreign.getResponse().getStatus()).isEqualTo(404);
+    assertThat(unknown.getResponse().getStatus()).isEqualTo(404);
+    assertThat(body(foreign).path("code").asString())
+        .isEqualTo("SESSION_NOT_FOUND")
+        .isEqualTo(body(unknown).path("code").asString());
+    assertThat(body(foreign).path("detail").asString())
+        .isNotBlank()
+        .isEqualTo(body(unknown).path("detail").asString());
+    assertThat(body(foreign).path("title").asString())
+        .isEqualTo(body(unknown).path("title").asString());
     assertThat(meStatus(bobFirefox)).isEqualTo(200);
     assertThat(security(bobFirefox).path("sessions")).hasSize(1);
   }
@@ -298,6 +399,33 @@ class MeSecurityIT extends AbstractLoginIT {
     String httpSessionId =
         new String(Base64.getDecoder().decode(chrome.getValue()), StandardCharsets.UTF_8);
     assertThat(raw).doesNotContain(httpSessionId);
+  }
+
+  @Test
+  void theExposedIdIsNotAUsableSessionCookie() throws Exception {
+    String email = account();
+    Cookie chrome = loginWith(email, CHROME_WINDOWS, false);
+    String id = sessionOf(security(chrome), "Chrome · Windows").path("id").asString();
+
+    // Témoin : le même encodage appliqué au vrai identifiant HTTP ouvre bien la session.
+    String httpSessionId =
+        new String(Base64.getDecoder().decode(chrome.getValue()), StandardCharsets.UTF_8);
+    assertThat(meStatus(cookieFor(httpSessionId))).isEqualTo(200);
+    // L'id exposé, présenté comme cookie, n'authentifie personne.
+    assertThat(meStatus(cookieFor(id))).isEqualTo(401);
+    assertThat(getSecurity(cookieFor(id)).getResponse().getStatus()).isEqualTo(401);
+  }
+
+  private static Cookie cookieFor(String sessionId) {
+    return new Cookie(
+        "SESSION", Base64.getEncoder().encodeToString(sessionId.getBytes(StandardCharsets.UTF_8)));
+  }
+
+  private int attributeRows(String primaryId) {
+    return jdbc.queryForObject(
+        "select count(*) from spring_session_attributes where session_primary_id = ?",
+        Integer.class,
+        primaryId);
   }
 
   @Test

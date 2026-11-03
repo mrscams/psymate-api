@@ -41,16 +41,18 @@ class MeSecurityController {
   @GetMapping("/security")
   @Operation(
       operationId = "getMeSecurity",
-      summary = "Sessions actives et dernière connexion du praticien connecté",
+      summary = "Sessions actives et connexion précédente du praticien connecté",
       description =
           """
           Session praticien. Liste les sessions non expirées du praticien (jamais celles d'un \
           autre compte), la plus récemment utilisée d'abord, avec l'appareil déduit de \
           l'User-Agent, les dates d'ouverture, de dernier appel et d'expiration, et current sur la \
-          session qui porte l'appel ; lastLogin donne la dernière connexion réussie. Aucune \
-          adresse IP, aucun User-Agent brut ni identifiant du cookie n'est rendu. Les sessions \
-          ouvertes avant cette fonction et les anciennes connexions ont device = null. La ville \
-          n'est pas renseignée en V1 : city vaut toujours null. Révoquer une session : \
+          session qui porte l'appel ; lastLogin donne la connexion précédente (la dernière \
+          connexion réussie antérieure à l'ouverture de la session courante, null à la première \
+          connexion ou pour une session ouverte avant cette fonction). Aucune adresse IP, aucun \
+          User-Agent brut ni identifiant du cookie n'est rendu. Les sessions ouvertes avant cette \
+          fonction et les anciennes connexions ont device = null. La ville n'est pas renseignée \
+          en V1 : city vaut toujours null. Révoquer une session : \
           POST /api/me/sessions/{id}/revoke.\
           """)
   @ApiResponses(@ApiResponse(responseCode = "200", description = "Sécurité du compte."))

@@ -24,6 +24,7 @@ import com.psymate.identity.auth.model.UserAgents;
 import com.psymate.identity.auth.service.AuthMessages;
 import com.psymate.identity.auth.service.AuthService;
 import com.psymate.identity.auth.service.LoginService;
+import com.psymate.identity.model.SessionAttributes;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -36,7 +37,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -80,11 +83,13 @@ class AuthController {
       SecurityContextHolder.getContextHolderStrategy();
   private final Duration sessionDefault;
   private final Duration sessionRememberMe;
+  private final Clock clock;
 
   AuthController(
       AuthService service,
       LoginService loginService,
       SecurityContextRepository securityContextRepository,
+      Clock clock,
       @Value("${app.auth.session-default}") Duration sessionDefault,
       @Value("${app.auth.session-remember-me}") Duration sessionRememberMe) {
     this.service = service;
@@ -92,6 +97,7 @@ class AuthController {
     this.securityContextRepository = securityContextRepository;
     this.sessionDefault = sessionDefault;
     this.sessionRememberMe = sessionRememberMe;
+    this.clock = clock;
   }
 
   @PostMapping("/register")
@@ -235,6 +241,7 @@ class AuthController {
       @Valid @RequestBody EmailConfirmRequest r,
       HttpServletRequest request,
       HttpServletResponse response) {
+    Instant openedAt = clock.instant();
     // Session portée par l'appel : conservée si le jeton change l'e-mail de ce même compte.
     UUID sessionOwner = CurrentPractitioner.get().map(CurrentPractitioner::id).orElse(null);
     HttpSession existing = request.getSession(false);
@@ -255,7 +262,14 @@ class AuthController {
     PractitionerRow row = ((AuthService.Confirmation.AccountConfirmed) outcome).practitioner();
     List<GrantedAuthority> authorities =
         List.of(new SimpleGrantedAuthority("ROLE_" + row.role().toUpperCase(Locale.ROOT)));
-    startSession(service.toCurrent(row), authorities, false, request, response);
+    startSession(
+        service.toCurrent(row),
+        authorities,
+        false,
+        UserAgents.device(request.getHeader(HttpHeaders.USER_AGENT)),
+        openedAt,
+        request,
+        response);
     service.recordLogin(row.id());
     return ResponseEntity.noContent().build();
   }
@@ -468,6 +482,9 @@ class AuthController {
       @Valid @RequestBody LoginRequest r,
       HttpServletRequest request,
       HttpServletResponse response) {
+    // Pris avant la connexion, donc avant son propre login_ok : la connexion précédente est le
+    // dernier login_ok antérieur à cet instant (M10-06).
+    Instant openedAt = clock.instant();
     // Libellé navigateur + système : l'en-tête brut n'est ni stocké ni journalisé (M10-06).
     String device = UserAgents.device(request.getHeader(HttpHeaders.USER_AGENT));
     LoginService.Outcome outcome =
@@ -482,7 +499,14 @@ class AuthController {
     CurrentPractitioner current = service.toCurrent(row);
     // Réponse assemblée avant d'ouvrir la session : rien ne peut échouer après startSession.
     MeResponse me = toMe(current, authenticated.account());
-    startSession(current, authorities, Boolean.TRUE.equals(r.rememberMe()), request, response);
+    startSession(
+        current,
+        authorities,
+        Boolean.TRUE.equals(r.rememberMe()),
+        device,
+        openedAt,
+        request,
+        response);
     service.recordLogin(current.id());
     return ResponseEntity.ok(me);
   }
@@ -715,6 +739,8 @@ class AuthController {
       CurrentPractitioner current,
       Collection<? extends GrantedAuthority> authorities,
       boolean rememberMe,
+      String device,
+      Instant openedAt,
       HttpServletRequest request,
       HttpServletResponse response) {
     // Anti-fixation : nouvel identifiant si une session anonyme existait.
@@ -729,11 +755,11 @@ class AuthController {
     securityContextRepository.saveContext(context, request, response);
 
     HttpSession session = request.getSession(true);
-    String device = UserAgents.device(request.getHeader(HttpHeaders.USER_AGENT));
+    // Attributs de session Spring Session lus par GET /api/me/security, aucune migration.
     if (device != null) {
-      // Attribut de session Spring Session : lu par GET /api/me/security, aucune migration.
-      session.setAttribute(UserAgents.SESSION_ATTRIBUTE, device);
+      session.setAttribute(SessionAttributes.DEVICE, device);
     }
+    session.setAttribute(SessionAttributes.OPENED_AT, openedAt.toString());
     session.setMaxInactiveInterval(
         (int) (rememberMe ? sessionRememberMe : sessionDefault).toSeconds());
     if (rememberMe) {

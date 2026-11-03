@@ -208,11 +208,14 @@ public class PractitionerRepository {
   }
 
   /**
-   * Dernière connexion réussie (événement login_ok), vide si le compte ne s'est jamais connecté.
+   * Connexion précédente : dernier événement login_ok strictement antérieur à {@code before}, vide
+   * s'il n'y en a pas. {@code before} est ramené à la microseconde comme la colonne ({@link
+   * Timestamps#utc}), pour qu'un événement écrit au même instant ne soit jamais compté.
    */
-  public Optional<LastLogin> lastLogin(UUID id) {
+  public Optional<LastLogin> lastLoginBefore(UUID id, Instant before) {
     return events
-        .findFirstByPractitionerIdAndKindOrderByOccurredAtDesc(id, "login_ok")
+        .findFirstByPractitionerIdAndKindAndOccurredAtLessThanOrderByOccurredAtDescIdDesc(
+            id, "login_ok", Timestamps.utc(before))
         .map(
             e -> {
               Object device = e.getDetails() == null ? null : e.getDetails().get("device");
@@ -221,6 +224,19 @@ public class PractitionerRepository {
                   device instanceof String s ? s : null,
                   null);
             });
+  }
+
+  /** Événement login_ok ; {@code device} (libellé, jamais l'en-tête brut) peut être null. */
+  public void recordLoginOk(UUID id, String ip, String device, Instant now) {
+    events.save(
+        new SecurityEvent(
+            UUID.randomUUID(),
+            id,
+            null,
+            "login_ok",
+            inet(ip),
+            device == null ? null : Map.of("device", device),
+            now));
   }
 
   /** Fin de verrou enregistrée en base (second garde, survit à un redémarrage). */

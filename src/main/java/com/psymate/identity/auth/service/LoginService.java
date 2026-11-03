@@ -165,10 +165,7 @@ public class LoginService {
       practitioners.insertSecurityEvent(row.id(), "recovery_code_used", ip, null, now);
     }
     if (mode == Mode.LOGIN) {
-      // Libellé d'une liste fermée (UserAgents) : aucun caractère à échapper dans le JSON.
-      String details =
-          device == null ? null : "{\"" + UserAgents.EVENT_DETAIL + "\":\"" + device + "\"}";
-      practitioners.insertSecurityEvent(row.id(), "login_ok", ip, details, now);
+      practitioners.recordLoginOk(row.id(), ip, device, now);
     }
     // Construit depuis ce qui est déjà lu : aucune requête de plus pour la réponse de connexion.
     AccountState account = new AccountState(row.role(), state.enabled(), row.mustChangePassword());

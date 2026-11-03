@@ -12,7 +12,9 @@ public record MeSecurityResponse(
         List<ActiveSessionResponse> sessions,
     @Schema(
             description =
-                "Dernière connexion réussie, y compris celle qui a ouvert la session courante si"
-                    + " c'est la plus récente. null si le compte n'a jamais ouvert de session par"
-                    + " POST /api/auth/login (ouverture par confirmation d'e-mail seulement).")
+                "Connexion précédente : la dernière connexion réussie (POST /api/auth/login)"
+                    + " antérieure à l'ouverture de la session courante, sans compter celle-ci. null"
+                    + " à la toute première connexion du compte (une session ouverte par"
+                    + " confirmation d'e-mail n'est pas une connexion et lit la dernière connexion"
+                    + " antérieure) ou pour une session ouverte avant cette fonction.")
         LastLoginResponse lastLogin) {}

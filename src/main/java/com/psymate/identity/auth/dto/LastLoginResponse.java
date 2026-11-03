@@ -3,7 +3,7 @@ package com.psymate.identity.auth.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 
-@Schema(description = "Dernière connexion réussie du praticien.")
+@Schema(description = "Connexion précédente du praticien (antérieure à la session courante).")
 public record LastLoginResponse(
     @Schema(description = "Date de la connexion (UTC).") Instant at,
     @Schema(

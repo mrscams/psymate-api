@@ -14,7 +14,9 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -219,56 +221,74 @@ class AdminPersistenceIT extends AbstractAccountsIT {
   void crossedAdminSuspensionsAreSerializedWithoutDeadlock() throws Exception {
     UUID a = admin();
     UUID b = admin();
-    // Seuls a et b sont actifs : le résultat est le même quel que soit l'ordre d'arrivée.
-    jdbc.update(
-        "update practitioner set verification_status = 'closed' where role = 'admin'"
+    // Seuls a et b sont actifs : le résultat est le même quel que soit l'ordre d'arrivée. Les
+    // autres administrateurs actifs (laissés par d'autres tests) sont écartés le temps du test,
+    // puis rétablis, comme dans AdminPractitionersIT.
+    Map<UUID, String> others = new LinkedHashMap<>();
+    jdbc.query(
+        "select id, verification_status from practitioner where role = 'admin'"
+            + " and verification_status not in ('suspended','rejected','closed')"
             + " and id not in (?, ?)",
+        rs -> {
+          others.put(rs.getObject(1, UUID.class), rs.getString(2));
+        },
         a,
         b);
+    others
+        .keySet()
+        .forEach(
+            id ->
+                jdbc.update(
+                    "update practitioner set verification_status = 'closed' where id = ?", id));
+    try {
+      List<Object> outcomes = new ArrayList<>();
+      try (Connection side = dataSource.getConnection()) {
+        side.setAutoCommit(false);
+        try (PreparedStatement ps =
+            side.prepareStatement(
+                "select id from practitioner where role = 'admin' and verification_status not in"
+                    + " ('suspended','rejected','closed') order by id for update")) {
+          ps.executeQuery();
+        }
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+          Future<Object> aSuspendsB =
+              pool.submit(outcome(() -> accounts.suspend(actor(a), b, REASON, null)));
+          Future<Object> bSuspendsA =
+              pool.submit(outcome(() -> accounts.suspend(actor(b), a, REASON, null)));
+          awaitBackendsWaitingOnALock(2);
+          side.commit();
+          outcomes.add(aSuspendsB.get(30, TimeUnit.SECONDS));
+          outcomes.add(bSuspendsA.get(30, TimeUnit.SECONDS));
+        } finally {
+          pool.shutdownNow();
+        }
+      }
 
-    List<Object> outcomes = new ArrayList<>();
-    try (Connection side = dataSource.getConnection()) {
-      side.setAutoCommit(false);
-      try (PreparedStatement ps =
-          side.prepareStatement(
-              "select id from practitioner where role = 'admin' and verification_status not in"
-                  + " ('suspended','rejected','closed') order by id for update")) {
-        ps.executeQuery();
-      }
-      ExecutorService pool = Executors.newFixedThreadPool(2);
-      try {
-        Future<Object> aSuspendsB =
-            pool.submit(outcome(() -> accounts.suspend(actor(a), b, REASON, null)));
-        Future<Object> bSuspendsA =
-            pool.submit(outcome(() -> accounts.suspend(actor(b), a, REASON, null)));
-        awaitBackendsWaitingOnALock(2);
-        side.commit();
-        outcomes.add(aSuspendsB.get(30, TimeUnit.SECONDS));
-        outcomes.add(bSuspendsA.get(30, TimeUnit.SECONDS));
-      } finally {
-        pool.shutdownNow();
-      }
+      long succeeded = outcomes.stream().filter(o -> !(o instanceof Throwable)).count();
+      List<String> refusals =
+          outcomes.stream()
+              .filter(o -> o instanceof AdminException)
+              .map(o -> ((AdminException) o).code())
+              .toList();
+      assertThat(outcomes)
+          .as("aucune erreur de verrou ou d'interblocage")
+          .allMatch(o -> !(o instanceof Throwable) || o instanceof AdminException);
+      assertThat(succeeded).isEqualTo(1);
+      assertThat(refusals).containsExactly("ADMIN_LAST_ADMIN");
+      assertThat(
+              count(
+                  "select count(*) from practitioner where id in (?, ?)"
+                      + " and verification_status = 'approved'",
+                  a,
+                  b))
+          .as("un administrateur actif reste")
+          .isEqualTo(1);
+    } finally {
+      others.forEach(
+          (id, st) ->
+              jdbc.update("update practitioner set verification_status = ? where id = ?", st, id));
     }
-
-    long succeeded = outcomes.stream().filter(o -> !(o instanceof Throwable)).count();
-    List<String> refusals =
-        outcomes.stream()
-            .filter(o -> o instanceof AdminException)
-            .map(o -> ((AdminException) o).code())
-            .toList();
-    assertThat(outcomes)
-        .as("aucune erreur de verrou ou d'interblocage")
-        .allMatch(o -> !(o instanceof Throwable) || o instanceof AdminException);
-    assertThat(succeeded).isEqualTo(1);
-    assertThat(refusals).containsExactly("ADMIN_LAST_ADMIN");
-    assertThat(
-            count(
-                "select count(*) from practitioner where id in (?, ?)"
-                    + " and verification_status = 'approved'",
-                a,
-                b))
-        .as("un administrateur actif reste")
-        .isEqualTo(1);
   }
 
   private static Callable<Object> outcome(Callable<?> call) {

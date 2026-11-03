@@ -131,14 +131,26 @@ class VocabularyIT {
 
   @Test
   void seedHasSixEntryTypes29EmotionsAndEightLinkTypes() {
-    assertThat(jdbc.queryForObject("select count(*) from entry_type", Integer.class)).isEqualTo(6);
-    assertThat(jdbc.queryForObject("select count(*) from emotion", Integer.class))
-        .isGreaterThanOrEqualTo(29);
+    // Codes du seed V02 : le compte exact sur toute la table est dans FlywayMigrationIT (base
+    // dédiée), car la base de ce test peut être partagée.
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from entry_type"
+                    + " where code in ('note', 'event', 'situation', 'feeling', 'session',"
+                    + " 'medication')",
+                Integer.class))
+        .isEqualTo(6);
     assertThat(
             jdbc.queryForObject(
                 "select count(*) from emotion where scope = 'global' and active", Integer.class))
         .isEqualTo(29);
-    assertThat(jdbc.queryForObject("select count(*) from link_type", Integer.class)).isEqualTo(8);
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from link_type"
+                    + " where code in ('triggers', 'caused_by', 'worsens', 'relieves', 'co_occurs',"
+                    + " 'follows', 'part_of', 'treats')",
+                Integer.class))
+        .isEqualTo(8);
   }
 
   @Test

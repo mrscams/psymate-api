@@ -26,7 +26,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,19 +58,6 @@ class ExportPersistenceIT extends ExportTestSupport {
     doctor = account("Dr Persistance", "approved");
     now = Instant.now().truncatedTo(ChronoUnit.MICROS);
     clock.set(now);
-  }
-
-  /**
-   * La base est partagée entre les tests du module : les jobs terminés et échus laissés ici
-   * seraient purgés par AccountExportJobIT (qui attend « rien à purger » avant l'échéance). Ils
-   * sont marqués purgés en sortie (la ligne reste, comme en production).
-   */
-  @AfterEach
-  void neutraliseExpiredJobs() {
-    jdbc.update(
-        "update export_job set purged_at = now() where purged_at is null and status = 'done'"
-            + " and practitioner_id in (select id from practitioner where tenant_id = ?)",
-        tenant);
   }
 
   // ---- helpers

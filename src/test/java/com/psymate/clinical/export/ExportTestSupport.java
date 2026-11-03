@@ -110,9 +110,17 @@ public abstract class ExportTestSupport {
     }
   }
 
+  /**
+   * Un test ne laisse jamais de job échu à la purge d'un autre (revue A-19, B3) : les exports
+   * terminés du tenant du test sont marqués purgés, comme dans {@code ExportPersistenceIT}.
+   */
   @AfterEach
-  void clearSecurity() {
+  void clearSecurityAndNeutraliseExports() {
     SecurityContextHolder.clearContext();
+    jdbc.update(
+        "update export_job set purged_at = now() where purged_at is null and status = 'done'"
+            + " and practitioner_id in (select id from practitioner where tenant_id = ?)",
+        tenant);
   }
 
   // ---- comptes et patients

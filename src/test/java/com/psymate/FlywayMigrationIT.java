@@ -112,6 +112,17 @@ class FlywayMigrationIT {
     }
   }
 
+  /**
+   * Compte exact du vocabulaire de référence de V02, sur toute la table : la base de ce test est
+   * dédiée, aucun autre test n'y écrit (VocabularyIT ne vérifie que les codes du seed).
+   */
+  @Test
+  void v02SeedsExactlySixEntryTypesAndEightLinkTypes() {
+    assertThat(jdbc().queryForObject("select count(*) from entry_type", Integer.class))
+        .isEqualTo(6);
+    assertThat(jdbc().queryForObject("select count(*) from link_type", Integer.class)).isEqualTo(8);
+  }
+
   @Test
   void extensionsAreInstalled() {
     assertThat(jdbc().queryForList("select extname from pg_extension", String.class))

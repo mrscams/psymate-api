@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-03T13:56:39.097Z",
+  "task": "M10-04",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "Fusionnée (PR 77 : verrou par compte, adresse de support, G Q49)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/77",
+  "branch": "claude/m10-cloture",
+  "checkout": "m9-19-cb33b1"
+}

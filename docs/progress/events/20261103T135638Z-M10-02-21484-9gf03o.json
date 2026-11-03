@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-03T13:56:38.759Z",
+  "task": "M10-02",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "Fusionnée (PR 76, suite PR 78 : approuvés seulement, plafond des facettes, G Q48)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/78",
+  "branch": "claude/m10-cloture",
+  "checkout": "m9-19-cb33b1"
+}

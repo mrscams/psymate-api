@@ -11,6 +11,7 @@ Faire franchir l'unique étape bloquante après l'inscription : tant que l'e-mai
   - `POST /api/auth/email/confirm` `{ token }` → `204` + session ouverte → redirection vers `/patients` (liste vide, écran 1). Token : 32 octets aléatoires, haché en base, **24 h**, usage unique.
   - `POST /api/auth/email/resend` `{ email }` → toujours `202` (ne révèle pas l'existence d'un compte) ; limite 1 / minute / compte, 5 / jour ; chaque renvoi invalide le précédent.
   - `POST /api/auth/email/change` `{ newEmail }` (session `email_pending` uniquement) → nouveau token, ancien invalidé.
+  - Compte déjà confirmé (`docs_pending`, `under_review`, `needs_more`, `approved`) : la même route, **avec session**, `{ newEmail, password }` → `202`, lien de 24 h envoyé à la **nouvelle** adresse ; l'adresse ne bascule qu'à `POST /api/auth/email/confirm`, qui révoque les autres sessions et prévient l'ancienne adresse (M10-04, G Q49, fiche 18).
 - Tant que `email_pending` : toutes les routes `/api/**` hors `/api/auth/**` → `403 EMAIL_NOT_CONFIRMED` ; le client redirige vers `/confirmer-email`.
 
 ## Structure

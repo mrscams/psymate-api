@@ -5979,7 +5979,7 @@ paths:
       - 'Administration : vocabulaire de l''annuaire'
   /api/auth/email/change:
     post:
-      description: 'Deux variantes, même route. Avec une session (compte confirmé : docs_pending, under_review, needs_more ou approved) : corps { newEmail, password }, le compte est celui de la session (email est ignoré). Le mot de passe est vérifié : faux, il donne 422 INVALID_PASSWORD et compte dans le verrou e-mail + IP du login (5 échecs, 423 pendant 15 min). Sinon la réponse est 202 dans tous les cas : un lien de confirmation (24 h, usage unique) part à la NOUVELLE adresse, et si cette adresse appartient déjà à un compte elle reçoit à la place l''e-mail « vous avez déjà un compte », sans que la réponse diffère. L''ancienne adresse reste valide pour se connecter jusqu''à la confirmation par POST /api/auth/email/confirm ; une nouvelle demande invalide le lien précédent (1 par minute, 5 par jour, au-delà rien ne part). Sans session (variante publique, compte email_pending) : corps { email, password, newEmail } ; réponse 202 dans tous les cas (compte inconnu, mot de passe faux, compte déjà confirmé, nouvelle adresse déjà prise, limite atteinte : aucune différence visible) ; seul un compte en email_pending change d''adresse, un nouveau lien de confirmation part à la nouvelle adresse (1 changement ou renvoi par minute, 5 par jour) ; les mots de passe faux comptent dans le verrou e-mail + IP du login (5 échecs, 423 pendant 15 min).'
+      description: 'Deux variantes, même route. Avec une session (compte confirmé : docs_pending, under_review, needs_more ou approved) : corps { newEmail, password }, le compte est celui de la session (email est ignoré). Le mot de passe est vérifié : faux, il donne 422 INVALID_PASSWORD et compte dans un verrou propre au compte (5 échecs, 423 pendant 15 min, quelle que soit l''IP). Sinon la réponse est 202 dans tous les cas : un lien de confirmation (24 h, usage unique) part à la NOUVELLE adresse, et si cette adresse appartient déjà à un compte elle reçoit à la place l''e-mail « vous avez déjà un compte », sans que la réponse diffère. L''ancienne adresse reste valide pour se connecter jusqu''à la confirmation par POST /api/auth/email/confirm ; une nouvelle demande invalide le lien précédent (1 par minute, 5 par jour, au-delà rien ne part). Sans session (variante publique, compte email_pending) : corps { email, password, newEmail } ; réponse 202 dans tous les cas (compte inconnu, mot de passe faux, compte déjà confirmé, nouvelle adresse déjà prise, limite atteinte : aucune différence visible) ; seul un compte en email_pending change d''adresse, un nouveau lien de confirmation part à la nouvelle adresse (1 changement ou renvoi par minute, 5 par jour) ; les mots de passe faux comptent dans le verrou e-mail + IP du login (5 échecs, 423 pendant 15 min).'
       operationId: changeEmail
       requestBody:
         content:
@@ -6001,7 +6001,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'ACCOUNT_LOCKED : verrouillage e-mail + IP après 5 mots de passe faux (15 min) ; retryAfterSeconds et en-tête Retry-After.'
+          description: 'ACCOUNT_LOCKED : verrouillage après 5 mots de passe faux (15 min), par compte avec session, par e-mail + IP sans ; retryAfterSeconds et en-tête Retry-After.'
           headers:
             Retry-After:
               description: Secondes avant nouvel essai

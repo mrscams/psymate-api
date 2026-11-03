@@ -10,7 +10,7 @@ Un **visiteur non connecté** trouve en moins d'une minute un psychologue, un ps
 ## Route & module
 - Route publique : `/annuaire?ville=&profession=&specialite=&public=&modalite=&langue=&page=` (layout `PublicLayout`, sans garde ; prérendu souhaitable pour le SEO ; pas de numéros d'urgence, G Q20). L'URL porte l'état complet de la recherche : un lien copié rejoue la même page.
 - API : `GET /api/public/directory` (M5-02) — paramètres `q`, `city`, `professions`, `modalities`, `audiences`, `languages`, `accepting`, `sort` (`relevance` | `distance` | `name`), `page` ; réponse `SearchResult` : `items` (`Card`[], 20 au plus), `facets` (professions, modalities, audiences, languages avec compteurs, toutes pages confondues), `page`, `pageSize` = 20, `total` (500 fiches examinées au plus), `totalPages`. `Cache-Control: max-age=60`. Limite 60 requêtes / min / IP → 429 `RATE_LIMITED` avec `retryAfterSeconds` (G Q24). 400 `INVALID_PARAMETERS` avec `errors[]` par champ.
-- Liste fermée (G Q15) : `GET /api/vocabulary/directory` (`specialties`, `audiences`, `modalities`, `languages`, codes + libellés FR/EN). Attention : cet endpoint exige une **session praticien** ; voir « Écarts ».
+- Liste fermée (G Q15) : `GET /api/vocabulary/directory` (`specialties`, `audiences`, `modalities`, `languages`, codes + libellés FR/EN). Cet endpoint exige une **session praticien** ; les pages publiques utilisent `GET /api/public/directory/vocabulary` (M10-01), même contenu, sans session, limité à 60 requêtes par minute et par IP ; voir « Écarts ».
 - Store : `PublicDirectoryStore` : `query`, `result`, `facets`, `loading`, `error` (dont `rateLimited`), `vocabulary`.
 
 ## Structure
@@ -59,7 +59,7 @@ Un **visiteur non connecté** trouve en moins d'une minute un psychologue, un ps
 - **Carte (état B)** : hors V1 tant qu'il n'y a pas de géolocalisation → **omettre** la bascule Liste | Carte plutôt qu'un bouton désactivé (pas d'affordance pour une fonction absente) ; l'état B reste une référence visuelle pour la V1.1.
 - **Pagination** = ce que renvoie l'API (`page`, `totalPages`, 20 par page) ; le « 1 2 3 … 5 » de la maquette est illustratif.
 - **Mot-clé `q`** : présent dans le contrat (nom, codes de spécialités, ville, présentation, 100 caractères) → ajouter le champ *Mot-clé* de B-ux que la maquette omet. Le sélecteur *Spécialité* envoie le code de la liste fermée dans `q`, faute de paramètre `specialties` dans le contrat ; la facette *Spécialités* avec compteurs n'existe pas dans `facets` → ne pas l'afficher en V1.
-- **Vocabulaire** : `GET /api/vocabulary/directory` exige une session → le layout public ne peut pas l'appeler. En V1, embarquer les libellés FR/EN des codes dans un fichier de traduction du front (`directory-vocabulary.fr.json`) généré depuis le seed V04, jusqu'à un endpoint public (à proposer dans G).
+- **Vocabulaire** : `GET /api/vocabulary/directory` exige une session → le layout public ne l'appelle pas. Il utilise `GET /api/public/directory/vocabulary` (M10-01, contrat v0.10.0) : mêmes listes (spécialités et publics actifs, modalités, langues, libellés FR/EN), sans session, limité à 60 requêtes par minute et par IP, `Cache-Control: max-age=60, public`. Plus besoin d'embarquer les libellés dans un fichier de traduction du front.
 - **Modalité « à domicile »** (`home`) : facette à ajouter à la colonne de filtres, absente de la maquette.
 
 ## Hors périmètre V1

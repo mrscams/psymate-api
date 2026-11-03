@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,7 @@ import tools.jackson.databind.json.JsonMapper;
 class DirectoryVocabularyAdminIT {
 
   private static final String BASE = "/api/admin/vocabulary/directory";
+  private static final AtomicInteger ANONYMOUS_IP = new AtomicInteger();
 
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
@@ -156,6 +158,27 @@ class DirectoryVocabularyAdminIT {
   private boolean publicHas(String key, String code) throws Exception {
     for (JsonNode n : publicList(key)) {
       if (code.equals(n.path("code").asString())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Même liste vue sans session par GET /api/public/directory/vocabulary (M10-01). */
+  private boolean anonymousHas(String key, String code) throws Exception {
+    int n = ANONYMOUS_IP.incrementAndGet();
+    MvcResult r =
+        mvc.perform(
+                get("/api/public/directory/vocabulary")
+                    .with(
+                        req -> {
+                          req.setRemoteAddr("10.82." + (n / 250) + "." + (n % 250 + 1));
+                          return req;
+                        }))
+            .andReturn();
+    assertThat(r.getResponse().getStatus()).isEqualTo(200);
+    for (JsonNode node : body(r).path(key)) {
+      if (code.equals(node.path("code").asString())) {
         return true;
       }
     }
@@ -390,15 +413,18 @@ class DirectoryVocabularyAdminIT {
     String code = code();
     create(admin, entry("specialty", code, "Éphémère"));
     assertThat(publicHas("specialties", code)).isTrue();
+    assertThat(anonymousHas("specialties", code)).isTrue();
 
     MvcResult off = patchEntry(admin, "specialty", code, Map.of("active", false));
     assertThat(status(off)).isEqualTo(200);
     assertThat(body(off).path("active").asBoolean()).isFalse();
     assertThat(publicHas("specialties", code)).isFalse();
+    assertThat(anonymousHas("specialties", code)).isFalse();
 
     MvcResult on = patchEntry(admin, "specialty", code, Map.of("active", true));
     assertThat(status(on)).isEqualTo(200);
     assertThat(publicHas("specialties", code)).isTrue();
+    assertThat(anonymousHas("specialties", code)).isTrue();
   }
 
   @Test

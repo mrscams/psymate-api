@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-03T12:17:35.987Z",
+  "task": "M10-01",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "GET /api/public/directory/vocabulary : vocabulaire de l'annuaire sans session, même service que l'endpoint praticien, 429 couvert, contrat regénéré",
+  "notes": "Suite complète par la CI de la PR ; IT directory (79) et ContractIT verts en local ; app.contract.version inchangé",
+  "next": "Relecture et fusion de la PR #75, puis M10-02",
+  "pr": "https://github.com/mrscams/psymate-api/pull/75",
+  "branch": "claude/m10-01",
+  "checkout": "agent-a56793d6dee9d7784"
+}

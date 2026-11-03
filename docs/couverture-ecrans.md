@@ -66,7 +66,7 @@ Les sept écrans manquants ont maintenant leur **fiche `.md` et leur maquette `.
 
 | Écart | Conséquence web en V1 | Suite proposée |
 | --- | --- | --- |
-| `GET /api/vocabulary/directory` exige une session praticien | Les pages publiques (08) ne peuvent pas charger les libellés de la liste fermée | Endpoint public `GET /api/public/directory/vocabulary` (ou lever l'authentification sur l'existant) ; en attendant, libellés embarqués depuis le seed V04 |
+| `GET /api/vocabulary/directory` exige une session praticien | Les pages publiques (08) ne peuvent pas charger les libellés de la liste fermée | Endpoint public `GET /api/public/directory/vocabulary` (M10-01, fait : même contenu que l'existant, sans session, 60/min/IP) ; l'endpoint praticien est conservé |
 | `GET /api/public/directory` n'a pas de paramètre `specialties` (seulement `q`, `city`, `lat/lng/radiusKm`, `professions`, `modalities`, `audiences`, `languages`, `accepting`, `sort`, `page`) | Pas de filtre ni de facette par spécialité dans l'annuaire ; le sélecteur envoie le code dans `q` | Ajouter `specialties` et sa facette (M5-02 bis) |
 | Aucun endpoint ne liste les sessions actives ni la dernière connexion | Carte Sessions réduite à « Déconnecter les autres appareils » ; carte Dernière connexion hors V1 | `GET /api/me/security` en V1.1 |
 | `POST /api/auth/email/change` ne couvre qu'un compte `email_pending` | Bouton « Modifier l'e-mail » masqué pour un compte confirmé | Étendre l'endpoint (confirmation sur la nouvelle adresse) |

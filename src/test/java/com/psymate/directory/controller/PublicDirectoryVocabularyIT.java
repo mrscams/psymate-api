@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,16 @@ class PublicDirectoryVocabularyIT {
   private final JsonMapper json = JsonMapper.builder().build();
 
   private UUID tenant;
+
+  /** Codes insérés par le test en cours : désactivés en fin de test, même après un échec. */
+  private final List<String> insertedCodes = new ArrayList<>();
+
+  @AfterEach
+  void deactivateInsertedCodes() {
+    for (String c : insertedCodes) {
+      jdbc.update("update directory_vocabulary set active = false where code = ?", c);
+    }
+  }
 
   @BeforeEach
   void tenant() {
@@ -127,10 +138,16 @@ class PublicDirectoryVocabularyIT {
     assertThat(codes(publicBody.path("languages"))).hasSize(15).contains("fr", "en");
     assertThat(codes(publicBody.path("specialties"))).contains("anxiety");
     assertThat(codes(publicBody.path("audiences"))).contains("adults");
-    for (JsonNode list : publicBody.path("specialties")) {
-      assertThat(list.path("labelFr").asString()).isNotBlank();
-      assertThat(list.has("labelEn")).isTrue();
+    for (JsonNode item : publicBody.path("specialties")) {
+      assertThat(item.path("labelFr").asString()).isNotBlank();
+      assertThat(item.has("labelEn")).isTrue();
     }
+  }
+
+  /** L'endpoint praticien est conservé tel quel : toujours réservé aux sessions. */
+  @Test
+  void thePractitionerEndpointStillRequiresASession() throws Exception {
+    mvc.perform(from(freshIp(), get(PRACTITIONER))).andExpect(status().isUnauthorized());
   }
 
   @Test
@@ -147,6 +164,7 @@ class PublicDirectoryVocabularyIT {
   void aSpecialtyOrAudienceDeactivatedByTheAdminAppearsInNeitherResponse() throws Exception {
     String specialty = code();
     String audience = code();
+    insertedCodes.addAll(List.of(specialty, audience));
     jdbc.update(
         "insert into directory_vocabulary (kind, code, label_fr, label_en) values"
             + " ('specialty', ?, 'Spécialité éphémère', 'Ephemeral specialty'),"

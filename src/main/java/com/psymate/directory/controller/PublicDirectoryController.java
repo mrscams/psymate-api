@@ -68,12 +68,7 @@ class PublicDirectoryController {
                 schema = @Schema(type = "string"))),
     @ApiResponse(
         responseCode = "429",
-        description = "RATE_LIMITED : plus de 60 requêtes par minute depuis cette adresse IP.",
-        headers =
-            @Header(
-                name = "Retry-After",
-                description = "Secondes avant la prochaine requête admise.",
-                schema = @Schema(type = "integer")),
+        description = "RATE_LIMITED : au-delà de 60 requêtes par minute et par IP.",
         content =
             @Content(
                 mediaType = "application/problem+json",

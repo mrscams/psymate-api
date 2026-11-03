@@ -78,6 +78,7 @@ public class PublicDirectoryRepository {
       params.add(new Object[] {"lat", c.lat()});
       params.add(new Object[] {"lng", c.lng()});
     }
+    overlap(sql, params, "specialties", c.specialties());
     overlap(sql, params, "modalities", c.modalities());
     overlap(sql, params, "audiences", c.audiences());
     overlap(sql, params, "languages", c.languages());

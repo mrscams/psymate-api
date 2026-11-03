@@ -9,17 +9,16 @@ public class ProfileException extends RuntimeException {
 
   public record FieldError(String field, String message) {}
 
+  /** Erreur de champ avec code machine (ex. INVALID_VALUE), rendue dans errors[]. */
+  public record CodedFieldError(String field, String code, String message) {}
+
   private final HttpStatus status;
   private final String code;
-  private final List<FieldError> errors;
+  private final List<?> errors;
   private final Map<String, Object> extra;
 
   public ProfileException(
-      HttpStatus status,
-      String code,
-      String message,
-      List<FieldError> errors,
-      Map<String, Object> extra) {
+      HttpStatus status, String code, String message, List<?> errors, Map<String, Object> extra) {
     super(message);
     this.status = status;
     this.code = code;
@@ -29,6 +28,16 @@ public class ProfileException extends RuntimeException {
 
   public static ProfileException of(HttpStatus status, String code, String message) {
     return new ProfileException(status, code, message, List.of(), Map.of());
+  }
+
+  /** 422 VALIDATION_FAILED dont chaque erreur de champ porte un code. */
+  public static ProfileException invalidCoded(List<CodedFieldError> errors) {
+    return new ProfileException(
+        HttpStatus.UNPROCESSABLE_ENTITY,
+        "VALIDATION_FAILED",
+        "Certains champs sont invalides.",
+        errors,
+        Map.of());
   }
 
   public static ProfileException invalid(List<FieldError> errors) {
@@ -48,7 +57,7 @@ public class ProfileException extends RuntimeException {
     return code;
   }
 
-  public List<FieldError> errors() {
+  public List<?> errors() {
     return errors;
   }
 

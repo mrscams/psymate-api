@@ -2087,7 +2087,7 @@ components:
           type: integer
       type: object
     Facets:
-      description: Facettes calculées sur le lot filtré (500 fiches au plus), chacune triée par nombre décroissant.
+      description: Facettes calculées sur le lot filtré (500 fiches au plus), chacune triée par nombre décroissant ; la facette specialties ignore le filtre specialties.
       properties:
         audiences:
           description: Répartition par public accueilli.
@@ -2108,6 +2108,11 @@ components:
           description: Répartition par profession (psychologist, psychiatrist, coach).
           items:
             $ref: '#/components/schemas/FacetCount'
+          type: array
+        specialties:
+          description: 'Répartition par spécialité active de la liste fermée, avec libellés. Calculée sans le filtre specialties (les autres filtres s''appliquent) : le compteur d''un code est le nombre de résultats qu''il donnerait seul.'
+          items:
+            $ref: '#/components/schemas/SpecialtyFacetCount'
           type: array
       type: object
     FeelingPointDto:
@@ -4065,6 +4070,27 @@ components:
           - private
           - clinical
           example: clinical
+          type: string
+      type: object
+    SpecialtyFacetCount:
+      description: Nombre de résultats pour une spécialité de la liste fermée.
+      properties:
+        code:
+          description: Code de la spécialité, à renvoyer dans le filtre specialties.
+          example: anxiety
+          type: string
+        count:
+          description: Nombre de fiches qui auraient ce code seul, tous les autres filtres appliqués sauf specialties.
+          example: 12
+          format: int64
+          type: integer
+        labelEn:
+          description: Libellé en anglais ; peut être null pour une entrée ajoutée sans.
+          example: Anxiety
+          type: string
+        labelFr:
+          description: Libellé en français.
+          example: Anxiété
           type: string
       type: object
     StartSessionRequest:
@@ -10197,7 +10223,7 @@ paths:
       - Patients
   /api/public/directory:
     get:
-      description: 'Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). Ne rend que les profils publiés. Les filtres se cumulent ; pour modalities, audiences et languages une fiche est retenue si elle a au moins une des valeurs demandées. Réponse paginée par page de 20 (page, totalPages) ; au plus 500 fiches sont examinées avant pagination, total et facettes portent sur ce lot. 200 avec Cache-Control: max-age=60, public.'
+      description: 'Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). Ne rend que les profils publiés. Les filtres se cumulent ; pour specialties, modalities, audiences et languages une fiche est retenue si elle a au moins une des valeurs demandées. Réponse paginée par page de 20 (page, totalPages) ; au plus 500 fiches sont examinées avant pagination, total et facettes portent sur ce lot, sauf la facette specialties qui ignore le filtre specialties (compteur d''un code = résultats qu''il donnerait seul). 200 avec Cache-Control: max-age=60, public.'
       operationId: searchPublicDirectory
       parameters:
       - description: 'Texte libre, 100 caractères au plus : tous les mots doivent correspondre, dans le nom, les codes de spécialités (ex. anxiety), la ville ou la présentation, sans tenir compte des accents ; un nom proche est aussi retenu. Absent : pas de filtre texte.'
@@ -10242,6 +10268,15 @@ paths:
         example: psychologist,coach
         in: query
         name: professions
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+      - description: 'Spécialités retenues (codes actifs de GET /api/public/directory/vocabulary) : valeurs séparées par des virgules ou paramètre répété, 20 au plus. Une fiche est retenue si elle a au moins une des spécialités. Code inconnu ou désactivé : 422. Absent : toutes.'
+        example: anxiety,burnout
+        in: query
+        name: specialties
         required: false
         schema:
           items:
@@ -10320,7 +10355,13 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'INVALID_PARAMETERS : errors[] {field, message} (pas de code par champ) ; champs : sort (hors relevance, distance, name), q et city (plus de 100 caractères), lat et lng (l''un sans l''autre, ou hors de -90 à 90 et -180 à 180), radiusKm (hors de 0 exclu à 1000), professions, modalities, audiences, languages (plus de 20 valeurs), page (inférieure à 1), ou tout paramètre dont la valeur n''a pas le bon type (nombre, booléen).'
+          description: 'INVALID_PARAMETERS : errors[] {field, message} (pas de code par champ) ; champs : sort (hors relevance, distance, name), q et city (plus de 100 caractères), lat et lng (l''un sans l''autre, ou hors de -90 à 90 et -180 à 180), radiusKm (hors de 0 exclu à 1000), professions, specialties, modalities, audiences, languages (plus de 20 valeurs), page (inférieure à 1), ou tout paramètre dont la valeur n''a pas le bon type (nombre, booléen).'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'VALIDATION_FAILED : errors[] {field, code, message}, avec le champ specialties et le code INVALID_VALUE pour chaque code qui n''est pas une spécialité active de la liste fermée (GET /api/public/directory/vocabulary).'
         '429':
           content:
             application/problem+json:

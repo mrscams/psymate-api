@@ -84,11 +84,12 @@ class PublicDirectoryController {
       description =
           """
           Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). \
-          Ne rend que les profils publiés. Les filtres se cumulent ; pour modalities, audiences \
-          et languages une fiche est retenue si elle a au moins une des valeurs demandées. \
-          Réponse paginée par page de 20 (page, totalPages) ; au plus 500 fiches sont examinées \
-          avant pagination, total et facettes portent sur ce lot. 200 avec Cache-Control: \
-          max-age=60, public.""")
+          Ne rend que les profils publiés. Les filtres se cumulent ; pour specialties, \
+          modalities, audiences et languages une fiche est retenue si elle a au moins une des \
+          valeurs demandées. Réponse paginée par page de 20 (page, totalPages) ; au plus 500 \
+          fiches sont examinées avant pagination, total et facettes portent sur ce lot, sauf la \
+          facette specialties qui ignore le filtre specialties (compteur d'un code = résultats \
+          qu'il donnerait seul). 200 avec Cache-Control: max-age=60, public.""")
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
@@ -104,9 +105,19 @@ class PublicDirectoryController {
             "INVALID_PARAMETERS : errors[] {field, message} (pas de code par champ) ; champs :"
                 + " sort (hors relevance, distance, name), q et city (plus de 100 caractères), lat"
                 + " et lng (l'un sans l'autre, ou hors de -90 à 90 et -180 à 180), radiusKm (hors"
-                + " de 0 exclu à 1000), professions, modalities, audiences, languages (plus de 20"
-                + " valeurs), page (inférieure à 1), ou tout paramètre dont la valeur n'a pas le"
-                + " bon type (nombre, booléen).",
+                + " de 0 exclu à 1000), professions, specialties, modalities, audiences,"
+                + " languages (plus de 20 valeurs), page (inférieure à 1), ou tout paramètre dont"
+                + " la valeur n'a pas le bon type (nombre, booléen).",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "422",
+        description =
+            "VALIDATION_FAILED : errors[] {field, code, message}, avec le champ specialties et le"
+                + " code INVALID_VALUE pour chaque code qui n'est pas une spécialité active de la"
+                + " liste fermée (GET /api/public/directory/vocabulary).",
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -160,6 +171,15 @@ class PublicDirectoryController {
           List<String> professions,
       @Parameter(
               description =
+                  "Spécialités retenues (codes actifs de GET /api/public/directory/vocabulary) :"
+                      + " valeurs séparées par des virgules ou paramètre répété, 20 au plus. Une"
+                      + " fiche est retenue si elle a au moins une des spécialités. Code inconnu"
+                      + " ou désactivé : 422. Absent : toutes.",
+              example = "anxiety,burnout")
+          @RequestParam(required = false)
+          List<String> specialties,
+      @Parameter(
+              description =
                   "Modalités retenues parmi in_person, video, home : valeurs séparées par des"
                       + " virgules ou paramètre répété, 20 au plus. Absent : toutes.",
               example = "video")
@@ -209,6 +229,7 @@ class PublicDirectoryController {
             lat,
             lng,
             radiusKm == null ? PublicDirectoryService.DEFAULT_RADIUS_KM : radiusKm,
+            specialties,
             modalities,
             audiences,
             languages,

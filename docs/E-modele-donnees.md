@@ -248,7 +248,7 @@ CREATE TABLE security_event (
   practitioner_id  uuid REFERENCES practitioner(id),  -- compte concerné ; NULL = événement système
   actor_id         uuid REFERENCES practitioner(id),  -- qui a agi ; NULL = le compte lui-même ou le système
   kind             text NOT NULL,                      -- login_ok, login_failed, locked, 2fa_enabled, 2fa_disabled,
-                                                       -- password_reset_requested, password_changed, email_confirmed,
+                                                       -- password_reset_requested, password_changed, email_confirmed, email_changed,
                                                        -- session_revoked, suspended, reactivated, export_requested, purge,
                                                        -- patient.read, patient.write (M7-02), admin.* (M1-14, M1-14b)…
   ip               inet,
@@ -260,7 +260,7 @@ CREATE INDEX ix_security_event_practitioner ON security_event(practitioner_id, o
 CREATE INDEX ix_security_event_kind ON security_event(kind, occurred_at DESC);
 ```
 
-Règles non portées par le schéma, à tester côté application : `role = 'admin'` exige `totp_enabled_at IS NOT NULL` pour accéder à `/api/admin/**` (M1-14, M7-08) ; un `email_change` ne peut être émis que par un compte `email_pending` (fiche 25) ; `failed_logins` revient à 0 à la première connexion réussie ; la durée de session est 12 h, 30 jours avec « rester connecté » (G Q6).
+Règles non portées par le schéma, à tester côté application : `role = 'admin'` exige `totp_enabled_at IS NOT NULL` pour accéder à `/api/admin/**` (M1-14, M7-08) ; un `email_change` est émis sans session par un compte `email_pending` (fiche 25), ou avec session et mot de passe par un compte confirmé ; l'adresse ne bascule qu'à la confirmation, qui consomme les jetons `password_reset` actifs (M10-04, G Q49) ; `failed_logins` revient à 0 à la première connexion réussie ; la durée de session est 12 h, 30 jours avec « rester connecté » (G Q6).
 
 ### E3.3 Vérification des praticiens et administration
 

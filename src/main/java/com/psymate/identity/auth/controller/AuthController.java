@@ -296,8 +296,8 @@ class AuthController {
           Deux variantes, même route. Avec une session (compte confirmé : docs_pending, \
           under_review, needs_more ou approved) : corps { newEmail, password }, le compte est celui \
           de la session (email est ignoré). Le mot de passe est vérifié : faux, il donne 422 \
-          INVALID_PASSWORD et compte dans le verrou e-mail + IP du login (5 échecs, 423 pendant \
-          15 min). Sinon la réponse est 202 dans tous les cas : un lien de confirmation (24 h, \
+          INVALID_PASSWORD et compte dans un verrou propre au compte (5 échecs, 423 pendant 15 \
+          min, quelle que soit l'IP). Sinon la réponse est 202 dans tous les cas : un lien de confirmation (24 h, \
           usage unique) part à la NOUVELLE adresse, et si cette adresse appartient déjà à un compte \
           elle reçoit à la place l'e-mail « vous avez déjà un compte », sans que la réponse \
           diffère. L'ancienne adresse reste valide pour se connecter jusqu'à la confirmation par \
@@ -328,7 +328,7 @@ class AuthController {
     @ApiResponse(
         responseCode = "423",
         description =
-            "ACCOUNT_LOCKED : verrouillage e-mail + IP après 5 mots de passe faux (15 min) ;"
+            "ACCOUNT_LOCKED : verrouillage après 5 mots de passe faux (15 min), par compte avec session, par e-mail + IP sans ;"
                 + " retryAfterSeconds et en-tête Retry-After.",
         headers = @Header(name = "Retry-After", description = "Secondes avant nouvel essai"),
         content =
@@ -340,7 +340,7 @@ class AuthController {
       @Valid @RequestBody EmailChangeRequest r, HttpServletRequest request) {
     Optional<CurrentPractitioner> current = CurrentPractitioner.get();
     if (current.isPresent()) {
-      service.changeEmail(current.get().id(), r.password(), r.newEmail(), request.getRemoteAddr());
+      service.changeEmail(current.get().id(), r.password(), r.newEmail());
     } else {
       if (r.email() == null || r.email().isBlank()) {
         throw new FieldValidationException(

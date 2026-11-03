@@ -61,6 +61,10 @@ app:
   # Base des liens envoyes par e-mail (frontend), a surcharger par environnement.
   web:
     base-url: ${APP_WEB_BASE_URL:http://localhost:5173}
+  # Adresse de recours citee dans l e-mail envoye a l ancienne adresse apres un changement d e-mail
+  # (M10-04, G Q49). Valeur d exemple non reelle : a definir par environnement (APP_SUPPORT_EMAIL).
+  support:
+    email: ${APP_SUPPORT_EMAIL:support@example.test}
   contract:
     # Version du contrat OpenAPI publie ; a bumper avant de poser un tag contract-vX.Y.Z.
     version: 0.9.0

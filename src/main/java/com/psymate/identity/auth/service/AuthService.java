@@ -334,6 +334,10 @@ public class AuthService {
       ConsumedToken change, String ip, UUID sessionOwner, String sessionId, Instant now) {
     UUID id = change.practitionerId();
     PractitionerRow before = practitioners.findById(id).orElseThrow(InvalidTokenException::new);
+    // Compte refusé, suspendu ou clos depuis la demande : le lien ne sert plus (rollback, 410).
+    if (!EMAIL_CHANGE_STATUSES.contains(before.verificationStatus())) {
+      throw new InvalidTokenException();
+    }
     String newEmail = newEmailOf(change.payload());
     String normalized = normalizeEmail(newEmail);
     Optional<PractitionerRow> other = practitioners.findByEmailNormalized(normalized);
@@ -341,6 +345,8 @@ public class AuthService {
       throw new InvalidTokenException();
     }
     practitioners.updateEmail(id, newEmail, normalized, now);
+    // Un lien de réinitialisation envoyé à l'ancienne adresse ne doit plus servir.
+    tokens.consumeActive(id, KIND_PASSWORD_RESET, Timestamps.utc(now));
     practitioners.insertSecurityEvent(
         id,
         "email_changed",
@@ -437,20 +443,20 @@ public class AuthService {
   }
 
   /**
-   * Changement d'e-mail d'un compte connecté (M10-04). Le mot de passe est vérifié : un échec
-   * compte dans le même verrou e-mail + IP que le login (423 au seuil) et donne 422
-   * INVALID_PASSWORD, la session prouvant déjà l'identité de l'appelant. Ensuite la réponse (202)
-   * ne dépend jamais de la nouvelle adresse : un jeton de 24 h qui porte l'adresse est toujours
-   * créé (les précédents sont invalidés), puis l'adresse reçoit soit le lien de confirmation, soit,
-   * si elle appartient déjà à un autre compte, l'e-mail « vous avez déjà un compte ». Dans ce
-   * second cas le jeton n'est envoyé à personne : il ne peut pas être consommé, et le travail en
-   * base reste identique. L'ancienne adresse reste valide jusqu'à la confirmation. Un compte
-   * email_pending suit la correction publique ; les autres statuts (refusé, suspendu, clos) ne
-   * changent rien.
+   * Changement d'e-mail d'un compte connecté (M10-04, G Q49). Le mot de passe est vérifié : un
+   * échec donne 422 INVALID_PASSWORD, la session prouvant déjà l'identité de l'appelant, et compte
+   * sur une clé par compte (emailchange:{id}, 5 essais puis 423 pendant 15 min quelle que soit
+   * l'IP), distincte du verrou e-mail + IP du login. Ensuite la réponse (202) ne dépend jamais de
+   * la nouvelle adresse : un jeton de 24 h qui porte l'adresse est toujours créé (les précédents
+   * sont invalidés), puis l'adresse reçoit soit le lien de confirmation, soit, si elle appartient
+   * déjà à un autre compte, l'e-mail « vous avez déjà un compte ». Dans ce second cas le jeton
+   * n'est envoyé à personne : il ne peut pas être consommé, et le travail en base reste identique.
+   * L'ancienne adresse reste valide jusqu'à la confirmation. Un compte email_pending suit la
+   * correction publique ; les autres statuts (refusé, suspendu, clos) ne changent rien.
    */
-  public void changeEmail(UUID id, String password, String newEmail, String ip) {
+  public void changeEmail(UUID id, String password, String newEmail) {
     PractitionerRow p = practitioners.findById(id).orElseThrow(InvalidCredentialsException::new);
-    String key = normalizeEmail(p.email()) + "|" + (ip == null ? "" : ip);
+    String key = "emailchange:" + id;
     limiter
         .remainingLock(key)
         .ifPresent(
@@ -465,6 +471,7 @@ public class AuthService {
       }
       throw new InvalidSecondFactorException("password");
     }
+    limiter.reset(key);
     if (PractitionerRow.EMAIL_PENDING.equals(p.verificationStatus())) {
       changePendingEmail(p, newEmail);
       return;

@@ -63,8 +63,7 @@ class EmailChangeIT extends AbstractLoginIT {
   }
 
   private String linkToken(String newAddress) throws Exception {
-    // Attente large : l'exécuteur d'envoi est partagé avec les événements, chargé par les autres IT.
-    String text = mails.lastText(newAddress, LINK_SUBJECT, Duration.ofSeconds(45));
+    String text = mails.lastText(newAddress, LINK_SUBJECT);
     assertThat(text).as("e-mail de confirmation envoyé à " + newAddress).isNotNull();
     Matcher m = LINK.matcher(text);
     assertThat(m.find()).isTrue();
@@ -332,28 +331,98 @@ class EmailChangeIT extends AbstractLoginIT {
   // ---- mot de passe
 
   @Test
-  void aWrongPasswordGives422AndCountsInTheLoginLock() throws Exception {
+  void wrongPasswordsCountPerAccountWhateverTheIp_andDoNotLockTheLogin() throws Exception {
     String oldEmail = account();
     Cookie cookie = session(oldEmail);
-    String ip = uniqueIp();
     String newAddress = newEmail();
 
-    for (int i = 1; i < 5; i++) {
+    // Quatre essais faux depuis deux IP différentes : toujours 422 INVALID_PASSWORD.
+    for (int i = 0; i < 4; i++) {
+      String ip = i % 2 == 0 ? "198.51.100.11" : "198.51.100.22";
       MvcResult wrong = change(cookie, newAddress, "Mauvais-Mot-De-Passe-1", ip);
       assertThat(wrong.getResponse().getStatus()).isEqualTo(422);
       JsonNode error = body(wrong).path("errors").get(0);
       assertThat(error.path("field").asString()).isEqualTo("password");
       assertThat(error.path("code").asString()).isEqualTo("INVALID_PASSWORD");
     }
-    MvcResult locked = change(cookie, newAddress, "Mauvais-Mot-De-Passe-1", ip);
+    // Le cinquième, depuis une troisième IP, verrouille le compte (clé par compte, G Q49).
+    MvcResult locked = change(cookie, newAddress, "Mauvais-Mot-De-Passe-1", "198.51.100.33");
     assertThat(locked.getResponse().getStatus()).isEqualTo(423);
     assertThat(locked.getResponse().getHeader("Retry-After")).isNotNull();
 
-    // Le verrou est celui du login : même le bon mot de passe est refusé, y compris à la connexion.
-    assertThat(change(cookie, newAddress, PASSWORD, ip).getResponse().getStatus()).isEqualTo(423);
-    assertThat(login(oldEmail, PASSWORD, null, ip).getResponse().getStatus()).isEqualTo(423);
+    // Même le bon mot de passe est refusé, depuis n'importe quelle IP.
+    assertThat(change(cookie, newAddress, PASSWORD, "198.51.100.44").getResponse().getStatus())
+        .isEqualTo(423);
     assertThat(tokens(oldEmail, "email_change")).isZero();
     assertThat(mails.count(newAddress, LINK_SUBJECT)).isZero();
+    // Le verrou du login est distinct : la connexion reste possible.
+    assertThat(login(oldEmail, PASSWORD, null, "198.51.100.55").getResponse().getStatus())
+        .isEqualTo(200);
+    // Le verrou expire après 15 minutes.
+    clock.advance(Duration.ofMinutes(16));
+    assertThat(change(cookie, newAddress, PASSWORD, "198.51.100.44").getResponse().getStatus())
+        .isEqualTo(202);
+    assertThat(tokens(oldEmail, "email_change")).isEqualTo(1);
+  }
+
+  // ---- bascule : réinitialisation, statut
+
+  @Test
+  void aPasswordResetLinkSentToTheOldAddressIsDeadOnceTheEmailChanged() throws Exception {
+    String oldEmail = account();
+    UUID id = idOf(oldEmail);
+    String newAddress = newEmail();
+    post("/api/auth/password-reset/request", Map.of("email", oldEmail), null, IP);
+    String resetText = mails.lastText(oldEmail, "réinitialisation");
+    assertThat(resetText).isNotNull();
+    Matcher m = Pattern.compile("token=([A-Za-z0-9_-]+)").matcher(resetText);
+    assertThat(m.find()).isTrue();
+    String resetToken = m.group(1);
+    change(session(oldEmail), newAddress);
+    String token = linkToken(newAddress);
+
+    assertThat(confirm(token, null)).isEqualTo(204);
+
+    MvcResult reset =
+        post(
+            "/api/auth/password-reset/confirm",
+            Map.of("token", resetToken, "password", "Autre-Mot-De-Passe-77"),
+            null,
+            IP);
+    assertThat(reset.getResponse().getStatus()).isEqualTo(410);
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from auth_token where practitioner_id = ? and kind ="
+                    + " 'password_reset' and consumed_at is null",
+                Integer.class,
+                id))
+        .isZero();
+    // Le mot de passe n'a pas changé.
+    assertThat(login(newAddress, PASSWORD, null, IP).getResponse().getStatus()).isEqualTo(200);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"suspended", "rejected", "closed"})
+  void anAccountTurnedSuspendedRefusedOrClosedSinceTheRequestKeepsItsEmail(String status)
+      throws Exception {
+    String oldEmail = account("approved");
+    UUID id = idOf(oldEmail);
+    String newAddress = newEmail();
+    change(session(oldEmail), newAddress);
+    String token = linkToken(newAddress);
+    jdbc.update("update practitioner set verification_status = ? where id = ?", status, id);
+
+    MvcResult result = post(CONFIRM, Map.of("token", token), null, IP);
+
+    assertThat(result.getResponse().getStatus()).isEqualTo(410);
+    assertThat(currentEmail(id)).isEqualTo(oldEmail);
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from security_event where practitioner_id = ? and kind ="
+                    + " 'email_changed'",
+                Integer.class,
+                id))
+        .isZero();
   }
 
   // ---- anti-énumération

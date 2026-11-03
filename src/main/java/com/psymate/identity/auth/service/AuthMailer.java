@@ -18,13 +18,16 @@ class AuthMailer {
   private final String from;
   private final String appName;
   private final String webBaseUrl;
+  private final String supportEmail;
 
   AuthMailer(
       JavaMailSender sender,
       AuthMessages messages,
       @Value("${app.mail.from}") String from,
       @Value("${app.name}") String appName,
-      @Value("${app.web.base-url}") String webBaseUrl) {
+      @Value("${app.web.base-url}") String webBaseUrl,
+      @Value("${app.support.email}") String supportEmail) {
+    this.supportEmail = supportEmail;
     this.sender = sender;
     this.messages = messages;
     this.from = from;
@@ -69,11 +72,10 @@ class AuthMailer {
 
   /** Information envoyée à l'ANCIENNE adresse une fois le changement confirmé. */
   void sendEmailChanged(String to, String newEmail, Locale locale) {
-    String link = webBaseUrl + "/connexion";
     send(
         to,
         messages.get("mail.changed.subject", locale, appName),
-        messages.get("mail.changed.body", locale, appName, newEmail, link));
+        messages.get("mail.changed.body", locale, appName, newEmail, supportEmail));
   }
 
   /** Information envoyée quand un changement d'e-mail vise une adresse déjà utilisée. */

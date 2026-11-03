@@ -32,9 +32,6 @@ public class LoginService {
   /** Statuts qui donnent droit à un recours (fiche 27) : refus du dossier ou suspension. */
   static final Set<String> APPEALABLE_STATUSES = Set.of("rejected", "suspended");
 
-  /** Préférence posée par le compte admin de bootstrap (M7-08) : mot de passe à changer. */
-  static final String MUST_CHANGE_PASSWORD = "security.mustChangePassword";
-
   /** Résultat d'une tentative qui n'a pas échoué. */
   public sealed interface Outcome {
     record Authenticated(PractitionerRow practitioner, boolean recoveryCodeUsed)
@@ -136,7 +133,7 @@ public class LoginService {
       revokeSessions(row, ip);
       throw new AccountSuspendedException();
     }
-    if (mode == Mode.LOGIN && mustChangePassword(row)) {
+    if (mode == Mode.LOGIN && row.mustChangePassword()) {
       throw new PasswordChangeRequiredException();
     }
 
@@ -163,12 +160,6 @@ public class LoginService {
       practitioners.insertSecurityEvent(row.id(), "login_ok", ip, null, now);
     }
     return new Outcome.Authenticated(row, recoveryUsed);
-  }
-
-  private static boolean mustChangePassword(PractitionerRow row) {
-    return row.preferences() != null
-        && row.preferences().get(MUST_CHANGE_PASSWORD) instanceof Boolean flag
-        && flag;
   }
 
   /** Échec : compteur par clé, reflet en base, événements ; 423 si le seuil est atteint. */

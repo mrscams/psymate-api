@@ -128,6 +128,13 @@ class AdminBootstrapIT {
         .andReturn();
   }
 
+  private JsonNode me(Cookie cookie) throws Exception {
+    MvcResult r =
+        mvc.perform(MockMvcRequestBuilders.get("/api/auth/me").cookie(cookie)).andReturn();
+    assertThat(r.getResponse().getStatus()).isEqualTo(200);
+    return body(r);
+  }
+
   private JsonNode body(MvcResult r) throws Exception {
     return json.readTree(r.getResponse().getContentAsString());
   }
@@ -243,6 +250,22 @@ class AdminBootstrapIT {
     assertThat(second.getResponse().getStatus()).isEqualTo(200);
     Cookie session = second.getResponse().getCookie("SESSION");
     assertThat(session).isNotNull();
+    // M10-03 : /me lit role=admin, passwordChangeRequired=false (levé) et twoFactorEnabled=false.
+    JsonNode meBefore2fa = me(session);
+    assertThat(meBefore2fa.path("role").asString()).isEqualTo("admin");
+    assertThat(meBefore2fa.path("passwordChangeRequired").asBoolean(true)).isFalse();
+    assertThat(meBefore2fa.path("twoFactorEnabled").asBoolean(true)).isFalse();
+    // Le drapeau du bootstrap, reposé sur la session ouverte, se relit à chaque appel.
+    jdbc.update(
+        "update practitioner set preferences = preferences ||"
+            + " '{\"security.mustChangePassword\": true}'::jsonb where email_normalized = ?",
+        email);
+    assertThat(me(session).path("passwordChangeRequired").asBoolean(false)).isTrue();
+    jdbc.update(
+        "update practitioner set preferences = preferences - 'security.mustChangePassword' where"
+            + " email_normalized = ?",
+        email);
+    assertThat(me(session).path("passwordChangeRequired").asBoolean(true)).isFalse();
 
     // 4. Sans 2FA active, /api/admin/** est refusé.
     MvcResult refused = adminList(session);
@@ -262,6 +285,8 @@ class AdminBootstrapIT {
     assertThat(body(verify).path("recoveryCodes")).hasSize(10);
     // Le code de /verify est consommé : on passe au pas suivant pour obtenir un code neuf.
     clock.advance(Duration.ofSeconds(30));
+
+    assertThat(me(session).path("twoFactorEnabled").asBoolean(false)).isTrue();
 
     // 6. Le login demande désormais le code, puis /api/admin/** répond.
     MvcResult needOtp = login(email, NEW_PASSWORD, null);

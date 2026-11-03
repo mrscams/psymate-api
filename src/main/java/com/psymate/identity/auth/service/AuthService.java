@@ -6,7 +6,9 @@ import com.psymate.identity.api.PractitionerRegistered;
 import com.psymate.identity.auth.dto.Address;
 import com.psymate.identity.auth.dto.RegisterRequest;
 import com.psymate.identity.auth.model.AccountLockedException;
+import com.psymate.identity.auth.model.AccountState;
 import com.psymate.identity.auth.model.FieldValidationException;
+import com.psymate.identity.auth.model.InvalidCredentialsException;
 import com.psymate.identity.auth.model.InvalidTokenException;
 import com.psymate.identity.auth.model.PasswordPolicy;
 import com.psymate.identity.auth.model.PasswordPolicyException;
@@ -66,6 +68,7 @@ public class AuthService {
   private static final String PREFS_PSYCHIATRIST = "{\"entryTypes.medicationVisible\":true}";
 
   private final PractitionerRepository practitioners;
+  private final OtpVerifier otp;
   private final AuthTokenJpaRepository tokens;
   private final PasswordEncoder encoder;
   private final AuthMailer mailer;
@@ -79,6 +82,7 @@ public class AuthService {
 
   AuthService(
       PractitionerRepository practitioners,
+      OtpVerifier otp,
       AuthTokenJpaRepository tokens,
       PasswordEncoder encoder,
       AuthMailer mailer,
@@ -88,6 +92,7 @@ public class AuthService {
       LoginAttemptLimiter limiter,
       PlatformTransactionManager txManager) {
     this.practitioners = practitioners;
+    this.otp = otp;
     this.tokens = tokens;
     this.encoder = encoder;
     this.mailer = mailer;
@@ -238,6 +243,16 @@ public class AuthService {
   public CurrentPractitioner toCurrent(PractitionerRow r) {
     return new CurrentPractitioner(
         r.id(), r.tenantId(), r.email(), r.displayName(), r.profession(), r.verificationStatus());
+  }
+
+  /**
+   * État de sécurité à jour du compte (GET /api/auth/me, M10-03) : relu en base, car la 2FA et
+   * l'obligation de changement de mot de passe évoluent pendant la session. Le secret TOTP n'est
+   * jamais lu ici, seul son état actif l'est.
+   */
+  public AccountState accountState(UUID id) {
+    PractitionerRow row = practitioners.findById(id).orElseThrow(InvalidCredentialsException::new);
+    return new AccountState(row.role(), otp.state(id).enabled(), row.mustChangePassword());
   }
 
   public void recordLogin(UUID id) {

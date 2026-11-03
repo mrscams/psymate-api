@@ -19,4 +19,14 @@ public record PractitionerRow(
 
   /** Statut d'un compte dont l'adresse e-mail n'est pas confirmée (fiche 25). */
   public static final String EMAIL_PENDING = "email_pending";
+
+  /** Préférence posée par le compte admin de bootstrap (M7-08) : mot de passe à changer. */
+  public static final String MUST_CHANGE_PASSWORD = "security.mustChangePassword";
+
+  /** Vrai tant que le mot de passe à usage unique d'un compte de bootstrap n'a pas été changé. */
+  public boolean mustChangePassword() {
+    return preferences != null
+        && preferences.get(MUST_CHANGE_PASSWORD) instanceof Boolean flag
+        && flag;
+  }
 }

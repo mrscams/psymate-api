@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-03T08:11:56.241Z",
+  "task": "M9-19",
+  "agent": "claude",
+  "status": "in-progress",
+  "summary": "Partie 1/2 fusionnee (PR 69) : assertions centrees sur les donnees du test, SharedDatabaseHygieneTest ; partie 2 (base partagee) en cours",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

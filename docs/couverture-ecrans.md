@@ -62,6 +62,8 @@ Classé par urgence : **bloquant** = une tâche d'un lot proche ne peut pas dém
 
 Les sept écrans manquants ont maintenant leur **fiche `.md` et leur maquette `.html`** dans `design/` : 03 Timeline, 05 Éditeur d'entrée (avec l'historique des versions), 08 Annuaire public, 18 Compte et sécurité, 19 Données et export, 28 Admin · Vocabulaire, 29 Planche d'états. Chaque fiche a une section « Écarts avec la maquette » qui dit ce que l'agent suit et ce qu'il ignore. La fiche `00-composants-partages.md` est écrite ; les tâches web **M1-17** et **M6-06** et la série API **M10** sont dans `C-plan.md` C9. Pas de `.png` pour ces fiches (décision du 2 novembre : la maquette `.html` suffit).
 
+**3 novembre 2026** : M10-01 à M10-06 sont fusionnées (PR #73 à #81), tags `contract-v0.10.0` puis `contract-v0.11.0` posés ; seule M10-07 (filtre `specialty` admin, V1.1) reste. Les lignes « Suite proposée » ci-dessous sont donc réalisées, sauf la dernière et les deux « Rien en V1 ». Le web épingle `contract-v0.11.0`.
+
 Écarts avec le contrat découverts en écrivant les fiches, devenus les tâches **M10-01 à M10-07** (C9 ; aucune ne bloque les lots 0–2, M10-01 à M10-05 avant le lot 3 web, tag `contract-v0.10.0`) :
 
 | Écart | Conséquence web en V1 | Suite proposée |

@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-03T16:05:15.215Z",
+  "task": "M10-06",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "Fusionnée (PR 80, suite PR 81) ; tag contract-v0.11.0",
+  "pr": "https://github.com/mrscams/psymate-api/pull/81",
+  "branch": "claude/m10-suivi",
+  "checkout": "m9-19-cb33b1"
+}

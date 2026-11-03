@@ -277,6 +277,15 @@ class ExportPersistenceIT extends ExportTestSupport {
     assertThat(active(doctor)).isTrue();
   }
 
+  /**
+   * Test sensible au timing, vu une fois en CI (PR #81, tranche clinical, graine 79492725344 :
+   * deux jobs au lieu d'un job et d'un 409). {@code request()} lance l'export en asynchrone dès le
+   * commit ({@code pool.execute}) ; ce compte n'a aucun patient, donc le premier job peut finir
+   * avant que la seconde demande prenne le verrou et lise {@code hasActive}, et elle crée alors
+   * légitimement un second job. Laissé tel quel à la demande de l'utilisateur (3 novembre 2026) :
+   * si l'échec se répète, empêcher le job de finir pendant le test (exécuteur bloqué, ou statut
+   * relu juste après l'insertion) plutôt que d'allonger une attente.
+   */
   @Test
   void twoConcurrentRequestsForOnePractitionerGiveOneJobAndOne409() throws Exception {
     ExportTexts texts = ExportTexts.of(Locale.FRENCH);

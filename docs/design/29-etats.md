@@ -38,7 +38,7 @@ Tous les codes ci-dessous sont documentés dans `docs/api-reference.md` (répons
 | 403 | `ACCOUNT_SUSPENDED` | `POST /api/auth/login` | bloc erreur « Compte suspendu », redirection vers 27 ; un compte `closed` renvoie le même code sans recours |
 | 403 | `PATIENT_FORBIDDEN` | patients, entrées, liens, timeline | état erreur du bloc « Ce dossier ne vous est pas accessible », sans « Réessayer » |
 | 409 | `LINK_EXISTS` (+ `existingLinkId`) | `POST /api/entries/{id}/links` | avertissement « Ce lien existe déjà · Modifier le type ? », « Modifier le type » ouvre `PATCH /api/links/{existingLinkId}` |
-| 422 | `VALIDATION_FAILED` + `errors[]` | tout formulaire | résumé `role="alert"` en tête avec liens, message sous chaque champ ; `code` de champ absent dans le module patients |
+| 422 | `VALIDATION_FAILED` + `errors[]` | tout formulaire | résumé `role="alert"` en tête avec liens, message sous chaque champ ; chaque erreur porte `{field, code, message}`, y compris dans le module patients (M10-05) |
 | 423 | `ACCOUNT_LOCKED` (+ `retryAfterSeconds`) | login, changement de mot de passe, 2FA | bloc erreur avec compte à rebours, bouton inactif jusqu'à zéro |
 | 429 | `RATE_LIMITED` (+ `retryAfterSeconds`) | toute route | avertissement « Trop de requêtes, réessayez dans N s », rejeu automatique, saisie conservée (G Q24 : 600 req/min/session) |
 | 5xx, réseau | `detail` générique ou aucune réponse | toute route | état erreur du bloc + « Réessayer » ; sans réponse du tout : bandeau « Connexion perdue · vos brouillons sont conservés » |

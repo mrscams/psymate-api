@@ -7,7 +7,8 @@ public record FlagRequest(
     @Schema(
             description =
                 "Nature du drapeau : watch = à surveiller, risk = risque, shared_care = suivi"
-                    + " partagé. Toute autre valeur est refusée (422 VALIDATION_FAILED).",
+                    + " partagé. Toute autre valeur est refusée (422 INVALID_VALUE), l'absence aussi"
+                    + " (422 REQUIRED).",
             allowableValues = {"watch", "risk", "shared_care"},
             requiredMode = Schema.RequiredMode.REQUIRED,
             example = "risk")

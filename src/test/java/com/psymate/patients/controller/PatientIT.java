@@ -141,7 +141,9 @@ class PatientIT {
   void createWithoutDisplayNameIs422() throws Exception {
     send(post("/api/patients"), "{\"firstName\":\"X\"}")
         .andExpect(status().isUnprocessableEntity())
-        .andExpect(jsonPath("$.errors[0].field").value("displayName"));
+        .andExpect(jsonPath("$.errors[0].field").value("displayName"))
+        .andExpect(jsonPath("$.errors[0].code").value("REQUIRED"))
+        .andExpect(jsonPath("$.errors[0].message").value("Le nom affiché est obligatoire."));
   }
 
   @Test
@@ -163,7 +165,8 @@ class PatientIT {
   void futureBirthDateIs422() throws Exception {
     send(post("/api/patients"), "{\"displayName\":\"A\",\"birthDate\":\"2999-01-01\"}")
         .andExpect(status().isUnprocessableEntity())
-        .andExpect(jsonPath("$.errors[0].field").value("birthDate"));
+        .andExpect(jsonPath("$.errors[0].field").value("birthDate"))
+        .andExpect(jsonPath("$.errors[0].code").value("INVALID_DATE"));
   }
 
   @Test
@@ -325,9 +328,13 @@ class PatientIT {
   void patchRejectsUnknownFieldAndEmptyName() throws Exception {
     String id = createPatientNamed("P");
     send(patch("/api/patients/" + id), "{\"authorType\":\"patient\"}")
-        .andExpect(status().isUnprocessableEntity());
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.errors[0].field").value("authorType"))
+        .andExpect(jsonPath("$.errors[0].code").value("UNKNOWN_FIELD"));
     send(patch("/api/patients/" + id), "{\"displayName\":\" \"}")
-        .andExpect(status().isUnprocessableEntity());
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.errors[0].field").value("displayName"))
+        .andExpect(jsonPath("$.errors[0].code").value("REQUIRED"));
   }
 
   // ---- drapeaux
@@ -337,7 +344,8 @@ class PatientIT {
     String id = createPatientNamed("Flag");
     send(post("/api/patients/" + id + "/flags"), "{\"kind\":\"watch\"}")
         .andExpect(status().isUnprocessableEntity())
-        .andExpect(jsonPath("$.errors[0].field").value("flag.reason"));
+        .andExpect(jsonPath("$.errors[0].field").value("flag.reason"))
+        .andExpect(jsonPath("$.errors[0].code").value("REQUIRED"));
     send(post("/api/patients/" + id + "/flags"), "{\"kind\":\"watch\",\"reason\":\"sommeil\"}")
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.flags[0].reason").value("sommeil"));
@@ -388,10 +396,13 @@ class PatientIT {
     String id = createPatientNamed("Emo");
     send(put("/api/patients/" + id + "/tags"), "{\"tags\":[\"anxiété\"]}")
         .andExpect(status().isUnprocessableEntity())
-        .andExpect(jsonPath("$.code").value("TAG_IS_EMOTION"));
+        .andExpect(jsonPath("$.code").value("TAG_IS_EMOTION"))
+        .andExpect(jsonPath("$.errors[0].field").value("tags[0]"))
+        .andExpect(jsonPath("$.errors[0].code").value("TAG_IS_EMOTION"));
     send(post("/api/patients"), "{\"displayName\":\"E2\",\"tags\":[\"Anxiete\"]}")
         .andExpect(status().isUnprocessableEntity())
-        .andExpect(jsonPath("$.code").value("TAG_IS_EMOTION"));
+        .andExpect(jsonPath("$.code").value("TAG_IS_EMOTION"))
+        .andExpect(jsonPath("$.errors[0].code").value("TAG_IS_EMOTION"));
   }
 
   @Test
@@ -399,7 +410,9 @@ class PatientIT {
     String id = createPatientNamed("Inconnu");
     send(put("/api/patients/" + id + "/tags"), "{\"tags\":[\"pasdetag\"]}")
         .andExpect(status().isUnprocessableEntity())
-        .andExpect(jsonPath("$.code").value("TAG_UNKNOWN"));
+        .andExpect(jsonPath("$.code").value("TAG_UNKNOWN"))
+        .andExpect(jsonPath("$.errors[0].field").value("tags[0]"))
+        .andExpect(jsonPath("$.errors[0].code").value("TAG_UNKNOWN"));
   }
 
   // ---- liste

@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-03T09:55:48.132Z",
+  "task": "M9-20",
+  "agent": "claude",
+  "status": "done",
+  "summary": "R4 non retenue (G Q46) : *Mapper MapStruct, *Assembler manuel, garde ArchUnit et fixture ; aucune classe de production modifiée",
+  "notes": "411 tests unitaires verts en local ; IT à la charge de la CI (aucun IT touché)",
+  "next": "Plan M9 terminé",
+  "pr": "https://github.com/mrscams/psymate-api/pull/71",
+  "branch": "claude/m9-20",
+  "checkout": "m9-19-cb33b1"
+}

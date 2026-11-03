@@ -9,6 +9,7 @@ import com.psymate.identity.auth.model.InvalidCredentialsException;
 import com.psymate.identity.auth.model.PasswordChangeRequiredException;
 import com.psymate.identity.auth.model.PractitionerRow;
 import com.psymate.identity.auth.model.TotpState;
+import com.psymate.identity.auth.model.UserAgents;
 import com.psymate.identity.auth.repository.PractitionerRepository;
 import com.psymate.identity.auth.service.LoginAttemptLimiter.State;
 import com.psymate.identity.auth.service.OtpVerifier.Kind;
@@ -64,8 +65,13 @@ public class LoginService {
     this.dummyHash = encoder.encode("psymate-timing-equalizer");
   }
 
-  public Outcome login(String email, String password, String otpInput, String ip) {
-    return authenticate(email, password, otpInput, ip, Mode.LOGIN);
+  /**
+   * Connexion avec l'appareil déduit de l'User-Agent (M10-06, {@link UserAgents#device}) : le
+   * libellé, jamais l'en-tête brut, est consigné dans le détail de l'événement {@code login_ok}
+   * pour la carte « Dernière connexion ». {@code device} peut être null.
+   */
+  public Outcome login(String email, String password, String otpInput, String ip, String device) {
+    return authenticate(email, password, otpInput, ip, device, Mode.LOGIN);
   }
 
   /**
@@ -76,7 +82,7 @@ public class LoginService {
    */
   public Outcome verifyForPasswordChange(
       String email, String password, String otpInput, String ip) {
-    return authenticate(email, password, otpInput, ip, Mode.PASSWORD_CHANGE);
+    return authenticate(email, password, otpInput, ip, null, Mode.PASSWORD_CHANGE);
   }
 
   /**
@@ -85,7 +91,7 @@ public class LoginService {
    * ACCOUNT_NOT_SUSPENDED sinon). Aucune connexion n'est journalisée, aucune session n'est ouverte.
    */
   Outcome verifyForAppeal(String email, String password, String otpInput, String ip) {
-    return authenticate(email, password, otpInput, ip, Mode.APPEAL);
+    return authenticate(email, password, otpInput, ip, null, Mode.APPEAL);
   }
 
   /** Usage des identifiants : connexion, changement de mot de passe ou recours. */
@@ -96,7 +102,7 @@ public class LoginService {
   }
 
   private Outcome authenticate(
-      String email, String password, String otpInput, String ip, Mode mode) {
+      String email, String password, String otpInput, String ip, String device, Mode mode) {
     String normalized = AuthService.normalizeEmail(email);
     String key = normalized + "|" + (ip == null ? "" : ip);
 
@@ -159,7 +165,10 @@ public class LoginService {
       practitioners.insertSecurityEvent(row.id(), "recovery_code_used", ip, null, now);
     }
     if (mode == Mode.LOGIN) {
-      practitioners.insertSecurityEvent(row.id(), "login_ok", ip, null, now);
+      // Libellé d'une liste fermée (UserAgents) : aucun caractère à échapper dans le JSON.
+      String details =
+          device == null ? null : "{\"" + UserAgents.EVENT_DETAIL + "\":\"" + device + "\"}";
+      practitioners.insertSecurityEvent(row.id(), "login_ok", ip, details, now);
     }
     // Construit depuis ce qui est déjà lu : aucune requête de plus pour la réponse de connexion.
     AccountState account = new AccountState(row.role(), state.enabled(), row.mustChangePassword());

@@ -21,4 +21,8 @@ public interface SecurityEventJpaRepository
           + " and e.kind = :kind")
   Optional<OffsetDateTime> lastOccurredAt(
       @Param("p") UUID practitionerId, @Param("kind") String kind);
+
+  /** Dernier événement d'un genre pour un praticien (M10-06 : dernière connexion réussie). */
+  Optional<SecurityEvent> findFirstByPractitionerIdAndKindOrderByOccurredAtDesc(
+      UUID practitionerId, String kind);
 }

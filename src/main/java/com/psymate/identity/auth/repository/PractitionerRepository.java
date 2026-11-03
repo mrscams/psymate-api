@@ -1,12 +1,14 @@
 package com.psymate.identity.auth.repository;
 
 import com.psymate.identity.auth.model.AccountState;
+import com.psymate.identity.auth.model.LastLogin;
 import com.psymate.identity.auth.model.PractitionerRow;
 import com.psymate.identity.model.Practitioner;
 import com.psymate.identity.model.SecurityEvent;
 import com.psymate.identity.model.Tenant;
 import com.psymate.identity.repository.PractitionerJpaRepository;
 import com.psymate.identity.repository.SecurityEventJpaRepository;
+import com.psymate.identity.repository.SessionNativeQueries;
 import com.psymate.identity.repository.TenantJpaRepository;
 import com.psymate.shared.time.Timestamps;
 import com.psymate.shared.web.IpAddresses;
@@ -14,6 +16,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -192,6 +195,32 @@ public class PractitionerRepository {
   /** Comme deleteSessions, avec le nombre de sessions révoquées (journal de sécurité). */
   public int deleteSessionsCount(UUID id) {
     return practitioners.deleteSessions(id);
+  }
+
+  /** Sessions du praticien non expirées à {@code now}, les plus récemment utilisées d'abord. */
+  public List<SessionNativeQueries.ActiveSessionRow> activeSessions(UUID id, Instant now) {
+    return practitioners.findActiveSessions(id, now);
+  }
+
+  /** Révoque une session du praticien désignée par sa clé interne ; 0 si elle n'existe plus. */
+  public int deleteSession(UUID id, String primaryId) {
+    return practitioners.deleteSessionByPrimaryId(id, primaryId);
+  }
+
+  /**
+   * Dernière connexion réussie (événement login_ok), vide si le compte ne s'est jamais connecté.
+   */
+  public Optional<LastLogin> lastLogin(UUID id) {
+    return events
+        .findFirstByPractitionerIdAndKindOrderByOccurredAtDesc(id, "login_ok")
+        .map(
+            e -> {
+              Object device = e.getDetails() == null ? null : e.getDetails().get("device");
+              return new LastLogin(
+                  Timestamps.instant(e.getOccurredAt()),
+                  device instanceof String s ? s : null,
+                  null);
+            });
   }
 
   /** Fin de verrou enregistrée en base (second garde, survit à un redémarrage). */

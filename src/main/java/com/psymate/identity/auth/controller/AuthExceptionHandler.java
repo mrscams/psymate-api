@@ -4,6 +4,7 @@ import com.psymate.identity.api.AuthErrorScope;
 import com.psymate.identity.auth.model.AccountLockedException;
 import com.psymate.identity.auth.model.AccountNotSuspendedException;
 import com.psymate.identity.auth.model.AccountSuspendedException;
+import com.psymate.identity.auth.model.CurrentSessionException;
 import com.psymate.identity.auth.model.EmailNotConfirmedException;
 import com.psymate.identity.auth.model.FieldValidationException;
 import com.psymate.identity.auth.model.InvalidCredentialsException;
@@ -12,6 +13,7 @@ import com.psymate.identity.auth.model.InvalidTokenException;
 import com.psymate.identity.auth.model.PasswordChangeRequiredException;
 import com.psymate.identity.auth.model.PasswordPolicyException;
 import com.psymate.identity.auth.model.PasswordUnchangedException;
+import com.psymate.identity.auth.model.SessionNotFoundException;
 import com.psymate.identity.auth.model.TwoFactorStateException;
 import com.psymate.identity.auth.service.AuthMessages;
 import com.psymate.shared.problem.AdviceOrder;
@@ -36,7 +38,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @Order(AdviceOrder.MODULE)
 @RestControllerAdvice(
-    assignableTypes = {AuthController.class, TwoFactorController.class, AuthErrorScope.class})
+    assignableTypes = {
+      AuthController.class,
+      TwoFactorController.class,
+      MeSecurityController.class,
+      AuthErrorScope.class
+    })
 class AuthExceptionHandler {
 
   private final AuthMessages messages;
@@ -228,6 +235,28 @@ class AuthExceptionHandler {
             ex.code(),
             messages.get("error.twofactor.title", locale),
             messages.get("error." + ex.code(), locale));
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
+  }
+
+  @ExceptionHandler(SessionNotFoundException.class)
+  ResponseEntity<ProblemDetail> sessionNotFound(Locale locale) {
+    ProblemDetail pd =
+        problem(
+            HttpStatus.NOT_FOUND,
+            "SESSION_NOT_FOUND",
+            messages.get("error.sessionNotFound.title", locale),
+            messages.get("error.sessionNotFound.detail", locale));
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(pd);
+  }
+
+  @ExceptionHandler(CurrentSessionException.class)
+  ResponseEntity<ProblemDetail> currentSession(Locale locale) {
+    ProblemDetail pd =
+        problem(
+            HttpStatus.CONFLICT,
+            "CURRENT_SESSION",
+            messages.get("error.currentSession.title", locale),
+            messages.get("error.currentSession.detail", locale));
     return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
   }
 }

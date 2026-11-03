@@ -20,6 +20,7 @@ import com.psymate.identity.auth.model.AccountState;
 import com.psymate.identity.auth.model.FieldValidationException;
 import com.psymate.identity.auth.model.InvalidCredentialsException;
 import com.psymate.identity.auth.model.PractitionerRow;
+import com.psymate.identity.auth.model.UserAgents;
 import com.psymate.identity.auth.service.AuthMessages;
 import com.psymate.identity.auth.service.AuthService;
 import com.psymate.identity.auth.service.LoginService;
@@ -467,8 +468,10 @@ class AuthController {
       @Valid @RequestBody LoginRequest r,
       HttpServletRequest request,
       HttpServletResponse response) {
+    // Libellé navigateur + système : l'en-tête brut n'est ni stocké ni journalisé (M10-06).
+    String device = UserAgents.device(request.getHeader(HttpHeaders.USER_AGENT));
     LoginService.Outcome outcome =
-        loginService.login(r.email(), r.password(), r.otp(), request.getRemoteAddr());
+        loginService.login(r.email(), r.password(), r.otp(), request.getRemoteAddr(), device);
     if (outcome instanceof LoginService.Outcome.OtpRequired) {
       return ResponseEntity.accepted().body(new OtpRequiredResponse(true));
     }
@@ -726,6 +729,11 @@ class AuthController {
     securityContextRepository.saveContext(context, request, response);
 
     HttpSession session = request.getSession(true);
+    String device = UserAgents.device(request.getHeader(HttpHeaders.USER_AGENT));
+    if (device != null) {
+      // Attribut de session Spring Session : lu par GET /api/me/security, aucune migration.
+      session.setAttribute(UserAgents.SESSION_ATTRIBUTE, device);
+    }
     session.setMaxInactiveInterval(
         (int) (rememberMe ? sessionRememberMe : sessionDefault).toSeconds());
     if (rememberMe) {

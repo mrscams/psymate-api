@@ -2,11 +2,11 @@ package com.psymate.patients.model;
 
 /**
  * Codes de champ des {@code errors[]} des 422 du module patients (champ {@code code} de {@link
- * com.psymate.shared.problem.FieldProblem}). Ce sont les codes des autres modules (clinical, identity) :
- * REQUIRED (obligatoire manquant ou vide), TOO_LONG (trop long), INVALID_VALUE (hors liste admise),
- * INVALID_DATE (date hors bornes), INVALID_FORMAT (valeur illisible : date, curseur, objet
- * attendu), UNKNOWN_FIELD (clé non modifiable ou inconnue). TAG_IS_EMOTION et TAG_UNKNOWN sont les
- * codes métier de tag, repris tels quels dans errors[0] comme à la racine.
+ * com.psymate.shared.problem.FieldProblem}). Ce sont les codes des autres modules (clinical,
+ * identity) : REQUIRED (obligatoire manquant ou vide), TOO_LONG (trop long), INVALID_VALUE (hors
+ * liste admise), INVALID_DATE (date hors bornes), INVALID_FORMAT (valeur illisible : date, curseur,
+ * objet attendu), UNKNOWN_FIELD (clé non modifiable ou inconnue). TAG_IS_EMOTION et TAG_UNKNOWN
+ * sont les codes métier de tag, repris tels quels dans errors[0] comme à la racine.
  */
 public final class PatientFieldCode {
 

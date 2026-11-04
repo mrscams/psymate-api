@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-03T20:34:21.327Z",
+  "task": "PROJET",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR psymate-web 1 fusionnee (597f638) : docs de reference, 32 fiches design et maquettes, contrat 0.11.0 dans docs/contract, api-reference regeneree",
+  "notes": "Depot distant psymate-web pousse pour la premiere fois (main + branche docs). Pas de CI web avant M0-06.",
+  "next": "Document H (runbook frontend), fiche 00 posee par M1-07 ; M10-07 (V1.1) seule tache API restante du lot 10",
+  "pr": "https://github.com/mrscams/psymate-web/pull/1",
+  "branch": "main",
+  "checkout": "psymate-api"
+}

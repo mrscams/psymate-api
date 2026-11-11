@@ -40,6 +40,8 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
 </head>
 <body>
 
+<!-- UX-F1 (11 nov. 2026) : distance (« 0,4 km », tri Distance, « rayon de 25 km »), tarif des fiches résumées, bascule Liste | Carte et « et alentours » retirés (contrat : Card sans tarif ni distanceKm, aucune position en V1, city = ville exacte) ; état B (carte) retiré, il reste dans l'historique git (commit 1498e50 de ce dépôt, ou psymate-web 597f638) comme référence V1.1 ; champ Mot-clé (q) ajouté au bandeau de recherche ; modalité « À domicile » (home) ajoutée ; pas de compteur sur « Accepte de nouveaux patients » (aucune facette accepting au contrat) ; tri Pertinence | Nom. Sous 760 px, la colonne de filtres se replie sous un bouton « Filtres (n) » (décrit dans la fiche, non dessiné). -->
+
 <div style="width: 100%; min-height: 1240px; display: flex; flex-direction: column; background: #EEF1F6">
 
   <!-- Bandeau public (layout partagé 09/11/12/24/25/26/27) -->
@@ -65,19 +67,23 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
     <!-- ÉTAT A · Résultats en liste                                             -->
     <!-- ======================================================================= -->
     <section aria-labelledby="etat-a">
-      <div class="etat"><strong id="etat-a">État A</strong> Résultats · 42 praticiens · tri par distance · bascule Liste active · GET /api/public/directory?city=Paris&amp;sort=distance&amp;page=1</div>
+      <div class="etat"><strong id="etat-a">État A</strong> Résultats · 42 praticiens · tri par pertinence · GET /api/public/directory?city=Paris&amp;page=1</div>
 
       <div style="max-width: 1360px; width: 100%; margin: 0 auto; padding: 28px 40px 48px; display: flex; flex-direction: column; gap: 20px">
 
         <!-- Bandeau de recherche -->
         <div style="display: flex; flex-direction: column; gap: 14px">
           <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em">Trouver un psychologue, un psychiatre ou un coach</h1>
-          <form role="search" aria-label="Recherche de praticiens" class="card" style="padding: 16px 18px; display: grid; grid-template-columns: 1.4fr 1fr 1.3fr auto; gap: 12px; align-items: end" onsubmit="return false">
+          <form role="search" aria-label="Recherche de praticiens" class="card" style="padding: 16px 18px; display: grid; grid-template-columns: 1.3fr 1.1fr 1fr 1.2fr auto; gap: 12px; align-items: end" onsubmit="return false">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="a-q" style="font-size: 12px; font-weight: 500; color: #5A6679">Mot-clé</label>
+              <input id="a-q" type="search" class="field" placeholder="Nom, spécialité, approche…" maxlength="100">
+            </div>
             <div style="display: flex; flex-direction: column; gap: 6px">
               <label for="a-ville" style="font-size: 12px; font-weight: 500; color: #5A6679">Ville ou code postal</label>
               <div style="position: relative">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A94A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 13px; top: 14px"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                <input id="a-ville" type="text" class="field" value="Paris 11e" style="padding-left: 38px">
+                <input id="a-ville" type="text" class="field" value="Paris" style="padding-left: 38px">
               </div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 6px">
@@ -148,6 +154,7 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
               <legend style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; padding: 0; margin-bottom: 6px">Modalités</legend>
               <label class="facet"><span><input type="checkbox">Au cabinet</span><span class="n">38</span></label>
               <label class="facet"><span><input type="checkbox">En visio</span><span class="n">29</span></label>
+              <label class="facet"><span><input type="checkbox">À domicile</span><span class="n">4</span></label>
             </fieldset>
 
             <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column">
@@ -158,7 +165,7 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
               <label class="facet"><span><input type="checkbox">Arabe</span><span class="n">3</span></label>
             </fieldset>
 
-            <label class="facet" style="border-top: 1px solid #D6DCE6; padding-top: 14px; font-weight: 500"><span><input type="checkbox">Accepte de nouveaux patients</span><span class="n">31</span></label>
+            <label class="facet" style="border-top: 1px solid #D6DCE6; padding-top: 14px; font-weight: 500"><span><input type="checkbox">Accepte de nouveaux patients</span></label>
           </aside>
 
           <!-- Résultats -->
@@ -166,21 +173,13 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
 
             <!-- Barre d'outils : compte, tri, bascule -->
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
-              <p style="margin: 0; font-size: 14px" aria-live="polite"><strong style="font-weight: 600">42 praticiens</strong> <span style="color: #5A6679">à Paris 11e et alentours</span></p>
+              <p style="margin: 0; font-size: 14px" aria-live="polite"><strong style="font-weight: 600">42 praticiens</strong> <span style="color: #5A6679">à Paris</span></p>
               <div style="display: flex; align-items: center; gap: 14px">
                 <label for="a-tri" style="font-size: 13px; color: #5A6679">Tri :</label>
                 <select id="a-tri" style="height: 36px; border: 1px solid #B9C2D1; border-radius: 9px; padding: 0 10px; background: #FFFFFF; font-weight: 500">
-                  <option selected>Distance</option>
-                  <option>Pertinence</option>
+                  <option selected>Pertinence</option>
+                  <option>Nom</option>
                 </select>
-                <div role="group" aria-label="Affichage" style="display: inline-flex; border: 1px solid #B9C2D1; border-radius: 9px; overflow: hidden; background: #FFFFFF">
-                  <button type="button" aria-pressed="true" style="height: 36px; padding: 0 14px; border: 0; background: #3A63C2; color: #FFFFFF; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>Liste
-                  </button>
-                  <button type="button" aria-pressed="false" style="height: 36px; padding: 0 14px; border: 0; border-left: 1px solid #B9C2D1; background: #FFFFFF; color: #1E2633; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E2633" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>Carte
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -199,11 +198,10 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
                   <p style="margin: 0; font-size: 13px; color: #5A6679">Psychologue clinicienne · TCC et gestion de l'anxiété chez l'adulte, en cabinet ou à distance…</p>
                   <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="tag">Anxiété</span><span class="tag">TCC</span><span class="tag">Burn-out</span><span class="tag">Estime de soi</span></div>
                   <div class="meta">
-                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris 11e · <span style="font-family: 'JetBrains Mono', monospace">0,4 km</span></span>
+                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris</span>
                     <span><span class="sq" aria-hidden="true"></span>Cabinet et visio</span>
                     <span>Adultes, jeunes adultes</span>
                     <span>Français, anglais</span>
-                    <span>Séance · <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: #1E2633">[TARIF] €</span></span>
                   </div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-shrink: 0">
@@ -227,11 +225,10 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
                   <p style="margin: 0; font-size: 13px; color: #5A6679">Psychiatre, ancien chef de clinique. Troubles de l'humeur et du sommeil ; suivi conjoint avec votre médecin traitant si vous le souhaitez…</p>
                   <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="tag">Dépression</span><span class="tag">Troubles bipolaires</span><span class="tag">Troubles du sommeil</span></div>
                   <div class="meta">
-                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris 11e · <span style="font-family: 'JetBrains Mono', monospace">1,2 km</span></span>
+                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris</span>
                     <span><span class="sq" aria-hidden="true"></span>Cabinet</span>
                     <span>Adultes</span>
                     <span>Français, arabe</span>
-                    <span>Séance · <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: #1E2633">[TARIF] €</span></span>
                   </div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-shrink: 0">
@@ -253,11 +250,10 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
                   <p style="margin: 0; font-size: 13px; color: #5A6679">Psychologue spécialisée dans le psychotraumatisme (EMDR). Je reçois adolescents et adultes, en français, anglais ou espagnol…</p>
                   <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="tag">EMDR</span><span class="tag">Traumatismes et stress post-traumatique</span><span class="tag">Phobies</span><span class="tag">Deuil</span></div>
                   <div class="meta">
-                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris 20e · <span style="font-family: 'JetBrains Mono', monospace">1,8 km</span></span>
+                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris</span>
                     <span><span class="sq" aria-hidden="true"></span>Cabinet et visio</span>
                     <span>Adolescents, adultes</span>
                     <span>Français, anglais, espagnol</span>
-                    <span>Séance · <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: #1E2633">[TARIF] €</span></span>
                   </div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-shrink: 0">
@@ -279,11 +275,10 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
                   <p style="margin: 0; font-size: 13px; color: #5A6679">Coach certifiée, accompagnement des transitions professionnelles et de la reprise après un burn-out. Séances en visio ou au cabinet…</p>
                   <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="tag">Accompagnement professionnel</span><span class="tag">Gestion du stress</span><span class="tag">Burn-out</span></div>
                   <div class="meta">
-                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris 3e · <span style="font-family: 'JetBrains Mono', monospace">2,3 km</span></span>
+                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris</span>
                     <span><span class="sq" aria-hidden="true"></span>Visio et cabinet</span>
                     <span>Adultes</span>
                     <span>Français</span>
-                    <span>Séance · <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: #1E2633">[TARIF] €</span></span>
                   </div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-shrink: 0">
@@ -305,11 +300,10 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
                   <p style="margin: 0; font-size: 13px; color: #5A6679">Pédopsychiatre. Consultations pour enfants et adolescents, en lien avec les familles et l'école…</p>
                   <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="tag">TDAH</span><span class="tag">Troubles du spectre autistique</span><span class="tag">Anxiété</span><span class="tag">Parentalité</span></div>
                   <div class="meta">
-                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris 12e · <span style="font-family: 'JetBrains Mono', monospace">3,1 km</span></span>
+                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris</span>
                     <span><span class="sq" aria-hidden="true"></span>Cabinet</span>
                     <span>Enfants, adolescents, couples et familles</span>
                     <span>Français, anglais</span>
-                    <span>Séance · <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: #1E2633">[TARIF] €</span></span>
                   </div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-shrink: 0">
@@ -339,144 +333,7 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
       </div>
     </section>
 
-    <!-- ======================================================================= -->
-    <!-- ÉTAT B · Même recherche, bascule Carte active                           -->
-    <!-- ======================================================================= -->
-    <section aria-labelledby="etat-b">
-      <div class="etat"><strong id="etat-b">État B</strong> Même page, bascule Carte active · liste compacte à gauche, marqueur n°2 sélectionné · le bandeau de recherche et les filtres sont identiques à l'état A</div>
-
-      <div style="max-width: 1360px; width: 100%; margin: 0 auto; padding: 28px 40px 48px; display: flex; flex-direction: column; gap: 14px">
-
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
-          <p style="margin: 0; font-size: 14px"><strong style="font-weight: 600">42 praticiens</strong> <span style="color: #5A6679">à Paris 11e et alentours · 5 affichés sur la carte</span></p>
-          <div style="display: flex; align-items: center; gap: 14px">
-            <label for="b-tri" style="font-size: 13px; color: #5A6679">Tri :</label>
-            <select id="b-tri" style="height: 36px; border: 1px solid #B9C2D1; border-radius: 9px; padding: 0 10px; background: #FFFFFF; font-weight: 500">
-              <option selected>Distance</option>
-              <option>Pertinence</option>
-            </select>
-            <div role="group" aria-label="Affichage" style="display: inline-flex; border: 1px solid #B9C2D1; border-radius: 9px; overflow: hidden; background: #FFFFFF">
-              <button type="button" aria-pressed="false" style="height: 36px; padding: 0 14px; border: 0; background: #FFFFFF; color: #1E2633; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E2633" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>Liste
-              </button>
-              <button type="button" aria-pressed="true" style="height: 36px; padding: 0 14px; border: 0; border-left: 1px solid #B9C2D1; background: #3A63C2; color: #FFFFFF; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>Carte
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 20px; align-items: stretch; height: 560px">
-
-          <!-- Liste compacte -->
-          <ol style="list-style: none; margin: 0; padding: 0; flex: 0 0 380px; display: flex; flex-direction: column; gap: 8px; overflow: hidden" aria-label="Résultats sur la carte">
-            <li class="card" style="padding: 12px 14px; display: flex; gap: 12px; align-items: center">
-              <span style="width: 24px; height: 24px; border-radius: 50%; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">1</span>
-              <div style="min-width: 0; flex: 1 1 auto">
-                <div style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 600">Claire Lambert</span><span class="prof prof-psy">Psychologue</span></div>
-                <div style="font-size: 12px; color: #5A6679">Paris 11e · <span style="font-family: 'JetBrains Mono', monospace">0,4 km</span> · Cabinet et visio</div>
-              </div>
-            </li>
-            <li class="card" style="padding: 12px 14px; display: flex; gap: 12px; align-items: center; background: #E3EAF8; border-color: #B9C2D1" aria-current="true">
-              <span style="width: 24px; height: 24px; border-radius: 50%; background: #2C4C99; color: #FFFFFF; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">2</span>
-              <div style="min-width: 0; flex: 1 1 auto">
-                <div style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 600">Dr Karim Benali</span><span class="prof prof-psych">Psychiatre</span></div>
-                <div style="font-size: 12px; color: #5A6679">Paris 11e · <span style="font-family: 'JetBrains Mono', monospace">1,2 km</span> · Cabinet · Liste d'attente</div>
-              </div>
-            </li>
-            <li class="card" style="padding: 12px 14px; display: flex; gap: 12px; align-items: center">
-              <span style="width: 24px; height: 24px; border-radius: 50%; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">3</span>
-              <div style="min-width: 0; flex: 1 1 auto">
-                <div style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 600">Inès Rahmani</span><span class="prof prof-psy">Psychologue</span></div>
-                <div style="font-size: 12px; color: #5A6679">Paris 20e · <span style="font-family: 'JetBrains Mono', monospace">1,8 km</span> · Cabinet et visio</div>
-              </div>
-            </li>
-            <li class="card" style="padding: 12px 14px; display: flex; gap: 12px; align-items: center">
-              <span style="width: 24px; height: 24px; border-radius: 50%; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">4</span>
-              <div style="min-width: 0; flex: 1 1 auto">
-                <div style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 600">Sophie Marchand</span><span class="prof prof-coach">Coach</span></div>
-                <div style="font-size: 12px; color: #5A6679">Paris 3e · <span style="font-family: 'JetBrains Mono', monospace">2,3 km</span> · Visio et cabinet</div>
-              </div>
-            </li>
-            <li class="card" style="padding: 12px 14px; display: flex; gap: 12px; align-items: center">
-              <span style="width: 24px; height: 24px; border-radius: 50%; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">5</span>
-              <div style="min-width: 0; flex: 1 1 auto">
-                <div style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 600">Dr Anne Lenoir</span><span class="prof prof-psych">Psychiatre</span></div>
-                <div style="font-size: 12px; color: #5A6679">Paris 12e · <span style="font-family: 'JetBrains Mono', monospace">3,1 km</span> · Cabinet · Complet</div>
-              </div>
-            </li>
-            <li style="margin-top: auto; font-size: 12px; color: #8A94A6; padding: 4px 2px">Déplacez la carte pour actualiser la liste. Seuls les praticiens au dossier vérifié sont affichés.</li>
-          </ol>
-
-          <!-- Carte stylisée (statique en V1 : pas de fournisseur tiers) -->
-          <div style="flex: 1 1 auto; min-width: 0; border: 1px solid #D6DCE6; border-radius: 14px; background: #E4E8F0; position: relative; overflow: hidden" role="img" aria-label="Carte de Paris 11e et alentours : 5 praticiens, le n°2 Dr Karim Benali est sélectionné">
-            <svg width="100%" height="100%" viewBox="0 0 880 558" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-              <rect width="880" height="558" fill="#E4E8F0"></rect>
-              <!-- Parc et plan d'eau -->
-              <path d="M560 60 C 640 40, 720 70, 730 150 C 740 220, 650 250, 590 220 C 540 190, 520 110, 560 60 Z" fill="#E4F2EA"></path>
-              <path d="M0 420 C 120 380, 240 460, 380 430 C 520 400, 640 470, 880 440 L 880 490 C 640 520, 520 450, 380 480 C 240 510, 120 430, 0 470 Z" fill="#E3EAF8"></path>
-              <!-- Rues secondaires -->
-              <g stroke="#FFFFFF" stroke-width="5" fill="none" stroke-linecap="round">
-                <path d="M0 120 H880 M0 250 H880 M0 350 H880 M120 0 V558 M260 0 V558 M420 0 V558 M660 0 V558 M780 0 V558"></path>
-                <path d="M60 0 L 200 558 M520 0 L 380 558 M880 300 L 600 558"></path>
-              </g>
-              <g stroke="#D6DCE6" stroke-width="1" fill="none">
-                <path d="M0 120 H880 M0 250 H880 M0 350 H880 M120 0 V558 M260 0 V558 M420 0 V558 M660 0 V558 M780 0 V558"></path>
-              </g>
-              <!-- Boulevards -->
-              <path d="M0 190 C 200 170, 400 220, 880 180" stroke="#FFFFFF" stroke-width="12" fill="none"></path>
-              <path d="M0 190 C 200 170, 400 220, 880 180" stroke="#B9C2D1" stroke-width="1.5" fill="none"></path>
-              <path d="M340 0 C 360 200, 300 360, 330 558" stroke="#FFFFFF" stroke-width="12" fill="none"></path>
-              <path d="M340 0 C 360 200, 300 360, 330 558" stroke="#B9C2D1" stroke-width="1.5" fill="none"></path>
-              <!-- Noms de quartiers -->
-              <g font-family="Inter, system-ui, sans-serif" font-size="11" fill="#8A94A6" font-weight="500">
-                <text x="612" y="150">Parc</text>
-                <text x="150" y="70">Paris 3e</text>
-                <text x="470" y="320">Paris 11e</text>
-                <text x="720" y="330">Paris 20e</text>
-                <text x="520" y="530">Paris 12e</text>
-              </g>
-              <!-- Marqueurs (cobalt, numérotés) -->
-              <g font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">
-                <circle cx="440" cy="290" r="14" fill="#3A63C2" stroke="#FFFFFF" stroke-width="3"></circle><text x="440" y="294.5">1</text>
-                <circle cx="700" cy="300" r="14" fill="#3A63C2" stroke="#FFFFFF" stroke-width="3"></circle><text x="700" y="304.5">3</text>
-                <circle cx="190" cy="110" r="14" fill="#3A63C2" stroke="#FFFFFF" stroke-width="3"></circle><text x="190" y="114.5">4</text>
-                <circle cx="560" cy="500" r="14" fill="#3A63C2" stroke="#FFFFFF" stroke-width="3"></circle><text x="560" y="504.5">5</text>
-                <!-- n°2 sélectionné -->
-                <circle cx="380" cy="380" r="24" fill="#3A63C2" fill-opacity="0.18"></circle>
-                <circle cx="380" cy="380" r="17" fill="#2C4C99" stroke="#FFFFFF" stroke-width="3"></circle><text x="380" y="385" font-size="13">2</text>
-              </g>
-              <!-- Échelle -->
-              <g font-family="JetBrains Mono, monospace" font-size="10" fill="#5A6679">
-                <path d="M20 530 H100" stroke="#5A6679" stroke-width="2"></path><path d="M20 525 V535 M100 525 V535" stroke="#5A6679" stroke-width="2"></path>
-                <text x="104" y="534">500 m</text>
-              </g>
-            </svg>
-
-            <!-- Bulle résumé du marqueur sélectionné -->
-            <div style="position: absolute; left: 290px; top: 190px; width: 300px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 14px 16px; box-shadow: 0 6px 18px rgba(30,38,51,0.14); display: flex; flex-direction: column; gap: 8px">
-              <span style="position: absolute; left: 160px; bottom: -8px; width: 14px; height: 14px; background: #FFFFFF; border-right: 1px solid #D6DCE6; border-bottom: 1px solid #D6DCE6; transform: rotate(45deg)" aria-hidden="true"></span>
-              <div style="display: flex; align-items: center; gap: 10px">
-                <span class="avatar" style="width: 36px; height: 36px; font-size: 13px; background: #E4E8F0" aria-hidden="true">KB</span>
-                <div style="min-width: 0">
-                  <div style="font-weight: 600; font-size: 14px">Dr Karim Benali</div>
-                  <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px"><span class="prof prof-psych">Psychiatre</span><span class="verified"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1E6B45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Vérifié</span></div>
-                </div>
-              </div>
-              <div style="font-size: 12px; color: #5A6679">Paris 11e · <span style="font-family: 'JetBrains Mono', monospace">1,2 km</span> · Cabinet · Liste d'attente</div>
-              <div style="display: flex; flex-wrap: wrap; gap: 4px"><span class="tag" style="font-size: 11px; padding: 2px 8px">Dépression</span><span class="tag" style="font-size: 11px; padding: 2px 8px">Troubles bipolaires</span></div>
-              <a href="#" style="font-size: 13px; font-weight: 600; text-decoration: none">Voir la fiche →</a>
-            </div>
-
-            <!-- Commandes de zoom -->
-            <div style="position: absolute; right: 14px; top: 14px; display: flex; flex-direction: column; border: 1px solid #B9C2D1; border-radius: 9px; overflow: hidden; background: #FFFFFF">
-              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; border-bottom: 1px solid #D6DCE6" aria-hidden="true">+</span>
-              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; font-weight: 600" aria-hidden="true">−</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- État B (carte) retiré par UX-F1 : hors V1, faute de géolocalisation (fiche 08, « Écarts »). Référence V1.1 : commit 1498e50 de ce dépôt (ou psymate-web 597f638). -->
 
     <!-- ======================================================================= -->
     <!-- ÉTAT C · Aucun résultat                                                 -->
@@ -486,7 +343,11 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
 
       <div style="max-width: 1360px; width: 100%; margin: 0 auto; padding: 28px 40px 56px; display: flex; flex-direction: column; gap: 20px">
 
-        <form role="search" aria-label="Recherche de praticiens" class="card" style="padding: 16px 18px; display: grid; grid-template-columns: 1.4fr 1fr 1.3fr auto; gap: 12px; align-items: end" onsubmit="return false">
+        <form role="search" aria-label="Recherche de praticiens" class="card" style="padding: 16px 18px; display: grid; grid-template-columns: 1.3fr 1.1fr 1fr 1.2fr auto; gap: 12px; align-items: end" onsubmit="return false">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="c-q" style="font-size: 12px; font-weight: 500; color: #5A6679">Mot-clé</label>
+            <input id="c-q" type="search" class="field" placeholder="Nom, spécialité, approche…" maxlength="100">
+          </div>
           <div style="display: flex; flex-direction: column; gap: 6px">
             <label for="c-ville" style="font-size: 12px; font-weight: 500; color: #5A6679">Ville ou code postal</label>
             <input id="c-ville" type="text" class="field" value="Brest">
@@ -538,10 +399,10 @@ input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
               </span>
               <div style="display: flex; flex-direction: column; gap: 6px; max-width: 520px">
                 <h2 style="margin: 0; font-size: 20px; font-weight: 600">Aucun praticien à Brest pour ces critères</h2>
-                <p style="margin: 0; color: #5A6679; line-height: 1.6">Aucune fiche vérifiée ne correspond à « psychiatre · EMDR · au cabinet » dans un rayon de 25 km. Essayez l'une des pistes ci-dessous.</p>
+                <p style="margin: 0; color: #5A6679; line-height: 1.6">Aucune fiche vérifiée ne correspond à « psychiatre · EMDR · au cabinet » à Brest. Essayez l'une des pistes ci-dessous.</p>
               </div>
               <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px" aria-label="Suggestions">
-                <li><a href="#" class="btn-secondary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E2633" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"></circle></svg>Élargir le rayon à 50 km</a></li>
+                <li><a href="#" class="btn-secondary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E2633" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"></circle></svg>Chercher dans toutes les villes</a></li>
                 <li><a href="#" class="btn-secondary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E2633" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>Retirer le filtre « EMDR »</a></li>
                 <li><a href="#" class="btn-secondary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E2633" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"></rect><path d="m16 10 5-3v10l-5-3z"></path></svg>Inclure les consultations en visio</a></li>
               </ul>

@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Inscription – créer un compte praticien</title>
+<title>Inscription – PsyMate</title>
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
 <style>
@@ -17,6 +17,8 @@ input,button,select{font-family:inherit}
 </head>
 <body>
 
+<!-- UX-F1 (11 nov. 2026) : case « nouveautés de la bêta » retirée (le contrat n'a que consents.terms et consents.privacy) ; colonne « Ensuite / Vos données » conservée à droite du formulaire, à partir de 1 024 px (en dessous, elle passe sous le bouton) ; nom PsyMate. -->
+
 
 <div style="min-height: 1660px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.5">
 
@@ -26,7 +28,7 @@ input,button,select{font-family:inherit}
       <span style="width: 28px; height: 28px; border-radius: 8px; background: #3A63C2; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
       </span>
-      Suivi
+      PsyMate
     </div>
     <span style="font-size: 13px; color: #5A6679">Déjà un compte ? <a href="#login" style="text-decoration: none; font-weight: 500">Se connecter</a></span>
   </div>
@@ -131,10 +133,6 @@ input,button,select{font-family:inherit}
         <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #1E2633; cursor: pointer; line-height: 1.5">
           <input type="checkbox" style="width: 16px; height: 16px; accent-color: #3A63C2; margin-top: 2px; flex-shrink: 0">
           <span>J'accepte les <a href="#cgu" style="text-decoration: none">conditions d'utilisation</a> et j'ai lu la <a href="#privacy" style="text-decoration: none">politique de confidentialité</a>. Je comprends que je suis responsable du traitement des données de mes patients et que la plateforme en est l'hébergeur.</span>
-        </label>
-        <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #5A6679; cursor: pointer; line-height: 1.5">
-          <input type="checkbox" style="width: 16px; height: 16px; accent-color: #3A63C2; margin-top: 2px; flex-shrink: 0">
-          <span>Je souhaite recevoir les nouveautés de la bêta (un e-mail par mois au plus).</span>
         </label>
       </section>
 

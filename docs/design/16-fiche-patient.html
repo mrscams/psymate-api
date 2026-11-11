@@ -1,0 +1,229 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Modifier la fiche de Marie D.</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select,textarea{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 1240px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>Suivi</div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a><span style="color: #9AA5B8">/</span>
+    <a href="#patient" style="font-size: 13px; color: #5A6679; text-decoration: none">Marie D.</a><span style="color: #9AA5B8">/</span>
+    <span style="font-size: 13px">Fiche</span>
+    <div style="flex: 1 1 auto"></div>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CL</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; align-items: flex-start; max-width: 1240px; width: 100%; margin: 0 auto">
+
+    <!-- Formulaire -->
+    <form onsubmit="return false" style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 18px" aria-labelledby="h-form">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h1 id="h-form" style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Modifier la fiche · Marie D.</h1>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Créée le 3 mars 2025 · 31 séances · dernière modification de la fiche le 3 oct. 2026 (drapeau posé). Pour un <strong style="font-weight: 600">nouveau patient</strong>, le même formulaire s'ouvre vide, titré « Nouveau patient », et seul le nom affiché est obligatoire.</p>
+        </div>
+      </div>
+
+      <!-- Identité -->
+      <section aria-labelledby="h-id" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-id" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Identité</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2">
+            <label for="display" style="font-size: 13px; font-weight: 500">Nom affiché <span style="color: #9A2F22">*</span> <span style="color: #8A94A6; font-weight: 400">· tel qu'il apparaît partout dans l'application</span></label>
+            <input id="display" type="text" value="Marie D." style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; color: #1E2633; background: #FFFFFF">
+            <span style="font-size: 12px; color: #5A6679">Vous pouvez n'utiliser qu'un prénom et une initiale : les nom et prénom complets ci-dessous restent facultatifs.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="prenom" style="font-size: 13px; font-weight: 500">Prénom <span style="color: #8A94A6; font-weight: 400">(facultatif)</span></label>
+            <input id="prenom" type="text" value="Marie" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="nom" style="font-size: 13px; font-weight: 500">Nom <span style="color: #8A94A6; font-weight: 400">(facultatif)</span></label>
+            <input id="nom" type="text" value="Dubois" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="naissance" style="font-size: 13px; font-weight: 500">Date de naissance <span style="color: #8A94A6; font-weight: 400">· sert à l'âge et aux phases de vie</span></label>
+            <input id="naissance" type="text" value="14/06/1992" placeholder="JJ/MM/AAAA ou année seule" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="pronom" style="font-size: 13px; font-weight: 500">Pronom / accord</label>
+            <select id="pronom" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #1E2633; background: #FFFFFF"><option>Elle</option><option>Il</option><option>Iel</option><option>Ne pas préciser</option></select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="tel" style="font-size: 13px; font-weight: 500">Téléphone <span style="color: #8A94A6; font-weight: 400">(facultatif)</span></label>
+            <input id="tel" type="tel" placeholder="06 …" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="email" style="font-size: 13px; font-weight: 500">E-mail <span style="color: #8A94A6; font-weight: 400">(facultatif)</span></label>
+            <input id="email" type="email" placeholder="pour les rappels, plus tard" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+        </div>
+      </section>
+
+      <!-- Contexte -->
+      <section aria-labelledby="h-ctx" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-ctx" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Contexte</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="situation" style="font-size: 13px; font-weight: 500">Situation</label>
+            <input id="situation" type="text" value="En couple, un enfant de 4 ans" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="activite" style="font-size: 13px; font-weight: 500">Activité</label>
+            <input id="activite" type="text" value="Cheffe de projet, agence web" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="adresse" style="font-size: 13px; font-weight: 500">Adressée par</label>
+            <input id="adresse" type="text" value="Médecin traitant (Dr Lenoir)" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="motif" style="font-size: 13px; font-weight: 500">Motif initial</label>
+            <input id="motif" type="text" value="Anxiété liée au travail, troubles du sommeil" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2">
+            <label for="histoire" style="font-size: 13px; font-weight: 500">Histoire et éléments à garder en tête <span style="color: #8A94A6; font-weight: 400">· texte libre, visible dans la vue d'ensemble</span></label>
+            <textarea id="histoire" rows="4" style="border: 1px solid #B9C2D1; border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.6; color: #1E2633; background: #FFFFFF; resize: vertical">Premier suivi psychologique. Épisode anxieux en 2019 (entretien annuel), résolu sans suivi. Père décédé en 2021. Conflit ancien avec sa sœur aînée. Pratique la course à pied, qu'elle a arrêtée en août 2026.</textarea>
+            <span style="font-size: 12px; color: #5A6679">Les faits datés (décès, épisodes) gagnent à être saisis comme <strong style="font-weight: 500; color: #1E2633">événements</strong> ou <strong style="font-weight: 500; color: #1E2633">situations</strong> dans la timeline, avec leur précision (année, phase de vie) : ils entrent alors dans le graphe. <a href="#" style="text-decoration: none">Créer les entrées depuis ce texte</a></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Suivi -->
+      <section aria-labelledby="h-suivi" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-suivi" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Suivi</h2>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="debut" style="font-size: 13px; font-weight: 500">Suivie depuis</label>
+            <input id="debut" type="text" value="03/2025" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="rythme" style="font-size: 13px; font-weight: 500">Rythme habituel</label>
+            <select id="rythme" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #1E2633; background: #FFFFFF"><option>Toutes les 1 à 2 semaines</option><option>Hebdomadaire</option><option>Toutes les 2 semaines</option><option>Mensuel</option><option>À la demande</option></select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="modalite" style="font-size: 13px; font-weight: 500">Modalité par défaut</label>
+            <select id="modalite" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #1E2633; background: #FFFFFF"><option>Cabinet</option><option>Visio</option><option>Alternance</option></select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="duree" style="font-size: 13px; font-weight: 500">Durée de séance</label>
+            <div style="display: flex; align-items: center; gap: 8px"><input id="duree" type="number" value="50" style="width: 90px; height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; font-family: 'JetBrains Mono', monospace"><span style="font-size: 13px; color: #5A6679">min</span></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="tarif" style="font-size: 13px; font-weight: 500">Tarif <span style="color: #8A94A6; font-weight: 400">(facultatif)</span></label>
+            <input id="tarif" type="text" placeholder="[TARIF] €" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="prescripteur" style="font-size: 13px; font-weight: 500">Médecin / prescripteur</label>
+            <input id="prescripteur" type="text" value="Dr Rémi Lenoir, psychiatre" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+        </div>
+      </section>
+
+      <!-- Drapeaux -->
+      <section aria-labelledby="h-flags" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h2 id="h-flags" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Drapeaux</h2>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Un drapeau est un repère manuel, visible dans l'en-tête du patient et dans la liste. Il n'est jamais déduit automatiquement.</p>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+          <label style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 2px solid #B8862E; border-radius: 10px; background: #FBF1DC; cursor: pointer">
+            <span style="display: flex; align-items: center; justify-content: space-between"><span style="font-weight: 600; color: #7A5A12">À surveiller</span><input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #B8862E; margin: 0"></span>
+            <span style="font-size: 12px; color: #7A5A12">Posé le 3 oct. · montée de l'anxiété et sommeil</span>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF; cursor: pointer">
+            <span style="display: flex; align-items: center; justify-content: space-between"><span style="font-weight: 600">Risque</span><input type="checkbox" style="width: 16px; height: 16px; accent-color: #9A2F22; margin: 0"></span>
+            <span style="font-size: 12px; color: #5A6679">Idées suicidaires, mise en danger ; affiché en premier</span>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF; cursor: pointer">
+            <span style="display: flex; align-items: center; justify-content: space-between"><span style="font-weight: 600">Suivi conjoint</span><input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #3A63C2; margin: 0"></span>
+            <span style="font-size: 12px; color: #5A6679">Un autre professionnel suit aussi ce patient</span>
+          </label>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="flagnote" style="font-size: 13px; font-weight: 500">Raison du drapeau « à surveiller »</label>
+          <input id="flagnote" type="text" value="Montée de l'anxiété depuis fin août, sommeil dégradé" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+        </div>
+      </section>
+
+      <!-- Tags -->
+      <section aria-labelledby="h-tags" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 10px">
+        <h2 id="h-tags" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Tags du patient</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; min-height: 42px; align-items: center">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 999px; padding: 4px 6px 4px 10px; background: #EEF1F6">#travail <button type="button" aria-label="Retirer travail" style="width: 18px; height: 18px; border: 0; border-radius: 50%; background: #D6DCE6; font-size: 11px; cursor: pointer; line-height: 1">×</button></span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 999px; padding: 4px 6px 4px 10px; background: #EEF1F6">#sommeil <button type="button" aria-label="Retirer sommeil" style="width: 18px; height: 18px; border: 0; border-radius: 50%; background: #D6DCE6; font-size: 11px; cursor: pointer; line-height: 1">×</button></span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 999px; padding: 4px 6px 4px 10px; background: #EEF1F6">#famille <button type="button" aria-label="Retirer famille" style="width: 18px; height: 18px; border: 0; border-radius: 50%; background: #D6DCE6; font-size: 11px; cursor: pointer; line-height: 1">×</button></span>
+          <input type="text" placeholder="Ajouter un tag…" aria-label="Ajouter un tag" style="flex: 1 1 100px; min-width: 100px; height: 28px; border: 0; outline: 0; font-size: 13px; background: transparent">
+        </div>
+        <span style="font-size: 12px; color: #8A94A6">Vos tags sont communs à tous vos patients. Un tag identique à une émotion est refusé.</span>
+      </section>
+
+      <!-- Actions -->
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+        <button type="submit" style="height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Enregistrer</button>
+        <a href="#patient" style="font-size: 14px; text-decoration: none; color: #5A6679">Annuler</a>
+        <span style="flex: 1 1 auto"></span>
+        <span style="font-size: 12px; color: #8A94A6">Chaque modification de la fiche est horodatée ; l'historique est consultable.</span>
+      </div>
+
+      <!-- Zone d'archivage -->
+      <section aria-labelledby="h-arch" style="border: 1px dashed #B9C2D1; border-radius: 12px; padding: 18px 22px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+        <div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 4px">
+          <h2 id="h-arch" style="margin: 0; font-size: 14px; font-weight: 600">Archiver ce patient</h2>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Le patient disparaît de la liste et de l'agenda ; le dossier est conservé intégralement et peut être restauré. Aucune suppression physique en V1.</p>
+        </div>
+        <button type="button" style="height: 40px; padding: 0 16px; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; font-size: 13px; color: #9A2F22; cursor: pointer">Archiver…</button>
+      </section>
+    </form>
+
+    <!-- Aperçu latéral -->
+    <aside aria-label="Aperçu" style="flex: 1 1 300px; max-width: 340px; display: flex; flex-direction: column; gap: 16px">
+      <section style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Aperçu de l'en-tête</h2>
+        <div style="border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: #FAFBFD">
+          <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap"><span style="font-size: 18px; font-weight: 600">Marie D.</span><span style="font-size: 12px; color: #5A6679">34 ans · suivie depuis mars 2025</span></div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap">
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 999px; background: #FBF1DC; color: #7A5A12; font-size: 11px; font-weight: 500">à surveiller</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 999px; background: #E3EAF8; color: #2C4C99; font-size: 11px; font-weight: 500">suivi conjoint</span>
+          </div>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #5A6679; line-height: 1.5">L'âge est calculé depuis la date de naissance ; « suivie depuis » depuis la date de début de suivi.</p>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">À la création d'un patient</h2>
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.5">
+          <li style="display: flex; gap: 10px"><span style="width: 12px; height: 12px; border-radius: 3px; border: 2px solid #3E8E7E; margin-top: 3px; flex-shrink: 0" aria-hidden="true"></span><span>Une <strong style="font-weight: 600">séance d'accueil</strong> est créée automatiquement : toute entrée a une séance.</span></li>
+          <li style="display: flex; gap: 10px"><span style="width: 14px; height: 6px; border-radius: 2px; background: #2F4F73; margin-top: 6px; flex-shrink: 0" aria-hidden="true"></span><span>Le motif initial peut devenir la première <strong style="font-weight: 600">situation</strong> (proposé après l'enregistrement).</span></li>
+          <li style="display: flex; gap: 10px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #E3EAF8; border: 2px solid #3A63C2; margin-top: 3px; flex-shrink: 0" aria-hidden="true"></span><span>Vous arrivez sur la <strong style="font-weight: 600">vue d'ensemble</strong> vide, barre de saisie prête.</span></li>
+        </ul>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #5A6679; line-height: 1.55">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Confidentialité</h2>
+        <p style="margin: 0">Les coordonnées du patient ne servent qu'aux rappels (plus tard) et ne sont jamais synchronisées avec Google Agenda ni exportées dans l'annuaire.</p>
+        <p style="margin: 0">Historique des modifications de la fiche : <a href="#" style="text-decoration: none">3 versions</a>.</p>
+      </section>
+    </aside>
+  </div>
+</div>
+
+</body>
+</html>

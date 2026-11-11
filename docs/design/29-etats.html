@@ -1,0 +1,624 @@
+<!-- Maquette statique · palette Nordique · planche d'états écrite à la main depuis B3 flux 1, B7, C5, M6-03, M7-03 et le contrat. Référence : docs/design/29-etats.md (à écrire) -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Planche d'états – PsyMate</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select,textarea{font-family:inherit}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.sk{display:block;height:10px;border-radius:4px;background:#E4E8F0}
+.kbd{font-family:'JetBrains Mono',monospace;font-size:11px;color:#5A6679;padding:1px 6px;border:1px solid #D6DCE6;border-bottom-width:2px;border-radius:4px;background:#FFFFFF;white-space:nowrap}
+.mono{font-family:'JetBrains Mono',monospace}
+.vig{width:360px;background:#FFFFFF;border:1px solid #D6DCE6;border-radius:12px;overflow:hidden;font-size:11px;line-height:1.4;display:flex;flex-direction:column}
+.vig-bar{display:flex;align-items:center;gap:8px;height:28px;padding:0 10px;background:#FFFFFF;border-bottom:1px solid #D6DCE6;font-size:11px;font-weight:600}
+.vig-head{display:flex;flex-direction:column;gap:6px;padding:8px 10px 0;background:#FFFFFF;border-bottom:1px solid #D6DCE6}
+.tab{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 6px;color:#5A6679;font-weight:500;border-bottom:2px solid transparent}
+.tab .kbd{font-size:9px;padding:0 3px}
+.btn-p{height:28px;padding:0 10px;border:0;border-radius:6px;background:#3A63C2;color:#FFFFFF;font-size:11px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-s{height:28px;padding:0 10px;border:1px solid #D6DCE6;border-radius:6px;background:#FFFFFF;color:#1E2633;font-size:11px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.card{background:#FFFFFF;border:1px solid #D6DCE6;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.lbl{font-size:11px;font-weight:600;color:#5A6679;text-transform:uppercase;letter-spacing:0.04em}
+.note{font-size:12px;color:#5A6679;margin:0}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3A63C2}
+.chip-on,.chip-off{height:20px;padding:0 7px;border-radius:999px;display:inline-flex;align-items:center;font-size:10px}
+.chip-on{border:1px solid #3A63C2;background:#E3EAF8;color:#2C4C99}
+.chip-off{border:1px solid #D6DCE6;color:#8A94A6}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 900px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.4">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      PsyMate
+    </div>
+    <span style="font-size: 13px; color: #5A6679">Design</span>
+    <span style="color: #9AA5B8">/</span>
+    <span style="font-size: 13px; color: #1E2633; font-weight: 500">29 · Planche d'états</span>
+    <div style="flex: 1 1 auto"></div>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CL</div>
+  </div>
+
+  <div style="max-width: 1392px; width: 100%; margin: 0 auto; padding: 28px 24px 48px; display: flex; flex-direction: column; gap: 40px">
+
+    <!-- Titre + légende -->
+    <div style="display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap">
+      <div style="display: flex; flex-direction: column; gap: 4px; max-width: 720px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.01em">Planche d'états</h1>
+        <p class="note" style="font-size: 13px">Vide, chargement, erreur : les trois états de chaque écran (C5, M6-03) et les notifications. Le composant <code class="mono" style="font-size: 12px">shared/ui/state</code> est le même partout ; seules les phrases et l'action changent. Une information n'est jamais portée par la couleur seule : icône + libellé.</p>
+      </div>
+      <div style="flex: 1 1 auto"></div>
+      <div role="list" aria-label="Signalétique système" style="display: flex; gap: 8px; flex-wrap: wrap">
+        <span role="listitem" style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: #FBE9E7; color: #9A2F22; font-size: 12px; font-weight: 500"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg>Erreur · #9A2F22 / #FBE9E7</span>
+        <span role="listitem" style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: #FBF1DC; color: #7A5A12; font-size: 12px; font-weight: 500"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2l6.5 12h-13zM8 7v3M8 12.5v.5"></path></svg>Avertissement · #7A5A12 / #FBF1DC</span>
+        <span role="listitem" style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: #E4F2EA; color: #1E6B45; font-size: 12px; font-weight: 500"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8.5l3 3 7-7"></path></svg>Succès · #1E6B45 / #E4F2EA</span>
+        <span role="listitem" style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 500"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7v4M8 5v.5"></path></svg>Information · #2C4C99 / #E3EAF8</span>
+      </div>
+    </div>
+
+    <!-- ===================================================== 1. Le composant État -->
+    <section aria-labelledby="h-composant" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: baseline; gap: 12px">
+        <h2 id="h-composant" style="margin: 0; font-size: 18px; font-weight: 600">1. Le composant État</h2>
+        <span class="note">illustration discrète · titre · une phrase · action principale facultative — à l'échelle d'un bloc de contenu (timeline de Marie D.)</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+
+        <!-- Vide -->
+        <div class="card" style="gap: 8px">
+          <span class="lbl">Vide</span>
+          <div style="min-height: 280px; border: 1px dashed #D6DCE6; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center">
+            <svg aria-hidden="true" width="96" height="64" viewBox="0 0 96 64" fill="none" stroke="#B9C2D1" stroke-width="1.5" stroke-linecap="round"><path d="M8 32h80" stroke-dasharray="3 5"></path><rect x="20" y="18" width="20" height="12" rx="2" fill="#E4E8F0"></rect><circle cx="56" cy="40" r="6" fill="#E4E8F0"></circle><path d="M72 16l6 6-6 6-6-6z" fill="#E4E8F0"></path><rect x="22" y="44" width="14" height="4" rx="2" fill="#E4E8F0"></rect></svg>
+            <h3 style="margin: 0; font-size: 15px; font-weight: 600">Aucune entrée dans cette période</h3>
+            <p class="note" style="max-width: 260px">Élargissez la période ou saisissez la première entrée de la séance du 24 oct.</p>
+            <button style="height: 36px; padding: 0 14px; border: 0; border-radius: 8px; background: #3A63C2; color: #FFFFFF; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>
+              Saisir une entrée <span class="mono" style="font-size: 11px; opacity: 0.85">N</span>
+            </button>
+          </div>
+          <p class="note">Jamais de page blanche : le bloc garde son titre de section et une phrase « apparaîtra ici quand… ».</p>
+        </div>
+
+        <!-- Chargement -->
+        <div class="card" style="gap: 8px">
+          <span class="lbl">Chargement</span>
+          <div aria-busy="true" style="min-height: 280px; border: 1px solid #E4E8F0; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 18px">
+            <span class="sr" role="status">Chargement…</span>
+            <div aria-hidden="true" style="display: flex; gap: 12px; align-items: flex-start">
+              <span class="sk" style="width: 12px; height: 12px; border-radius: 50%; margin-top: 2px"></span>
+              <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px"><span class="sk" style="width: 60%"></span><span class="sk" style="width: 90%"></span><span class="sk" style="width: 40%"></span></div>
+            </div>
+            <div aria-hidden="true" style="display: flex; gap: 12px; align-items: flex-start">
+              <span class="sk" style="width: 12px; height: 12px; margin-top: 2px"></span>
+              <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px"><span class="sk" style="width: 45%"></span><span class="sk" style="width: 80%"></span></div>
+            </div>
+            <div aria-hidden="true" style="display: flex; gap: 12px; align-items: flex-start">
+              <span class="sk" style="width: 12px; height: 12px; transform: rotate(45deg); margin-top: 2px"></span>
+              <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px"><span class="sk" style="width: 70%"></span><span class="sk" style="width: 55%"></span><span class="sk" style="width: 85%"></span></div>
+            </div>
+            <div aria-hidden="true" style="display: flex; gap: 12px; align-items: flex-start">
+              <span class="sk" style="width: 12px; height: 12px; border-radius: 50%; margin-top: 2px"></span>
+              <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px"><span class="sk" style="width: 50%"></span><span class="sk" style="width: 75%"></span></div>
+            </div>
+          </div>
+          <p class="note">Barres #E4E8F0, formes du type d'entrée conservées. Animation facultative (pulsation 1,2 s), coupée sous <code class="mono" style="font-size: 11px">prefers-reduced-motion</code>. Le conteneur porte <code class="mono" style="font-size: 11px">aria-busy</code> ; « Chargement… » est lu une fois.</p>
+        </div>
+
+        <!-- Erreur -->
+        <div class="card" style="gap: 8px">
+          <span class="lbl">Erreur</span>
+          <div role="alert" style="min-height: 280px; border: 1px solid #D6DCE6; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center">
+            <span aria-hidden="true" style="width: 44px; height: 44px; border-radius: 50%; background: #FBE9E7; color: #9A2F22; display: inline-flex; align-items: center; justify-content: center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16v.5"></path></svg>
+            </span>
+            <h3 style="margin: 0; font-size: 15px; font-weight: 600">Impossible de charger la timeline</h3>
+            <p class="note" style="max-width: 260px">Le serveur n'a pas répondu. Rien n'a été modifié dans le dossier de Marie D.</p>
+            <button style="height: 36px; padding: 0 14px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2v3h-3"></path></svg>
+              Réessayer
+            </button>
+            <details style="font-size: 12px; color: #5A6679">
+              <summary style="cursor: pointer">Détail technique</summary>
+              <code class="mono" style="display: inline-block; margin-top: 6px; padding: 4px 8px; border-radius: 6px; background: #E4E8F0; color: #1E2633; font-size: 11px">503 · service indisponible · réessayer</code>
+            </details>
+          </div>
+          <p class="note">Le contenu précédent reste affiché s'il existe (liste, graphe) ; seul le bloc en échec passe en erreur. Le bouton reprend le focus après « Réessayer ».</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================== 2. États vides par écran -->
+    <section aria-labelledby="h-vides" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: baseline; gap: 12px">
+        <h2 id="h-vides" style="margin: 0; font-size: 18px; font-weight: 600">2. États vides par écran</h2>
+        <span class="note">vignettes réduites, 360 px · données fictives de seed</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+
+        <!-- 01 · Liste des patients, première connexion -->
+        <figure class="vig" style="margin: 0; min-height: 300px">
+          <div class="vig-bar"><span aria-hidden="true" class="dot"></span>PsyMate <span style="font-weight: 500; color: #5A6679">Patients</span></div>
+          <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; flex: 1 1 auto">
+            <div style="display: flex; align-items: center; gap: 8px"><strong style="font-size: 14px">Mes patients</strong><span style="color: #5A6679">0 suivi</span><div style="flex: 1 1 auto"></div><button class="btn-p"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>Nouveau patient <span class="mono" style="font-size: 9px; opacity: 0.85">N</span></button></div>
+            <div style="border: 1px dashed #D6DCE6; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center">
+              <svg aria-hidden="true" width="56" height="40" viewBox="0 0 56 40" fill="none" stroke="#B9C2D1" stroke-width="1.5"><circle cx="20" cy="14" r="7" fill="#E4E8F0"></circle><path d="M8 36c0-7 5-11 12-11s12 4 12 11" fill="#E4E8F0"></path><circle cx="42" cy="18" r="5" fill="#E4E8F0"></circle><path d="M34 36c0-5 3-8 8-8s8 3 8 8" fill="#E4E8F0"></path></svg>
+              <strong style="font-size: 13px">Créez votre premier patient</strong>
+              <span style="color: #5A6679">Le dossier, la timeline et le graphe se construisent à partir de la première entrée.</span>
+              <button class="btn-p">Nouveau patient <span class="mono" style="font-size: 9px; opacity: 0.85">N</span></button>
+              <span style="color: #5A6679">ou explorez un patient de démonstration</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D6DCE6; border-radius: 8px">
+              <span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 50%; background: #E4E8F0; color: #2F4F73; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 10px">MD</span>
+              <span style="display: flex; flex-direction: column"><span><span class="mono" style="font-size: 9px; font-weight: 500; padding: 1px 5px; border-radius: 4px; background: #E3EAF8; color: #2C4C99">DEMO</span> · <strong>Marie D.</strong></span><span style="color: #5A6679">18 mois · 20 séances fictives</span></span>
+              <div style="flex: 1 1 auto"></div>
+              <a href="#demo-delete" style="font-size: 11px; white-space: nowrap">Supprimer le patient démo</a>
+            </div>
+            <a href="#raccourcis" style="font-size: 11px; align-self: center; display: inline-flex; align-items: center; gap: 6px">Voir les raccourcis <span class="kbd" style="font-size: 9px">?</span></a>
+          </div>
+          <figcaption class="sr">Liste des patients à la première connexion : bloc central, patient démo supprimable, lien vers les raccourcis.</figcaption>
+        </figure>
+
+        <!-- 02 · Vue d'ensemble d'un patient sans entrée -->
+        <figure class="vig" style="margin: 0; min-height: 300px">
+          <div class="vig-bar"><span aria-hidden="true" class="dot"></span>PsyMate <span style="font-weight: 400; color: #5A6679">Patients / Nora K.</span></div>
+          <div class="vig-head">
+            <div style="display: flex; align-items: baseline; gap: 6px"><strong style="font-size: 13px">Nora K.</strong><span style="color: #5A6679">29 ans · suivie depuis aujourd'hui</span><div style="flex: 1 1 auto"></div><button class="btn-p" style="height: 22px; font-size: 10px">Démarrer la séance</button></div>
+            <div style="display: flex; gap: 2px"><span class="tab" style="color: #1E2633; font-weight: 600; border-bottom-color: #3A63C2"><span class="kbd">1</span>Vue d'ensemble</span><span class="tab"><span class="kbd">2</span>Timeline</span><span class="tab"><span class="kbd">3</span>Graphe</span></div>
+          </div>
+          <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto">
+            <div style="display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px; border: 1.5px solid #3A63C2; border-radius: 8px; box-shadow: 0 0 0 3px #E3EAF8; color: #8A94A6" class="mono">Saisir une entrée… (/evt, /sit, /res, /med)</div>
+            <div style="border: 1px dashed #D6DCE6; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center">
+              <svg aria-hidden="true" width="40" height="28" viewBox="0 0 40 28" fill="none" stroke="#B9C2D1" stroke-width="1.5" stroke-linecap="round"><path d="M20 24V6M14 12l6-6 6 6"></path><rect x="6" y="2" width="28" height="4" rx="2" fill="#E4E8F0"></rect></svg>
+              <strong>Commencez par une entrée</strong>
+              <span style="color: #5A6679">La séance d'accueil a été créée avec le patient : tout ce que vous saisissez maintenant s'y rattache.</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+              <div style="border: 1px solid #E4E8F0; border-radius: 8px; padding: 8px"><span class="lbl" style="font-size: 9px">Faits clés</span><p class="note" style="font-size: 11px; margin-top: 4px">Apparaîtront ici dès la première situation ou le premier événement.</p></div>
+              <div style="border: 1px solid #E4E8F0; border-radius: 8px; padding: 8px"><span class="lbl" style="font-size: 9px">Tendance</span><p class="note" style="font-size: 11px; margin-top: 4px">Apparaîtra ici après deux ressentis.</p></div>
+            </div>
+          </div>
+          <figcaption class="sr">Vue d'ensemble d'un patient sans entrée : chaque bloc garde son titre et une phrase d'attente.</figcaption>
+        </figure>
+
+        <!-- 03 · Timeline vide -->
+        <figure class="vig" style="margin: 0; min-height: 300px">
+          <div class="vig-bar"><span aria-hidden="true" class="dot"></span>PsyMate <span style="font-weight: 400; color: #5A6679">Patients / Marie D.</span></div>
+          <div class="vig-head">
+            <div style="display: flex; align-items: baseline; gap: 6px"><strong style="font-size: 13px">Marie D.</strong><span style="color: #5A6679">34 ans · suivie depuis mars 2025</span></div>
+            <div style="display: flex; gap: 2px"><span class="tab"><span class="kbd">1</span>Vue d'ensemble</span><span class="tab" style="color: #1E2633; font-weight: 600; border-bottom-color: #3A63C2"><span class="kbd">2</span>Timeline</span><span class="tab"><span class="kbd">3</span>Graphe</span></div>
+          </div>
+          <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto">
+            <div role="group" aria-label="Filtres de la timeline" style="display: flex; gap: 4px; flex-wrap: wrap">
+              <span class="chip-on">1 – 7 oct.</span>
+              <span class="chip-on">Médicaments</span>
+              <span class="chip-off">Ressentis</span>
+            </div>
+            <div style="flex: 1 1 auto; border: 1px dashed #D6DCE6; border-radius: 8px; padding: 18px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center">
+              <svg aria-hidden="true" width="64" height="32" viewBox="0 0 64 32" fill="none" stroke="#B9C2D1" stroke-width="1.5" stroke-linecap="round"><path d="M4 16h56" stroke-dasharray="3 4"></path><circle cx="16" cy="16" r="4" fill="#E4E8F0"></circle><rect x="40" y="11" width="10" height="10" rx="2" fill="#E4E8F0"></rect></svg>
+              <strong>Aucune entrée dans cette période</strong>
+              <span style="color: #5A6679">Du 1<sup>er</sup> au 7 oct., aucun médicament n'a été noté pour Marie D.</span>
+              <div style="display: flex; gap: 6px; margin-top: 4px"><button class="btn-s">Élargir la période</button><button class="btn-s">Effacer les filtres</button></div>
+            </div>
+          </div>
+          <figcaption class="sr">Timeline vide pour la période et les filtres choisis.</figcaption>
+        </figure>
+
+        <!-- 04 · Graphe sans lien -->
+        <figure class="vig" style="margin: 0; min-height: 300px">
+          <div class="vig-bar"><span aria-hidden="true" class="dot"></span>PsyMate <span style="font-weight: 400; color: #5A6679">Patients / Nora K.</span></div>
+          <div class="vig-head">
+            <div style="display: flex; align-items: baseline; gap: 6px"><strong style="font-size: 13px">Nora K.</strong><span style="color: #5A6679">29 ans · 3 entrées</span></div>
+            <div style="display: flex; gap: 2px"><span class="tab"><span class="kbd">1</span>Vue d'ensemble</span><span class="tab"><span class="kbd">2</span>Timeline</span><span class="tab" style="color: #1E2633; font-weight: 600; border-bottom-color: #3A63C2"><span class="kbd">3</span>Graphe</span></div>
+          </div>
+          <div style="padding: 10px 12px; flex: 1 1 auto; display: flex">
+            <div style="flex: 1 1 auto; border: 1px dashed #D6DCE6; border-radius: 8px; padding: 18px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center">
+              <svg aria-hidden="true" width="80" height="44" viewBox="0 0 80 44" fill="none" stroke="#B9C2D1" stroke-width="1.5" stroke-linecap="round"><rect x="6" y="14" width="18" height="12" rx="2" fill="#E4E8F0"></rect><circle cx="64" cy="20" r="7" fill="#E4E8F0"></circle><path d="M26 20h30" stroke-dasharray="3 4"></path><path d="M44 12l-4 8 4 8" stroke="#8A94A6"></path><path d="M44 12l4 8-4 8" stroke="#8A94A6"></path></svg>
+              <strong>Liez deux entrées (<span class="kbd" style="font-size: 9px">L</span>) pour voir une carte</strong>
+              <span style="color: #5A6679">Les liens que vous créez apparaîtront ici, avec leur provenance et leur type.</span>
+              <button class="btn-s" style="margin-top: 4px">Ouvrir la timeline <span class="kbd" style="font-size: 9px">2</span></button>
+              <span style="color: #8A94A6; font-size: 10px">Liste équivalente pour lecteur d'écran : « Liens de cette entrée » (vide).</span>
+            </div>
+          </div>
+          <figcaption class="sr">Graphe d'un patient sans lien.</figcaption>
+        </figure>
+
+        <!-- 07 · Recherche sans résultat -->
+        <figure class="vig" style="margin: 0; min-height: 300px">
+          <div class="vig-bar"><span aria-hidden="true" class="dot"></span>PsyMate <span style="font-weight: 400; color: #5A6679">Patients / Marie D. / Recherche</span></div>
+          <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto">
+            <div style="display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; border: 1.5px solid #3A63C2; border-radius: 8px; box-shadow: 0 0 0 3px #E3EAF8">
+              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#3A63C2" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>
+              <span style="flex: 1 1 auto">anxiéter</span><span class="kbd" style="font-size: 9px">/</span>
+            </div>
+            <div role="group" aria-label="Facettes" style="display: flex; gap: 4px; flex-wrap: wrap">
+              <span class="chip-on">Ressentis</span>
+              <span aria-disabled="true" class="chip-off">Notes · 0</span>
+              <span aria-disabled="true" class="chip-off">Situations · 0</span>
+            </div>
+            <div role="status" style="flex: 1 1 auto; border: 1px dashed #D6DCE6; border-radius: 8px; padding: 16px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center">
+              <svg aria-hidden="true" width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#B9C2D1" stroke-width="1.5" stroke-linecap="round"><circle cx="17" cy="17" r="10" fill="#E4E8F0"></circle><path d="M25 25l9 9M13 17h8"></path></svg>
+              <strong>Aucun résultat pour « anxiéter »</strong>
+              <span style="color: #5A6679">Voulez-vous dire <a href="#q-anxiete">anxiété</a> ? 12 entrées correspondent.</span>
+              <span style="color: #5A6679">Ou <a href="#f-ressentis">retirer le filtre « Ressentis »</a> pour chercher dans tout le dossier.</span>
+            </div>
+          </div>
+          <figcaption class="sr">Recherche dans le dossier sans résultat, avec suggestion orthographique et retrait de filtre.</figcaption>
+        </figure>
+
+        <!-- 08 · Annuaire sans résultat (vignette minimale) -->
+        <figure class="vig" style="margin: 0; min-height: 300px">
+          <div class="vig-bar" style="background: #FFFFFF"><span aria-hidden="true" class="dot"></span>PsyMate <span style="font-weight: 400; color: #5A6679">Annuaire</span><div style="flex: 1 1 auto"></div><span style="font-weight: 500; color: #3A63C2">Se connecter</span></div>
+          <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto">
+            <div style="display: flex; gap: 6px"><span style="flex: 1 1 auto; height: 28px; padding: 0 8px; border: 1px solid #D6DCE6; border-radius: 6px; display: inline-flex; align-items: center; color: #1E2633">EMDR · Lille · enfants</span><button class="btn-p">Rechercher</button></div>
+            <div role="status" style="flex: 1 1 auto; border: 1px dashed #D6DCE6; border-radius: 8px; padding: 16px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center">
+              <svg aria-hidden="true" width="56" height="36" viewBox="0 0 56 36" fill="none" stroke="#B9C2D1" stroke-width="1.5"><rect x="4" y="6" width="22" height="26" rx="3" fill="#E4E8F0"></rect><rect x="30" y="6" width="22" height="26" rx="3" fill="#E4E8F0"></rect></svg>
+              <strong>Aucun praticien ne correspond</strong>
+              <span style="color: #5A6679">Essayez d'<a href="#visio">élargir à la visio</a> ou de <a href="#f-enfants">retirer le filtre « enfants »</a>.</span>
+            </div>
+            <span style="color: #8A94A6; font-size: 10px">Détail complet dans la fiche 08 (à repasser en Nordique).</span>
+          </div>
+          <figcaption class="sr">Annuaire public sans résultat, vignette minimale.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ===================================================== 3. Chargement -->
+    <section aria-labelledby="h-chargement" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: baseline; gap: 12px">
+        <h2 id="h-chargement" style="margin: 0; font-size: 18px; font-weight: 600">3. Chargement</h2>
+        <span class="note">squelettes aux dimensions réelles du contenu · l'en-tête s'affiche d'abord, la liste précédente reste grisée pendant 300 ms</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+
+        <!-- Ligne de tableau -->
+        <div class="card">
+          <span class="lbl">Ligne de tableau · liste des patients (6 lignes)</span>
+          <div aria-busy="true" style="border: 1px solid #D6DCE6; border-radius: 10px; overflow: hidden">
+            <span class="sr" role="status">Chargement des patients…</span>
+            <div aria-hidden="true" style="display: grid; grid-template-columns: 2fr 1.2fr 1fr 1.4fr 1fr; gap: 16px; padding: 8px 16px; background: #F3F5F9; border-bottom: 1px solid #D6DCE6"><span class="sk" style="width: 50px; height: 8px"></span><span class="sk" style="width: 70px; height: 8px"></span><span class="sk" style="width: 48px; height: 8px"></span><span class="sk" style="width: 90px; height: 8px"></span><span class="sk" style="width: 36px; height: 8px"></span></div>
+            <div aria-hidden="true" style="display: grid; grid-template-columns: 2fr 1.2fr 1fr 1.4fr 1fr; gap: 16px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #E4E8F0">
+              <span style="display: flex; align-items: center; gap: 12px"><span class="sk" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0"></span><span style="display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto"><span class="sk" style="width: 55%; height: 12px"></span><span class="sk" style="width: 80%; height: 8px"></span></span></span>
+              <span class="sk" style="width: 70%"></span>
+              <span class="sk" style="width: 80px; height: 24px; border-radius: 999px"></span>
+              <span style="display: flex; gap: 6px"><span class="sk" style="width: 12px; height: 12px; border-radius: 50%"></span><span class="sk" style="width: 12px; height: 12px; border-radius: 50%"></span><span class="sk" style="width: 40px; margin-left: 4px"></span></span>
+              <span class="sk" style="width: 60%"></span>
+            </div>
+            <div aria-hidden="true" style="display: grid; grid-template-columns: 2fr 1.2fr 1fr 1.4fr 1fr; gap: 16px; align-items: center; padding: 12px 16px">
+              <span style="display: flex; align-items: center; gap: 12px"><span class="sk" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0"></span><span style="display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto"><span class="sk" style="width: 40%; height: 12px"></span><span class="sk" style="width: 70%; height: 8px"></span></span></span>
+              <span class="sk" style="width: 55%"></span>
+              <span class="sk" style="width: 64px; height: 24px; border-radius: 999px"></span>
+              <span style="display: flex; gap: 6px"><span class="sk" style="width: 12px; height: 12px; border-radius: 50%"></span><span class="sk" style="width: 32px; margin-left: 4px"></span></span>
+              <span class="sk" style="width: 30%"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Carte de timeline -->
+        <div class="card">
+          <span class="lbl">Carte de timeline · fenêtre au-delà des voisines préchargées</span>
+          <div aria-busy="true" style="display: flex; flex-direction: column; gap: 10px">
+            <span class="sr" role="status">Chargement de la timeline…</span>
+            <div aria-hidden="true" style="display: flex; gap: 12px; align-items: stretch">
+              <span style="display: flex; flex-direction: column; align-items: center; gap: 4px; width: 16px"><span class="sk" style="width: 12px; height: 12px; border-radius: 50%; background: #D6DCE6"></span><span style="flex: 1 1 auto; width: 2px; background: #E4E8F0"></span></span>
+              <div style="flex: 1 1 auto; border: 1px solid #E4E8F0; border-left: 3px solid #D6DCE6; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
+                <span style="display: flex; gap: 8px; align-items: center"><span class="sk" style="width: 64px; height: 18px; border-radius: 999px"></span><span class="sk" style="width: 90px; height: 8px"></span><span style="flex: 1 1 auto"></span><span class="sk" style="width: 48px; height: 8px"></span></span>
+                <span class="sk" style="width: 92%"></span><span class="sk" style="width: 76%"></span>
+                <span style="display: flex; gap: 6px"><span class="sk" style="width: 56px; height: 18px; border-radius: 999px"></span><span class="sk" style="width: 44px; height: 18px; border-radius: 999px"></span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bloc de vue d'ensemble -->
+        <div class="card">
+          <span class="lbl">Bloc de vue d'ensemble · « Tendance » (l'en-tête patient est déjà rendu)</span>
+          <div aria-busy="true" style="border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+            <span class="sr" role="status">Chargement de la tendance…</span>
+            <h3 aria-hidden="true" class="lbl" style="margin: 0">Tendance · 90 j</h3>
+            <div aria-hidden="true" style="display: flex; gap: 16px">
+              <span style="display: flex; flex-direction: column; gap: 8px; width: 120px"><span class="sk" style="width: 100%; height: 22px"></span><span class="sk" style="width: 70%"></span></span>
+              <svg aria-hidden="true" width="100%" height="88" viewBox="0 0 400 88" preserveAspectRatio="none" fill="none"><path d="M0 70 L50 60 L100 66 L150 40 L200 48 L250 30 L300 36 L350 20 L400 26 L400 88 L0 88 Z" fill="#E4E8F0"></path><path d="M0 70 L50 60 L100 66 L150 40 L200 48 L250 30 L300 36 L350 20 L400 26" stroke="#D6DCE6" stroke-width="2"></path></svg>
+            </div>
+            <div aria-hidden="true" style="display: flex; gap: 8px"><span class="sk" style="width: 72px; height: 20px; border-radius: 999px"></span><span class="sk" style="width: 64px; height: 20px; border-radius: 999px"></span><span class="sk" style="width: 80px; height: 20px; border-radius: 999px"></span></div>
+          </div>
+        </div>
+
+        <!-- Fiche publique -->
+        <div class="card">
+          <span class="lbl">Fiche publique d'un praticien · 09</span>
+          <div aria-busy="true" style="border: 1px solid #D6DCE6; border-radius: 12px; padding: 20px; display: flex; gap: 20px">
+            <span class="sr" role="status">Chargement de la fiche…</span>
+            <span aria-hidden="true" class="sk" style="width: 112px; height: 112px; border-radius: 16px; flex-shrink: 0"></span>
+            <div aria-hidden="true" style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px">
+              <span class="sk" style="width: 45%; height: 22px"></span>
+              <span class="sk" style="width: 30%"></span>
+              <span style="display: flex; gap: 6px; margin-top: 4px"><span class="sk" style="width: 90px; height: 22px; border-radius: 999px"></span><span class="sk" style="width: 70px; height: 22px; border-radius: 999px"></span><span class="sk" style="width: 110px; height: 22px; border-radius: 999px"></span></span>
+              <span class="sk" style="width: 95%; margin-top: 8px"></span><span class="sk" style="width: 88%"></span><span class="sk" style="width: 60%"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================== 4. Erreurs -->
+    <section aria-labelledby="h-erreurs" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap">
+        <h2 id="h-erreurs" style="margin: 0; font-size: 18px; font-weight: 600">4. Erreurs</h2>
+        <span class="note">toutes issues de <code class="mono" style="font-size: 11px">application/problem+json</code> (RFC 9457) : <code class="mono" style="font-size: 11px">status</code>, <code class="mono" style="font-size: 11px">code</code>, <code class="mono" style="font-size: 11px">errors[{field, code, message}]</code>, <code class="mono" style="font-size: 11px">retryAfterSeconds</code></span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+
+        <!-- 422 formulaire -->
+        <div class="card" style="grid-row: span 2">
+          <span class="lbl">422 · Validation champ par champ · fiche patient (16)</span>
+          <div role="alert" tabindex="-1" style="display: flex; gap: 10px; padding: 10px 12px; border-radius: 8px; background: #FBE9E7; color: #9A2F22; font-size: 13px">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink: 0; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16v.5"></path></svg>
+            <span><strong style="font-weight: 600">2 champs à corriger.</strong> <a href="#f-nom" style="color: #9A2F22">Nom affiché</a> · <a href="#f-naissance" style="color: #9A2F22">Date de naissance</a></span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="f-nom" style="font-size: 13px; font-weight: 500">Nom affiché <span style="color: #5A6679; font-weight: 400">(obligatoire)</span></label>
+            <input id="f-nom" type="text" value="" aria-invalid="true" aria-describedby="e-nom" style="height: 40px; padding: 0 12px; border: 1.5px solid #9A2F22; border-radius: 8px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+            <span id="e-nom" style="display: inline-flex; align-items: center; gap: 6px; color: #9A2F22; font-size: 12px"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg>Le nom affiché est obligatoire.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="f-naissance" style="font-size: 13px; font-weight: 500">Date de naissance</label>
+            <input id="f-naissance" type="text" value="12/03/2031" aria-invalid="true" aria-describedby="e-naissance" style="height: 40px; padding: 0 12px; border: 1.5px solid #9A2F22; border-radius: 8px; font-size: 14px; color: #1E2633; background: #FFFFFF; width: 200px">
+            <span id="e-naissance" style="display: inline-flex; align-items: center; gap: 6px; color: #9A2F22; font-size: 12px"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg>La date de naissance ne peut pas être dans le futur.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="f-contexte" style="font-size: 13px; font-weight: 500">Contexte</label>
+            <textarea id="f-contexte" rows="2" style="padding: 8px 12px; border: 1px solid #D6DCE6; border-radius: 8px; font-size: 14px; color: #1E2633; resize: none">Orientée par son médecin traitant.</textarea>
+            <span class="note" style="font-size: 12px">Les champs valides gardent leur saisie.</span>
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: flex-end"><button class="btn-s" style="height: 36px; font-size: 13px">Annuler</button><button class="btn-p" style="height: 36px; font-size: 13px">Enregistrer <span class="mono" style="font-size: 10px; opacity: 0.85">Ctrl+⏎</span></button></div>
+          <details style="font-size: 12px; color: #5A6679">
+            <summary style="cursor: pointer">Réponse reçue</summary>
+<pre class="mono" style="margin: 6px 0 0; padding: 10px 12px; border-radius: 8px; background: #E4E8F0; color: #1E2633; font-size: 11px; line-height: 1.5; overflow: auto">{
+  "status": 422,
+  "code": "VALIDATION_FAILED",
+  "errors": [
+    { "field": "displayName", "message": "Le nom affiché est obligatoire." },
+    { "field": "birthDate", "message": "La date de naissance ne peut pas être dans le futur." }
+  ]
+}</pre>
+          </details>
+          <p class="note">Le résumé reçoit le focus à la soumission ; chaque lien mène au champ. Message sous le champ fautif, bordure #9A2F22, <code class="mono" style="font-size: 11px">aria-invalid</code> + <code class="mono" style="font-size: 11px">aria-describedby</code>. Le module patients ne renvoie pas de code de champ : on affiche <code class="mono" style="font-size: 11px">message</code> tel quel ; ailleurs (entrées, liens, identité) le code de champ sert au test, jamais à l'affichage.</p>
+        </div>
+
+        <!-- 403 e-mail non confirmé -->
+        <div class="card">
+          <span class="lbl">403 · EMAIL_NOT_CONFIRMED</span>
+          <div role="alert" style="display: flex; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #FBF1DC; color: #7A5A12; font-size: 13px; align-items: flex-start">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <strong style="font-weight: 600">E-mail non confirmé</strong>
+              <span>Confirmez <strong style="font-weight: 500">claire.moreau@exemple.fr</strong> pour accéder à vos patients. Le lien reçu est valable 24 h.</span>
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 2px"><button style="height: 32px; padding: 0 12px; border: 1px solid #7A5A12; border-radius: 8px; background: #FFFFFF; color: #7A5A12; font-size: 13px; font-weight: 600; cursor: pointer">Renvoyer l'e-mail</button><span style="font-size: 12px">1 renvoi par minute, 5 par jour · <a href="#25" style="color: #7A5A12">Changer d'adresse</a></span></div>
+            </div>
+          </div>
+          <p class="note">Avertissement, pas erreur : le compte est sain, une action du praticien suffit. Page dédiée : 25 Confirmation d'e-mail.</p>
+        </div>
+
+        <!-- 403 compte suspendu -->
+        <div class="card">
+          <span class="lbl">403 · ACCOUNT_SUSPENDED</span>
+          <div role="alert" style="display: flex; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #FBE9E7; color: #9A2F22; font-size: 13px; align-items: flex-start">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink: 0; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M5.6 5.6l12.8 12.8"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <strong style="font-weight: 600">Compte suspendu</strong>
+              <span>Vos sessions ont été fermées. Vous allez être redirigé vers la page « Compte suspendu » : lecture seule, export de vos données et recours.</span>
+              <span style="font-size: 12px"><a href="#27" style="color: #9A2F22">Ouvrir maintenant</a> · redirection automatique dans <span class="mono" aria-live="polite">5 s</span></span>
+            </div>
+          </div>
+          <p class="note">Aucune donnée patient n'est affichée après ce message ; la fiche 27 prend le relais (G Q26, M1-14b).</p>
+        </div>
+
+        <!-- 409 conflit -->
+        <div class="card">
+          <span class="lbl">409 · LINK_EXISTS · éditeur de lien (06)</span>
+          <div role="alert" style="display: flex; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #FBF1DC; color: #7A5A12; font-size: 13px; align-items: flex-start">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"></path><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <strong style="font-weight: 600">Ce lien existe déjà · Modifier le type ?</strong>
+              <span>« Surcharge au travail » est déjà liée à « Insomnie, 3 nuits » comme <em>cause probable</em> (lien praticien du 12 oct.). Un seul lien par paire d'entrées.</span>
+              <div style="display: flex; gap: 8px; margin-top: 2px"><button style="height: 32px; padding: 0 12px; border: 1px solid #7A5A12; border-radius: 8px; background: #FFFFFF; color: #7A5A12; font-size: 13px; font-weight: 600; cursor: pointer">Modifier le type</button><button style="height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: #7A5A12; font-size: 13px; cursor: pointer">Garder le lien existant</button></div>
+            </div>
+          </div>
+          <p class="note">Le conflit propose toujours la sortie la plus courte ; la saisie du panneau reste intacte.</p>
+        </div>
+
+        <!-- 423 verrouillé -->
+        <div class="card">
+          <span class="lbl">423 · ACCOUNT_LOCKED · connexion (11)</span>
+          <div style="display: flex; flex-direction: column; gap: 10px; max-width: 420px">
+            <div role="alert" style="display: flex; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #FBE9E7; color: #9A2F22; font-size: 13px; align-items: flex-start">
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+              <div style="display: flex; flex-direction: column; gap: 4px">
+                <strong style="font-weight: 600">Trop de tentatives</strong>
+                <span>5 mots de passe faux pour cet e-mail. Nouvel essai possible dans <span class="mono" aria-live="polite" aria-atomic="true" style="font-weight: 500">14 min 32 s</span>.</span>
+                <span style="font-size: 12px"><a href="#26" style="color: #9A2F22">Mot de passe oublié ?</a> · <span class="mono" style="font-size: 11px; color: #5A6679">Retry-After: 872</span></span>
+              </div>
+            </div>
+            <label for="f-mail" class="sr">E-mail</label>
+            <input id="f-mail" type="email" value="claire.moreau@exemple.fr" readonly style="height: 40px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; font-size: 14px; color: #5A6679; background: #F3F5F9">
+            <button disabled aria-disabled="true" style="height: 40px; border: 0; border-radius: 8px; background: #B9C2D1; color: #FFFFFF; font-size: 14px; font-weight: 600">Se connecter</button>
+          </div>
+          <p class="note">Compte à rebours depuis <code class="mono" style="font-size: 11px">retryAfterSeconds</code>, annoncé toutes les minutes seulement (<code class="mono" style="font-size: 11px">aria-live="polite"</code>). Le bouton se réactive à zéro.</p>
+        </div>
+
+        <!-- 429 -->
+        <div class="card">
+          <span class="lbl">429 · RATE_LIMITED</span>
+          <div role="alert" style="display: flex; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #FBF1DC; color: #7A5A12; font-size: 13px; align-items: center">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink: 0"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+            <span style="flex: 1 1 auto"><strong style="font-weight: 600">Trop de requêtes,</strong> réessayez dans <span class="mono" aria-live="polite" style="font-weight: 500">12 s</span>. Votre saisie est conservée.</span>
+            <span class="mono" style="font-size: 11px; color: #5A6679">Retry-After: 12</span>
+          </div>
+          <p class="note">Limite de 600 requêtes par minute et par session (G Q24). Le client rejoue la requête à la fin du délai, sans action de l'utilisateur.</p>
+        </div>
+
+        <!-- Hors ligne -->
+        <div class="card">
+          <span class="lbl">Hors ligne · aucune réponse réseau</span>
+          <div role="status" aria-live="polite" style="display: flex; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #FBF1DC; color: #7A5A12; font-size: 13px; align-items: center">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink: 0"><path d="M2 9a16 16 0 0 1 20 0M5.5 12.5a11 11 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 19.5v.5M3 3l18 18"></path></svg>
+            <span style="flex: 1 1 auto"><strong style="font-weight: 600">Connexion perdue</strong> · vos brouillons sont conservés sur cet appareil et seront renvoyés automatiquement.</span>
+            <button style="height: 30px; padding: 0 10px; border: 1px solid #7A5A12; border-radius: 8px; background: #FFFFFF; color: #7A5A12; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap">Réessayer maintenant</button>
+          </div>
+          <p class="note">Bandeau fixé sous la barre d'application, sur tous les écrans ; disparaît seul au retour du réseau avec le toast « Connexion rétablie · 2 brouillons envoyés ».</p>
+        </div>
+
+        <!-- 500 -->
+        <div class="card">
+          <span class="lbl">500 · erreur inattendue</span>
+          <div role="alert" style="display: flex; gap: 12px; padding: 14px; border-radius: 10px; border: 1px solid #D6DCE6; font-size: 13px; align-items: flex-start">
+            <span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 50%; background: #FBE9E7; color: #9A2F22; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16v.5"></path></svg></span>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <strong style="font-weight: 600">Une erreur inattendue s'est produite</strong>
+              <span style="color: #5A6679">L'entrée n'a pas été enregistrée ; votre texte est conservé dans le panneau. Si le problème persiste, transmettez cet identifiant au support.</span>
+              <span style="display: inline-flex; align-items: center; gap: 8px"><code class="mono" style="padding: 3px 8px; border-radius: 6px; background: #E4E8F0; color: #1E2633; font-size: 12px">req_8f3a2c71-0b4e</code><button class="btn-s" style="height: 26px; font-size: 11px">Copier</button></span>
+              <div style="display: flex; gap: 8px; margin-top: 2px"><button class="btn-s" style="height: 32px; font-size: 13px; font-weight: 600"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2v3h-3"></path></svg>Réessayer</button></div>
+            </div>
+          </div>
+          <p class="note">Jamais de trace technique à l'écran : seul l'identifiant (en-tête <code class="mono" style="font-size: 11px">X-Request-Id</code>) en JetBrains Mono.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================== 5. Notifications -->
+    <section aria-labelledby="h-notifs" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: baseline; gap: 12px">
+        <h2 id="h-notifs" style="margin: 0; font-size: 18px; font-weight: 600">5. Notifications</h2>
+        <span class="note">toasts en bas à droite, 6 s, empilés (3 au plus) · bandeau global sous la barre · confirmation destructive en boîte modale</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; align-items: start">
+
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <!-- Toasts -->
+          <div class="card">
+            <span class="lbl">Toasts</span>
+            <div style="position: relative; min-height: 220px; border: 1px solid #E4E8F0; border-radius: 10px; background: #EEF1F6">
+              <div aria-hidden="true" style="position: absolute; left: 16px; top: 16px; right: 240px; display: flex; flex-direction: column; gap: 8px"><span class="sk" style="width: 40%; height: 14px"></span><span class="sk" style="width: 90%"></span><span class="sk" style="width: 75%"></span></div>
+              <div style="position: absolute; right: 16px; bottom: 16px; width: 340px; display: flex; flex-direction: column; gap: 8px">
+                <div role="status" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #FFFFFF; border: 1px solid #D6DCE6; border-left: 4px solid #7A5A12; font-size: 13px; box-shadow: 0 4px 12px #D6DCE6">
+                  <span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 50%; background: #FBF1DC; color: #7A5A12; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2l6.5 12h-13zM8 7v3M8 12.5v.5"></path></svg></span>
+                  <span style="flex: 1 1 auto"><strong style="font-weight: 600">Avertissement</strong> · Dossier en cours de vérification</span>
+                  <button aria-label="Fermer" style="width: 24px; height: 24px; border: 0; background: transparent; color: #5A6679; cursor: pointer; font-size: 16px; line-height: 1">×</button>
+                </div>
+                <div role="status" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #FFFFFF; border: 1px solid #D6DCE6; border-left: 4px solid #2C4C99; font-size: 13px; box-shadow: 0 4px 12px #D6DCE6">
+                  <span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 50%; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7v4M8 5v.5"></path></svg></span>
+                  <span style="flex: 1 1 auto"><strong style="font-weight: 600">Information</strong> · Vue d'ensemble en cours de mise à jour, quelques secondes</span>
+                  <button aria-label="Fermer" style="width: 24px; height: 24px; border: 0; background: transparent; color: #5A6679; cursor: pointer; font-size: 16px; line-height: 1">×</button>
+                </div>
+                <div role="status" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #FFFFFF; border: 1px solid #D6DCE6; border-left: 4px solid #1E6B45; font-size: 13px; box-shadow: 0 4px 12px #D6DCE6">
+                  <span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 50%; background: #E4F2EA; color: #1E6B45; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8.5l3 3 7-7"></path></svg></span>
+                  <span style="flex: 1 1 auto"><strong style="font-weight: 600">Entrée enregistrée</strong> · <a href="#undo" style="font-weight: 500">Annuler</a></span>
+                  <button aria-label="Fermer" style="width: 24px; height: 24px; border: 0; background: transparent; color: #5A6679; cursor: pointer; font-size: 16px; line-height: 1">×</button>
+                </div>
+              </div>
+            </div>
+            <p class="note">Toujours une icône + le mot du niveau (« Entrée enregistrée », « Information », « Avertissement »), jamais la couleur seule. Le toast de succès offre « Annuler » pendant 6 s ; après, la correction passe par une version (G Q37). Les toasts sont <code class="mono" style="font-size: 11px">role="status"</code>, lus sans interrompre.</p>
+          </div>
+
+          <!-- Bandeau global -->
+          <div class="card">
+            <span class="lbl">Bandeau global · dossier en vérification (fiche 13, repris sur toutes les pages)</span>
+            <div style="border: 1px solid #D6DCE6; border-radius: 10px; overflow: hidden">
+              <div aria-hidden="true" style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6; font-weight: 600; font-size: 13px"><span class="dot"></span>PsyMate <span style="font-weight: 500; color: #5A6679; font-size: 12px">Patients</span></div>
+              <div role="status" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: #FBF1DC; border-bottom: 1px solid #F0DDB0; color: #7A5A12; font-size: 13px">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+                <span style="flex: 1 1 auto"><strong style="font-weight: 600">Votre dossier professionnel est en cours de vérification.</strong> Vous pouvez utiliser l'application pour vos patients. L'annuaire public et le badge « Profil vérifié » seront disponibles après validation.</span>
+                <a href="#13" style="color: #7A5A12; font-weight: 500; white-space: nowrap">Voir le dossier</a>
+              </div>
+              <div aria-hidden="true" style="padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; background: #EEF1F6"><span class="sk" style="width: 30%; height: 14px"></span><span class="sk" style="width: 80%"></span></div>
+            </div>
+            <p class="note">Même composant pour « Dossier : complément demandé » (avertissement) et « Profil vérifié » (succès, affiché une fois puis toast). Non fermable tant que l'état dure.</p>
+          </div>
+        </div>
+
+        <!-- Confirmation destructive -->
+        <div class="card">
+          <span class="lbl">Confirmation destructive · archiver un patient (16)</span>
+          <div style="position: relative; min-height: 420px; border: 1px solid #E4E8F0; border-radius: 10px; background: #B9C2D1; display: flex; align-items: center; justify-content: center; padding: 24px">
+            <div role="dialog" aria-modal="true" aria-labelledby="h-archiver" aria-describedby="d-archiver" style="width: 100%; max-width: 440px; background: #FFFFFF; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 12px 32px #8A94A6">
+              <div style="display: flex; align-items: flex-start; gap: 12px">
+                <span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 50%; background: #FBE9E7; color: #9A2F22; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"></path></svg></span>
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <h3 id="h-archiver" style="margin: 0; font-size: 17px; font-weight: 600">Archiver Marie D. ?</h3>
+                  <p id="d-archiver" style="margin: 0; font-size: 13px; color: #5A6679">Le dossier passe en lecture seule dans « Archivés ». Aucune entrée, aucun lien n'est supprimé ; vous pourrez le réactiver.</p>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px">
+                <label for="f-confirm" style="font-size: 13px; font-weight: 500">Retapez <strong class="mono" style="font-weight: 500">Marie D.</strong> pour confirmer</label>
+                <input id="f-confirm" type="text" value="Marie D" aria-describedby="d-confirm" style="height: 40px; padding: 0 12px; border: 1.5px solid #3A63C2; border-radius: 8px; font-size: 14px; color: #1E2633; box-shadow: 0 0 0 4px #E3EAF8">
+                <span id="d-confirm" style="font-size: 12px; color: #5A6679">Le bouton s'active quand le nom correspond exactement.</span>
+              </div>
+              <div style="display: flex; justify-content: flex-end; gap: 8px">
+                <button style="height: 36px; padding: 0 14px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">Annuler <span class="kbd" style="font-size: 10px">Échap</span></button>
+                <button disabled aria-disabled="true" style="height: 36px; padding: 0 14px; border: 0; border-radius: 8px; background: #9A2F22; color: #FFFFFF; font-size: 13px; font-weight: 600; opacity: 0.5; display: inline-flex; align-items: center; gap: 8px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"></path></svg>Archiver le patient</button>
+              </div>
+            </div>
+          </div>
+          <p class="note">Le rouge #9A2F22 porte l'action destructive, jamais le patient lui-même (son nom reste en #1E2633). Focus initial sur le champ ; « Échap » annule ; le bouton reste grisé tant que le nom diffère. Même boîte pour « Retirer le lien » et « Supprimer le patient démo ».</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================== 6. Page d'aide des raccourcis -->
+    <section aria-labelledby="h-raccourcis" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: baseline; gap: 12px">
+        <h2 id="h-raccourcis" style="margin: 0; font-size: 18px; font-weight: 600">6. Page d'aide des raccourcis</h2>
+        <span class="note">M7-03 · panneau latéral ouvert par <span class="kbd">?</span>, par le lien « Voir les raccourcis » ou depuis le menu du compte</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 420px 1fr; gap: 16px; align-items: start">
+        <div id="raccourcis" role="dialog" aria-labelledby="h-rac-panel" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 8px 24px #D6DCE6">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <h3 id="h-rac-panel" style="margin: 0; font-size: 16px; font-weight: 600">Raccourcis clavier</h3>
+            <div style="flex: 1 1 auto"></div>
+            <button aria-label="Fermer" style="width: 28px; height: 28px; border: 1px solid #D6DCE6; border-radius: 6px; background: #FFFFFF; color: #5A6679; cursor: pointer; font-size: 16px; line-height: 1">×</button>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px">
+            <caption class="sr">Raccourcis disponibles et leur effet</caption>
+            <thead><tr style="color: #5A6679; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em"><th scope="col" style="text-align: left; font-weight: 600; padding: 6px 0; border-bottom: 1px solid #D6DCE6; width: 120px">Touche</th><th scope="col" style="text-align: left; font-weight: 600; padding: 6px 0; border-bottom: 1px solid #D6DCE6">Effet</th></tr></thead>
+            <tbody>
+              <tr><th scope="row" style="text-align: left; font-weight: 400; padding: 8px 0; border-bottom: 1px solid #E4E8F0"><span class="kbd">N</span></th><td style="padding: 8px 0; border-bottom: 1px solid #E4E8F0">Nouvelle entrée dans le dossier ouvert · nouveau patient depuis la liste</td></tr>
+              <tr><th scope="row" style="text-align: left; font-weight: 400; padding: 8px 0; border-bottom: 1px solid #E4E8F0"><span class="kbd">/</span></th><td style="padding: 8px 0; border-bottom: 1px solid #E4E8F0">Rechercher dans le dossier · filtrer la liste des patients</td></tr>
+              <tr><th scope="row" style="text-align: left; font-weight: 400; padding: 8px 0; border-bottom: 1px solid #E4E8F0"><span class="kbd">L</span></th><td style="padding: 8px 0; border-bottom: 1px solid #E4E8F0">Lier l'entrée ouverte à une autre (ouvre l'éditeur de lien)</td></tr>
+              <tr><th scope="row" style="text-align: left; font-weight: 400; padding: 8px 0; border-bottom: 1px solid #E4E8F0"><span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span></th><td style="padding: 8px 0; border-bottom: 1px solid #E4E8F0">Vue d'ensemble · Timeline · Graphe du patient</td></tr>
+              <tr><th scope="row" style="text-align: left; font-weight: 400; padding: 8px 0; border-bottom: 1px solid #E4E8F0"><span class="kbd">M</span></th><td style="padding: 8px 0; border-bottom: 1px solid #E4E8F0">Basculer le mode d'affichage (timeline chronologique ↔ par séance ; graphe complet ↔ centré)</td></tr>
+              <tr><th scope="row" style="text-align: left; font-weight: 400; padding: 8px 0; border-bottom: 1px solid #E4E8F0"><span class="kbd">Échap</span></th><td style="padding: 8px 0; border-bottom: 1px solid #E4E8F0">Fermer le panneau ou la recherche ; le brouillon est conservé</td></tr>
+              <tr><th scope="row" style="text-align: left; font-weight: 400; padding: 8px 0; border-bottom: 1px solid #E4E8F0"><span class="kbd">Ctrl</span> + <span class="kbd">Entrée</span></th><td style="padding: 8px 0; border-bottom: 1px solid #E4E8F0">Enregistrer le formulaire · depuis la barre de capture, ouvrir l'éditeur complet prérempli</td></tr>
+              <tr><th scope="row" style="text-align: left; font-weight: 400; padding: 8px 0"><span class="kbd">Ctrl</span> + <span class="kbd">S</span></th><td style="padding: 8px 0">Enregistrer en brouillon, à compléter après la séance</td></tr>
+            </tbody>
+          </table>
+          <p class="note">Les raccourcis à une lettre sont inactifs dans un champ de saisie. Sur Mac, <span class="kbd">Ctrl</span> devient <span class="kbd">⌘</span>.</p>
+        </div>
+        <div class="card" style="gap: 8px">
+          <span class="lbl">Règles</span>
+          <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #1E2633; display: flex; flex-direction: column; gap: 6px">
+            <li>Le panneau est le même sur tous les écrans ; les lignes sans objet pour l'écran courant sont grisées (#8A94A6) et annoncées « indisponible ici ».</li>
+            <li>Chaque bouton qui a un raccourci l'affiche en JetBrains Mono à droite de son libellé (« Nouveau patient N »), comme dans les fiches 01 et 02.</li>
+            <li>À la première connexion, « Voir les raccourcis » accompagne le bloc « Créez votre premier patient » (section 2) ; après la première entrée, le lien passe dans le menu du compte.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <p class="note" style="border-top: 1px solid #D6DCE6; padding-top: 16px">Hors de cette planche : mode sombre (étude §8) et déclinaison mobile. Cette planche fait autorité pour la forme des trois états et des notifications.</p>
+  </div>
+</div>
+</body>
+</html>

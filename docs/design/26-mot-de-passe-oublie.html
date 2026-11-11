@@ -1,0 +1,120 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mot de passe oublié – Suivi</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 760px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.5">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="max-width: 1120px; margin: 0 auto; padding: 0 24px; height: 64px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap">
+      <a href="Main.dc.html" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #1E2633; text-decoration: none">
+        <span style="width: 32px; height: 32px; border-radius: 9px; background: #3A63C2; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+        </span>
+        Suivi
+      </a>
+      <a href="#login" style="margin-left: auto; font-size: 13px; text-decoration: none; font-weight: 500">← Retour à la connexion</a>
+    </div>
+  </header>
+
+  <main style="flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; justify-content: center; padding: 56px 24px 72px; max-width: 1120px; width: 100%; margin: 0 auto">
+
+    <!-- Étape 1 : demande -->
+    <form onsubmit="return false" style="flex: 1 1 440px; max-width: 520px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; padding: 36px; display: flex; flex-direction: column; gap: 20px" aria-labelledby="h-ask">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #3A63C2">Étape 1 sur 2</span>
+        <h1 id="h-ask" style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25">Mot de passe oublié</h1>
+        <p style="margin: 0; color: #5A6679; line-height: 1.65">Indiquez l'e-mail de votre compte. Si un compte existe, vous recevrez un lien de réinitialisation valable <strong style="font-weight: 600; color: #1E2633">30 minutes</strong>.</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="email" style="font-size: 13px; font-weight: 500">E-mail professionnel</label>
+        <input id="email" type="email" autocomplete="username" placeholder="prenom.nom@exemple.fr" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; color: #1E2633; background: #FFFFFF">
+      </div>
+
+      <button type="submit" style="height: 46px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">Envoyer le lien</button>
+
+      <div style="background: #E4F2EA; border: 1px solid #BFE0CD; border-radius: 10px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; color: #1E6B45" role="status">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M8 12l3 3 5-6"></path></svg>
+        <p style="margin: 0; font-size: 13px; line-height: 1.55">Si cette adresse correspond à un compte, un e-mail vient de partir. Vérifiez aussi le courrier indésirable. Vous pourrez redemander un lien dans 2 minutes.</p>
+      </div>
+
+      <p style="margin: 0; font-size: 12px; color: #8A94A6; line-height: 1.6">Par sécurité, le message est le même qu'un compte existe ou non. Les demandes sont consignées dans le journal de sécurité du compte concerné.</p>
+    </form>
+
+    <!-- Étape 2 : nouveau mot de passe -->
+    <form onsubmit="return false" style="flex: 1 1 440px; max-width: 520px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; padding: 36px; display: flex; flex-direction: column; gap: 20px" aria-labelledby="h-new">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #3A63C2">Étape 2 sur 2</span>
+        <h1 id="h-new" style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25">Choisissez un nouveau mot de passe</h1>
+        <p style="margin: 0; color: #5A6679; line-height: 1.65">Pour le compte <strong style="font-weight: 600; color: #1E2633; font-family: 'JetBrains Mono', monospace; font-size: 13px">claire.moreau@exemple.fr</strong>. Ce lien expire dans <span style="font-family: 'JetBrains Mono', monospace; color: #1E2633">27:40</span>.</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="pwd1" style="font-size: 13px; font-weight: 500">Nouveau mot de passe</label>
+        <div style="display: flex; align-items: center; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; padding-right: 6px">
+          <input id="pwd1" type="password" autocomplete="new-password" value="••••••••••••••" style="flex: 1 1 auto; min-width: 0; height: 42px; border: 0; outline: 0; background: transparent; padding: 0 14px; font-size: 15px; color: #1E2633; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em">
+          <button type="button" aria-label="Afficher le mot de passe" style="width: 34px; height: 34px; border: 0; border-radius: 8px; background: transparent; color: #5A6679; cursor: pointer; display: inline-flex; align-items: center; justify-content: center">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+        </div>
+        <!-- Jauge de robustesse -->
+        <div style="display: flex; gap: 4px; margin-top: 4px" aria-hidden="true">
+          <span style="flex: 1; height: 4px; border-radius: 2px; background: #1E6B45"></span>
+          <span style="flex: 1; height: 4px; border-radius: 2px; background: #1E6B45"></span>
+          <span style="flex: 1; height: 4px; border-radius: 2px; background: #1E6B45"></span>
+          <span style="flex: 1; height: 4px; border-radius: 2px; background: #D6DCE6"></span>
+        </div>
+        <ul style="margin: 4px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; font-size: 12px; color: #5A6679">
+          <li style="display: flex; gap: 6px; align-items: center; color: #1E6B45"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>12 caractères minimum</li>
+          <li style="display: flex; gap: 6px; align-items: center; color: #1E6B45"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>Majuscules et minuscules</li>
+          <li style="display: flex; gap: 6px; align-items: center; color: #1E6B45"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>Absent des listes de mots de passe compromis</li>
+          <li style="display: flex; gap: 6px; align-items: center"><span style="width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #B9C2D1; display: inline-block" aria-hidden="true"></span>Un chiffre ou un symbole (conseillé)</li>
+        </ul>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="pwd2" style="font-size: 13px; font-weight: 500">Confirmer le mot de passe</label>
+        <input id="pwd2" type="password" autocomplete="new-password" value="••••••••••••••" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; color: #1E2633; background: #FFFFFF; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em">
+      </div>
+
+      <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #5A6679; cursor: pointer; line-height: 1.5">
+        <input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #3A63C2; margin-top: 2px; flex: 0 0 auto">
+        Déconnecter tous les autres appareils (recommandé si vous pensez que votre mot de passe a fuité)
+      </label>
+
+      <button type="submit" style="height: 46px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">Enregistrer et me connecter</button>
+
+      <p style="margin: 0; font-size: 12px; color: #8A94A6; line-height: 1.6">Si la double authentification est activée, votre code vous sera demandé juste après. Un e-mail de confirmation du changement sera envoyé.</p>
+    </form>
+  </main>
+
+  <footer style="background: #FFFFFF; border-top: 1px solid #D6DCE6">
+    <div style="max-width: 1120px; margin: 0 auto; padding: 20px 24px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; font-size: 12px; color: #8A94A6">
+      <span>© Suivi · Données hébergées en France</span>
+      <nav aria-label="Pied de page" style="margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap">
+        <a href="#confidentialite" style="text-decoration: none">Confidentialité</a>
+        <a href="#mentions" style="text-decoration: none">Mentions légales</a>
+        <a href="#contact" style="text-decoration: none">Contact</a>
+      </nav>
+    </div>
+  </footer>
+</div>
+
+</body>
+</html>

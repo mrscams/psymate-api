@@ -1,0 +1,626 @@
+<!-- Maquette statique · palette Nordique · écrite à la main depuis B4 écran 3 et A6. Référence : docs/design/03-timeline.md (à écrire) -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Timeline du patient</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button{font-family:inherit}
+/* Classes structurelles partagées (couleurs toujours en hex) */
+.d{display:flex;flex-direction:column;align-items:flex-end;padding-right:20px;position:relative;font-size:12px}
+.x{margin:0;color:#5A6679;font-size:13px}
+.s{font-size:11px;color:#5A6679}
+.m{font-family:'JetBrains Mono',monospace;font-size:12px;color:#1E2633}
+.n{font-family:'JetBrains Mono',monospace;font-size:11px;color:#5A6679}
+.kbd{font-family:'JetBrains Mono',monospace;font-size:11px;padding:1px 5px;border:1px solid #D6DCE6;border-radius:4px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid #D6DCE6;border-radius:999px;background:#FFFFFF;color:#1E2633;cursor:pointer}
+.chip.on{border-color:#3A63C2;background:#E3EAF8;color:#2C4C99;font-weight:500}
+.tg{height:28px;padding:0 10px;border:0;background:#FFFFFF;color:#5A6679;font-size:12px;cursor:pointer}
+.tg.on{background:#E3EAF8;color:#2C4C99;font-weight:600}
+.said{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#5A6679;border:1px solid #D6DCE6;padding:1px 8px;border-radius:999px}
+.mi{display:flex;align-items:center;gap:10px;height:32px;padding:0 10px;border:0;border-radius:6px;background:#FFFFFF;color:#1E2633;text-align:left;cursor:pointer}
+.ses{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #D6DCE6;border-left:3px solid #3E8E7E;border-radius:12px;background:#FFFFFF;text-align:left;cursor:pointer;font-size:14px;color:#1E2633}
+.tag{padding:1px 8px;border-radius:999px;background:#E4E8F0;color:#1E2633}
+.ic{display:inline-flex;align-items:center;gap:6px}
+.c{background:#FFFFFF;border:1px solid #D6DCE6;border-left:3px solid;border-radius:10px;padding:10px 14px;display:flex;flex-direction:column;gap:6px}
+.c1{flex-direction:row;align-items:center;gap:8px}
+.c0{padding:8px 14px;color:#5A6679;font-size:13px}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 1080px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.4">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      PsyMate
+    </div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a>
+    <span style="color: #8A94A6">/</span>
+    <span style="font-size: 13px; color: #1E2633">Marie D.</span>
+    <div style="flex: 1 1 auto"></div>
+    <button aria-label="Rechercher dans le dossier" style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>
+      Rechercher <span class="kbd">/</span>
+    </button>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CL</div>
+  </div>
+
+  <!-- En-tête patient permanent -->
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 0; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+      <div style="display: flex; align-items: baseline; gap: 10px">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Marie D.</h1>
+        <span style="color: #5A6679; font-size: 14px">34 ans · suivie depuis mars 2025</span>
+      </div>
+      <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; background: #FBF1DC; color: #7A5A12; font-size: 12px; font-weight: 500">
+        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M2 1v10M2 1h7l-1.5 2.5L9 6H2"></path></svg>
+        à surveiller
+      </span>
+      <div style="flex: 1 1 auto"></div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <button style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; color: #1E2633; font-size: 13px; cursor: pointer">Dernière séance : 17 oct.
+          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
+        </button>
+        <button style="height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: #3A63C2; color: #FFFFFF; font-size: 13px; font-weight: 600; cursor: pointer">Démarrer la séance</button>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 4px">
+      <a href="#overview" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; text-decoration: none; color: #5A6679; font-weight: 500; font-size: 13px; border-bottom: 2px solid transparent"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">1</span> Vue d'ensemble</a>
+      <a href="#timeline" aria-current="page" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; text-decoration: none; color: #1E2633; font-weight: 600; font-size: 13px; border-bottom: 2px solid #3A63C2"><span class="s" style="font-family: 'JetBrains Mono', monospace">2</span> Timeline</a>
+      <a href="#graph" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; text-decoration: none; color: #5A6679; font-weight: 500; font-size: 13px; border-bottom: 2px solid transparent"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">3</span> Graphe</a>
+      <div style="flex: 1 1 auto"></div>
+      <div role="group" aria-label="Niveau de détail de la vue d'ensemble" style="display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: #5A6679; margin-bottom: 4px">
+        Vue
+        <span style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+          <button aria-pressed="false" style="height: 28px; padding: 0 12px; border: 0; background: #FFFFFF; color: #5A6679; font-size: 12px; font-weight: 500; cursor: pointer">Simple</button>
+          <button aria-pressed="true" class="tg on" style="padding: 0 12px; border-left: 1px solid #D6DCE6">Complète</button>
+        </span>
+        <span style="font-size: 11px; color: #8A94A6">mémorisée dans vos préférences</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barre de capture (repliée) -->
+  <div style="max-width: 1180px; width: 100%; margin: 0 auto; padding: 12px 24px 0">
+    <div style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 14px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round"><path d="M4 5l4 4-4 4M10 13h5"></path></svg>
+      <label for="capture" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Capture rapide</label>
+      <input id="capture" type="text" placeholder="Saisir une entrée… (/evt, /sit, /res, /med) — touche N" style="flex: 1 1 auto; min-width: 0; height: 36px; border: 0; outline: 0; background: transparent; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #1E2633">
+    </div>
+  </div>
+
+  <div style="max-width: 1180px; width: 100%; margin: 0 auto; padding: 16px 24px 40px; display: flex; flex-direction: column; gap: 40px">
+
+    <!-- ÉTAT A · Mode chronologique (défaut) -->
+    <section aria-labelledby="etat-a" style="display: flex; flex-direction: column; gap: 12px">
+      <h2 id="etat-a" style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em"><span style="padding: 2px 8px; border: 1px dashed #B9C2D1; border-radius: 6px">État A</span> Mode chronologique · défaut · GET /api/patients/{id}/timeline?emotions=anxiety&amp;from=…&amp;limit=200</h2>
+
+      <!-- Barre d'outils -->
+      <div role="toolbar" aria-label="Filtres et affichage de la timeline" style="display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px">
+          <span style="color: #5A6679; margin-right: 4px">Types <span class="kbd">F</span></span>
+          <button aria-pressed="true" class="chip on">Tous <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">214</span></button>
+          <button aria-pressed="false" class="chip"><span style="width: 8px; height: 10px; border-radius: 2px; background: #7F8EA8" aria-hidden="true"></span>Notes <span class="s" style="font-family: 'JetBrains Mono', monospace">61</span></button>
+          <button aria-pressed="false" class="chip"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: #3A63C2" aria-hidden="true"></span>Événements <span class="s" style="font-family: 'JetBrains Mono', monospace">38</span></button>
+          <button aria-pressed="false" class="chip"><span style="width: 10px; height: 4px; border-radius: 2px; background: #2F4F73" aria-hidden="true"></span>Situations <span class="s" style="font-family: 'JetBrains Mono', monospace">9</span></button>
+          <button aria-pressed="false" class="chip"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8B7BD6" aria-hidden="true"></span>Ressentis <span class="s" style="font-family: 'JetBrains Mono', monospace">72</span></button>
+          <button aria-pressed="false" class="chip"><span style="width: 8px; height: 8px; border-radius: 2px; border: 2px solid #3E8E7E" aria-hidden="true"></span>Séances <span class="s" style="font-family: 'JetBrains Mono', monospace">31</span></button>
+          <button aria-pressed="false" class="chip"><span style="width: 10px; height: 5px; border-radius: 999px; background: #B07A2A" aria-hidden="true"></span>Médicaments <span class="s" style="font-family: 'JetBrains Mono', monospace">3</span></button>
+          <span aria-hidden="true" style="width: 1px; height: 22px; background: #D6DCE6; margin: 0 4px"></span>
+          <button aria-pressed="true" aria-label="Filtre émotion Anxiété, actif ; retirer" class="chip on"><span style="width: 8px; height: 8px; border-radius: 50%; background: #7A68C9" aria-hidden="true"></span>Anxiété <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">18</span><span aria-hidden="true" style="margin-left: 2px">×</span></button>
+          <button aria-pressed="false" class="chip">#travail <span class="s" style="font-family: 'JetBrains Mono', monospace">24</span></button>
+          <button aria-pressed="false" class="chip">
+            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#7A5A12" stroke-width="1.8" stroke-linecap="round"><path d="M3 13l1-4 7-7 3 3-7 7z"></path></svg>
+            Brouillons seulement <span class="s" style="font-family: 'JetBrains Mono', monospace">2</span></button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: #5A6679">
+          <span>Période</span>
+          <div role="group" aria-label="Période affichée" style="display: flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+            <button aria-pressed="false" class="tg">30 j</button>
+            <button aria-pressed="true" class="tg on">90 j</button>
+            <button aria-pressed="false" class="tg">1 an</button>
+            <button aria-pressed="false" class="tg">Tout</button>
+          </div>
+          <span aria-hidden="true" style="width: 1px; height: 22px; background: #D6DCE6"></span>
+          <span>Mode</span>
+          <div role="group" aria-label="Mode d'affichage" style="display: flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+            <button aria-pressed="true" class="tg on" style="padding: 0 12px">Chronologique</button>
+            <button aria-pressed="false" class="tg" style="padding: 0 12px; border-left: 1px solid #D6DCE6">Par séance</button>
+          </div>
+          <span class="kbd">M</span>
+          <div style="flex: 1 1 auto"></div>
+          <span>Zoom</span>
+          <button aria-label="Zoom arrière" style="width: 28px; height: 28px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 14px; cursor: pointer">−</button>
+          <span aria-hidden="true" style="display: inline-flex; align-items: center; width: 110px; height: 4px; border-radius: 2px; background: #E4E8F0; position: relative"><span style="width: 45%; height: 4px; border-radius: 2px; background: #3A63C2"></span><span style="position: absolute; left: 45%; top: -5px; width: 14px; height: 14px; border-radius: 50%; background: #FFFFFF; border: 2px solid #3A63C2; margin-left: -7px"></span></span>
+          <button aria-label="Zoom avant" style="width: 28px; height: 28px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 14px; cursor: pointer">+</button>
+          <span style="color: #8A94A6">jour · <span class="kbd" style="color: #5A6679">Ctrl</span> + molette</span>
+        </div>
+      </div>
+
+      <!-- Indication du défilement virtuel -->
+      <div class="s" style="display: flex; align-items: center; gap: 10px; padding: 0 4px">
+        <span style="font-family: 'JetBrains Mono', monospace">2 014 entrées · 3 fenêtres en mémoire</span>
+        <span aria-hidden="true">·</span>
+        <span>fenêtre courante 24 oct. → 15 août (200 éléments) · précédente et suivante chargées en arrière-plan</span>
+        <div style="flex: 1 1 auto"></div>
+        <span>Facettes de la fenêtre : anxiété 18 · tristesse 6 · colère 3 · #travail 24 · #sommeil 7</span>
+      </div>
+
+      <!-- Corps : bandes de situations · axe · cartes -->
+      <div role="list" aria-label="Entrées de la timeline, du plus récent au plus ancien" style="display: grid; grid-template-columns: 18px 18px 120px minmax(0, 1fr); column-gap: 8px; row-gap: 12px; padding: 8px 0 0 8px; position: relative">
+
+        <!-- Axe vertical (une seule cellule qui couvre toutes les lignes) -->
+        <div aria-hidden="true" style="grid-column: 3; grid-row: 1 / span 11; border-right: 2px solid #D6DCE6; margin-right: 10px"></div>
+
+        <!-- Bande « Surcharge au travail » : en cours depuis le 3 sept., chevauche les lignes 1 à 8 -->
+        <div role="listitem" aria-label="Situation en cours : Surcharge au travail, depuis le 3 septembre" style="grid-column: 1; grid-row: 1 / span 8; position: relative; min-height: 100%">
+          <div aria-hidden="true" style="position: absolute; inset: 0; border-radius: 4px; background: #2F4F73; opacity: 0.25"></div>
+          <svg aria-hidden="true" width="18" height="12" viewBox="0 0 18 12" style="position: absolute; top: -12px; left: 0"><path d="M9 11V2M5 6l4-4 4 4" fill="none" stroke="#2F4F73" stroke-width="1.6" stroke-linecap="round"></path></svg>
+          <span style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%) rotate(180deg); writing-mode: vertical-rl; white-space: nowrap; font-size: 11px; font-weight: 500; color: #2F4F73">Surcharge au travail · depuis le 3 sept. · en cours</span>
+        </div>
+
+        <!-- Bande « Séparation » : clôturée, 15 août → 30 sept., chevauche les lignes 6 à 10 -->
+        <div role="listitem" aria-label="Situation clôturée : Séparation, du 15 août au 30 septembre" style="grid-column: 2; grid-row: 6 / span 5; position: relative">
+          <div aria-hidden="true" style="position: absolute; inset: 0; border-radius: 4px; background: #2F4F73; opacity: 0.25; border-top: 2px solid #2F4F73"></div>
+          <span style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%) rotate(180deg); writing-mode: vertical-rl; white-space: nowrap; font-size: 11px; font-weight: 500; color: #2F4F73">Séparation · 15 août → 30 sept. · clôturée</span>
+        </div>
+
+        <!-- Ligne 1 · 24 oct. · ressenti, brouillon, date exacte -->
+        <div class="d" style="grid-column: 3; grid-row: 1">
+          <span aria-hidden="true" style="position: absolute; right: 5px; top: 12px; width: 10px; height: 10px; border-radius: 50%; background: #FFFFFF; border: 2px solid #8B7BD6"></span>
+          <strong style="font-size: 13px">24 oct.</strong><span style="color: #5A6679">samedi</span>
+        </div>
+        <article role="listitem" class="c" style="grid-column: 4; grid-row: 1; border-left-color: #8B7BD6">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #7A68C9; opacity: 0.8"></span>
+            <strong style="font-size: 14px">Anxiété</strong>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #4E3F9E; background: #ECE8F8; padding: 1px 8px; border-radius: 999px; font-weight: 600">8/10 <span aria-hidden="true" style="display: inline-block; width: 50px; height: 4px; border-radius: 2px; background: #FFFFFF"><span style="display: block; width: 80%; height: 4px; border-radius: 2px; background: #8B7BD6"></span></span></span>
+            <span style="font-size: 11px; color: #7A5A12; background: #FBF1DC; padding: 1px 6px; border-radius: 999px">brouillon</span>
+            <div style="flex: 1 1 auto"></div>
+            <span class="m">24 oct. 2026 · 07:40</span>
+            <span class="s">précision : exacte</span>
+          </div>
+          <p class="x">N'a pas dormi ; ruminations sur l'entretien, « je vais me faire démonter ». Souffle court au réveil.</p>
+          <div class="s" style="display: flex; align-items: center; gap: 8px">
+            <span class="tag">#travail</span>
+            <span class="tag">#sommeil</span>
+            <span>2 liens</span>
+            <span aria-hidden="true">·</span>
+            <span>déclenché par Entretien d'évaluation</span>
+          </div>
+        </article>
+
+        <!-- Ligne 2 · 18 oct. · événement, précision jour, dit en séance du 17 oct., menu contextuel ouvert -->
+        <div class="d" style="grid-column: 3; grid-row: 2">
+          <span aria-hidden="true" style="position: absolute; right: 5px; top: 12px; width: 9px; height: 9px; background: #FFFFFF; border: 2px solid #3A63C2; transform: rotate(45deg)"></span>
+          <strong style="font-size: 13px">18 oct.</strong><span style="color: #5A6679">dimanche</span>
+        </div>
+        <article role="listitem" aria-selected="true" style="grid-column: 4; grid-row: 2; position: relative; background: #FFFFFF; border: 1.5px solid #3A63C2; border-left: 3px solid #3A63C2; border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span aria-hidden="true" style="width: 9px; height: 9px; background: #3A63C2; transform: rotate(45deg); margin: 0 1px"></span>
+            <strong style="font-size: 14px">Entretien d'évaluation avec le manager</strong>
+            <span class="said"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 2px; border: 1.5px solid #3E8E7E"></span>dit en séance du 17 oct.</span>
+            <div style="flex: 1 1 auto"></div>
+            <span class="m">18 oct. 2026</span>
+            <span class="s">précision : jour</span>
+            <button aria-label="Actions sur l'entrée" aria-haspopup="menu" aria-expanded="true" style="width: 24px; height: 24px; border: 1px solid #D6DCE6; border-radius: 6px; background: #E3EAF8; color: #2C4C99; cursor: pointer; font-size: 14px; line-height: 1">⋯</button>
+          </div>
+          <p class="x">Entretien annuel ; craint une remise en cause de son poste après la réorganisation. Préparé en séance : repérer les pensées automatiques.</p>
+          <div class="s" style="display: flex; align-items: center; gap: 8px">
+            <span class="tag">#travail</span>
+            <span>1 lien</span>
+          </div>
+          <!-- Menu contextuel (ouvert) -->
+          <div role="menu" aria-label="Actions sur l'entrée" style="position: absolute; right: 14px; top: 40px; z-index: 2; min-width: 220px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 6px; box-shadow: 0 6px 18px #D6DCE6; display: flex; flex-direction: column; gap: 2px; font-size: 13px">
+            <button role="menuitem" style="display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border: 0; border-radius: 6px; background: #E3EAF8; color: #2C4C99; text-align: left; cursor: pointer; font-weight: 500"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 3h10v10H3zM6 8h4"></path></svg><span style="flex: 1 1 auto">Ouvrir</span><span class="s" style="font-family: 'JetBrains Mono', monospace">Entrée</span></button>
+            <button role="menuitem" class="mi"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 13l1-4 7-7 3 3-7 7z"></path></svg><span style="flex: 1 1 auto">Corriger</span><span class="s">crée une version</span></button>
+            <button role="menuitem" class="mi"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6.5 9.5l3-3M5 11l-1.5 1.5a2 2 0 01-3-3L4 6M11 5l1.5-1.5a2 2 0 013 3L12 10"></path></svg><span style="flex: 1 1 auto">Lier</span><span class="kbd" style="color: #5A6679">L</span></button>
+            <div aria-hidden="true" style="height: 1px; background: #D6DCE6; margin: 4px 0"></div>
+            <button role="menuitem" class="mi"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg><span style="flex: 1 1 auto">Voir dans le graphe</span><span class="s">onglet 3</span></button>
+          </div>
+        </article>
+
+        <!-- Ligne 3 · 17 oct. · séance -->
+        <div class="d" style="grid-column: 3; grid-row: 3">
+          <span aria-hidden="true" style="position: absolute; right: 5px; top: 12px; width: 10px; height: 10px; border-radius: 3px; background: #FFFFFF; border: 2px solid #3E8E7E"></span>
+          <strong style="font-size: 13px">17 oct.</strong><span style="color: #5A6679">samedi</span>
+        </div>
+        <article role="listitem" class="c" style="grid-column: 4; grid-row: 3; border-left-color: #3E8E7E">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; border: 2px solid #3E8E7E"></span>
+            <strong style="font-size: 14px">Séance · 50 min · cabinet</strong>
+            <span style="font-size: 12px; color: #5A6679">4 entrées</span>
+            <span style="font-size: 11px; color: #7A5A12; background: #FBF1DC; padding: 1px 6px; border-radius: 999px">non clôturée</span>
+            <div style="flex: 1 1 auto"></div>
+            <span class="m">17 oct. 2026 · 18:00 → 18:50</span>
+            <a href="#session-17" style="font-size: 12px; text-decoration: none">Voir par séance</a>
+          </div>
+          <p class="x">Compte rendu : reprise du thème du travail ; objectif, préparer l'entretien et repérer les pensées automatiques.</p>
+        </article>
+
+        <!-- Ligne 4 · 10 oct. · note, date exacte -->
+        <div class="d" style="grid-column: 3; grid-row: 4">
+          <span aria-hidden="true" style="position: absolute; right: 5px; top: 12px; width: 10px; height: 10px; border-radius: 2px; background: #FFFFFF; border: 2px solid #7F8EA8"></span>
+          <strong style="font-size: 13px">10 oct.</strong><span style="color: #5A6679">samedi</span>
+        </div>
+        <article role="listitem" class="c" style="grid-column: 4; grid-row: 4; border-left-color: #7F8EA8">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span aria-hidden="true" style="width: 10px; height: 12px; border-radius: 2px; background: #7F8EA8"></span>
+            <strong style="font-size: 14px">Note</strong>
+            <span class="said"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 2px; border: 1.5px solid #3E8E7E"></span>dit en séance du 10 oct.</span>
+            <div style="flex: 1 1 auto"></div>
+            <span class="m">10 oct. 2026 · 18:12</span>
+            <span class="s">précision : exacte</span>
+          </div>
+          <p class="x">Semble plus détendue en visio, parle plus vite ; évoque spontanément la reprise de la course à pied.</p>
+        </article>
+
+        <!-- Ligne 5 · oct. 2026 · ressenti, précision mois -->
+        <div class="d" style="grid-column: 3; grid-row: 5">
+          <span aria-hidden="true" style="position: absolute; right: 5px; top: 12px; width: 10px; height: 10px; border-radius: 50%; background: #FFFFFF; border: 2px dashed #8B7BD6"></span>
+          <strong style="font-size: 13px; color: #5A6679">oct. 2026</strong><span style="color: #8A94A6">mois entier</span>
+        </div>
+        <article role="listitem" class="c" style="grid-column: 4; grid-row: 5; border-left-color: #8B7BD6">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #3C66A6; opacity: 0.55"></span>
+            <strong style="font-size: 14px">Tristesse</strong>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #4E3F9E; background: #ECE8F8; padding: 1px 8px; border-radius: 999px; font-weight: 600">4/10 <span aria-hidden="true" style="display: inline-block; width: 50px; height: 4px; border-radius: 2px; background: #FFFFFF"><span style="display: block; width: 40%; height: 4px; border-radius: 2px; background: #8B7BD6"></span></span></span>
+            <div style="flex: 1 1 auto"></div>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679">oct. 2026</span>
+            <span style="font-size: 11px; color: #5A6679; border: 1px dashed #B9C2D1; padding: 0 6px; border-radius: 999px">précision : mois</span>
+          </div>
+          <p class="x">« Depuis le début du mois, des moments de vide le soir, sans raison identifiée. » Durée d'au moins deux semaines.</p>
+        </article>
+
+        <!-- Ligne 6 · 26 sept. · séance (compacte) -->
+        <div class="d" style="grid-column: 3; grid-row: 6">
+          <span aria-hidden="true" style="position: absolute; right: 5px; top: 12px; width: 10px; height: 10px; border-radius: 3px; background: #FFFFFF; border: 2px solid #3E8E7E"></span>
+          <strong style="font-size: 13px">26 sept.</strong><span style="color: #5A6679">samedi</span>
+        </div>
+        <article role="listitem" class="c c1" style="grid-column: 4; grid-row: 6; border-left-color: #3E8E7E">
+          <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; border: 2px solid #3E8E7E"></span>
+          <strong style="font-size: 14px">Séance · 50 min · cabinet</strong>
+          <span style="font-size: 12px; color: #5A6679">6 entrées · clôturée</span>
+          <div style="flex: 1 1 auto"></div>
+          <span class="m">26 sept. 2026 · 10:00 → 10:50</span>
+        </article>
+
+        <!-- Ligne 7 · 12 sept. · médicament, changement de posologie -->
+        <div class="d" style="grid-column: 3; grid-row: 7">
+          <span aria-hidden="true" style="position: absolute; right: 3px; top: 13px; width: 14px; height: 8px; border-radius: 999px; background: #FFFFFF; border: 2px solid #B07A2A"></span>
+          <strong style="font-size: 13px">12 sept.</strong><span style="color: #5A6679">samedi</span>
+        </div>
+        <article role="listitem" class="c" style="grid-column: 4; grid-row: 7; border-left-color: #B07A2A">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span aria-hidden="true" style="width: 14px; height: 8px; border-radius: 999px; background: #B07A2A"></span>
+            <strong style="font-size: 14px">Sertraline</strong>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679; text-decoration: line-through">50 mg</span>
+            <span aria-hidden="true" style="color: #5A6679">→</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; color: #1E2633">75 mg · matin</span>
+            <span style="font-size: 11px; color: #7A5A12; background: #FBF1DC; padding: 1px 8px; border-radius: 999px">changement de posologie</span>
+            <div style="flex: 1 1 auto"></div>
+            <span class="m">12 sept. 2026</span>
+            <span class="s">précision : jour</span>
+          </div>
+          <p class="x">Prescrit par le Dr Lenoir (psychiatre) ; rapporté par la patiente. Effets attendus sous 3 à 4 semaines.</p>
+        </article>
+
+        <!-- Ligne 8 · 3 sept. · début de situation « Surcharge au travail » -->
+        <div class="d" style="grid-column: 3; grid-row: 8">
+          <span aria-hidden="true" style="position: absolute; right: 3px; top: 14px; width: 14px; height: 6px; border-radius: 999px; background: #2F4F73"></span>
+          <strong style="font-size: 13px">3 sept.</strong><span style="color: #5A6679">jeudi</span>
+        </div>
+        <article role="listitem" class="c" style="grid-column: 4; grid-row: 8; border-left-color: #2F4F73">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span aria-hidden="true" style="width: 14px; height: 6px; border-radius: 999px; background: #2F4F73"></span>
+            <strong style="font-size: 14px">Surcharge au travail</strong>
+            <span style="font-size: 11px; color: #2C4C99; background: #E3EAF8; padding: 1px 8px; border-radius: 999px">en cours</span>
+            <div style="flex: 1 1 auto"></div>
+            <span class="m">depuis le 3 sept. 2026</span>
+            <button style="height: 24px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 6px; background: #FFFFFF; color: #1E2633; font-size: 12px; cursor: pointer">Clôturer…</button>
+          </div>
+          <p class="x">Réorganisation du service, deux postes non remplacés. 5 ressentis liés · intensité moyenne 7,4 · glisser la bande pour clôturer.</p>
+        </article>
+
+        <!-- Ligne 9 · 28 août · ressenti colère -->
+        <div class="d" style="grid-column: 3; grid-row: 9">
+          <span aria-hidden="true" style="position: absolute; right: 5px; top: 12px; width: 10px; height: 10px; border-radius: 50%; background: #FFFFFF; border: 2px solid #8B7BD6"></span>
+          <strong style="font-size: 13px">28 août</strong><span style="color: #5A6679">vendredi</span>
+        </div>
+        <article role="listitem" class="c" style="grid-column: 4; grid-row: 9; border-left-color: #8B7BD6">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #B8463C; opacity: 0.8"></span>
+            <strong style="font-size: 14px">Colère</strong>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #4E3F9E; background: #ECE8F8; padding: 1px 8px; border-radius: 999px; font-weight: 600">6/10 <span aria-hidden="true" style="display: inline-block; width: 50px; height: 4px; border-radius: 2px; background: #FFFFFF"><span style="display: block; width: 60%; height: 4px; border-radius: 2px; background: #8B7BD6"></span></span></span>
+            <div style="flex: 1 1 auto"></div>
+            <span class="m">28 août 2026 · 21:30</span>
+            <span class="s">précision : exacte</span>
+          </div>
+          <p class="x">Dispute au téléphone avec son ex-compagnon au sujet du logement. « Il décide encore pour moi. »</p>
+          <div class="s" style="display: flex; align-items: center; gap: 8px"><span class="tag">#couple</span><span>1 lien · aggrave Séparation</span></div>
+        </article>
+
+        <!-- Ligne 10 · 15 août · début de situation « Séparation » (clôturée) -->
+        <div class="d" style="grid-column: 3; grid-row: 10">
+          <span aria-hidden="true" style="position: absolute; right: 3px; top: 14px; width: 14px; height: 6px; border-radius: 999px; background: #2F4F73"></span>
+          <strong style="font-size: 13px">15 août</strong><span style="color: #5A6679">samedi</span>
+        </div>
+        <article role="listitem" class="c c1" style="grid-column: 4; grid-row: 10; border-left-color: #2F4F73">
+          <span aria-hidden="true" style="width: 14px; height: 6px; border-radius: 999px; background: #2F4F73"></span>
+          <strong style="font-size: 14px">Séparation</strong>
+          <span style="font-size: 11px; color: #5A6679; background: #E4E8F0; padding: 1px 8px; border-radius: 999px">clôturée le 30 sept.</span>
+          <div style="flex: 1 1 auto"></div>
+          <span class="m">15 août → 30 sept. 2026</span>
+          <span class="s">précision : jour</span>
+        </article>
+
+        <!-- Ligne 11 · squelette de la fenêtre suivante -->
+        <div aria-hidden="true" style="grid-column: 3; grid-row: 11; display: flex; justify-content: flex-end; padding-right: 20px"><span style="width: 48px; height: 12px; border-radius: 4px; background: #E4E8F0"></span></div>
+        <div role="status" aria-label="Fenêtre suivante en cours de chargement" style="grid-column: 4; grid-row: 11; display: flex; flex-direction: column; gap: 8px">
+          <div aria-hidden="true" style="height: 56px; border-radius: 10px; border: 1px solid #E4E8F0; background: #FFFFFF; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="width: 40%; height: 10px; border-radius: 4px; background: #E4E8F0"></span><span style="width: 70%; height: 8px; border-radius: 4px; background: #E4E8F0"></span></div>
+          <div style="font-size: 11px; color: #5A6679; text-align: center">Fenêtre suivante (14 août → 2 juin) · cursor=eyJvIjoiMjAyNi0wOC0xNSIsImlkIjoi… · chargée en arrière-plan</div>
+        </div>
+      </div>
+
+      <!-- Zone « Avant le suivi » -->
+      <section aria-labelledby="avant-suivi" style="margin-top: 4px; background: #E4E8F0; border-radius: 12px; padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <h3 id="avant-suivi" style="margin: 0; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">Avant le suivi</h3>
+          <span style="font-size: 12px; color: #5A6679">· antérieur à mars 2025 · 3 entrées · précisions période, année et phase de vie</span>
+        </div>
+        <div role="list" aria-label="Entrées antérieures au suivi" style="display: grid; grid-template-columns: 18px 18px 120px minmax(0, 1fr); column-gap: 8px; row-gap: 8px; padding-left: 8px">
+          <div aria-hidden="true" style="grid-column: 3; grid-row: 1 / span 3; border-right: 2px dashed #B9C2D1; margin-right: 10px"></div>
+
+          <div style="grid-column: 3; grid-row: 1; display: flex; flex-direction: column; align-items: flex-end; padding-right: 20px; font-size: 12px"><strong style="font-size: 13px; color: #5A6679">été 2024</strong><span style="color: #8A94A6">période</span></div>
+          <article role="listitem" class="c c1 c0" style="grid-column: 4; grid-row: 1; border-left-color: #3A63C2">
+            <span aria-hidden="true" style="width: 9px; height: 9px; background: #3A63C2; transform: rotate(45deg); margin: 0 1px; opacity: 0.7"></span>
+            <span style="font-weight: 500; color: #1E2633">Déménagement à Lyon</span>
+            <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; border: 1px solid #D6DCE6; padding: 1px 8px; border-radius: 999px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 2px; border: 1.5px solid #3E8E7E"></span>dit en séance du 24 oct. 2026</span>
+            <div style="flex: 1 1 auto"></div>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">été 2024</span>
+            <span style="font-size: 11px; border: 1px dashed #B9C2D1; padding: 0 6px; border-radius: 999px">precision : period · label « été 2024 »</span>
+          </article>
+
+          <div style="grid-column: 3; grid-row: 2; display: flex; flex-direction: column; align-items: flex-end; padding-right: 20px; font-size: 12px"><strong style="font-size: 13px; color: #5A6679">2014</strong><span style="color: #8A94A6">année</span></div>
+          <article role="listitem" class="c c1 c0" style="grid-column: 4; grid-row: 2; border-left-color: #3A63C2">
+            <span aria-hidden="true" style="width: 9px; height: 9px; background: #3A63C2; transform: rotate(45deg); margin: 0 1px; opacity: 0.7"></span>
+            <span style="font-weight: 500; color: #1E2633">Séparation des parents</span>
+            <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; border: 1px solid #D6DCE6; padding: 1px 8px; border-radius: 999px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 2px; border: 1.5px solid #3E8E7E"></span>dit en séance du 17 oct. 2026</span>
+            <div style="flex: 1 1 auto"></div>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">2014</span>
+            <span style="font-size: 11px; border: 1px dashed #B9C2D1; padding: 0 6px; border-radius: 999px">precision : year</span>
+          </article>
+
+          <div style="grid-column: 3; grid-row: 3; display: flex; flex-direction: column; align-items: flex-end; padding-right: 20px; font-size: 12px"><strong style="font-size: 13px; color: #5A6679">Enfance</strong><span style="color: #8A94A6">phase de vie</span></div>
+          <article role="listitem" class="c c1 c0" style="grid-column: 4; grid-row: 3; border-left-color: #3A63C2">
+            <span aria-hidden="true" style="width: 9px; height: 9px; background: #3A63C2; transform: rotate(45deg); margin: 0 1px; opacity: 0.7"></span>
+            <span style="font-weight: 500; color: #1E2633">Départ du père</span>
+            <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; border: 1px solid #D6DCE6; padding: 1px 8px; border-radius: 999px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 2px; border: 1.5px solid #3E8E7E"></span>dit en séance du 4 avr. 2025</span>
+            <div style="flex: 1 1 auto"></div>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">1992 → 2004</span>
+            <span style="font-size: 11px; border: 1px dashed #B9C2D1; padding: 0 6px; border-radius: 999px">precision : life_phase · bornes déduites de la date de naissance</span>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <!-- ÉTAT B · Mode par séance -->
+    <section aria-labelledby="etat-b" style="display: flex; flex-direction: column; gap: 12px">
+      <h2 id="etat-b" style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em"><span style="padding: 2px 8px; border: 1px dashed #B9C2D1; border-radius: 6px">État B</span> Mode par séance · touche M · séances dépliables, la plus récente en haut</h2>
+
+      <div role="toolbar" aria-label="Filtres et affichage de la timeline" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; font-size: 12px; color: #5A6679">
+        <button aria-pressed="true" style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid #3A63C2; border-radius: 999px; background: #E3EAF8; color: #2C4C99; font-weight: 500; cursor: pointer; font-size: 13px">Tous <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">214</span></button>
+        <button aria-pressed="false" style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; color: #1E2633; cursor: pointer; font-size: 13px"><span style="width: 8px; height: 8px; border-radius: 2px; border: 2px solid #3E8E7E" aria-hidden="true"></span>Séances <span class="s" style="font-family: 'JetBrains Mono', monospace">31</span></button>
+        <span aria-hidden="true" style="width: 1px; height: 22px; background: #D6DCE6"></span>
+        <span>Mode</span>
+        <div role="group" aria-label="Mode d'affichage" style="display: flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+          <button aria-pressed="false" class="tg" style="padding: 0 12px">Chronologique</button>
+          <button aria-pressed="true" class="tg on" style="padding: 0 12px; border-left: 1px solid #D6DCE6">Par séance</button>
+        </div>
+        <span class="kbd">M</span>
+        <div style="flex: 1 1 auto"></div>
+        <span>Les entrées saisies hors séance (37) restent visibles en mode chronologique</span>
+      </div>
+
+      <div role="list" aria-label="Séances, de la plus récente à la plus ancienne" style="display: flex; flex-direction: column; gap: 10px">
+
+        <!-- Séance dépliée -->
+        <article role="listitem" id="session-17" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-left: 3px solid #3E8E7E; border-radius: 12px; overflow: hidden">
+          <button aria-expanded="true" aria-controls="session-17-body" style="width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 0; border-bottom: 1px solid #D6DCE6; background: #FFFFFF; text-align: left; cursor: pointer; font-size: 14px; color: #1E2633">
+            <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
+            <span aria-hidden="true" style="width: 14px; height: 14px; border-radius: 4px; border: 2.5px solid #3E8E7E"></span>
+            <strong style="font-size: 15px">Samedi 17 octobre 2026</strong>
+            <span style="color: #5A6679; font-size: 13px">18:00 → 18:50 · 50 min · cabinet</span>
+            <span style="font-size: 11px; color: #7A5A12; background: #FBF1DC; padding: 1px 6px; border-radius: 999px">non clôturée</span>
+            <div style="flex: 1 1 auto"></div>
+            <span style="color: #5A6679; font-size: 12px">4 entrées · 3 liens</span>
+          </button>
+          <div id="session-17-body" style="display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 0">
+            <div role="list" aria-label="Entrées de la séance du 17 octobre" style="display: flex; flex-direction: column; padding: 6px 8px">
+              <div role="listitem" style="display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-bottom: 1px solid #E4E8F0; font-size: 13px">
+                <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #7A68C9; opacity: 0.8; flex: 0 0 auto"></span>
+                <span style="flex: 1 1 auto"><strong>Anxiété</strong> <span style="color: #4E3F9E; font-weight: 600">6/10</span> · le soir, avant l'entretien</span>
+                <span class="s">survenu le 16 oct. au soir</span>
+                <span style="font-size: 11px; color: #5A6679; width: 44px; text-align: right">1 lien</span>
+              </div>
+              <div role="listitem" style="display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-bottom: 1px solid #E4E8F0; font-size: 13px">
+                <span aria-hidden="true" style="width: 9px; height: 9px; background: #3A63C2; transform: rotate(45deg); margin: 0 1px; flex: 0 0 auto"></span>
+                <span style="flex: 1 1 auto"><strong>Entretien d'évaluation</strong> avec le manager, prévu le 18</span>
+                <span class="s">survenu le 18 oct.</span>
+                <span style="font-size: 11px; color: #5A6679; width: 44px; text-align: right">1 lien</span>
+              </div>
+              <div role="listitem" style="display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-bottom: 1px solid #E4E8F0; font-size: 13px">
+                <span aria-hidden="true" style="width: 10px; height: 12px; border-radius: 2px; background: #7F8EA8; flex: 0 0 auto"></span>
+                <span style="flex: 1 1 auto"><strong>Note</strong> · arrive en retard, essoufflée ; s'excuse trois fois</span>
+                <span class="s">pendant la séance</span>
+                <span style="font-size: 11px; color: #5A6679; width: 44px; text-align: right"></span>
+              </div>
+              <div role="listitem" style="display: flex; align-items: center; gap: 10px; padding: 9px 8px; font-size: 13px">
+                <span aria-hidden="true" style="width: 9px; height: 9px; background: #3A63C2; transform: rotate(45deg); margin: 0 1px; flex: 0 0 auto"></span>
+                <span style="flex: 1 1 auto"><strong>Séparation des parents</strong> · évoquée en lien avec le sentiment d'abandon</span>
+                <span style="font-size: 11px; color: #5A6679; border: 1px dashed #B9C2D1; padding: 0 6px; border-radius: 999px">2014 · année</span>
+                <span style="font-size: 11px; color: #5A6679; width: 44px; text-align: right">1 lien</span>
+              </div>
+            </div>
+            <div style="border-left: 1px solid #D6DCE6; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; font-size: 13px">
+              <div style="font-size: 11px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">Compte rendu</div>
+              <p style="margin: 0; color: #1E2633">Reprise du thème du travail ; objectif, préparer l'entretien et repérer les pensées automatiques. Exercice proposé : noter trois pensées avant le 18.</p>
+              <div class="s">Modalité : cabinet · durée 50 min · version 2 (modifiée hier)</div>
+              <div style="display: flex; gap: 8px; margin-top: auto">
+                <button style="height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: #3A63C2; color: #FFFFFF; font-size: 12px; font-weight: 600; cursor: pointer">Clôturer la séance</button>
+                <button style="height: 30px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 12px; cursor: pointer">Ouvrir</button>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Séances repliées -->
+        <button role="listitem" aria-expanded="false" class="ses">
+          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 2l4 3-4 3"></path></svg>
+          <span aria-hidden="true" style="width: 14px; height: 14px; border-radius: 4px; border: 2.5px solid #3E8E7E"></span>
+          <strong style="font-size: 15px">Samedi 10 octobre 2026</strong>
+          <span style="color: #5A6679; font-size: 13px">18:00 → 18:50 · 50 min · visio</span>
+          <div style="flex: 1 1 auto"></div>
+          <span style="color: #5A6679; font-size: 12px">2 entrées</span>
+        </button>
+        <button role="listitem" aria-expanded="false" class="ses">
+          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 2l4 3-4 3"></path></svg>
+          <span aria-hidden="true" style="width: 14px; height: 14px; border-radius: 4px; border: 2.5px solid #3E8E7E"></span>
+          <strong style="font-size: 15px">Samedi 26 septembre 2026</strong>
+          <span style="color: #5A6679; font-size: 13px">10:00 → 10:50 · 50 min · cabinet</span>
+          <div style="flex: 1 1 auto"></div>
+          <span style="color: #5A6679; font-size: 12px">6 entrées</span>
+        </button>
+        <button role="listitem" aria-expanded="false" class="ses">
+          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 2l4 3-4 3"></path></svg>
+          <span aria-hidden="true" style="width: 14px; height: 14px; border-radius: 4px; border: 2.5px solid #3E8E7E"></span>
+          <strong style="font-size: 15px">Samedi 12 septembre 2026</strong>
+          <span style="color: #5A6679; font-size: 13px">10:00 → 10:45 · 45 min · cabinet</span>
+          <span style="font-size: 11px; color: #7A5A12; background: #FBF1DC; padding: 1px 6px; border-radius: 999px">changement de médicament</span>
+          <div style="flex: 1 1 auto"></div>
+          <span style="color: #5A6679; font-size: 12px">6 entrées</span>
+        </button>
+        <div style="font-size: 11px; color: #5A6679; text-align: center; padding: 4px 0">27 séances plus anciennes · fenêtre suivante chargée en arrière-plan</div>
+      </div>
+    </section>
+
+    <!-- ÉTAT C · Vue décennie agrégée -->
+    <section aria-labelledby="etat-c" style="display: flex; flex-direction: column; gap: 12px">
+      <h2 id="etat-c" style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em"><span style="padding: 2px 8px; border: 1px dashed #B9C2D1; border-radius: 6px">État C</span> Vue décennie · zoom maximal, plage &gt; 3 ans · GET /api/patients/{id}/timeline/summary?granularity=month</h2>
+
+      <div role="toolbar" aria-label="Filtres et affichage de la timeline" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; font-size: 12px; color: #5A6679">
+        <span>Période</span>
+        <div role="group" aria-label="Période affichée" style="display: flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+          <button aria-pressed="false" class="tg">90 j</button>
+          <button aria-pressed="false" class="tg">1 an</button>
+          <button aria-pressed="true" class="tg on">Tout</button>
+        </div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">janv. 2023 → oct. 2026 · 3 ans 10 mois</span>
+        <span aria-hidden="true" style="width: 1px; height: 22px; background: #D6DCE6"></span>
+        <span>Mode</span>
+        <div role="group" aria-label="Mode d'affichage" style="display: flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+          <button aria-pressed="true" class="tg on" style="padding: 0 12px">Chronologique</button>
+          <button aria-pressed="false" disabled style="height: 28px; padding: 0 12px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #8A94A6; font-size: 12px">Par séance</button>
+        </div>
+        <div style="flex: 1 1 auto"></div>
+        <span>Zoom</span>
+        <button aria-label="Zoom arrière" disabled style="width: 28px; height: 28px; border: 1px solid #D6DCE6; border-radius: 8px; background: #E4E8F0; color: #8A94A6; font-size: 14px">−</button>
+        <span aria-hidden="true" style="display: inline-flex; align-items: center; width: 110px; height: 4px; border-radius: 2px; background: #E4E8F0; position: relative"><span style="width: 100%; height: 4px; border-radius: 2px; background: #3A63C2"></span><span style="position: absolute; left: 100%; top: -5px; width: 14px; height: 14px; border-radius: 50%; background: #FFFFFF; border: 2px solid #3A63C2; margin-left: -7px"></span></span>
+        <button aria-label="Zoom avant" style="width: 28px; height: 28px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 14px; cursor: pointer">+</button>
+        <span style="color: #8A94A6">mois · zoom maximal</span>
+      </div>
+
+      <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: #5A6679">
+          <span style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: #E3EAF8; color: #2C4C99; font-weight: 500">
+            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14M7 5v4M5 7h4"></path></svg>
+            Agrégé par mois · double-clic pour zoomer
+          </span>
+          <span>46 mois · 23 non vides · 2 014 entrées · 3 entrées antérieures à janv. 2023 hors plage</span>
+          <div style="flex: 1 1 auto"></div>
+          <span class="ic"><span aria-hidden="true" style="width: 14px; height: 3px; border-radius: 2px; background: #8B7BD6"></span>Intensité moyenne des ressentis (axe droit, 0-10)</span>
+        </div>
+        <svg role="img" aria-label="Agrégats par mois de janvier 2023 à octobre 2026 : barres empilées du nombre d'entrées par type, courbe d'intensité moyenne des ressentis de 3,9 à 7,4 en hausse depuis août 2026, et trois bandes de situations longues" viewBox="0 0 1120 280" width="100%" height="280" style="display: block; font-family: Inter, sans-serif">
+        <line x1="64" y1="190" x2="1082" y2="190" stroke="#D6DCE6" stroke-width="1"/>
+        <text x="60" y="194" font-size="10" fill="#5A6679" text-anchor="end">0</text>
+        <line x1="64" y1="110" x2="1082" y2="110" stroke="#D6DCE6" stroke-width="1" stroke-dasharray="3 4"/>
+        <text x="60" y="114" font-size="10" fill="#5A6679" text-anchor="end">10</text>
+        <line x1="64" y1="30" x2="1082" y2="30" stroke="#D6DCE6" stroke-width="1" stroke-dasharray="3 4"/>
+        <text x="60" y="34" font-size="10" fill="#5A6679" text-anchor="end">20</text>
+        <text x="1090" y="194" font-size="10" fill="#4E3F9E">0</text>
+        <text x="1090" y="114" font-size="10" fill="#4E3F9E">5</text>
+        <text x="1090" y="34" font-size="10" fill="#4E3F9E">10</text>
+        <line x1="66" y1="30" x2="66" y2="196" stroke="#B9C2D1" stroke-width="1"/>
+        <text x="70" y="210" font-size="11" font-weight="600" fill="#1E2633">2023</text>
+        <line x1="330" y1="30" x2="330" y2="196" stroke="#B9C2D1" stroke-width="1"/>
+        <text x="334" y="210" font-size="11" font-weight="600" fill="#1E2633">2024</text>
+        <line x1="594" y1="30" x2="594" y2="196" stroke="#B9C2D1" stroke-width="1"/>
+        <text x="598" y="210" font-size="11" font-weight="600" fill="#1E2633">2025</text>
+        <line x1="858" y1="30" x2="858" y2="196" stroke="#B9C2D1" stroke-width="1"/>
+        <text x="862" y="210" font-size="11" font-weight="600" fill="#1E2633">2026</text>
+        <line x1="638" y1="22" x2="638" y2="196" stroke="#3A63C2" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text x="642" y="18" font-size="10" fill="#2C4C99">début du suivi · mars 2025</text>
+        <g><title>juin 2023 : 1 situation</title><rect x="180" y="182" width="14" height="7" fill="#2F4F73"/></g>
+        <g><title>juin 2024 : 1 événement</title><rect x="444" y="182" width="14" height="7" fill="#3A63C2"/></g>
+        <g><title>janv. 2025 : 1 situation</title><rect x="598" y="182" width="14" height="7" fill="#2F4F73"/></g>
+        <g><title>mars 2025 : 3 note, 1 événement, 1 situation, 4 ressenti, 2 séance · int. moy. 5,2</title><rect x="642" y="166" width="14" height="23" fill="#7F8EA8"/><rect x="642" y="158" width="14" height="7" fill="#3A63C2"/><rect x="642" y="150" width="14" height="7" fill="#2F4F73"/><rect x="642" y="118" width="14" height="31" fill="#8B7BD6"/><rect x="642" y="102" width="14" height="15" fill="#3E8E7E"/></g>
+        <g><title>avr. 2025 : 4 note, 2 événement, 5 ressenti, 2 séance · int. moy. 5,0</title><rect x="664" y="158" width="14" height="31" fill="#7F8EA8"/><rect x="664" y="142" width="14" height="15" fill="#3A63C2"/><rect x="664" y="102" width="14" height="39" fill="#8B7BD6"/><rect x="664" y="86" width="14" height="15" fill="#3E8E7E"/></g>
+        <g><title>mai 2025 : 3 note, 1 événement, 3 ressenti, 2 séance · int. moy. 4,6</title><rect x="686" y="166" width="14" height="23" fill="#7F8EA8"/><rect x="686" y="158" width="14" height="7" fill="#3A63C2"/><rect x="686" y="134" width="14" height="23" fill="#8B7BD6"/><rect x="686" y="118" width="14" height="15" fill="#3E8E7E"/></g>
+        <g><title>juin 2025 : 2 note, 2 événement, 4 ressenti, 1 séance · int. moy. 4,8</title><rect x="708" y="174" width="14" height="15" fill="#7F8EA8"/><rect x="708" y="158" width="14" height="15" fill="#3A63C2"/><rect x="708" y="126" width="14" height="31" fill="#8B7BD6"/><rect x="708" y="118" width="14" height="7" fill="#3E8E7E"/></g>
+        <g><title>juil. 2025 : 2 note, 1 événement, 2 ressenti, 1 séance · int. moy. 4,2</title><rect x="730" y="174" width="14" height="15" fill="#7F8EA8"/><rect x="730" y="166" width="14" height="7" fill="#3A63C2"/><rect x="730" y="150" width="14" height="15" fill="#8B7BD6"/><rect x="730" y="142" width="14" height="7" fill="#3E8E7E"/></g>
+        <g><title>août 2025 : 1 note, 1 ressenti · int. moy. 3,9</title><rect x="752" y="182" width="14" height="7" fill="#7F8EA8"/><rect x="752" y="174" width="14" height="7" fill="#8B7BD6"/></g>
+        <g><title>sept. 2025 : 3 note, 2 événement, 1 situation, 4 ressenti, 2 séance, 1 médicament · int. moy. 5,4</title><rect x="774" y="166" width="14" height="23" fill="#7F8EA8"/><rect x="774" y="150" width="14" height="15" fill="#3A63C2"/><rect x="774" y="142" width="14" height="7" fill="#2F4F73"/><rect x="774" y="110" width="14" height="31" fill="#8B7BD6"/><rect x="774" y="94" width="14" height="15" fill="#3E8E7E"/><rect x="774" y="86" width="14" height="7" fill="#B07A2A"/></g>
+        <g><title>oct. 2025 : 4 note, 1 événement, 5 ressenti, 2 séance · int. moy. 5,6</title><rect x="796" y="158" width="14" height="31" fill="#7F8EA8"/><rect x="796" y="150" width="14" height="7" fill="#3A63C2"/><rect x="796" y="110" width="14" height="39" fill="#8B7BD6"/><rect x="796" y="94" width="14" height="15" fill="#3E8E7E"/></g>
+        <g><title>nov. 2025 : 3 note, 2 événement, 4 ressenti, 2 séance · int. moy. 5,1</title><rect x="818" y="166" width="14" height="23" fill="#7F8EA8"/><rect x="818" y="150" width="14" height="15" fill="#3A63C2"/><rect x="818" y="118" width="14" height="31" fill="#8B7BD6"/><rect x="818" y="102" width="14" height="15" fill="#3E8E7E"/></g>
+        <g><title>déc. 2025 : 2 note, 1 événement, 3 ressenti, 1 séance · int. moy. 4,7</title><rect x="840" y="174" width="14" height="15" fill="#7F8EA8"/><rect x="840" y="166" width="14" height="7" fill="#3A63C2"/><rect x="840" y="142" width="14" height="23" fill="#8B7BD6"/><rect x="840" y="134" width="14" height="7" fill="#3E8E7E"/></g>
+        <g><title>janv. 2026 : 3 note, 1 événement, 4 ressenti, 2 séance · int. moy. 5,0</title><rect x="862" y="166" width="14" height="23" fill="#7F8EA8"/><rect x="862" y="158" width="14" height="7" fill="#3A63C2"/><rect x="862" y="126" width="14" height="31" fill="#8B7BD6"/><rect x="862" y="110" width="14" height="15" fill="#3E8E7E"/></g>
+        <g><title>févr. 2026 : 4 note, 2 événement, 5 ressenti, 2 séance · int. moy. 5,5</title><rect x="884" y="158" width="14" height="31" fill="#7F8EA8"/><rect x="884" y="142" width="14" height="15" fill="#3A63C2"/><rect x="884" y="102" width="14" height="39" fill="#8B7BD6"/><rect x="884" y="86" width="14" height="15" fill="#3E8E7E"/></g>
+        <g><title>mars 2026 : 4 note, 2 événement, 1 situation, 6 ressenti, 2 séance · int. moy. 6,1</title><rect x="906" y="158" width="14" height="31" fill="#7F8EA8"/><rect x="906" y="142" width="14" height="15" fill="#3A63C2"/><rect x="906" y="134" width="14" height="7" fill="#2F4F73"/><rect x="906" y="86" width="14" height="47" fill="#8B7BD6"/><rect x="906" y="70" width="14" height="15" fill="#3E8E7E"/></g>
+        <g><title>avr. 2026 : 3 note, 1 événement, 5 ressenti, 2 séance · int. moy. 5,8</title><rect x="928" y="166" width="14" height="23" fill="#7F8EA8"/><rect x="928" y="158" width="14" height="7" fill="#3A63C2"/><rect x="928" y="118" width="14" height="39" fill="#8B7BD6"/><rect x="928" y="102" width="14" height="15" fill="#3E8E7E"/></g>
+        <g><title>mai 2026 : 3 note, 2 événement, 4 ressenti, 2 séance · int. moy. 5,4</title><rect x="950" y="166" width="14" height="23" fill="#7F8EA8"/><rect x="950" y="150" width="14" height="15" fill="#3A63C2"/><rect x="950" y="118" width="14" height="31" fill="#8B7BD6"/><rect x="950" y="102" width="14" height="15" fill="#3E8E7E"/></g>
+        <g><title>juin 2026 : 2 note, 1 événement, 4 ressenti, 1 séance · int. moy. 5,2</title><rect x="972" y="174" width="14" height="15" fill="#7F8EA8"/><rect x="972" y="166" width="14" height="7" fill="#3A63C2"/><rect x="972" y="134" width="14" height="31" fill="#8B7BD6"/><rect x="972" y="126" width="14" height="7" fill="#3E8E7E"/></g>
+        <g><title>juil. 2026 : 2 note, 1 événement, 3 ressenti, 1 séance · int. moy. 5,0</title><rect x="994" y="174" width="14" height="15" fill="#7F8EA8"/><rect x="994" y="166" width="14" height="7" fill="#3A63C2"/><rect x="994" y="142" width="14" height="23" fill="#8B7BD6"/><rect x="994" y="134" width="14" height="7" fill="#3E8E7E"/></g>
+        <g><title>août 2026 : 2 note, 1 événement, 1 situation, 4 ressenti, 1 séance · int. moy. 5,9</title><rect x="1016" y="174" width="14" height="15" fill="#7F8EA8"/><rect x="1016" y="166" width="14" height="7" fill="#3A63C2"/><rect x="1016" y="158" width="14" height="7" fill="#2F4F73"/><rect x="1016" y="126" width="14" height="31" fill="#8B7BD6"/><rect x="1016" y="118" width="14" height="7" fill="#3E8E7E"/></g>
+        <g><title>sept. 2026 : 4 note, 2 événement, 2 situation, 7 ressenti, 2 séance, 1 médicament · int. moy. 6,8</title><rect x="1038" y="158" width="14" height="31" fill="#7F8EA8"/><rect x="1038" y="142" width="14" height="15" fill="#3A63C2"/><rect x="1038" y="126" width="14" height="15" fill="#2F4F73"/><rect x="1038" y="70" width="14" height="55" fill="#8B7BD6"/><rect x="1038" y="54" width="14" height="15" fill="#3E8E7E"/><rect x="1038" y="46" width="14" height="7" fill="#B07A2A"/></g>
+        <g><title>oct. 2026 : 5 note, 3 événement, 8 ressenti, 3 séance · int. moy. 7,4</title><rect x="1060" y="150" width="14" height="39" fill="#7F8EA8"/><rect x="1060" y="126" width="14" height="23" fill="#3A63C2"/><rect x="1060" y="62" width="14" height="63" fill="#8B7BD6"/><rect x="1060" y="38" width="14" height="23" fill="#3E8E7E"/></g>
+        <polyline points="649,107 671,110 693,116 715,113 737,123 759,128 781,104 803,100 825,108 847,115 869,110 891,102 913,92 935,97 957,104 979,107 1001,110 1023,96 1045,81 1067,72" fill="none" stroke="#8B7BD6" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <circle cx="649" cy="107" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="671" cy="110" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="693" cy="116" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="715" cy="113" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="737" cy="123" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="759" cy="128" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="781" cy="104" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="803" cy="100" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="825" cy="108" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="847" cy="115" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="869" cy="110" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="891" cy="102" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="913" cy="92" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="935" cy="97" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="957" cy="104" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="979" cy="107" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="1001" cy="110" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="1023" cy="96" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="1045" cy="81" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/><circle cx="1067" cy="72" r="2.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="1.5"/>
+        <rect x="180" y="224" width="902" height="14" rx="3" fill="#2F4F73" opacity="0.25"/>
+        <path d="M1082 231 l6 0 M1085 228 l3 3 -3 3" fill="none" stroke="#2F4F73" stroke-width="1.5" stroke-linecap="round"/>
+        <text x="186" y="235" font-size="10" fill="#2F4F73" text-anchor="start">Conflit avec la sœur · depuis juin 2023 · en cours</text>
+        <rect x="598" y="244" width="388" height="14" rx="3" fill="#2F4F73" opacity="0.25"/>
+        <text x="604" y="255" font-size="10" fill="#2F4F73" text-anchor="start">Reconversion professionnelle · janv. 2025 → mai 2026</text>
+        <rect x="1038" y="264" width="44" height="14" rx="3" fill="#2F4F73" opacity="0.25"/>
+        <path d="M1082 271 l6 0 M1085 268 l3 3 -3 3" fill="none" stroke="#2F4F73" stroke-width="1.5" stroke-linecap="round"/>
+        <text x="1032" y="275" font-size="10" fill="#2F4F73" text-anchor="end">Surcharge au travail · depuis sept. 2026 · en cours</text>
+        </svg>
+        <div style="display: flex; align-items: center; gap: 14px; font-size: 11px; color: #5A6679; flex-wrap: wrap; padding-top: 4px; border-top: 1px solid #E4E8F0">
+          <span class="ic"><span aria-hidden="true" style="width: 10px; height: 12px; border-radius: 2px; background: #7F8EA8"></span>Notes</span>
+          <span class="ic"><span aria-hidden="true" style="width: 9px; height: 9px; background: #3A63C2; transform: rotate(45deg); margin: 0 1px"></span>Événements</span>
+          <span class="ic"><span aria-hidden="true" style="width: 14px; height: 6px; border-radius: 999px; background: #2F4F73"></span>Situations</span>
+          <span class="ic"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #8B7BD6"></span>Ressentis</span>
+          <span class="ic"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; border: 2px solid #3E8E7E"></span>Séances</span>
+          <span class="ic"><span aria-hidden="true" style="width: 14px; height: 8px; border-radius: 999px; background: #B07A2A"></span>Médicaments</span>
+          <span style="margin-left: auto">Survoler un mois : détail des comptes · double-clic : timeline au zoom « semaine » sur ce mois · Échap : retour</span>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+</div>
+
+</body>
+</html>

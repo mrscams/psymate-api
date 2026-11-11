@@ -1,0 +1,170 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Comment ça marche – Suivi</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 1480px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.5">
+
+  <!-- Bandeau public -->
+  <header style="background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="max-width: 1120px; margin: 0 auto; padding: 0 24px; height: 64px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap">
+      <a href="#accueil" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #1E2633; text-decoration: none">
+        <span style="width: 32px; height: 32px; border-radius: 9px; background: #3A63C2; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+        </span>
+        Suivi
+      </a>
+      <nav aria-label="Navigation publique" style="display: flex; gap: 22px; font-size: 14px; font-weight: 500; flex-wrap: wrap">
+        <a href="#annuaire" style="color: #5A6679; text-decoration: none">Annuaire des praticiens</a>
+        <a href="#how" aria-current="page" style="color: #1E2633; text-decoration: none; border-bottom: 2px solid #3A63C2; padding-bottom: 2px">Comment ça marche</a>
+        <a href="#confidentialite" style="color: #5A6679; text-decoration: none">Confidentialité</a>
+      </nav>
+      <div style="margin-left: auto; display: flex; gap: 10px; align-items: center">
+        <a href="Main.dc.html#connexion" style="height: 38px; padding: 0 14px; border-radius: 9px; border: 1px solid #B9C2D1; color: #1E2633; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; background: #FFFFFF">Se connecter</a>
+        <a href="#inscription" style="height: 38px; padding: 0 14px; border-radius: 9px; background: #3A63C2; color: #FFFFFF; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center">Créer un compte praticien</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 56px; padding: 56px 24px 72px">
+
+    <!-- Intro -->
+    <section style="max-width: 1120px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 18px">
+      <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #3A63C2">Comment ça marche</p>
+      <h1 style="margin: 0; font-size: 40px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; max-width: 760px">Un outil de suivi pour les praticiens, un annuaire vérifié pour le public.</h1>
+      <p style="margin: 0; font-size: 17px; color: #5A6679; line-height: 1.65; max-width: 720px">Suivi sert deux publics qui ne se croisent jamais dans l'outil : les praticiens, qui y tiennent le fil de leurs accompagnements, et les personnes qui cherchent un professionnel et veulent savoir à qui elles s'adressent.</p>
+    </section>
+
+    <!-- Deux parcours -->
+    <section style="max-width: 1120px; width: 100%; margin: 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px" aria-label="Deux parcours">
+      <article style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 40px; height: 40px; border-radius: 10px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"></path></svg>
+          </span>
+          <h2 style="margin: 0; font-size: 20px; font-weight: 600">Vous cherchez un praticien</h2>
+        </div>
+        <p style="margin: 0; color: #5A6679; line-height: 1.6">Vous consultez des fiches publiques de psychologues, psychiatres et coachs dont les diplômes ont été vérifiés par notre équipe. Vous les contactez par un formulaire ; le message leur est transmis directement, nous n'en gardons pas de copie.</p>
+        <ul style="margin: 0; padding-left: 18px; color: #1E2633; line-height: 1.7">
+          <li>Aucun compte à créer, aucune donnée personnelle enregistrée.</li>
+          <li>Badge « Diplômes vérifiés » sur chaque fiche approuvée.</li>
+          <li>Possibilité de signaler une fiche qui pose problème.</li>
+        </ul>
+        <a href="#annuaire" style="margin-top: auto; align-self: flex-start; height: 40px; padding: 0 16px; border-radius: 9px; border: 1px solid #B9C2D1; color: #1E2633; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; background: #FFFFFF">Parcourir l'annuaire</a>
+      </article>
+
+      <article style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 40px; height: 40px; border-radius: 10px; background: #E2F1EE; color: #3E8E7E; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"></path><circle cx="18" cy="17" r="3"></circle></svg>
+          </span>
+          <h2 style="margin: 0; font-size: 20px; font-weight: 600">Vous êtes praticien</h2>
+        </div>
+        <p style="margin: 0; color: #5A6679; line-height: 1.6">Vous notez vos séances, les ressentis exprimés, les situations de vie et, si votre pratique le permet, les traitements. Vous reliez ce qui va ensemble et retrouvez en quelques secondes où en est une personne.</p>
+        <ul style="margin: 0; padding-left: 18px; color: #1E2633; line-height: 1.7">
+          <li>Outil utilisable dès la confirmation de votre e-mail.</li>
+          <li>Fiche publique et badge activés après vérification de vos diplômes.</li>
+          <li>Agenda synchronisable avec Google Agenda, en respectant l'anonymat des patients.</li>
+        </ul>
+        <a href="#inscription" style="margin-top: auto; align-self: flex-start; height: 40px; padding: 0 16px; border-radius: 9px; background: #3A63C2; color: #FFFFFF; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center">Créer un compte</a>
+      </article>
+    </section>
+
+    <!-- Étapes praticien -->
+    <section style="max-width: 1120px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 22px" aria-labelledby="h-steps">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h2 id="h-steps" style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em">De l'inscription à la fiche publique, en quatre étapes</h2>
+        <p style="margin: 0; color: #5A6679">La vérification prend en général deux à trois jours ouvrés. Elle ne bloque pas l'usage de l'outil de suivi.</p>
+      </div>
+      <ol style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #3A63C2; font-weight: 500">01</span>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 600">Créer le compte</h3>
+          <p style="margin: 0; font-size: 13px; color: #5A6679; line-height: 1.6">Identité, profession, e-mail professionnel, téléphone et adresse du cabinet. Deux minutes.</p>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #3A63C2; font-weight: 500">02</span>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 600">Confirmer l'e-mail</h3>
+          <p style="margin: 0; font-size: 13px; color: #5A6679; line-height: 1.6">Un lien valable 24 h. Dès ce clic, l'outil de suivi est ouvert : vous pouvez créer vos premiers patients.</p>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #3A63C2; font-weight: 500">03</span>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 600">Déposer ses diplômes</h3>
+          <p style="margin: 0; font-size: 13px; color: #5A6679; line-height: 1.6">Scans ou photos de vos diplômes et, selon la profession, votre numéro RPPS ou ADELI. Plusieurs diplômes possibles.</p>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #3A63C2; font-weight: 500">04</span>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 600">Vérification humaine</h3>
+          <p style="margin: 0; font-size: 13px; color: #5A6679; line-height: 1.6">Un membre de l'équipe examine le dossier. Approuvé : fiche publique et badge activés. Pièce manquante : on vous le dit précisément.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Confidentialité -->
+    <section style="max-width: 1120px; width: 100%; margin: 0 auto; background: #1E2633; color: #FFFFFF; border-radius: 16px; padding: 40px; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start" aria-labelledby="h-privacy">
+      <div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+        <h2 id="h-privacy" style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em">Ce que nous ne voyons jamais</h2>
+        <p style="margin: 0; color: #C5CCD8; line-height: 1.65">Les dossiers patients appartiennent au praticien. Notre équipe d'administration vérifie des diplômes, jamais des dossiers : l'espace administrateur n'a techniquement aucun accès aux données cliniques.</p>
+      </div>
+      <ul style="flex: 1 1 400px; min-width: 0; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px">
+        <li style="display: flex; gap: 10px; align-items: flex-start; line-height: 1.55"><span style="margin-top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #8DB7FF; flex: 0 0 auto" aria-hidden="true"></span><span><strong style="font-weight: 600">Hébergement en France</strong><br><span style="color: #C5CCD8">Données chiffrées au repos et en transit.</span></span></li>
+        <li style="display: flex; gap: 10px; align-items: flex-start; line-height: 1.55"><span style="margin-top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #8DB7FF; flex: 0 0 auto" aria-hidden="true"></span><span><strong style="font-weight: 600">Formulaire de contact relayé</strong><br><span style="color: #C5CCD8">Le message part chez le praticien, nous n'en conservons pas de copie.</span></span></li>
+        <li style="display: flex; gap: 10px; align-items: flex-start; line-height: 1.55"><span style="margin-top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #8DB7FF; flex: 0 0 auto" aria-hidden="true"></span><span><strong style="font-weight: 600">Justificatifs purgés</strong><br><span style="color: #C5CCD8">Vos scans de diplômes sont supprimés 90 jours après la décision.</span></span></li>
+        <li style="display: flex; gap: 10px; align-items: flex-start; line-height: 1.55"><span style="margin-top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #8DB7FF; flex: 0 0 auto" aria-hidden="true"></span><span><strong style="font-weight: 600">Agenda discret</strong><br><span style="color: #C5CCD8">Dans Google Agenda, un rendez-vous s'affiche « Séance · M. D. », jamais le nom complet.</span></span></li>
+      </ul>
+    </section>
+
+    <!-- FAQ -->
+    <section style="max-width: 1120px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 18px" aria-labelledby="h-faq">
+      <h2 id="h-faq" style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em">Questions fréquentes</h2>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+        <details open style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px 20px">
+          <summary style="cursor: pointer; font-weight: 600; font-size: 15px">Qui peut créer un compte praticien ?</summary>
+          <p style="margin: 10px 0 0; color: #5A6679; line-height: 1.6">Psychologues, psychiatres et coachs exerçant en France. Chaque profession a sa liste de justificatifs acceptés, affichée lors du dépôt.</p>
+        </details>
+        <details open style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px 20px">
+          <summary style="cursor: pointer; font-weight: 600; font-size: 15px">Que se passe-t-il si mon dossier est refusé ?</summary>
+          <p style="margin: 10px 0 0; color: #5A6679; line-height: 1.6">Vous recevez le motif par e-mail. Le compte passe en suspension : vous pouvez exporter vos données et contester la décision, mais plus saisir de nouvelles entrées.</p>
+        </details>
+        <details style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px 20px">
+          <summary style="cursor: pointer; font-weight: 600; font-size: 15px">Mes patients ont-ils un compte ?</summary>
+          <p style="margin: 10px 0 0; color: #5A6679; line-height: 1.6">Non. Dans cette version, seul le praticien accède au dossier. Il n'y a ni espace patient, ni messagerie interne.</p>
+        </details>
+        <details style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px 20px">
+          <summary style="cursor: pointer; font-weight: 600; font-size: 15px">Puis-je exporter ou supprimer mes données ?</summary>
+          <p style="margin: 10px 0 0; color: #5A6679; line-height: 1.6">Oui, à tout moment depuis vos préférences : export complet au format ouvert, suppression du compte avec délai de rétractation de 30 jours.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer style="background: #FFFFFF; border-top: 1px solid #D6DCE6">
+    <div style="max-width: 1120px; margin: 0 auto; padding: 20px 24px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; font-size: 12px; color: #8A94A6">
+      <span>© Suivi · Données hébergées en France</span>
+      <nav aria-label="Pied de page" style="margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap">
+        <a href="#confidentialite" style="text-decoration: none">Confidentialité</a>
+        <a href="#mentions" style="text-decoration: none">Mentions légales</a>
+        <a href="#cgu" style="text-decoration: none">Conditions d'utilisation</a>
+        <a href="#contact" style="text-decoration: none">Contact</a>
+      </nav>
+    </div>
+  </footer>
+</div>
+
+</body>
+</html>

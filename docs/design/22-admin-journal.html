@@ -1,0 +1,79 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Administration – journal</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 820px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #1E2633; color: #FFFFFF">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#9FB4E8" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>Suivi <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #1E2633; background: #FBF1DC; border-radius: 4px; padding: 2px 6px; margin-left: 4px">Admin</span></div>
+    <nav style="display: flex; align-items: center; gap: 4px; margin-left: 12px" aria-label="Administration">
+      <a href="#validation" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Validation <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-left: 8px; background: #FBF1DC; color: #7A5A12; border-radius: 999px; padding: 1px 7px">6</span></a>
+      <a href="#praticiens" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Praticiens</a>
+      <a href="#signalements" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Signalements</a>
+      <a href="#vocabulaire" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Vocabulaire</a>
+      <a href="#journal" aria-current="page" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; background: rgba(255,255,255,0.12); color: #FFFFFF; font-size: 13px; font-weight: 600; text-decoration: none">Journal</a>
+    </nav>
+    <div style="flex: 1 1 auto"></div>
+    <span style="font-size: 12px; color: #C9D2E3">Aucune donnée patient n'est accessible depuis l'administration.</span>
+    <div aria-label="Compte administrateur" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #FBF1DC; color: #7A5A12; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">HA</div>
+  </div>
+
+  <div style="padding: 20px 24px 32px; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+      <h1 style="margin: 0; font-size: 20px; font-weight: 600">Journal</h1>
+      <span style="font-size: 13px; color: #5A6679">Décisions de vérification, accès aux justificatifs, événements de sécurité · conservé 12 mois · en lecture seule</span>
+      <div style="flex: 1 1 auto"></div>
+      <button style="height: 36px; padding: 0 14px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF; font-size: 13px; cursor: pointer">Exporter la période</button>
+    </div>
+
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px">
+      <div role="group" aria-label="Type d'événement" style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+        <button aria-pressed="true" style="height: 32px; padding: 0 12px; border: 0; background: #E3EAF8; color: #2C4C99; font-weight: 600; cursor: pointer">Tout</button>
+        <button aria-pressed="false" style="height: 32px; padding: 0 12px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; cursor: pointer">Décisions</button>
+        <button aria-pressed="false" style="height: 32px; padding: 0 12px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; cursor: pointer">Accès aux documents</button>
+        <button aria-pressed="false" style="height: 32px; padding: 0 12px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; cursor: pointer">Sécurité</button>
+        <button aria-pressed="false" style="height: 32px; padding: 0 12px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; cursor: pointer">Annuaire</button>
+      </div>
+      <select aria-label="Administrateur" style="height: 32px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; padding: 0 8px"><option>Tous les administrateurs</option><option>HA</option><option>NB</option></select>
+      <select aria-label="Période" style="height: 32px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; padding: 0 8px"><option>7 derniers jours</option><option>30 derniers jours</option><option>Personnalisée…</option></select>
+      <div style="display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; width: 260px"><label for="q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Filtrer par praticien</label><input id="q" type="search" placeholder="Praticien, e-mail, IP…" style="flex: 1 1 auto; border: 0; outline: 0; font-size: 13px; background: transparent"></div>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; overflow: hidden">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px">
+        <thead><tr style="text-align: left; color: #5A6679; font-size: 12px; background: #F7F9FC"><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #D6DCE6; width: 170px">Horodatage</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #D6DCE6; width: 140px">Type</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #D6DCE6">Événement</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #D6DCE6; width: 120px">Par</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #D6DCE6; width: 160px">Contexte</th></tr></thead>
+        <tbody>
+          <tr><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace; color: #5A6679">25 oct. 11:42:08</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0"><span style="font-size: 12px; font-weight: 500; color: #1E6B45; background: #E4F2EA; border-radius: 999px; padding: 3px 9px">Décision</span></td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0"><strong style="font-weight: 600">Dr Maya Kaddour</strong> approuvée · checklist 4/4 · note interne présente</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0">HA</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679"><a href="#" style="text-decoration: none">Voir la décision</a></td></tr>
+          <tr><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace; color: #5A6679">25 oct. 11:39:51</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0"><span style="font-size: 12px; font-weight: 500; color: #2C4C99; background: #E3EAF8; border-radius: 999px; padding: 3px 9px">Accès document</span></td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0">Ouverture de <span style="font-family: 'JetBrains Mono', monospace">rpps-attestation.pdf</span> (Dr Maya Kaddour) · URL signée 5 min</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0">HA</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679; font-family: 'JetBrains Mono', monospace">IP 92.184.xx.xx</td></tr>
+          <tr><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace; color: #5A6679">25 oct. 10:05:12</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0"><span style="font-size: 12px; font-weight: 500; color: #7A5A12; background: #FBF1DC; border-radius: 999px; padding: 3px 9px">Décision</span></td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0"><strong style="font-weight: 600">Samir Benali</strong> · complément demandé · « pièce d'identité manquante » · e-mail envoyé</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0">NB</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679"><a href="#" style="text-decoration: none">Voir la décision</a></td></tr>
+          <tr><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace; color: #5A6679">25 oct. 09:12:40</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0"><span style="font-size: 12px; font-weight: 500; color: #5A6679; background: #EEF1F6; border-radius: 999px; padding: 3px 9px">Sécurité</span></td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0">Connexion administrateur réussie · 2FA TOTP</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0">HA</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679; font-family: 'JetBrains Mono', monospace">Lyon · Chrome</td></tr>
+          <tr style="background: #FBE9E7"><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace; color: #5A6679">25 oct. 03:17:03</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0"><span style="font-size: 12px; font-weight: 500; color: #9A2F22; background: #FFFFFF; border: 1px solid #E8C1BB; border-radius: 999px; padding: 3px 9px">Sécurité</span></td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0"><strong style="font-weight: 600">Compte verrouillé 15 min</strong> · 5 échecs de connexion sur <span style="font-family: 'JetBrains Mono', monospace">r.lenoir@exemple.fr</span></td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679">système</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679; font-family: 'JetBrains Mono', monospace">IP 185.220.xx.xx</td></tr>
+          <tr><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace; color: #5A6679">24 oct. 18:40:22</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0"><span style="font-size: 12px; font-weight: 500; color: #5A6679; background: #EEF1F6; border-radius: 999px; padding: 3px 9px">Annuaire</span></td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0"><strong style="font-weight: 600">Dr Rémi Lenoir</strong> a publié sa fiche publique</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679">praticien</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679"><a href="#" style="text-decoration: none">Voir la fiche</a></td></tr>
+          <tr><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace; color: #5A6679">24 oct. 16:02:10</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0"><span style="font-size: 12px; font-weight: 500; color: #5A6679; background: #EEF1F6; border-radius: 999px; padding: 3px 9px">Sécurité</span></td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0">Double authentification activée par <strong style="font-weight: 600">Claire Moreau</strong></td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679">praticienne</td><td style="padding: 11px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679; font-family: 'JetBrains Mono', monospace">Lyon · Safari</td></tr>
+          <tr><td style="padding: 11px 14px; font-family: 'JetBrains Mono', monospace; color: #5A6679">24 oct. 15:58:33</td><td style="padding: 11px 14px"><span style="font-size: 12px; font-weight: 500; color: #5A6679; background: #EEF1F6; border-radius: 999px; padding: 3px 9px">Système</span></td><td style="padding: 11px 14px">Purge planifiée : 3 justificatifs supprimés du stockage (décisions de juillet, +90 j) · métadonnées conservées</td><td style="padding: 11px 14px; color: #5A6679">système</td><td style="padding: 11px 14px; color: #5A6679">—</td></tr>
+        </tbody>
+      </table>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-top: 1px solid #D6DCE6; font-size: 12px; color: #5A6679"><span>8 sur 312 · 7 derniers jours</span><button style="height: 30px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; cursor: pointer">Afficher plus</button></div>
+    </div>
+    <p style="margin: 0; font-size: 12px; color: #8A94A6">Le journal est append-only : aucune ligne ne peut être modifiée ni supprimée depuis l'interface. Les adresses IP sont tronquées à l'affichage.</p>
+  </div>
+</div>
+
+</body>
+</html>

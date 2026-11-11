@@ -1,0 +1,570 @@
+<!-- Maquette statique · palette Nordique · écrite à la main depuis B4 écran 8 et B3 flux 7. Référence : docs/design/08-annuaire-public.md (à écrire) -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Annuaire des praticiens – PsyMate</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6;font-size:14px;line-height:1.5}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,select,button{font-family:inherit;font-size:14px;color:#1E2633}
+.field{height:44px;border:1px solid #B9C2D1;border-radius:10px;padding:0 14px;background:#FFFFFF;width:100%}
+.card{background:#FFFFFF;border:1px solid #D6DCE6;border-radius:14px}
+.tag{display:inline-block;font-size:12px;border:1px solid #D6DCE6;border-radius:999px;padding:4px 10px;background:#E4E8F0;color:#1E2633}
+.prof{display:inline-block;font-size:12px;font-weight:600;border-radius:6px;padding:3px 9px}
+.prof-psy{background:#ECE8F8;color:#4E3F9E}
+.prof-psych{background:#E1E9F2;color:#2F4F73}
+.prof-coach{background:#E4E8F0;color:#5A6679}
+.verified{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#1E6B45;background:#E4F2EA;border-radius:999px;padding:3px 9px}
+.accepting{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#2C4C99;background:#E3EAF8;border-radius:999px;padding:4px 10px}
+.waitlist{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#5A6679;background:#EEF1F6;border:1px solid #D6DCE6;border-radius:999px;padding:3px 10px}
+.btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#3A63C2;color:#FFFFFF;font-weight:600;border:0;border-radius:10px;padding:0 16px;height:40px;text-decoration:none;cursor:pointer}
+.btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#FFFFFF;color:#1E2633;font-weight:500;border:1px solid #B9C2D1;border-radius:10px;padding:0 14px;height:40px;text-decoration:none;cursor:pointer}
+.facet{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;padding:5px 0;cursor:pointer}
+.facet input{width:16px;height:16px;margin:0 8px 0 0;accent-color:#3A63C2}
+.facet .n{font-family:'JetBrains Mono',monospace;font-size:12px;color:#8A94A6}
+.meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:#5A6679}
+.meta span{display:inline-flex;align-items:center;gap:6px}
+.etat{display:flex;align-items:center;gap:12px;background:#E4E8F0;border-top:1px solid #D6DCE6;border-bottom:1px solid #D6DCE6;padding:8px 40px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#5A6679}
+.etat strong{color:#1E2633;font-weight:500}
+.avatar{width:56px;height:56px;border-radius:50%;background:#E3EAF8;color:#2C4C99;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0}
+.sq{width:10px;height:10px;border-radius:2px;background:#3E8E7E;display:inline-block}
+.page-link{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;padding:0 10px;border-radius:9px;border:1px solid #D6DCE6;background:#FFFFFF;color:#1E2633;text-decoration:none;font-weight:500;font-size:13px}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+<div style="width: 100%; min-height: 1240px; display: flex; flex-direction: column; background: #EEF1F6">
+
+  <!-- Bandeau public (layout partagé 09/11/12/24/25/26/27) -->
+  <header style="height: 60px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; gap: 12px; flex-wrap: wrap">
+    <a href="#" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #1E2633">
+      <span style="width: 28px; height: 28px; border-radius: 8px; background: #3A63C2; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"></path></svg>
+      </span>
+      <span style="font-weight: 700; font-size: 15px; letter-spacing: -0.01em">PsyMate</span>
+      <span style="color: #5A6679; font-size: 13px; margin-left: 6px">Annuaire des praticiens</span>
+    </a>
+    <nav style="display: flex; align-items: center; gap: 22px; font-size: 13px; font-weight: 500" aria-label="Navigation publique">
+      <a href="#" aria-current="page" style="text-decoration: none; color: #1E2633; border-bottom: 2px solid #3A63C2; padding-bottom: 2px">Annuaire</a>
+      <a href="#" style="text-decoration: none; color: #5A6679">Comment ça marche</a>
+      <a href="#" style="text-decoration: none; color: #1E2633; border: 1px solid #B9C2D1; border-radius: 8px; padding: 8px 14px; background: #FFFFFF">Connexion</a>
+      <a href="#" style="text-decoration: none; color: #3A63C2">Vous êtes praticien ?</a>
+    </nav>
+  </header>
+
+  <main style="flex: 1 1 auto; display: flex; flex-direction: column">
+
+    <!-- ======================================================================= -->
+    <!-- ÉTAT A · Résultats en liste                                             -->
+    <!-- ======================================================================= -->
+    <section aria-labelledby="etat-a">
+      <div class="etat"><strong id="etat-a">État A</strong> Résultats · 42 praticiens · tri par distance · bascule Liste active · GET /api/public/directory?city=Paris&amp;sort=distance&amp;page=1</div>
+
+      <div style="max-width: 1360px; width: 100%; margin: 0 auto; padding: 28px 40px 48px; display: flex; flex-direction: column; gap: 20px">
+
+        <!-- Bandeau de recherche -->
+        <div style="display: flex; flex-direction: column; gap: 14px">
+          <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em">Trouver un psychologue, un psychiatre ou un coach</h1>
+          <form role="search" aria-label="Recherche de praticiens" class="card" style="padding: 16px 18px; display: grid; grid-template-columns: 1.4fr 1fr 1.3fr auto; gap: 12px; align-items: end" onsubmit="return false">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="a-ville" style="font-size: 12px; font-weight: 500; color: #5A6679">Ville ou code postal</label>
+              <div style="position: relative">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A94A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 13px; top: 14px"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                <input id="a-ville" type="text" class="field" value="Paris 11e" style="padding-left: 38px">
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="a-prof" style="font-size: 12px; font-weight: 500; color: #5A6679">Profession</label>
+              <select id="a-prof" class="field">
+                <option selected>Toutes</option>
+                <option>Psychologue</option>
+                <option>Psychiatre</option>
+                <option>Coach</option>
+              </select>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="a-spec" style="font-size: 12px; font-weight: 500; color: #5A6679">Spécialité <span style="font-weight: 400; color: #8A94A6">(liste fermée)</span></label>
+              <select id="a-spec" class="field">
+                <option selected>Toutes les spécialités</option>
+                <option>Anxiété</option><option>Dépression</option><option>Thérapie cognitivo-comportementale (TCC)</option><option>EMDR</option>
+                <option>Thérapie de couple</option><option>Burn-out</option><option>TDAH</option><option>Addictions</option>
+                <option>Traumatismes et stress post-traumatique</option><option>Phobies</option><option>TOC</option>
+                <option>Troubles du comportement alimentaire</option><option>Troubles bipolaires</option><option>Deuil</option>
+                <option>Estime de soi</option><option>Gestion du stress</option><option>Troubles du sommeil</option>
+                <option>Troubles du spectre autistique</option><option>Parentalité</option><option>Accompagnement professionnel</option>
+                <option>Pleine conscience</option><option>Approche psychodynamique</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-primary" style="height: 44px; padding: 0 22px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+              Rechercher
+            </button>
+          </form>
+        </div>
+
+        <div style="display: flex; gap: 24px; align-items: flex-start">
+
+          <!-- Colonne de filtres (facettes du lot, toutes pages confondues) -->
+          <aside aria-label="Filtres" class="card" style="flex: 0 0 272px; padding: 18px 20px; display: flex; flex-direction: column; gap: 18px">
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <h2 style="margin: 0; font-size: 14px; font-weight: 600">Filtres</h2>
+              <a href="#" style="font-size: 12px; text-decoration: none; color: #5A6679">Tout effacer</a>
+            </div>
+
+            <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column">
+              <legend style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; padding: 0; margin-bottom: 6px">Profession</legend>
+              <label class="facet"><span><input type="checkbox" checked>Psychologue</span><span class="n">27</span></label>
+              <label class="facet"><span><input type="checkbox" checked>Psychiatre</span><span class="n">9</span></label>
+              <label class="facet"><span><input type="checkbox" checked>Coach</span><span class="n">6</span></label>
+            </fieldset>
+
+            <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column">
+              <legend style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; padding: 0; margin-bottom: 6px">Spécialités</legend>
+              <label class="facet"><span><input type="checkbox">Anxiété</span><span class="n">18</span></label>
+              <label class="facet"><span><input type="checkbox">Dépression</span><span class="n">15</span></label>
+              <label class="facet"><span><input type="checkbox">TCC</span><span class="n">12</span></label>
+              <label class="facet"><span><input type="checkbox">Burn-out</span><span class="n">11</span></label>
+              <label class="facet"><span><input type="checkbox">EMDR</span><span class="n">7</span></label>
+              <label class="facet"><span><input type="checkbox">Deuil</span><span class="n">6</span></label>
+              <a href="#" style="font-size: 12px; text-decoration: none; margin-top: 4px">Afficher les 22 spécialités</a>
+            </fieldset>
+
+            <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column">
+              <legend style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; padding: 0; margin-bottom: 6px">Publics</legend>
+              <label class="facet"><span><input type="checkbox">Adultes</span><span class="n">40</span></label>
+              <label class="facet"><span><input type="checkbox">Adolescents</span><span class="n">14</span></label>
+              <label class="facet"><span><input type="checkbox">Enfants</span><span class="n">9</span></label>
+              <label class="facet"><span><input type="checkbox">Couples et familles</span><span class="n">8</span></label>
+            </fieldset>
+
+            <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column">
+              <legend style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; padding: 0; margin-bottom: 6px">Modalités</legend>
+              <label class="facet"><span><input type="checkbox">Au cabinet</span><span class="n">38</span></label>
+              <label class="facet"><span><input type="checkbox">En visio</span><span class="n">29</span></label>
+            </fieldset>
+
+            <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column">
+              <legend style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; padding: 0; margin-bottom: 6px">Langues</legend>
+              <label class="facet"><span><input type="checkbox">Français</span><span class="n">42</span></label>
+              <label class="facet"><span><input type="checkbox">Anglais</span><span class="n">17</span></label>
+              <label class="facet"><span><input type="checkbox">Espagnol</span><span class="n">5</span></label>
+              <label class="facet"><span><input type="checkbox">Arabe</span><span class="n">3</span></label>
+            </fieldset>
+
+            <label class="facet" style="border-top: 1px solid #D6DCE6; padding-top: 14px; font-weight: 500"><span><input type="checkbox">Accepte de nouveaux patients</span><span class="n">31</span></label>
+          </aside>
+
+          <!-- Résultats -->
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+
+            <!-- Barre d'outils : compte, tri, bascule -->
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+              <p style="margin: 0; font-size: 14px" aria-live="polite"><strong style="font-weight: 600">42 praticiens</strong> <span style="color: #5A6679">à Paris 11e et alentours</span></p>
+              <div style="display: flex; align-items: center; gap: 14px">
+                <label for="a-tri" style="font-size: 13px; color: #5A6679">Tri :</label>
+                <select id="a-tri" style="height: 36px; border: 1px solid #B9C2D1; border-radius: 9px; padding: 0 10px; background: #FFFFFF; font-weight: 500">
+                  <option selected>Distance</option>
+                  <option>Pertinence</option>
+                </select>
+                <div role="group" aria-label="Affichage" style="display: inline-flex; border: 1px solid #B9C2D1; border-radius: 9px; overflow: hidden; background: #FFFFFF">
+                  <button type="button" aria-pressed="true" style="height: 36px; padding: 0 14px; border: 0; background: #3A63C2; color: #FFFFFF; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>Liste
+                  </button>
+                  <button type="button" aria-pressed="false" style="height: 36px; padding: 0 14px; border: 0; border-left: 1px solid #B9C2D1; background: #FFFFFF; color: #1E2633; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E2633" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>Carte
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px" aria-label="Résultats">
+
+              <!-- 1 -->
+              <li class="card" style="padding: 20px 22px; display: flex; gap: 18px">
+                <div class="avatar" role="img" aria-label="Photo de Claire Lambert (initiales CL)">CL</div>
+                <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+                    <h3 style="margin: 0; font-size: 17px; font-weight: 600">Claire Lambert</h3>
+                    <span class="prof prof-psy">Psychologue</span>
+                    <span class="verified"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1E6B45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Profil vérifié</span>
+                    <span class="accepting" style="margin-left: auto"><span style="width: 7px; height: 7px; border-radius: 50%; background: #1E6B45" aria-hidden="true"></span>Accepte de nouveaux patients</span>
+                  </div>
+                  <p style="margin: 0; font-size: 13px; color: #5A6679">Psychologue clinicienne · TCC et gestion de l'anxiété chez l'adulte, en cabinet ou à distance…</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="tag">Anxiété</span><span class="tag">TCC</span><span class="tag">Burn-out</span><span class="tag">Estime de soi</span></div>
+                  <div class="meta">
+                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris 11e · <span style="font-family: 'JetBrains Mono', monospace">0,4 km</span></span>
+                    <span><span class="sq" aria-hidden="true"></span>Cabinet et visio</span>
+                    <span>Adultes, jeunes adultes</span>
+                    <span>Français, anglais</span>
+                    <span>Séance · <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: #1E2633">[TARIF] €</span></span>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-shrink: 0">
+                  <a href="#" class="btn-primary">Voir la fiche</a>
+                  <a href="#" class="btn-secondary">Contacter</a>
+                </div>
+              </li>
+
+              <!-- 2 (avec photo) -->
+              <li class="card" style="padding: 20px 22px; display: flex; gap: 18px">
+                <div class="avatar" style="overflow: hidden; background: #E4E8F0" role="img" aria-label="Photo du Dr Karim Benali">
+                  <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="22" r="10" fill="#B9C2D1"></circle><path d="M8 56c0-12 9-18 20-18s20 6 20 18" fill="#B9C2D1"></path></svg>
+                </div>
+                <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+                    <h3 style="margin: 0; font-size: 17px; font-weight: 600">Dr Karim Benali</h3>
+                    <span class="prof prof-psych">Psychiatre</span>
+                    <span class="verified"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1E6B45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Profil vérifié</span>
+                    <span class="waitlist" style="margin-left: auto">Liste d'attente</span>
+                  </div>
+                  <p style="margin: 0; font-size: 13px; color: #5A6679">Psychiatre, ancien chef de clinique. Troubles de l'humeur et du sommeil ; suivi conjoint avec votre médecin traitant si vous le souhaitez…</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="tag">Dépression</span><span class="tag">Troubles bipolaires</span><span class="tag">Troubles du sommeil</span></div>
+                  <div class="meta">
+                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris 11e · <span style="font-family: 'JetBrains Mono', monospace">1,2 km</span></span>
+                    <span><span class="sq" aria-hidden="true"></span>Cabinet</span>
+                    <span>Adultes</span>
+                    <span>Français, arabe</span>
+                    <span>Séance · <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: #1E2633">[TARIF] €</span></span>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-shrink: 0">
+                  <a href="#" class="btn-primary">Voir la fiche</a>
+                  <a href="#" class="btn-secondary">Contacter</a>
+                </div>
+              </li>
+
+              <!-- 3 -->
+              <li class="card" style="padding: 20px 22px; display: flex; gap: 18px">
+                <div class="avatar" role="img" aria-label="Photo d'Inès Rahmani (initiales IR)">IR</div>
+                <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+                    <h3 style="margin: 0; font-size: 17px; font-weight: 600">Inès Rahmani</h3>
+                    <span class="prof prof-psy">Psychologue</span>
+                    <span class="verified"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1E6B45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Profil vérifié</span>
+                    <span class="accepting" style="margin-left: auto"><span style="width: 7px; height: 7px; border-radius: 50%; background: #1E6B45" aria-hidden="true"></span>Accepte de nouveaux patients</span>
+                  </div>
+                  <p style="margin: 0; font-size: 13px; color: #5A6679">Psychologue spécialisée dans le psychotraumatisme (EMDR). Je reçois adolescents et adultes, en français, anglais ou espagnol…</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="tag">EMDR</span><span class="tag">Traumatismes et stress post-traumatique</span><span class="tag">Phobies</span><span class="tag">Deuil</span></div>
+                  <div class="meta">
+                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris 20e · <span style="font-family: 'JetBrains Mono', monospace">1,8 km</span></span>
+                    <span><span class="sq" aria-hidden="true"></span>Cabinet et visio</span>
+                    <span>Adolescents, adultes</span>
+                    <span>Français, anglais, espagnol</span>
+                    <span>Séance · <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: #1E2633">[TARIF] €</span></span>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-shrink: 0">
+                  <a href="#" class="btn-primary">Voir la fiche</a>
+                  <a href="#" class="btn-secondary">Contacter</a>
+                </div>
+              </li>
+
+              <!-- 4 -->
+              <li class="card" style="padding: 20px 22px; display: flex; gap: 18px">
+                <div class="avatar" role="img" aria-label="Photo de Sophie Marchand (initiales SM)">SM</div>
+                <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+                    <h3 style="margin: 0; font-size: 17px; font-weight: 600">Sophie Marchand</h3>
+                    <span class="prof prof-coach">Coach</span>
+                    <span class="verified"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1E6B45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Profil vérifié</span>
+                    <span class="accepting" style="margin-left: auto"><span style="width: 7px; height: 7px; border-radius: 50%; background: #1E6B45" aria-hidden="true"></span>Accepte de nouveaux patients</span>
+                  </div>
+                  <p style="margin: 0; font-size: 13px; color: #5A6679">Coach certifiée, accompagnement des transitions professionnelles et de la reprise après un burn-out. Séances en visio ou au cabinet…</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="tag">Accompagnement professionnel</span><span class="tag">Gestion du stress</span><span class="tag">Burn-out</span></div>
+                  <div class="meta">
+                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris 3e · <span style="font-family: 'JetBrains Mono', monospace">2,3 km</span></span>
+                    <span><span class="sq" aria-hidden="true"></span>Visio et cabinet</span>
+                    <span>Adultes</span>
+                    <span>Français</span>
+                    <span>Séance · <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: #1E2633">[TARIF] €</span></span>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-shrink: 0">
+                  <a href="#" class="btn-primary">Voir la fiche</a>
+                  <a href="#" class="btn-secondary">Contacter</a>
+                </div>
+              </li>
+
+              <!-- 5 -->
+              <li class="card" style="padding: 20px 22px; display: flex; gap: 18px">
+                <div class="avatar" role="img" aria-label="Photo du Dr Anne Lenoir (initiales AL)">AL</div>
+                <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+                    <h3 style="margin: 0; font-size: 17px; font-weight: 600">Dr Anne Lenoir</h3>
+                    <span class="prof prof-psych">Psychiatre</span>
+                    <span class="verified"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1E6B45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Profil vérifié</span>
+                    <span class="waitlist" style="margin-left: auto">Complet</span>
+                  </div>
+                  <p style="margin: 0; font-size: 13px; color: #5A6679">Pédopsychiatre. Consultations pour enfants et adolescents, en lien avec les familles et l'école…</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="tag">TDAH</span><span class="tag">Troubles du spectre autistique</span><span class="tag">Anxiété</span><span class="tag">Parentalité</span></div>
+                  <div class="meta">
+                    <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Paris 12e · <span style="font-family: 'JetBrains Mono', monospace">3,1 km</span></span>
+                    <span><span class="sq" aria-hidden="true"></span>Cabinet</span>
+                    <span>Enfants, adolescents, couples et familles</span>
+                    <span>Français, anglais</span>
+                    <span>Séance · <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: #1E2633">[TARIF] €</span></span>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-shrink: 0">
+                  <a href="#" class="btn-primary">Voir la fiche</a>
+                  <a href="#" class="btn-secondary">Contacter</a>
+                </div>
+              </li>
+            </ul>
+
+            <!-- Pagination par page (20 par page) -->
+            <nav aria-label="Pagination" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding-top: 6px">
+              <a href="#" class="page-link" aria-disabled="true" style="color: #8A94A6">‹ Précédent</a>
+              <a href="#" class="page-link" aria-current="page" style="background: #3A63C2; color: #FFFFFF; border-color: #3A63C2; font-weight: 600">1</a>
+              <a href="#" class="page-link">2</a>
+              <a href="#" class="page-link">3</a>
+              <span style="padding: 0 6px; color: #8A94A6" aria-hidden="true">…</span>
+              <a href="#" class="page-link">5</a>
+              <a href="#" class="page-link">Suivant ›</a>
+            </nav>
+
+            <p style="margin: 4px 0 0; font-size: 12px; color: #8A94A6; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8A94A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"></path><path d="m9 12 2 2 4-4"></path></svg>
+              Seuls les praticiens dont le dossier a été vérifié apparaissent ici. Un praticien sans dossier approuvé n'est jamais listé.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- ÉTAT B · Même recherche, bascule Carte active                           -->
+    <!-- ======================================================================= -->
+    <section aria-labelledby="etat-b">
+      <div class="etat"><strong id="etat-b">État B</strong> Même page, bascule Carte active · liste compacte à gauche, marqueur n°2 sélectionné · le bandeau de recherche et les filtres sont identiques à l'état A</div>
+
+      <div style="max-width: 1360px; width: 100%; margin: 0 auto; padding: 28px 40px 48px; display: flex; flex-direction: column; gap: 14px">
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+          <p style="margin: 0; font-size: 14px"><strong style="font-weight: 600">42 praticiens</strong> <span style="color: #5A6679">à Paris 11e et alentours · 5 affichés sur la carte</span></p>
+          <div style="display: flex; align-items: center; gap: 14px">
+            <label for="b-tri" style="font-size: 13px; color: #5A6679">Tri :</label>
+            <select id="b-tri" style="height: 36px; border: 1px solid #B9C2D1; border-radius: 9px; padding: 0 10px; background: #FFFFFF; font-weight: 500">
+              <option selected>Distance</option>
+              <option>Pertinence</option>
+            </select>
+            <div role="group" aria-label="Affichage" style="display: inline-flex; border: 1px solid #B9C2D1; border-radius: 9px; overflow: hidden; background: #FFFFFF">
+              <button type="button" aria-pressed="false" style="height: 36px; padding: 0 14px; border: 0; background: #FFFFFF; color: #1E2633; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E2633" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>Liste
+              </button>
+              <button type="button" aria-pressed="true" style="height: 36px; padding: 0 14px; border: 0; border-left: 1px solid #B9C2D1; background: #3A63C2; color: #FFFFFF; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>Carte
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 20px; align-items: stretch; height: 560px">
+
+          <!-- Liste compacte -->
+          <ol style="list-style: none; margin: 0; padding: 0; flex: 0 0 380px; display: flex; flex-direction: column; gap: 8px; overflow: hidden" aria-label="Résultats sur la carte">
+            <li class="card" style="padding: 12px 14px; display: flex; gap: 12px; align-items: center">
+              <span style="width: 24px; height: 24px; border-radius: 50%; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">1</span>
+              <div style="min-width: 0; flex: 1 1 auto">
+                <div style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 600">Claire Lambert</span><span class="prof prof-psy">Psychologue</span></div>
+                <div style="font-size: 12px; color: #5A6679">Paris 11e · <span style="font-family: 'JetBrains Mono', monospace">0,4 km</span> · Cabinet et visio</div>
+              </div>
+            </li>
+            <li class="card" style="padding: 12px 14px; display: flex; gap: 12px; align-items: center; background: #E3EAF8; border-color: #B9C2D1" aria-current="true">
+              <span style="width: 24px; height: 24px; border-radius: 50%; background: #2C4C99; color: #FFFFFF; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">2</span>
+              <div style="min-width: 0; flex: 1 1 auto">
+                <div style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 600">Dr Karim Benali</span><span class="prof prof-psych">Psychiatre</span></div>
+                <div style="font-size: 12px; color: #5A6679">Paris 11e · <span style="font-family: 'JetBrains Mono', monospace">1,2 km</span> · Cabinet · Liste d'attente</div>
+              </div>
+            </li>
+            <li class="card" style="padding: 12px 14px; display: flex; gap: 12px; align-items: center">
+              <span style="width: 24px; height: 24px; border-radius: 50%; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">3</span>
+              <div style="min-width: 0; flex: 1 1 auto">
+                <div style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 600">Inès Rahmani</span><span class="prof prof-psy">Psychologue</span></div>
+                <div style="font-size: 12px; color: #5A6679">Paris 20e · <span style="font-family: 'JetBrains Mono', monospace">1,8 km</span> · Cabinet et visio</div>
+              </div>
+            </li>
+            <li class="card" style="padding: 12px 14px; display: flex; gap: 12px; align-items: center">
+              <span style="width: 24px; height: 24px; border-radius: 50%; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">4</span>
+              <div style="min-width: 0; flex: 1 1 auto">
+                <div style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 600">Sophie Marchand</span><span class="prof prof-coach">Coach</span></div>
+                <div style="font-size: 12px; color: #5A6679">Paris 3e · <span style="font-family: 'JetBrains Mono', monospace">2,3 km</span> · Visio et cabinet</div>
+              </div>
+            </li>
+            <li class="card" style="padding: 12px 14px; display: flex; gap: 12px; align-items: center">
+              <span style="width: 24px; height: 24px; border-radius: 50%; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">5</span>
+              <div style="min-width: 0; flex: 1 1 auto">
+                <div style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 600">Dr Anne Lenoir</span><span class="prof prof-psych">Psychiatre</span></div>
+                <div style="font-size: 12px; color: #5A6679">Paris 12e · <span style="font-family: 'JetBrains Mono', monospace">3,1 km</span> · Cabinet · Complet</div>
+              </div>
+            </li>
+            <li style="margin-top: auto; font-size: 12px; color: #8A94A6; padding: 4px 2px">Déplacez la carte pour actualiser la liste. Seuls les praticiens au dossier vérifié sont affichés.</li>
+          </ol>
+
+          <!-- Carte stylisée (statique en V1 : pas de fournisseur tiers) -->
+          <div style="flex: 1 1 auto; min-width: 0; border: 1px solid #D6DCE6; border-radius: 14px; background: #E4E8F0; position: relative; overflow: hidden" role="img" aria-label="Carte de Paris 11e et alentours : 5 praticiens, le n°2 Dr Karim Benali est sélectionné">
+            <svg width="100%" height="100%" viewBox="0 0 880 558" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <rect width="880" height="558" fill="#E4E8F0"></rect>
+              <!-- Parc et plan d'eau -->
+              <path d="M560 60 C 640 40, 720 70, 730 150 C 740 220, 650 250, 590 220 C 540 190, 520 110, 560 60 Z" fill="#E4F2EA"></path>
+              <path d="M0 420 C 120 380, 240 460, 380 430 C 520 400, 640 470, 880 440 L 880 490 C 640 520, 520 450, 380 480 C 240 510, 120 430, 0 470 Z" fill="#E3EAF8"></path>
+              <!-- Rues secondaires -->
+              <g stroke="#FFFFFF" stroke-width="5" fill="none" stroke-linecap="round">
+                <path d="M0 120 H880 M0 250 H880 M0 350 H880 M120 0 V558 M260 0 V558 M420 0 V558 M660 0 V558 M780 0 V558"></path>
+                <path d="M60 0 L 200 558 M520 0 L 380 558 M880 300 L 600 558"></path>
+              </g>
+              <g stroke="#D6DCE6" stroke-width="1" fill="none">
+                <path d="M0 120 H880 M0 250 H880 M0 350 H880 M120 0 V558 M260 0 V558 M420 0 V558 M660 0 V558 M780 0 V558"></path>
+              </g>
+              <!-- Boulevards -->
+              <path d="M0 190 C 200 170, 400 220, 880 180" stroke="#FFFFFF" stroke-width="12" fill="none"></path>
+              <path d="M0 190 C 200 170, 400 220, 880 180" stroke="#B9C2D1" stroke-width="1.5" fill="none"></path>
+              <path d="M340 0 C 360 200, 300 360, 330 558" stroke="#FFFFFF" stroke-width="12" fill="none"></path>
+              <path d="M340 0 C 360 200, 300 360, 330 558" stroke="#B9C2D1" stroke-width="1.5" fill="none"></path>
+              <!-- Noms de quartiers -->
+              <g font-family="Inter, system-ui, sans-serif" font-size="11" fill="#8A94A6" font-weight="500">
+                <text x="612" y="150">Parc</text>
+                <text x="150" y="70">Paris 3e</text>
+                <text x="470" y="320">Paris 11e</text>
+                <text x="720" y="330">Paris 20e</text>
+                <text x="520" y="530">Paris 12e</text>
+              </g>
+              <!-- Marqueurs (cobalt, numérotés) -->
+              <g font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">
+                <circle cx="440" cy="290" r="14" fill="#3A63C2" stroke="#FFFFFF" stroke-width="3"></circle><text x="440" y="294.5">1</text>
+                <circle cx="700" cy="300" r="14" fill="#3A63C2" stroke="#FFFFFF" stroke-width="3"></circle><text x="700" y="304.5">3</text>
+                <circle cx="190" cy="110" r="14" fill="#3A63C2" stroke="#FFFFFF" stroke-width="3"></circle><text x="190" y="114.5">4</text>
+                <circle cx="560" cy="500" r="14" fill="#3A63C2" stroke="#FFFFFF" stroke-width="3"></circle><text x="560" y="504.5">5</text>
+                <!-- n°2 sélectionné -->
+                <circle cx="380" cy="380" r="24" fill="#3A63C2" fill-opacity="0.18"></circle>
+                <circle cx="380" cy="380" r="17" fill="#2C4C99" stroke="#FFFFFF" stroke-width="3"></circle><text x="380" y="385" font-size="13">2</text>
+              </g>
+              <!-- Échelle -->
+              <g font-family="JetBrains Mono, monospace" font-size="10" fill="#5A6679">
+                <path d="M20 530 H100" stroke="#5A6679" stroke-width="2"></path><path d="M20 525 V535 M100 525 V535" stroke="#5A6679" stroke-width="2"></path>
+                <text x="104" y="534">500 m</text>
+              </g>
+            </svg>
+
+            <!-- Bulle résumé du marqueur sélectionné -->
+            <div style="position: absolute; left: 290px; top: 190px; width: 300px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 14px 16px; box-shadow: 0 6px 18px rgba(30,38,51,0.14); display: flex; flex-direction: column; gap: 8px">
+              <span style="position: absolute; left: 160px; bottom: -8px; width: 14px; height: 14px; background: #FFFFFF; border-right: 1px solid #D6DCE6; border-bottom: 1px solid #D6DCE6; transform: rotate(45deg)" aria-hidden="true"></span>
+              <div style="display: flex; align-items: center; gap: 10px">
+                <span class="avatar" style="width: 36px; height: 36px; font-size: 13px; background: #E4E8F0" aria-hidden="true">KB</span>
+                <div style="min-width: 0">
+                  <div style="font-weight: 600; font-size: 14px">Dr Karim Benali</div>
+                  <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px"><span class="prof prof-psych">Psychiatre</span><span class="verified"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1E6B45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Vérifié</span></div>
+                </div>
+              </div>
+              <div style="font-size: 12px; color: #5A6679">Paris 11e · <span style="font-family: 'JetBrains Mono', monospace">1,2 km</span> · Cabinet · Liste d'attente</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 4px"><span class="tag" style="font-size: 11px; padding: 2px 8px">Dépression</span><span class="tag" style="font-size: 11px; padding: 2px 8px">Troubles bipolaires</span></div>
+              <a href="#" style="font-size: 13px; font-weight: 600; text-decoration: none">Voir la fiche →</a>
+            </div>
+
+            <!-- Commandes de zoom -->
+            <div style="position: absolute; right: 14px; top: 14px; display: flex; flex-direction: column; border: 1px solid #B9C2D1; border-radius: 9px; overflow: hidden; background: #FFFFFF">
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; border-bottom: 1px solid #D6DCE6" aria-hidden="true">+</span>
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; font-weight: 600" aria-hidden="true">−</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- ÉTAT C · Aucun résultat                                                 -->
+    <!-- ======================================================================= -->
+    <section aria-labelledby="etat-c">
+      <div class="etat"><strong id="etat-c">État C</strong> Aucun résultat · GET /api/public/directory?city=Brest&amp;professions=psychiatrist&amp;modalities=in_person → total 0, totalPages 0, facettes à zéro</div>
+
+      <div style="max-width: 1360px; width: 100%; margin: 0 auto; padding: 28px 40px 56px; display: flex; flex-direction: column; gap: 20px">
+
+        <form role="search" aria-label="Recherche de praticiens" class="card" style="padding: 16px 18px; display: grid; grid-template-columns: 1.4fr 1fr 1.3fr auto; gap: 12px; align-items: end" onsubmit="return false">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="c-ville" style="font-size: 12px; font-weight: 500; color: #5A6679">Ville ou code postal</label>
+            <input id="c-ville" type="text" class="field" value="Brest">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="c-prof" style="font-size: 12px; font-weight: 500; color: #5A6679">Profession</label>
+            <select id="c-prof" class="field"><option>Toutes</option><option>Psychologue</option><option selected>Psychiatre</option><option>Coach</option></select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="c-spec" style="font-size: 12px; font-weight: 500; color: #5A6679">Spécialité</label>
+            <select id="c-spec" class="field"><option>Toutes les spécialités</option><option selected>EMDR</option></select>
+          </div>
+          <button type="submit" class="btn-primary" style="height: 44px; padding: 0 22px">Rechercher</button>
+        </form>
+
+        <div style="display: flex; gap: 24px; align-items: flex-start">
+
+          <!-- Filtres grisés (facettes à zéro) -->
+          <aside aria-label="Filtres" class="card" style="flex: 0 0 272px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; color: #8A94A6">
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <h2 style="margin: 0; font-size: 14px; font-weight: 600; color: #1E2633">Filtres</h2>
+              <a href="#" style="font-size: 12px; text-decoration: none">Tout effacer</a>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px">
+              <span class="tag" style="display: inline-flex; align-items: center; gap: 6px; background: #E3EAF8; border-color: #B9C2D1; color: #2C4C99">Psychiatre <span aria-hidden="true">×</span></span>
+              <span class="tag" style="display: inline-flex; align-items: center; gap: 6px; background: #E3EAF8; border-color: #B9C2D1; color: #2C4C99">EMDR <span aria-hidden="true">×</span></span>
+              <span class="tag" style="display: inline-flex; align-items: center; gap: 6px; background: #E3EAF8; border-color: #B9C2D1; color: #2C4C99">Au cabinet <span aria-hidden="true">×</span></span>
+            </div>
+            <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column" disabled>
+              <legend style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 0; margin-bottom: 6px">Profession</legend>
+              <label class="facet"><span><input type="checkbox">Psychologue</span><span class="n">0</span></label>
+              <label class="facet"><span><input type="checkbox" checked>Psychiatre</span><span class="n">0</span></label>
+              <label class="facet"><span><input type="checkbox">Coach</span><span class="n">0</span></label>
+            </fieldset>
+            <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column" disabled>
+              <legend style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 0; margin-bottom: 6px">Modalités</legend>
+              <label class="facet"><span><input type="checkbox" checked>Au cabinet</span><span class="n">0</span></label>
+              <label class="facet"><span><input type="checkbox">En visio</span><span class="n">0</span></label>
+            </fieldset>
+            <p style="margin: 0; font-size: 12px; line-height: 1.5">Les autres facettes sont masquées tant que la recherche ne rend aucun résultat.</p>
+          </aside>
+
+          <!-- Message vide -->
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+            <p style="margin: 0; font-size: 14px" aria-live="polite"><strong style="font-weight: 600">0 praticien</strong> <span style="color: #5A6679">à Brest</span></p>
+            <div class="card" style="padding: 44px 32px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px">
+              <span style="width: 64px; height: 64px; border-radius: 18px; background: #E4E8F0; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path><path d="M8.5 8.5l5 5M13.5 8.5l-5 5"></path></svg>
+              </span>
+              <div style="display: flex; flex-direction: column; gap: 6px; max-width: 520px">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 600">Aucun praticien à Brest pour ces critères</h2>
+                <p style="margin: 0; color: #5A6679; line-height: 1.6">Aucune fiche vérifiée ne correspond à « psychiatre · EMDR · au cabinet » dans un rayon de 25 km. Essayez l'une des pistes ci-dessous.</p>
+              </div>
+              <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px" aria-label="Suggestions">
+                <li><a href="#" class="btn-secondary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E2633" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"></circle></svg>Élargir le rayon à 50 km</a></li>
+                <li><a href="#" class="btn-secondary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E2633" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>Retirer le filtre « EMDR »</a></li>
+                <li><a href="#" class="btn-secondary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E2633" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"></rect><path d="m16 10 5-3v10l-5-3z"></path></svg>Inclure les consultations en visio</a></li>
+              </ul>
+              <p style="margin: 4px 0 0; font-size: 13px; color: #5A6679">Vous ne savez pas quel type de praticien consulter ? <a href="#" style="font-weight: 500">Comment ça marche</a></p>
+            </div>
+            <p style="margin: 0; font-size: 12px; color: #8A94A6; text-align: center">Seuls les praticiens dont le dossier a été vérifié apparaissent dans l'annuaire.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Pied de page public : pas de numéros d'urgence (G Q20) -->
+  <footer style="margin-top: auto; background: #FFFFFF; border-top: 1px solid #D6DCE6; padding: 18px 40px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #5A6679">
+    <span>© 2026 PsyMate · Praticiens inscrits, responsables de leur profil · Données hébergées en France</span>
+    <nav style="display: flex; gap: 16px" aria-label="Liens légaux">
+      <a href="#" style="text-decoration: none; color: #5A6679">Mentions légales</a>
+      <a href="#" style="text-decoration: none; color: #5A6679">Confidentialité</a>
+      <a href="#" style="text-decoration: none; color: #5A6679">Accessibilité</a>
+      <a href="#" style="text-decoration: none; color: #5A6679">Contact</a>
+    </nav>
+  </footer>
+</div>
+
+</body>
+</html>

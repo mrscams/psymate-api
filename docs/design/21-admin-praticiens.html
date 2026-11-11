@@ -1,0 +1,125 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Administration – praticiens</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 820px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <!-- Barre admin -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #1E2633; color: #FFFFFF">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#9FB4E8" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>Suivi <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #1E2633; background: #FBF1DC; border-radius: 4px; padding: 2px 6px; margin-left: 4px">Admin</span></div>
+    <nav style="display: flex; align-items: center; gap: 4px; margin-left: 12px" aria-label="Administration">
+      <a href="#validation" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Validation <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-left: 8px; background: #FBF1DC; color: #7A5A12; border-radius: 999px; padding: 1px 7px">6</span></a>
+      <a href="#praticiens" aria-current="page" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; background: rgba(255,255,255,0.12); color: #FFFFFF; font-size: 13px; font-weight: 600; text-decoration: none">Praticiens</a>
+      <a href="#signalements" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Signalements</a>
+      <a href="#vocabulaire" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Vocabulaire</a>
+      <a href="#journal" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Journal</a>
+    </nav>
+    <div style="flex: 1 1 auto"></div>
+    <span style="font-size: 12px; color: #C9D2E3">Aucune donnée patient n'est accessible depuis l'administration.</span>
+    <div aria-label="Compte administrateur" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #FBF1DC; color: #7A5A12; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">HA</div>
+  </div>
+
+  <div style="padding: 20px 24px 32px; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+      <h1 style="margin: 0; font-size: 20px; font-weight: 600">Praticiens · 47</h1>
+      <span style="font-size: 13px; color: #5A6679">38 approuvés · 6 en vérification · 2 compléments demandés · 1 suspendu</span>
+      <div style="flex: 1 1 auto"></div>
+      <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF; width: 280px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#5A6679" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg><label for="q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Rechercher un praticien</label><input id="q" type="search" placeholder="Nom, e-mail, ville…" style="flex: 1 1 auto; border: 0; outline: 0; font-size: 13px; background: transparent"></div>
+      <button style="height: 36px; padding: 0 14px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF; font-size: 13px; cursor: pointer">Exporter CSV</button>
+      <button style="height: 36px; padding: 0 14px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 13px; font-weight: 600; cursor: pointer">+ Inviter un praticien</button>
+    </div>
+
+    <div style="display: flex; gap: 6px; flex-wrap: wrap; font-size: 13px">
+      <button aria-pressed="true" style="height: 30px; padding: 0 12px; border: 1px solid #3A63C2; border-radius: 999px; background: #E3EAF8; color: #2C4C99; font-weight: 500; cursor: pointer">Tous</button>
+      <button aria-pressed="false" style="height: 30px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; cursor: pointer">Approuvés</button>
+      <button aria-pressed="false" style="height: 30px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; cursor: pointer">En vérification</button>
+      <button aria-pressed="false" style="height: 30px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; cursor: pointer">Suspendus</button>
+      <span style="width: 1px; height: 22px; background: #D6DCE6; margin: 4px 6px" aria-hidden="true"></span>
+      <select aria-label="Profession" style="height: 30px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; padding: 0 8px; font-size: 13px"><option>Toutes professions</option><option>Psychologues</option><option>Psychiatres</option><option>Coachs</option></select>
+      <select aria-label="Publié dans l'annuaire" style="height: 30px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; padding: 0 8px; font-size: 13px"><option>Annuaire : tous</option><option>Publiés</option><option>Non publiés</option></select>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; overflow: hidden">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px">
+        <thead><tr style="text-align: left; color: #5A6679; font-size: 12px; background: #F7F9FC"><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #D6DCE6">Praticien</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #D6DCE6">Profession · ville</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #D6DCE6">Vérification</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #D6DCE6">Annuaire</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #D6DCE6">2FA</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #D6DCE6">Inscrit · dernière connexion</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #D6DCE6; text-align: right">Actions</th></tr></thead>
+        <tbody>
+          <tr>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0"><div style="display: flex; align-items: center; gap: 10px"><span style="width: 32px; height: 32px; border-radius: 9px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px" aria-hidden="true">CM</span><span style="display: flex; flex-direction: column"><a href="#" style="font-weight: 600; text-decoration: none; color: #1E2633">Claire Moreau</a><span style="font-size: 12px; color: #5A6679">claire.moreau@exemple.fr</span></span></div></td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0">Psychologue · Lyon</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0"><span style="font-size: 12px; font-weight: 500; color: #7A5A12; background: #FBF1DC; border-radius: 999px; padding: 3px 9px">En vérification · 1 j</span></td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #8A94A6">—</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #1E6B45">Activée</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679"><span style="font-family: 'JetBrains Mono', monospace">24 oct.</span> · aujourd'hui 09:12</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; text-align: right; white-space: nowrap"><a href="#" style="font-size: 12px; text-decoration: none">Ouvrir le dossier</a></td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0"><div style="display: flex; align-items: center; gap: 10px"><span style="width: 32px; height: 32px; border-radius: 9px; background: #E1E9F2; color: #2F4F73; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px" aria-hidden="true">RL</span><span style="display: flex; flex-direction: column"><a href="#" style="font-weight: 600; text-decoration: none; color: #1E2633">Dr Rémi Lenoir</a><span style="font-size: 12px; color: #5A6679">r.lenoir@exemple.fr</span></span></div></td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0">Psychiatre · Villeurbanne</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0"><span style="font-size: 12px; font-weight: 500; color: #1E6B45; background: #E4F2EA; border-radius: 999px; padding: 3px 9px">Approuvé · 12 sept.</span></td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #1E6B45" aria-hidden="true"></span>Publié</span></td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #1E6B45">Activée</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679"><span style="font-family: 'JetBrains Mono', monospace">2 sept.</span> · hier 18:40</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; text-align: right; white-space: nowrap"><a href="#" style="font-size: 12px; text-decoration: none; margin-right: 10px">Voir la fiche</a><button type="button" style="height: 28px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; color: #9A2F22; cursor: pointer">Suspendre…</button></td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0"><div style="display: flex; align-items: center; gap: 10px"><span style="width: 32px; height: 32px; border-radius: 9px; background: #E2F1EE; color: #3E8E7E; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px" aria-hidden="true">SB</span><span style="display: flex; flex-direction: column"><a href="#" style="font-weight: 600; text-decoration: none; color: #1E2633">Samir Benali</a><span style="font-size: 12px; color: #5A6679">samir.b@exemple.fr</span></span></div></td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0">Coach · Paris</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0"><span style="font-size: 12px; font-weight: 500; color: #7A5A12; background: #FBF1DC; border-radius: 999px; padding: 3px 9px">Complément demandé · 2 j</span></td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #8A94A6">—</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679">Non</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679"><span style="font-family: 'JetBrains Mono', monospace">22 oct.</span> · 23 oct. 14:05</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; text-align: right; white-space: nowrap"><a href="#" style="font-size: 12px; text-decoration: none">Ouvrir le dossier</a></td>
+          </tr>
+          <tr style="background: #FBE9E7">
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0"><div style="display: flex; align-items: center; gap: 10px"><span style="width: 32px; height: 32px; border-radius: 9px; background: #FFFFFF; color: #9A2F22; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; border: 1px solid #E8C1BB" aria-hidden="true">KD</span><span style="display: flex; flex-direction: column"><a href="#" style="font-weight: 600; text-decoration: none; color: #1E2633">K. Dumont</a><span style="font-size: 12px; color: #5A6679">kd.psy@exemple.fr</span></span></div></td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0">Psychologue · Nice</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0"><span style="font-size: 12px; font-weight: 500; color: #9A2F22; background: #FFFFFF; border: 1px solid #E8C1BB; border-radius: 999px; padding: 3px 9px">Refusé · suspendu le 15 oct.</span></td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #8A94A6">—</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679">Non</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679"><span style="font-family: 'JetBrains Mono', monospace">10 oct.</span> · 15 oct. 08:30 · <span style="color: #9A2F22">purge des données le 14 nov.</span></td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; text-align: right; white-space: nowrap"><a href="#" style="font-size: 12px; text-decoration: none; margin-right: 10px">Décision</a><button type="button" style="height: 28px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; cursor: pointer">Réactiver…</button></td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0"><div style="display: flex; align-items: center; gap: 10px"><span style="width: 32px; height: 32px; border-radius: 9px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px" aria-hidden="true">AP</span><span style="display: flex; flex-direction: column"><a href="#" style="font-weight: 600; text-decoration: none; color: #1E2633">Anaïs Petit</a><span style="font-size: 12px; color: #5A6679">anais.petit@exemple.fr</span></span></div></td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0">Psychologue · Nantes</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0"><span style="font-size: 12px; font-weight: 500; color: #9A2F22; background: #FBE9E7; border-radius: 999px; padding: 3px 9px">En vérification · 3 j · hors délai</span></td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #8A94A6">—</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679">Non</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; color: #5A6679"><span style="font-family: 'JetBrains Mono', monospace">21 oct.</span> · 24 oct. 20:15</td>
+            <td style="padding: 12px 14px; border-bottom: 1px solid #E4E8F0; text-align: right; white-space: nowrap"><a href="#" style="font-size: 12px; text-decoration: none">Ouvrir le dossier</a></td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 14px"><div style="display: flex; align-items: center; gap: 10px"><span style="width: 32px; height: 32px; border-radius: 9px; background: #E2F1EE; color: #3E8E7E; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px" aria-hidden="true">JV</span><span style="display: flex; flex-direction: column"><a href="#" style="font-weight: 600; text-decoration: none; color: #1E2633">Julien Vasseur</a><span style="font-size: 12px; color: #5A6679">j.vasseur@exemple.fr</span></span></div></td>
+            <td style="padding: 12px 14px">Coach mental · Lille</td>
+            <td style="padding: 12px 14px"><span style="font-size: 12px; font-weight: 500; color: #1E6B45; background: #E4F2EA; border-radius: 999px; padding: 3px 9px">Approuvé · 3 oct.</span></td>
+            <td style="padding: 12px 14px"><span style="display: inline-flex; align-items: center; gap: 6px; color: #5A6679"><span style="width: 8px; height: 8px; border-radius: 50%; background: #B9C2D1" aria-hidden="true"></span>Non publié</span></td>
+            <td style="padding: 12px 14px; color: #5A6679">Non</td>
+            <td style="padding: 12px 14px; color: #5A6679"><span style="font-family: 'JetBrains Mono', monospace">28 sept.</span> · 20 oct. 11:00</td>
+            <td style="padding: 12px 14px; text-align: right; white-space: nowrap"><a href="#" style="font-size: 12px; text-decoration: none; margin-right: 10px">Décision</a><button type="button" style="height: 28px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; color: #9A2F22; cursor: pointer">Suspendre…</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-top: 1px solid #D6DCE6; font-size: 12px; color: #5A6679"><span>6 sur 47</span><button style="height: 30px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; cursor: pointer">Afficher plus</button></div>
+    </div>
+    <p style="margin: 0; font-size: 12px; color: #8A94A6">« Suspendre » révoque les sessions et bloque la connexion ; le motif est obligatoire et envoyé au praticien. L'administration ne voit ni le nombre de patients ni aucune donnée clinique.</p>
+  </div>
+</div>
+
+</body>
+</html>

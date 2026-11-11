@@ -1,0 +1,157 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mon compte – émotions personnalisées</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select,textarea{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 1120px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>Suivi</div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a><span style="color: #9AA5B8">/</span><span style="font-size: 13px">Mon compte</span>
+    <div style="flex: 1 1 auto"></div>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CL</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; align-items: flex-start">
+
+    <!-- Navigation du compte -->
+    <nav aria-label="Mon compte" style="flex: 0 1 220px; display: flex; flex-direction: column; gap: 4px">
+      <div style="padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600; font-size: 15px">Claire Moreau</span><span style="font-size: 12px; color: #5A6679">Psychologue · Lyon</span></div>
+      <a href="#profil" style="display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Profil public <span style="width: 8px; height: 8px; border-radius: 50%; background: #1E6B45" aria-label="publié"></span></a>
+      <a href="#prefs" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Préférences</a>
+      <a href="#emotions" aria-current="page" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; font-weight: 600; font-size: 13px; text-decoration: none">Émotions personnalisées</a>
+      <a href="#securite" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Compte et sécurité</a>
+      <a href="#donnees" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Données et export</a>
+    </nav>
+
+    <!-- Contenu -->
+    <div style="flex: 999 1 560px; min-width: 0; max-width: 980px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Émotions personnalisées</h1>
+        <p style="margin: 0; font-size: 13px; color: #5A6679; max-width: 72ch">Le vocabulaire global (29 émotions, inspiré de Plutchik) couvre l'essentiel. Quand il manque un mot à votre pratique, ajoutez-le ici : il sera proposé dans la saisie, marqué « personnalisée », et rattaché à une famille pour entrer dans les courbes et le graphe.</p>
+      </div>
+
+      <!-- Ajouter -->
+      <form onsubmit="return false" aria-labelledby="h-add" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-add" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Ajouter une émotion</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="libelle" style="font-size: 13px; font-weight: 500">Libellé <span style="color: #9A2F22">*</span></label>
+            <input id="libelle" type="text" value="Appréhension sociale" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+            <span style="font-size: 12px; color: #7A5A12; display: flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2.5 1.8 13.5h12.4L8 2.5zM8 7v3M8 12h.01"></path></svg>Proche de « Anxiété » (vocabulaire global). Vérifiez que ce n'est pas la même chose.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="en" style="font-size: 13px; font-weight: 500">Libellé anglais <span style="color: #8A94A6; font-weight: 400">(facultatif)</span></label>
+            <input id="en" type="text" placeholder="Social apprehension" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+        </div>
+        <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px">
+          <legend style="font-size: 13px; font-weight: 500; padding: 0; margin-bottom: 2px">Famille <span style="color: #9A2F22">*</span> <span style="color: #8A94A6; font-weight: 400">· détermine la couleur des courbes et la lecture par l'IA (V2)</span></legend>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; cursor: pointer; font-size: 13px"><input type="radio" name="fam" style="width: 16px; height: 16px; accent-color: #D9A426; margin: 0"><span style="width: 12px; height: 12px; border-radius: 50%; background: #D9A426" aria-hidden="true"></span>Joie</label>
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; cursor: pointer; font-size: 13px"><input type="radio" name="fam" style="width: 16px; height: 16px; accent-color: #3E8E7E; margin: 0"><span style="width: 12px; height: 12px; border-radius: 50%; background: #3E8E7E" aria-hidden="true"></span>Confiance</label>
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 2px solid #7A68C9; border-radius: 10px; background: #ECE8F8; cursor: pointer; font-size: 13px; font-weight: 600"><input type="radio" name="fam" checked style="width: 16px; height: 16px; accent-color: #7A68C9; margin: 0"><span style="width: 12px; height: 12px; border-radius: 50%; background: #7A68C9" aria-hidden="true"></span>Peur</label>
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; cursor: pointer; font-size: 13px"><input type="radio" name="fam" style="width: 16px; height: 16px; accent-color: #2E9AA8; margin: 0"><span style="width: 12px; height: 12px; border-radius: 50%; background: #2E9AA8" aria-hidden="true"></span>Surprise</label>
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; cursor: pointer; font-size: 13px"><input type="radio" name="fam" style="width: 16px; height: 16px; accent-color: #3C66A6; margin: 0"><span style="width: 12px; height: 12px; border-radius: 50%; background: #3C66A6" aria-hidden="true"></span>Tristesse</label>
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; cursor: pointer; font-size: 13px"><input type="radio" name="fam" style="width: 16px; height: 16px; accent-color: #6E7F3E; margin: 0"><span style="width: 12px; height: 12px; border-radius: 50%; background: #6E7F3E" aria-hidden="true"></span>Dégoût</label>
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; cursor: pointer; font-size: 13px"><input type="radio" name="fam" style="width: 16px; height: 16px; accent-color: #B8463C; margin: 0"><span style="width: 12px; height: 12px; border-radius: 50%; background: #B8463C" aria-hidden="true"></span>Colère</label>
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; cursor: pointer; font-size: 13px"><input type="radio" name="fam" style="width: 16px; height: 16px; accent-color: #D07A2C; margin: 0"><span style="width: 12px; height: 12px; border-radius: 50%; background: #D07A2C" aria-hidden="true"></span>Anticipation</label>
+          </div>
+        </fieldset>
+        <details style="border: 1px solid #E4E8F0; border-radius: 10px; padding: 10px 14px">
+          <summary style="font-size: 13px; font-weight: 500; cursor: pointer; color: #5A6679">Valence et activation <span style="font-weight: 400; color: #8A94A6">· facultatif en V1, demandé avant la V2</span></summary>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; margin-top: 12px">
+            <div style="display: flex; flex-direction: column; gap: 6px"><label for="val" style="font-size: 13px">Valence · de très désagréable (−2) à très agréable (+2)</label><input id="val" type="range" min="-2" max="2" step="1" value="-1" style="accent-color: #3A63C2"><span style="font-size: 12px; color: #5A6679; font-family: 'JetBrains Mono', monospace">−1 · plutôt désagréable</span></div>
+            <div style="display: flex; flex-direction: column; gap: 6px"><label for="aro" style="font-size: 13px">Activation · de calme (0) à très activé (4)</label><input id="aro" type="range" min="0" max="4" step="1" value="3" style="accent-color: #3A63C2"><span style="font-size: 12px; color: #5A6679; font-family: 'JetBrains Mono', monospace">3 · activé</span></div>
+          </div>
+        </details>
+        <div style="display: flex; align-items: center; gap: 12px">
+          <button type="submit" style="height: 42px; padding: 0 18px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Ajouter à mon vocabulaire</button>
+          <span style="font-size: 12px; color: #8A94A6">Visible de vous seul·e ; proposée dans la barre de commande dès la prochaine saisie.</span>
+        </div>
+      </form>
+
+      <!-- Liste -->
+      <section aria-labelledby="h-list" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+          <h2 id="h-list" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Mes émotions · 3</h2>
+          <span style="font-size: 12px; color: #8A94A6">Une émotion utilisée ne peut pas être supprimée, seulement fusionnée ou désactivée.</span>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px">
+          <thead><tr style="text-align: left; color: #5A6679; font-size: 12px"><th scope="col" style="padding: 6px 8px 8px 0; font-weight: 500; border-bottom: 1px solid #E4E8F0">Émotion</th><th scope="col" style="padding: 6px 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0">Famille</th><th scope="col" style="padding: 6px 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0">Valence · activation</th><th scope="col" style="padding: 6px 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0">Utilisée</th><th scope="col" style="padding: 6px 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0">Créée</th><th scope="col" style="padding: 6px 0 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0; text-align: right">Actions</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="padding: 12px 8px 12px 0; border-bottom: 1px solid #E4E8F0"><span style="font-weight: 600">Appréhension sociale</span> <span style="font-size: 11px; color: #5A6679; border: 1px solid #D6DCE6; border-radius: 4px; padding: 1px 5px; margin-left: 6px">perso</span></td>
+              <td style="padding: 12px 8px; border-bottom: 1px solid #E4E8F0"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #7A68C9" aria-hidden="true"></span>Peur</span></td>
+              <td style="padding: 12px 8px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace; color: #8A94A6">— · — <a href="#" style="font-family: Inter, sans-serif; font-size: 12px; text-decoration: none; margin-left: 6px">compléter</a></td>
+              <td style="padding: 12px 8px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace">41 fois · 6 patients</td>
+              <td style="padding: 12px 8px; border-bottom: 1px solid #E4E8F0; color: #5A6679">12 avr. 2025</td>
+              <td style="padding: 12px 0 12px 8px; border-bottom: 1px solid #E4E8F0; text-align: right; white-space: nowrap"><button type="button" style="height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; cursor: pointer">Renommer</button> <button type="button" style="height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; cursor: pointer">Fusionner…</button> <button type="button" style="height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; color: #2C4C99; cursor: pointer">Proposer au global</button></td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 8px 12px 0; border-bottom: 1px solid #E4E8F0"><span style="font-weight: 600">Soulagement</span> <span style="font-size: 11px; color: #1E6B45; border: 1px solid #B9DCC8; background: #E4F2EA; border-radius: 4px; padding: 1px 5px; margin-left: 6px">promue au global</span></td>
+              <td style="padding: 12px 8px; border-bottom: 1px solid #E4E8F0"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #D9A426" aria-hidden="true"></span>Joie</span></td>
+              <td style="padding: 12px 8px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace">+1 · 1</td>
+              <td style="padding: 12px 8px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace">12 fois · 4 patients</td>
+              <td style="padding: 12px 8px; border-bottom: 1px solid #E4E8F0; color: #5A6679">3 août 2025</td>
+              <td style="padding: 12px 0 12px 8px; border-bottom: 1px solid #E4E8F0; text-align: right; color: #5A6679; font-size: 12px">Vos 12 ressentis pointent désormais vers « Soulagement » (global). Rien à faire.</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 8px 12px 0"><span style="font-weight: 600">Lassitude</span> <span style="font-size: 11px; color: #5A6679; border: 1px solid #D6DCE6; border-radius: 4px; padding: 1px 5px; margin-left: 6px">perso</span></td>
+              <td style="padding: 12px 8px"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #3C66A6" aria-hidden="true"></span>Tristesse</span></td>
+              <td style="padding: 12px 8px; font-family: 'JetBrains Mono', monospace; color: #8A94A6">— · — <a href="#" style="font-family: Inter, sans-serif; font-size: 12px; text-decoration: none; margin-left: 6px">compléter</a></td>
+              <td style="padding: 12px 8px; font-family: 'JetBrains Mono', monospace">3 fois · 1 patient</td>
+              <td style="padding: 12px 8px; color: #5A6679">9 oct. 2026</td>
+              <td style="padding: 12px 0 12px 8px; text-align: right; white-space: nowrap"><button type="button" style="height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; cursor: pointer">Renommer</button> <button type="button" style="height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; cursor: pointer">Fusionner…</button> <button type="button" style="height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; color: #5A6679; cursor: pointer">Désactiver</button></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Fusion : exemple de confirmation inline -->
+        <div style="display: flex; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #EEF1F6; align-items: flex-start; font-size: 13px; line-height: 1.5">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7"></path></svg>
+          <span><strong style="font-weight: 600">Fusionner « Lassitude » dans « Tristesse » (global) ?</strong> Les 3 ressentis garderont leur intensité et leur texte ; l'émotion affichée devient « Tristesse », avec la mention « anciennement Lassitude ». Opération réversible pendant 30 jours.</span>
+          <span style="margin-left: auto; display: inline-flex; gap: 8px; flex-shrink: 0"><button type="button" style="height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: #3A63C2; color: #FFFFFF; font-size: 12px; font-weight: 600; cursor: pointer">Fusionner</button><button type="button" style="height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; cursor: pointer">Annuler</button></span>
+        </div>
+      </section>
+
+      <!-- Vocabulaire global (référence) -->
+      <section aria-labelledby="h-global" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+          <h2 id="h-global" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Vocabulaire global · 29 émotions · version 3</h2>
+          <span style="font-size: 12px; color: #8A94A6">Géré par la plateforme ; vos propositions de promotion sont examinées par un administrateur.</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 16px; font-size: 13px">
+          <div style="display: flex; flex-direction: column; gap: 4px"><span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 50%; background: #D9A426" aria-hidden="true"></span>Joie</span><span style="color: #5A6679">sérénité · joie · extase · soulagement</span></div>
+          <div style="display: flex; flex-direction: column; gap: 4px"><span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 50%; background: #3E8E7E" aria-hidden="true"></span>Confiance</span><span style="color: #5A6679">acceptation · confiance · admiration · calme</span></div>
+          <div style="display: flex; flex-direction: column; gap: 4px"><span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 50%; background: #7A68C9" aria-hidden="true"></span>Peur</span><span style="color: #5A6679">appréhension · peur · terreur · anxiété</span></div>
+          <div style="display: flex; flex-direction: column; gap: 4px"><span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 50%; background: #2E9AA8" aria-hidden="true"></span>Surprise</span><span style="color: #5A6679">distraction · surprise · stupéfaction</span></div>
+          <div style="display: flex; flex-direction: column; gap: 4px"><span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 50%; background: #3C66A6" aria-hidden="true"></span>Tristesse</span><span style="color: #5A6679">pensivité · tristesse · chagrin · vide</span></div>
+          <div style="display: flex; flex-direction: column; gap: 4px"><span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 50%; background: #6E7F3E" aria-hidden="true"></span>Dégoût</span><span style="color: #5A6679">ennui · dégoût · aversion · honte</span></div>
+          <div style="display: flex; flex-direction: column; gap: 4px"><span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 50%; background: #B8463C" aria-hidden="true"></span>Colère</span><span style="color: #5A6679">agacement · colère · rage · culpabilité</span></div>
+          <div style="display: flex; flex-direction: column; gap: 4px"><span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 50%; background: #D07A2C" aria-hidden="true"></span>Anticipation</span><span style="color: #5A6679">intérêt · anticipation · vigilance</span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

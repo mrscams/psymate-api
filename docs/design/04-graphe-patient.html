@@ -1,0 +1,271 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Graphe du patient – carte mentale</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 980px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.4">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      Suivi
+    </div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a>
+    <span style="color: #9AA5B8">/</span>
+    <span style="font-size: 13px; color: #1E2633">Marie D.</span>
+    <div style="flex: 1 1 auto"></div>
+    <button aria-label="Rechercher dans le dossier" style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>
+      Rechercher <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 1px 5px; border: 1px solid #D6DCE6; border-radius: 4px">/</span>
+    </button>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CL</div>
+  </div>
+
+  <!-- En-tête patient permanent -->
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 0; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+      <div style="display: flex; align-items: baseline; gap: 10px">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Marie D.</h1>
+        <span style="color: #5A6679; font-size: 14px">34 ans · suivie depuis mars 2025</span>
+      </div>
+      <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; background: #FBF1DC; color: #7A5A12; font-size: 12px; font-weight: 500">
+        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M2 1v10M2 1h7l-1.5 2.5L9 6H2"></path></svg>
+        à surveiller
+      </span>
+      <div style="flex: 1 1 auto"></div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <button style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; color: #1E2633; font-size: 13px; cursor: pointer">Dernière séance : 17 oct.
+          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
+        </button>
+        <button style="height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: #3A63C2; color: #FFFFFF; font-size: 13px; font-weight: 600; cursor: pointer">Démarrer la séance</button>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 4px">
+      <a href="#overview" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; text-decoration: none; color: #5A6679; font-weight: 500; font-size: 13px; border-bottom: 2px solid transparent"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">1</span> Vue d'ensemble</a>
+      <a href="#timeline" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; text-decoration: none; color: #5A6679; font-weight: 500; font-size: 13px; border-bottom: 2px solid transparent"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">2</span> Timeline</a>
+      <a href="#graph" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; text-decoration: none; color: #1E2633; font-weight: 600; font-size: 13px; border-bottom: 2px solid #3A63C2"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">3</span> Graphe</a>
+    </div>
+  </div>
+
+  <!-- Barre d'outils du graphe -->
+  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 24px 0">
+    <label for="root" style="font-size: 12px; color: #5A6679">Centré sur</label>
+    <button id="root" style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 13px; color: #1E2633; cursor: pointer; display: inline-flex; align-items: center; gap: 8px">
+      <span aria-hidden="true" style="width: 14px; height: 6px; border-radius: 999px; background: #2F4F73"></span>Surcharge au travail
+      <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
+    </button>
+    <span style="font-size: 12px; color: #5A6679; margin-left: 6px">Profondeur</span>
+    <div role="group" aria-label="Profondeur" style="display: flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden; background: #FFFFFF">
+      <button aria-pressed="false" style="width: 32px; height: 32px; border: 0; background: #FFFFFF; color: #5A6679; font-size: 12px; cursor: pointer">1</button>
+      <button aria-pressed="true" style="width: 32px; height: 32px; border: 0; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; cursor: pointer">2</button>
+      <button aria-pressed="false" style="width: 32px; height: 32px; border: 0; background: #FFFFFF; color: #5A6679; font-size: 12px; cursor: pointer">3</button>
+    </div>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; font-size: 12px; color: #1E2633; cursor: pointer; display: inline-flex; align-items: center; gap: 6px">Types d'entrées : tous
+      <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
+    </button>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; font-size: 12px; color: #1E2633; cursor: pointer; display: inline-flex; align-items: center; gap: 6px">Liens : tous
+      <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
+    </button>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; font-size: 12px; color: #1E2633; cursor: pointer; display: inline-flex; align-items: center; gap: 6px">Période : 12 mois
+      <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
+    </button>
+    <div style="flex: 1 1 auto"></div>
+    <span style="font-size: 12px; color: #5A6679">14 nœuds · 17 liens</span>
+    <button style="height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; color: #1E2633; cursor: pointer">Recentrer</button>
+    <button style="height: 32px; padding: 0 12px; border: 1px solid #3A63C2; border-radius: 8px; background: #FFFFFF; font-size: 12px; font-weight: 500; color: #2C4C99; cursor: pointer; display: inline-flex; align-items: center; gap: 6px">
+      <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 6h8M6 3l3 3-3 3"></path></svg>
+      Lier <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5A6679">L</span>
+    </button>
+  </div>
+
+  <!-- Corps : canevas + panneau -->
+  <div style="display: flex; gap: 16px; padding: 12px 24px 24px; flex: 1 1 auto; align-items: stretch; flex-wrap: wrap">
+
+    <!-- Canevas du graphe -->
+    <div style="flex: 999 1 560px; min-width: 0; position: relative; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; overflow: hidden; min-height: 700px">
+      <svg role="img" aria-label="Graphe centré sur la situation Surcharge au travail : cinq ressentis d'anxiété qu'elle aggrave, trois événements liés au travail qui les déclenchent, un médicament qui la traite, et un regroupement de douze ressentis plus anciens" viewBox="0 0 1000 700" width="100%" height="700" style="display: block">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8A94A6"></path></marker>
+          <marker id="arrow-sel" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3A63C2"></path></marker>
+        </defs>
+
+        <!-- Arêtes depuis la racine (aggrave : tiret long) -->
+        <path d="M500 350 L300 190" stroke="#8A94A6" stroke-width="1.5" stroke-dasharray="10 6" fill="none" marker-end="url(#arrow)"></path>
+        <path d="M500 350 L500 160" stroke="#3A63C2" stroke-width="2.5" stroke-dasharray="10 6" fill="none" marker-end="url(#arrow-sel)"></path>
+        <path d="M500 350 L700 190" stroke="#8A94A6" stroke-width="1.5" stroke-dasharray="10 6" fill="none" marker-end="url(#arrow)"></path>
+        <path d="M500 350 L740 350" stroke="#8A94A6" stroke-width="1.5" stroke-dasharray="10 6" fill="none" marker-end="url(#arrow)"></path>
+        <path d="M500 350 L300 500" stroke="#8A94A6" stroke-width="1.5" stroke-dasharray="10 6" fill="none" marker-end="url(#arrow)"></path>
+        <!-- fait partie de : plein fin, événements -> situation -->
+        <path d="M150 300 L440 345" stroke="#8A94A6" stroke-width="1" fill="none" marker-end="url(#arrow)"></path>
+        <path d="M520 540 L505 400" stroke="#8A94A6" stroke-width="1" fill="none" marker-end="url(#arrow)"></path>
+        <!-- déclenche : plein, événements -> ressentis -->
+        <path d="M150 300 L270 210" stroke="#8A94A6" stroke-width="1.5" fill="none" marker-end="url(#arrow)"></path>
+        <path d="M520 540 L320 520" stroke="#8A94A6" stroke-width="1.5" fill="none" marker-end="url(#arrow)"></path>
+        <path d="M860 520 L730 370" stroke="#8A94A6" stroke-width="1.5" fill="none" marker-end="url(#arrow)"></path>
+        <!-- traite : double trait, médicament -> situation -->
+        <path d="M820 150 L560 330" stroke="#8A94A6" stroke-width="1.5" fill="none"></path>
+        <path d="M826 158 L566 338" stroke="#8A94A6" stroke-width="1.5" fill="none" marker-end="url(#arrow)"></path>
+        <!-- co-occurrence : pointillé sans flèche -->
+        <path d="M300 190 L500 160" stroke="#8A94A6" stroke-width="1.2" stroke-dasharray="2 5" fill="none"></path>
+        <!-- vers super-nœud -->
+        <path d="M500 350 L500 560" stroke="#8A94A6" stroke-width="1.5" stroke-dasharray="10 6" fill="none" marker-end="url(#arrow)"></path>
+        <!-- suggestion V2 (pointillé léger, non lavande) -->
+        <path d="M860 520 L760 380" stroke="#B9C2D1" stroke-width="1.2" stroke-dasharray="3 4" fill="none"></path>
+
+        <!-- Nœud racine : situation -->
+        <rect x="400" y="320" width="200" height="60" rx="12" fill="#E1E9F2" stroke="#2F4F73" stroke-width="2"></rect>
+        <rect x="412" y="346" width="20" height="8" rx="4" fill="#2F4F73"></rect>
+        <text x="440" y="344" font-size="14" font-weight="600" fill="#1E2633" font-family="Inter, sans-serif">Surcharge au travail</text>
+        <text x="440" y="362" font-size="11" fill="#5A6679" font-family="Inter, sans-serif">situation · depuis mars 2026</text>
+
+        <!-- Ressentis (cercles, lavande, opacité = intensité) -->
+        <circle cx="300" cy="190" r="26" fill="#8B7BD6" fill-opacity="0.8" stroke="#8B7BD6" stroke-width="1.5"></circle>
+        <text x="300" y="195" font-size="12" font-weight="600" fill="#FFFFFF" font-family="Inter, sans-serif" text-anchor="middle">6</text>
+        <text x="300" y="232" font-size="12" fill="#1E2633" font-family="Inter, sans-serif" text-anchor="middle">Anxiété 6 · 18 oct.</text>
+
+        <circle cx="500" cy="160" r="30" fill="#8B7BD6" stroke="#3A63C2" stroke-width="3"></circle>
+        <text x="500" y="165" font-size="13" font-weight="600" fill="#FFFFFF" font-family="Inter, sans-serif" text-anchor="middle">8</text>
+        <text x="500" y="205" font-size="12" font-weight="600" fill="#1E2633" font-family="Inter, sans-serif" text-anchor="middle">Anxiété 8 · 24 oct.</text>
+
+        <circle cx="700" cy="190" r="24" fill="#8B7BD6" fill-opacity="0.55" stroke="#8B7BD6" stroke-width="1.5"></circle>
+        <text x="700" y="195" font-size="12" font-weight="600" fill="#FFFFFF" font-family="Inter, sans-serif" text-anchor="middle">5</text>
+        <text x="700" y="230" font-size="12" fill="#1E2633" font-family="Inter, sans-serif" text-anchor="middle">Tristesse 5 · 3 oct.</text>
+
+        <circle cx="760" cy="350" r="26" fill="#8B7BD6" fill-opacity="0.8" stroke="#8B7BD6" stroke-width="1.5"></circle>
+        <text x="760" y="355" font-size="12" font-weight="600" fill="#FFFFFF" font-family="Inter, sans-serif" text-anchor="middle">7</text>
+        <text x="760" y="392" font-size="12" fill="#1E2633" font-family="Inter, sans-serif" text-anchor="middle">Anxiété 7 · 12 sept.</text>
+
+        <circle cx="300" cy="510" r="24" fill="#8B7BD6" fill-opacity="0.55" stroke="#8B7BD6" stroke-width="1.5"></circle>
+        <text x="300" y="515" font-size="12" font-weight="600" fill="#FFFFFF" font-family="Inter, sans-serif" text-anchor="middle">4</text>
+        <text x="300" y="552" font-size="12" fill="#1E2633" font-family="Inter, sans-serif" text-anchor="middle">Anxiété 4 · 10 oct.</text>
+
+        <!-- Événements (losanges, cobalt) -->
+        <rect x="128" y="278" width="44" height="44" rx="6" fill="#E3EAF8" stroke="#3A63C2" stroke-width="1.5" transform="rotate(45 150 300)"></rect>
+        <text x="150" y="345" font-size="12" fill="#1E2633" font-family="Inter, sans-serif" text-anchor="middle">Entretien d'évaluation</text>
+        <text x="150" y="360" font-size="11" fill="#5A6679" font-family="Inter, sans-serif" text-anchor="middle">18 oct.</text>
+
+        <rect x="498" y="518" width="44" height="44" rx="6" fill="#E3EAF8" stroke="#3A63C2" stroke-width="1.5" transform="rotate(45 520 540)"></rect>
+        <text x="520" y="585" font-size="12" fill="#1E2633" font-family="Inter, sans-serif" text-anchor="middle">Réunion de crise</text>
+        <text x="520" y="600" font-size="11" fill="#5A6679" font-family="Inter, sans-serif" text-anchor="middle">9 oct.</text>
+
+        <rect x="838" y="498" width="44" height="44" rx="6" fill="#E3EAF8" stroke="#3A63C2" stroke-width="1.5" transform="rotate(45 860 520)"></rect>
+        <text x="860" y="565" font-size="12" fill="#1E2633" font-family="Inter, sans-serif" text-anchor="middle">E-mail du manager</text>
+        <text x="860" y="580" font-size="11" fill="#5A6679" font-family="Inter, sans-serif" text-anchor="middle">11 sept.</text>
+
+        <!-- Médicament (capsule, ocre) -->
+        <rect x="770" y="134" width="110" height="32" rx="16" fill="#FAF0DC" stroke="#B07A2A" stroke-width="1.5"></rect>
+        <text x="825" y="154" font-size="12" font-weight="600" fill="#1E2633" font-family="Inter, sans-serif" text-anchor="middle">Sertraline 75 mg</text>
+        <text x="825" y="186" font-size="11" fill="#5A6679" font-family="Inter, sans-serif" text-anchor="middle">médicament · depuis 12 sept.</text>
+
+        <!-- Super-nœud regroupé -->
+        <rect x="410" y="560" width="180" height="48" rx="10" fill="#E4E8F0" stroke="#B9C2D1" stroke-width="1.5" stroke-dasharray="6 4"></rect>
+        <circle cx="436" cy="584" r="8" fill="#8B7BD6" fill-opacity="0.5"></circle>
+        <text x="452" y="580" font-size="12" font-weight="600" fill="#1E2633" font-family="Inter, sans-serif">12 ressentis plus anciens</text>
+        <text x="452" y="596" font-size="11" fill="#5A6679" font-family="Inter, sans-serif">anxiété majoritaire · développer</text>
+
+        <!-- Étiquette de suggestion V2 -->
+        <rect x="770" y="420" width="78" height="20" rx="4" fill="#FFFFFF" stroke="#D6DCE6"></rect>
+        <text x="809" y="434" font-size="11" fill="#5A6679" font-family="Inter, sans-serif" text-anchor="middle">suggéré (V2)</text>
+
+        <!-- Contrôles de zoom -->
+        <rect x="16" y="620" width="36" height="64" rx="8" fill="#FFFFFF" stroke="#D6DCE6"></rect>
+        <text x="34" y="643" font-size="16" fill="#1E2633" font-family="Inter, sans-serif" text-anchor="middle">+</text>
+        <line x1="22" y1="652" x2="46" y2="652" stroke="#D6DCE6"></line>
+        <text x="34" y="673" font-size="16" fill="#1E2633" font-family="Inter, sans-serif" text-anchor="middle">−</text>
+      </svg>
+
+      <!-- Légende flottante -->
+      <div style="position: absolute; right: 16px; bottom: 16px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 10px 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; font-size: 11px; color: #5A6679">
+        <div style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #8B7BD6"></span>Ressenti · taille = intensité</div>
+        <div style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 18px; height: 0; border-top: 2px solid #8A94A6"></span>déclenche</div>
+        <div style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 9px; height: 9px; background: #E3EAF8; border: 1.5px solid #3A63C2; transform: rotate(45deg); margin: 0 1px"></span>Événement</div>
+        <div style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 18px; height: 0; border-top: 2px dashed #8A94A6"></span>aggrave</div>
+        <div style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 14px; height: 6px; border-radius: 999px; background: #2F4F73"></span>Situation</div>
+        <div style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 18px; height: 0; border-top: 2px dotted #8A94A6"></span>co-occurrence</div>
+        <div style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 14px; height: 8px; border-radius: 999px; background: #B07A2A"></span>Médicament</div>
+        <div style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 18px; height: 3px; border-top: 1px solid #8A94A6; border-bottom: 1px solid #8A94A6"></span>traite</div>
+      </div>
+    </div>
+
+    <!-- Panneau de détail du nœud sélectionné -->
+    <aside aria-label="Détail du nœud sélectionné" style="flex: 1 1 360px; max-width: 380px; min-width: 300px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; display: flex; flex-direction: column">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #D6DCE6">
+        <span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 50%; background: #8B7BD6"></span>
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600; flex: 1 1 auto">Anxiété 8/10</h2>
+        <span style="height: 22px; padding: 0 8px; border-radius: 999px; background: #ECE8F8; color: #4E3F9E; font-size: 11px; font-weight: 500; display: inline-flex; align-items: center">Ressenti</span>
+        <button aria-label="Fermer le panneau" style="width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: #5A6679; cursor: pointer; display: inline-flex; align-items: center; justify-content: center">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"></path></svg>
+        </button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 16px; flex: 1 1 auto; font-size: 13px">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <div><div style="font-size: 11px; color: #5A6679">Quand</div><div>24 oct. 2026 · 19:00 · exact</div></div>
+          <div><div style="font-size: 11px; color: #5A6679">Séance</div><div>24 oct. (en cours)</div></div>
+          <div><div style="font-size: 11px; color: #5A6679">Émotion</div><div>Anxiété · famille peur</div></div>
+          <div><div style="font-size: 11px; color: #5A6679">Tags</div><div><span style="height: 20px; padding: 0 6px; border-radius: 5px; background: #E4E8F0; display: inline-flex; align-items: center; font-size: 12px">#travail</span></div></div>
+        </div>
+        <p style="margin: 0; color: #1E2633">N'a pas dormi, monte avant les appels du soir.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <h3 style="margin: 0; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em; flex: 1 1 auto">Liens · 2</h3>
+            <button style="height: 26px; padding: 0 10px; border: 1px solid #3A63C2; border-radius: 6px; background: #FFFFFF; color: #2C4C99; font-size: 12px; font-weight: 500; cursor: pointer">+ Lier</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; border: 1px solid #D6DCE6; background: #F3F5F9">
+            <span aria-hidden="true" style="width: 9px; height: 9px; background: #E3EAF8; border: 1.5px solid #3A63C2; transform: rotate(45deg); margin: 0 1px; flex: 0 0 auto"></span>
+            <span style="flex: 1 1 auto"><strong>Entretien d'évaluation</strong> <span style="color: #5A6679">déclenche</span> ce ressenti</span>
+            <button aria-label="Modifier ce lien" style="height: 24px; padding: 0 8px; border: 1px solid #D6DCE6; border-radius: 6px; background: #FFFFFF; color: #1E2633; font-size: 11px; cursor: pointer">Modifier</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; border: 1px solid #D6DCE6; background: #F3F5F9">
+            <span aria-hidden="true" style="width: 14px; height: 6px; border-radius: 999px; background: #2F4F73; flex: 0 0 auto"></span>
+            <span style="flex: 1 1 auto"><strong>Surcharge au travail</strong> <span style="color: #5A6679">aggrave</span> ce ressenti</span>
+            <button aria-label="Modifier ce lien" style="height: 24px; padding: 0 8px; border: 1px solid #D6DCE6; border-radius: 6px; background: #FFFFFF; color: #1E2633; font-size: 11px; cursor: pointer">Modifier</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; border: 1px dashed #B9C2D1">
+            <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #8B7BD6; opacity: 0.6; flex: 0 0 auto"></span>
+            <span style="flex: 1 1 auto; color: #5A6679"><strong style="color: #1E2633">Anxiété 6 · 18 oct.</strong> co-occurrence</span>
+            <span style="font-size: 11px; color: #5A6679">dérivé</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid #D6DCE6">
+          <a href="#timeline-entry" style="display: inline-flex; align-items: center; gap: 8px; height: 32px; text-decoration: none; font-size: 13px">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 8h10M9 4l4 4-4 4"></path></svg>
+            Voir dans la timeline
+          </a>
+          <a href="#recenter" style="display: inline-flex; align-items: center; gap: 8px; height: 32px; text-decoration: none; font-size: 13px">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><circle cx="8" cy="8" r="6.5"></circle></svg>
+            Recentrer le graphe ici <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5A6679">double-clic</span>
+          </a>
+          <a href="#edit-entry" style="display: inline-flex; align-items: center; gap: 8px; height: 32px; text-decoration: none; font-size: 13px">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 13l1-4 7-7 3 3-7 7z"></path></svg>
+            Modifier l'entrée · version 1
+          </a>
+        </div>
+      </div>
+      <div style="padding: 10px 16px; border-top: 1px solid #D6DCE6; background: #F6F8FB; border-radius: 0 0 12px 12px; font-size: 11px; color: #5A6679">
+        Glisser un nœud vers un autre crée un lien · <span style="font-family: 'JetBrains Mono', monospace; padding: 1px 5px; border: 1px solid #D6DCE6; border-radius: 4px; background: #FFFFFF">Suppr</span> retire le lien sélectionné (confirmation)
+      </div>
+    </aside>
+  </div>
+</div>
+
+</body>
+</html>

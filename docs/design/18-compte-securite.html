@@ -1,0 +1,399 @@
+<!-- Maquette statique · palette Nordique · écrite à la main depuis la fiche 14 §5, A10.4 et le contrat. Référence : docs/design/18-compte-securite.md (à écrire) -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mon compte – compte et sécurité</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+<!-- Repère entre les trois états (hors application) -->
+<div style="padding: 10px 24px; background: #E4E8F0; color: #5A6679; font-size: 12px; border-bottom: 1px solid #D6DCE6">État A · Page « Compte et sécurité » d'une praticienne, double authentification déjà activée (GET /api/auth/session → twoFactorEnabled = true)</div>
+
+<!-- ============================================================ -->
+<!-- ÉTAT A · Page Compte et sécurité                              -->
+<!-- ============================================================ -->
+<div style="min-height: 1180px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      PsyMate
+    </div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a>
+    <span style="color: #9AA5B8">/</span>
+    <span style="font-size: 13px; color: #1E2633">Mon compte</span>
+    <div style="flex: 1 1 auto"></div>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CM</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; align-items: flex-start">
+
+    <!-- Navigation du compte -->
+    <nav aria-label="Mon compte" style="flex: 0 1 220px; display: flex; flex-direction: column; gap: 4px">
+      <div style="padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 2px">
+        <span style="font-weight: 600; font-size: 15px">Claire Martin</span>
+        <span style="font-size: 12px; color: #5A6679">Psychologue · Paris</span>
+      </div>
+      <a href="#profil" style="display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Profil public <span style="width: 8px; height: 8px; border-radius: 50%; background: #1E6B45" aria-label="publié"></span></a>
+      <a href="#prefs" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Préférences</a>
+      <a href="#emotions" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Émotions personnalisées</a>
+      <a href="#securite" aria-current="page" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; font-weight: 600; font-size: 13px; text-decoration: none">Compte et sécurité</a>
+      <a href="#donnees" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Données et export</a>
+    </nav>
+
+    <!-- Contenu -->
+    <div style="flex: 999 1 560px; min-width: 0; max-width: 960px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Compte et sécurité</h1>
+        <p style="margin: 0; font-size: 13px; color: #5A6679">Identifiants, double authentification et appareils connectés. Chaque opération sensible est consignée dans votre journal de sécurité.</p>
+      </div>
+
+      <!-- E-mail de connexion -->
+      <section aria-labelledby="h-mail" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-mail" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">E-mail de connexion</h2>
+        <div style="display: grid; grid-template-columns: 260px minmax(0, 1fr) auto; gap: 12px 24px; align-items: center">
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Adresse actuelle</span><span style="font-size: 12px; color: #5A6679">Sert à la connexion et aux notifications.</span></div>
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-weight: 500">claire.martin@exemple.fr</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #1E6B45"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Confirmée le 12 sept. 2026</span>
+          </div>
+          <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #B9C2D1; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">Modifier</button>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Un e-mail de confirmation sera envoyé à la nouvelle adresse ; l'adresse actuelle reste valable jusqu'à ce que le lien soit ouvert (valable 24 h).</p>
+      </section>
+
+      <!-- Mot de passe -->
+      <section aria-labelledby="h-pwd" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-pwd" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Mot de passe</h2>
+        <div style="display: grid; grid-template-columns: 260px minmax(0, 1fr) auto; gap: 12px 24px; align-items: center">
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Mot de passe</span><span style="font-size: 12px; color: #5A6679">Modifié il y a 3 mois.</span></div>
+          <span style="font-family: 'JetBrains Mono', monospace; letter-spacing: 0.15em; color: #5A6679" aria-label="Mot de passe masqué">••••••••••••••</span>
+          <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #B9C2D1; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">Modifier</button>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Au moins 12 caractères, majuscules et minuscules, pas un mot de passe courant, ni votre nom ni votre e-mail. Le changement demande votre mot de passe actuel et un code de double authentification, puis déconnecte tous vos appareils.</p>
+      </section>
+
+      <!-- Double authentification -->
+      <section aria-labelledby="h-2fa" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-2fa" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Double authentification</h2>
+        <div style="display: grid; grid-template-columns: 260px minmax(0, 1fr) auto; gap: 12px 24px; align-items: center">
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">État</span><span style="font-size: 12px; color: #5A6679">Un code à 6 chiffres est demandé à chaque connexion.</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; padding: 3px 10px 3px 8px; border-radius: 999px; background: #E4F2EA; color: #1E6B45; font-size: 12px; font-weight: 600"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Activée</span>
+            <span style="font-size: 13px">Application d'authentification · depuis le 14 sept. 2026</span>
+          </div>
+          <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #9A2F22; border-radius: 8px; background: #FFFFFF; color: #9A2F22; font-size: 13px; font-weight: 500; cursor: pointer">Désactiver</button>
+
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Codes de secours</span><span style="font-size: 12px; color: #5A6679">À usage unique, si vous perdez votre téléphone.</span></div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px">8</span><span style="font-size: 13px">codes de secours restants sur 10</span>
+          </div>
+          <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #B9C2D1; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">Régénérer les codes</button>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Régénérer invalide les anciens codes et en affiche 10 nouveaux, une seule fois. Désactiver demande votre mot de passe et un code ; les codes de secours sont alors retirés.</p>
+      </section>
+
+      <!-- Sessions actives -->
+      <section aria-labelledby="h-sess" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+          <h2 id="h-sess" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Sessions actives · 2</h2>
+          <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #B9C2D1; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">Déconnecter les autres</button>
+        </div>
+        <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+          <li style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #E4E8F0">
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8M12 16v4"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto">
+              <span style="font-weight: 500">Cet appareil <span style="margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #E3EAF8; color: #2C4C99; font-size: 11px; font-weight: 600">session courante</span></span>
+              <span style="font-size: 12px; color: #5A6679">Chrome · Windows · Paris</span>
+            </div>
+            <span style="font-size: 12px; color: #5A6679">maintenant</span>
+            <span style="font-size: 12px; color: #8A94A6; min-width: 150px; text-align: right">expire dans 11 h 40 (12 h)</span>
+          </li>
+          <li style="display: flex; align-items: center; gap: 14px; padding: 12px 0">
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><path d="M11 18h2"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto">
+              <span style="font-weight: 500">iPad</span>
+              <span style="font-size: 12px; color: #5A6679">Safari · iPadOS · Paris</span>
+            </div>
+            <span style="font-size: 12px; color: #5A6679">il y a 2 j</span>
+            <span style="font-size: 12px; color: #8A94A6; min-width: 150px; text-align: right">« rester connectée » · 30 j</span>
+          </li>
+        </ul>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Une session dure 12 h d'inactivité, ou 30 jours avec « rester connectée ». « Déconnecter les autres » conserve cet appareil et consigne l'opération.</p>
+      </section>
+
+      <!-- Dernière connexion -->
+      <section aria-labelledby="h-last" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 26px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h2 id="h-last" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Dernière connexion</h2>
+          <span style="font-size: 13px"><span style="font-family: 'JetBrains Mono', monospace">24 oct. 09:12</span> · Paris · Chrome · mot de passe + code</span>
+        </div>
+        <a href="#journal" style="font-size: 13px; text-decoration: none; font-weight: 500">Voir le journal de sécurité</a>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Repère entre les trois états (hors application) -->
+<div style="padding: 10px 24px; background: #E4E8F0; color: #5A6679; font-size: 12px; border-top: 1px solid #D6DCE6; border-bottom: 1px solid #D6DCE6">État B · Panneau latéral « Activer la double authentification » (POST /api/me/2fa/enable → verify). Les trois étapes sont montrées déroulées ; dans l'application une seule est visible à la fois.</div>
+
+<!-- ============================================================ -->
+<!-- ÉTAT B · Panneau latéral d'activation de la 2FA              -->
+<!-- ============================================================ -->
+<div style="position: relative; min-height: 1040px; background: #EEF1F6; font-size: 14px; line-height: 1.45; overflow: hidden">
+
+  <!-- Page en arrière-plan (réduite), assombrie -->
+  <div aria-hidden="true" style="position: absolute; inset: 0; display: flex; flex-direction: column">
+    <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>PsyMate</div>
+      <span style="font-size: 13px; color: #5A6679">Patients</span><span style="color: #9AA5B8">/</span><span style="font-size: 13px">Mon compte</span>
+    </div>
+    <div style="display: flex; gap: 24px; padding: 24px">
+      <div style="flex: 0 0 220px; display: flex; flex-direction: column; gap: 4px">
+        <div style="padding: 8px 12px 14px"><span style="font-weight: 600; font-size: 15px">Claire Martin</span><br><span style="font-size: 12px; color: #5A6679">Psychologue · Paris</span></div>
+        <span style="height: 40px; padding: 0 12px; display: flex; align-items: center; font-size: 13px">Profil public</span>
+        <span style="height: 40px; padding: 0 12px; display: flex; align-items: center; font-size: 13px">Préférences</span>
+        <span style="height: 40px; padding: 0 12px; display: flex; align-items: center; font-size: 13px">Émotions personnalisées</span>
+        <span style="height: 40px; padding: 0 12px; display: flex; align-items: center; font-size: 13px; background: #E3EAF8; color: #2C4C99; font-weight: 600; border-radius: 8px">Compte et sécurité</span>
+        <span style="height: 40px; padding: 0 12px; display: flex; align-items: center; font-size: 13px">Données et export</span>
+      </div>
+      <div style="flex: 1 1 auto; max-width: 960px; display: flex; flex-direction: column; gap: 18px">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 600">Compte et sécurité</h1>
+        <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 10px"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">E-mail de connexion</span><span style="font-weight: 500">claire.martin@exemple.fr</span></div>
+        <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 10px"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Double authentification</span><span style="display: inline-flex; align-self: flex-start; padding: 3px 10px; border-radius: 999px; background: #FBF1DC; color: #7A5A12; font-size: 12px; font-weight: 600">Non activée</span><span style="font-size: 13px; color: #5A6679">Recommandée pour tout compte contenant des données cliniques.</span></div>
+        <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 10px"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Sessions actives · 2</span><span style="height: 8px; width: 40%; background: #E4E8F0; border-radius: 4px"></span><span style="height: 8px; width: 32%; background: #E4E8F0; border-radius: 4px"></span></div>
+      </div>
+    </div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: #1E2633; opacity: 0.38"></div>
+
+  <!-- Panneau latéral -->
+  <div role="dialog" aria-modal="true" aria-labelledby="h-dlg" style="position: absolute; top: 0; right: 0; bottom: 0; width: 560px; background: #FFFFFF; border-left: 1px solid #D6DCE6; display: flex; flex-direction: column">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 28px; border-bottom: 1px solid #E4E8F0">
+      <h2 id="h-dlg" style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em">Activer la double authentification</h2>
+      <button type="button" aria-label="Fermer" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: #5A6679; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </div>
+
+    <!-- Stepper -->
+    <ol aria-label="Étapes" style="list-style: none; margin: 0; padding: 16px 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; border-bottom: 1px solid #E4E8F0">
+      <li aria-current="step" style="display: flex; flex-direction: column; gap: 6px"><span style="height: 4px; border-radius: 2px; background: #3A63C2"></span><span style="font-size: 12px; color: #2C4C99; font-weight: 600">1 · Scanner le QR</span></li>
+      <li style="display: flex; flex-direction: column; gap: 6px"><span style="height: 4px; border-radius: 2px; background: #D6DCE6"></span><span style="font-size: 12px; color: #5A6679">2 · Saisir le code</span></li>
+      <li style="display: flex; flex-direction: column; gap: 6px"><span style="height: 4px; border-radius: 2px; background: #D6DCE6"></span><span style="font-size: 12px; color: #5A6679">3 · Codes de secours</span></li>
+    </ol>
+
+    <div style="flex: 1 1 auto; overflow: auto; padding: 20px 28px 24px; display: flex; flex-direction: column; gap: 22px">
+
+      <!-- Étape 1 -->
+      <section aria-labelledby="h-s1" style="display: flex; flex-direction: column; gap: 12px">
+        <h3 id="h-s1" style="margin: 0; font-size: 14px; font-weight: 600"><span style="display: inline-flex; width: 22px; height: 22px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; font-size: 12px; align-items: center; justify-content: center; margin-right: 8px">1</span>Scanner le QR code</h3>
+        <p style="margin: 0; font-size: 13px; color: #5A6679">Avec une application d'authentification (Aegis, FreeOTP, Google Authenticator, 1Password…). Le secret n'est affiché qu'une seule fois.</p>
+        <div style="display: flex; gap: 20px; align-items: flex-start">
+          <div style="flex: 0 0 auto; padding: 10px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF">
+            <svg role="img" aria-label="QR code à scanner (fictif)" width="150" height="150" viewBox="0 0 25 25" shape-rendering="crispEdges"><rect width="25" height="25" fill="#FFFFFF"></rect><path fill="#1E2633" d="M0 0h7v1h-7zM8 0h2v1h-2zM11 0h1v1h-1zM16 0h1v1h-1zM18 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM10 1h2v1h-2zM14 1h1v1h-1zM18 1h1v1h-1zM24 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h2v1h-2zM12 2h1v1h-1zM18 2h1v1h-1zM20 2h3v1h-3zM24 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h2v1h-2zM12 3h1v1h-1zM14 3h2v1h-2zM18 3h1v1h-1zM20 3h3v1h-3zM24 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM12 4h2v1h-2zM18 4h1v1h-1zM20 4h3v1h-3zM24 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h2v1h-2zM14 5h1v1h-1zM18 5h1v1h-1zM24 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h7v1h-7zM9 7h3v1h-3zM13 7h2v1h-2zM16 7h1v1h-1zM0 8h2v1h-2zM6 8h1v1h-1zM8 8h1v1h-1zM10 8h1v1h-1zM14 8h2v1h-2zM18 8h2v1h-2zM22 8h1v1h-1zM24 8h1v1h-1zM0 9h1v1h-1zM3 9h1v1h-1zM5 9h1v1h-1zM7 9h2v1h-2zM10 9h1v1h-1zM15 9h2v1h-2zM18 9h1v1h-1zM21 9h2v1h-2zM24 9h1v1h-1zM4 10h4v1h-4zM9 10h4v1h-4zM14 10h1v1h-1zM16 10h1v1h-1zM20 10h1v1h-1zM23 10h1v1h-1zM0 11h1v1h-1zM4 11h2v1h-2zM7 11h1v1h-1zM9 11h2v1h-2zM12 11h1v1h-1zM17 11h6v1h-6zM2 12h1v1h-1zM6 12h1v1h-1zM9 12h1v1h-1zM11 12h1v1h-1zM13 12h1v1h-1zM18 12h1v1h-1zM0 13h1v1h-1zM9 13h1v1h-1zM12 13h1v1h-1zM14 13h1v1h-1zM17 13h2v1h-2zM20 13h3v1h-3zM24 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM10 14h1v1h-1zM12 14h4v1h-4zM17 14h1v1h-1zM19 14h2v1h-2zM24 14h1v1h-1zM2 15h3v1h-3zM10 15h2v1h-2zM14 15h4v1h-4zM19 15h1v1h-1zM22 15h2v1h-2zM0 16h2v1h-2zM5 16h2v1h-2zM8 16h1v1h-1zM10 16h3v1h-3zM16 16h5v1h-5zM24 16h1v1h-1zM8 17h1v1h-1zM12 17h2v1h-2zM15 17h2v1h-2zM20 17h1v1h-1zM0 18h7v1h-7zM8 18h3v1h-3zM12 18h1v1h-1zM14 18h1v1h-1zM16 18h1v1h-1zM18 18h1v1h-1zM20 18h1v1h-1zM22 18h1v1h-1zM24 18h1v1h-1zM0 19h1v1h-1zM6 19h1v1h-1zM8 19h2v1h-2zM13 19h4v1h-4zM20 19h1v1h-1zM23 19h1v1h-1zM0 20h1v1h-1zM2 20h3v1h-3zM6 20h1v1h-1zM8 20h3v1h-3zM16 20h5v1h-5zM22 20h1v1h-1zM0 21h1v1h-1zM2 21h3v1h-3zM6 21h1v1h-1zM13 21h1v1h-1zM18 21h3v1h-3zM23 21h2v1h-2zM0 22h1v1h-1zM2 22h3v1h-3zM6 22h1v1h-1zM13 22h3v1h-3zM22 22h2v1h-2zM0 23h1v1h-1zM6 23h1v1h-1zM10 23h1v1h-1zM14 23h3v1h-3zM19 23h1v1h-1zM22 23h1v1h-1zM24 23h1v1h-1zM0 24h7v1h-7zM9 24h3v1h-3zM13 24h1v1h-1zM16 24h1v1h-1zM18 24h1v1h-1zM24 24h1v1h-1z"></path></svg>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1 1 auto">
+            <span style="font-size: 12px; color: #5A6679">QR illisible ? Saisissez le secret à la main :</span>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; background: #EEF1F6">
+              <code style="flex: 1 1 auto; font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.06em; word-break: break-all">JBSW Y3DP EHPK 3PXP 7Q4M N5A2 KZ6R H3LT</code>
+              <button type="button" style="height: 30px; padding: 0 10px; border: 1px solid #B9C2D1; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg>Copier</button>
+            </div>
+            <span style="font-size: 12px; color: #8A94A6">Émetteur PsyMate · 6 chiffres · toutes les 30 s · SHA-1.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Étape 2 -->
+      <section aria-labelledby="h-s2" style="display: flex; flex-direction: column; gap: 12px; padding-top: 18px; border-top: 1px solid #E4E8F0">
+        <h3 id="h-s2" style="margin: 0; font-size: 14px; font-weight: 600"><span style="display: inline-flex; width: 22px; height: 22px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; font-size: 12px; align-items: center; justify-content: center; margin-right: 8px">2</span>Saisir le code à 6 chiffres</h3>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; background: #EEF1F6; border-radius: 10px">
+          <label for="otp-b" style="font-size: 13px; font-weight: 500">Code de vérification</label>
+          <p id="otp-b-help" style="margin: 0; font-size: 12px; color: #5A6679">Le code affiché par l'application pour PsyMate. Il prouve que le secret est bien enregistré ; la double authentification n'est active qu'après cette étape.</p>
+          <div style="display: flex; gap: 10px; align-items: center">
+            <input id="otp-b" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000 000" aria-describedby="otp-b-help" style="width: 150px; height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 18px; letter-spacing: 0.25em; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF; text-align: center">
+            <button type="button" style="height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Vérifier</button>
+          </div>
+          <p style="margin: 0; font-size: 12px; color: #8A94A6">Code incorrect : « Ce code n'est pas valide ou a déjà été utilisé ». Après 5 codes faux en 15 minutes, les essais sont verrouillés 15 minutes.</p>
+        </div>
+      </section>
+
+      <!-- Étape 3 -->
+      <section aria-labelledby="h-s3" style="display: flex; flex-direction: column; gap: 12px; padding-top: 18px; border-top: 1px solid #E4E8F0">
+        <h3 id="h-s3" style="margin: 0; font-size: 14px; font-weight: 600"><span style="display: inline-flex; width: 22px; height: 22px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; font-size: 12px; align-items: center; justify-content: center; margin-right: 8px">3</span>Codes de secours</h3>
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; background: #E4F2EA; color: #1E6B45; font-size: 13px">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><path d="M20 6 9 17l-5-5"></path></svg>
+          <span><strong>Double authentification activée.</strong> Conservez ces 10 codes en lieu sûr : chacun ne sert qu'une fois et ils ne seront plus affichés.</span>
+        </div>
+        <ul aria-label="Codes de secours" style="list-style: none; margin: 0; padding: 14px 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 24px; border: 1px solid #D6DCE6; border-radius: 10px; background: #EEF1F6; font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.04em">
+          <li>7K4QD-M2XWP</li><li>H9ZR3-TB6NL</li>
+          <li>A2CFV-8WQ5J</li><li>P6LYM-4RD9S</li>
+          <li>X3NHB-K7TEC</li><li>R8QWA-M5ZVD</li>
+          <li>C4TJS-9NPLG</li><li>F7MKX-2HBYV</li>
+          <li>W5DQN-6ZJRT</li><li>B9RVL-3KXMA</li>
+        </ul>
+        <div style="display: flex; gap: 10px">
+          <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #B9C2D1; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M6 11l6 6 6-6M4 21h16"></path></svg>Télécharger (.txt)</button>
+          <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #B9C2D1; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">Copier</button>
+        </div>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #3A63C2"> Je les ai enregistrés</label>
+      </section>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 28px; border-top: 1px solid #E4E8F0; background: #FFFFFF">
+      <span style="font-size: 12px; color: #8A94A6">Fermer avant la fin annule l'activation ; le secret en attente est remplacé au prochain essai.</span>
+      <div style="display: flex; gap: 10px">
+        <button type="button" style="height: 40px; padding: 0 16px; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; color: #1E2633; font-size: 14px; font-weight: 500; cursor: pointer">Annuler</button>
+        <button type="button" disabled aria-disabled="true" style="height: 40px; padding: 0 18px; border: 0; border-radius: 10px; background: #B9C2D1; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: not-allowed">Terminer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Repère entre les trois états (hors application) -->
+<div style="padding: 10px 24px; background: #E4E8F0; color: #5A6679; font-size: 12px; border-top: 1px solid #D6DCE6; border-bottom: 1px solid #D6DCE6">État C · Première connexion de l'administrateur de bootstrap (G Q5) : login → 403 PASSWORD_CHANGE_REQUIRED → POST /api/auth/password/change → nouveau login → 403 TWO_FACTOR_REQUIRED sur /api/admin/** tant que la 2FA n'est pas activée. Les deux étapes sont montrées l'une sous l'autre.</div>
+
+<!-- ============================================================ -->
+<!-- ÉTAT C · Première connexion administrateur (écran bloquant)  -->
+<!-- ============================================================ -->
+<div style="min-height: 1300px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.5">
+
+  <!-- Barre sombre admin, sans navigation : rien n'est accessible -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #1E2633; color: #FFFFFF">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#9FB4E8" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      PsyMate <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #1E2633; background: #FBF1DC; border-radius: 4px; padding: 2px 6px; margin-left: 4px">Admin</span>
+    </div>
+    <span style="font-size: 13px; color: #C9D2E3; margin-left: 12px">Première connexion · configuration obligatoire</span>
+    <div style="flex: 1 1 auto"></div>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #C9D2E3">hushan@gmail.com</span>
+    <a href="#logout" style="font-size: 13px; color: #C9D2E3; text-decoration: none">Se déconnecter</a>
+  </div>
+
+  <div style="flex: 1 1 auto; display: flex; flex-wrap: wrap">
+
+    <!-- Panneau gauche : explication du blocage -->
+    <div style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border-right: 1px solid #D6DCE6; padding: 40px 56px; display: flex; flex-direction: column; justify-content: space-between; gap: 40px">
+      <div style="display: flex; flex-direction: column; gap: 28px; max-width: 460px">
+        <h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2">Avant d'ouvrir l'administration.</h1>
+        <p style="margin: 0; font-size: 16px; color: #5A6679; line-height: 1.65">Ce compte a été créé depuis le serveur avec un mot de passe à usage unique, affiché une seule fois dans le terminal. Deux étapes sont obligatoires avant tout accès à <code style="font-family: 'JetBrains Mono', monospace; font-size: 14px">/admin</code> : choisir votre mot de passe, puis activer la double authentification.</p>
+
+        <ol aria-label="Progression" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+          <li style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 2px solid #3A63C2; border-radius: 10px; background: #E3EAF8" aria-current="step">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600">1</span>
+            <span style="display: flex; flex-direction: column; gap: 1px"><span style="font-weight: 600; color: #2C4C99">Choisissez votre mot de passe</span><span style="font-size: 12px; color: #5A6679">Remplace le mot de passe temporaire.</span></span>
+          </li>
+          <li style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF">
+            <span style="width: 26px; height: 26px; border-radius: 50%; border: 1px solid #B9C2D1; color: #5A6679; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600">2</span>
+            <span style="display: flex; flex-direction: column; gap: 1px"><span style="font-weight: 600">Activez la double authentification</span><span style="font-size: 12px; color: #5A6679">Obligatoire pour les administrateurs, ne peut pas être désactivée ensuite.</span></span>
+          </li>
+        </ol>
+
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; background: #FBF1DC; color: #7A5A12; font-size: 13px">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 2px"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+          <span>Tant que ces deux étapes ne sont pas terminées, toute page d'administration répond « accès refusé » et vous ramène ici.</span>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 12px; color: #8A94A6; line-height: 1.6">Aucun e-mail n'intervient dans cette procédure. Les deux opérations sont consignées dans le journal de sécurité.</p>
+    </div>
+
+    <!-- Panneau droit : les deux étapes, empilées -->
+    <div style="flex: 1 1 480px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 40px 24px">
+
+      <!-- Étape 1 / 2 -->
+      <form onsubmit="return false" aria-labelledby="h-c1" style="width: 100%; max-width: 440px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; padding: 32px; display: flex; flex-direction: column; gap: 18px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Étape 1 / 2</span>
+          <h2 id="h-c1" style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Choisissez votre mot de passe</h2>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Le mot de passe temporaire n'a été affiché qu'une seule fois dans le terminal ; il cesse de fonctionner dès que celui-ci est enregistré.</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="c-email" style="font-size: 13px; font-weight: 500">E-mail du compte</label>
+          <input id="c-email" type="email" autocomplete="username" value="hushan@gmail.com" readonly style="height: 44px; border: 1px solid #D6DCE6; border-radius: 10px; padding: 0 14px; font-size: 15px; color: #5A6679; background: #EEF1F6">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="c-tmp" style="font-size: 13px; font-weight: 500">Mot de passe temporaire</label>
+          <div style="display: flex; align-items: center; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; padding-right: 6px">
+            <input id="c-tmp" type="password" autocomplete="current-password" value="••••••••••••••••••••" style="flex: 1 1 auto; min-width: 0; height: 42px; border: 0; outline: 0; background: transparent; padding: 0 14px; font-size: 15px; color: #1E2633; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em">
+            <button type="button" aria-label="Afficher le mot de passe temporaire" style="width: 34px; height: 34px; border: 0; border-radius: 8px; background: transparent; color: #5A6679; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+          </div>
+          <span style="font-size: 12px; color: #8A94A6">Les 20 caractères affichés par <code style="font-family: 'JetBrains Mono', monospace">make admin</code>.</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="c-new" style="font-size: 13px; font-weight: 500">Nouveau mot de passe</label>
+          <div style="display: flex; align-items: center; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; padding-right: 6px">
+            <input id="c-new" type="password" autocomplete="new-password" aria-describedby="c-new-help" value="••••••••••••••" style="flex: 1 1 auto; min-width: 0; height: 42px; border: 0; outline: 0; background: transparent; padding: 0 14px; font-size: 15px; color: #1E2633; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em">
+            <button type="button" aria-label="Afficher le nouveau mot de passe" style="width: 34px; height: 34px; border: 0; border-radius: 8px; background: transparent; color: #5A6679; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+          </div>
+          <ul id="c-new-help" aria-label="Règles du mot de passe" style="list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 12px">
+            <li style="display: flex; align-items: center; gap: 6px; color: #1E6B45"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Au moins 12 caractères</li>
+            <li style="display: flex; align-items: center; gap: 6px; color: #1E6B45"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Majuscules et minuscules</li>
+            <li style="display: flex; align-items: center; gap: 6px; color: #5A6679"><span style="width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #B9C2D1; display: inline-block" aria-hidden="true"></span>Pas un mot de passe courant, ni votre nom ni votre e-mail (vérifié à l'envoi)</li>
+          </ul>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="c-new2" style="font-size: 13px; font-weight: 500">Confirmer le nouveau mot de passe</label>
+          <div style="display: flex; align-items: center; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF">
+            <input id="c-new2" type="password" autocomplete="new-password" value="••••••••••••••" style="flex: 1 1 auto; min-width: 0; height: 42px; border: 0; outline: 0; background: transparent; padding: 0 14px; font-size: 15px; color: #1E2633; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em">
+          </div>
+        </div>
+
+        <button type="submit" style="height: 46px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">Enregistrer et continuer</button>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6; text-align: center; line-height: 1.6">Vous serez reconnecté·e automatiquement avec le nouveau mot de passe.<br>Après 5 tentatives échouées, le compte est verrouillé 15 minutes.</p>
+      </form>
+
+      <!-- Étape 2 / 2 -->
+      <form onsubmit="return false" aria-labelledby="h-c2" style="width: 100%; max-width: 440px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; padding: 32px; display: flex; flex-direction: column; gap: 18px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+            <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Étape 2 / 2</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #1E6B45; font-weight: 500"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Mot de passe enregistré</span>
+          </div>
+          <h2 id="h-c2" style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Activez la double authentification</h2>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Obligatoire pour les administrateurs : sans elle, les routes d'administration répondent TWO_FACTOR_REQUIRED. Un administrateur ne peut pas la désactiver ensuite.</p>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: flex-start">
+          <div style="flex: 0 0 auto; padding: 8px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF">
+            <svg role="img" aria-label="QR code à scanner (fictif)" width="124" height="124" viewBox="0 0 25 25" shape-rendering="crispEdges"><rect width="25" height="25" fill="#FFFFFF"></rect><path fill="#1E2633" d="M0 0h7v1h-7zM8 0h2v1h-2zM11 0h1v1h-1zM16 0h1v1h-1zM18 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM10 1h2v1h-2zM14 1h1v1h-1zM18 1h1v1h-1zM24 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h2v1h-2zM12 2h1v1h-1zM18 2h1v1h-1zM20 2h3v1h-3zM24 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h2v1h-2zM12 3h1v1h-1zM14 3h2v1h-2zM18 3h1v1h-1zM20 3h3v1h-3zM24 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM12 4h2v1h-2zM18 4h1v1h-1zM20 4h3v1h-3zM24 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h2v1h-2zM14 5h1v1h-1zM18 5h1v1h-1zM24 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h7v1h-7zM9 7h3v1h-3zM13 7h2v1h-2zM16 7h1v1h-1zM0 8h2v1h-2zM6 8h1v1h-1zM8 8h1v1h-1zM10 8h1v1h-1zM14 8h2v1h-2zM18 8h2v1h-2zM22 8h1v1h-1zM24 8h1v1h-1zM0 9h1v1h-1zM3 9h1v1h-1zM5 9h1v1h-1zM7 9h2v1h-2zM10 9h1v1h-1zM15 9h2v1h-2zM18 9h1v1h-1zM21 9h2v1h-2zM24 9h1v1h-1zM4 10h4v1h-4zM9 10h4v1h-4zM14 10h1v1h-1zM16 10h1v1h-1zM20 10h1v1h-1zM23 10h1v1h-1zM0 11h1v1h-1zM4 11h2v1h-2zM7 11h1v1h-1zM9 11h2v1h-2zM12 11h1v1h-1zM17 11h6v1h-6zM2 12h1v1h-1zM6 12h1v1h-1zM9 12h1v1h-1zM11 12h1v1h-1zM13 12h1v1h-1zM18 12h1v1h-1zM0 13h1v1h-1zM9 13h1v1h-1zM12 13h1v1h-1zM14 13h1v1h-1zM17 13h2v1h-2zM20 13h3v1h-3zM24 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM10 14h1v1h-1zM12 14h4v1h-4zM17 14h1v1h-1zM19 14h2v1h-2zM24 14h1v1h-1zM2 15h3v1h-3zM10 15h2v1h-2zM14 15h4v1h-4zM19 15h1v1h-1zM22 15h2v1h-2zM0 16h2v1h-2zM5 16h2v1h-2zM8 16h1v1h-1zM10 16h3v1h-3zM16 16h5v1h-5zM24 16h1v1h-1zM8 17h1v1h-1zM12 17h2v1h-2zM15 17h2v1h-2zM20 17h1v1h-1zM0 18h7v1h-7zM8 18h3v1h-3zM12 18h1v1h-1zM14 18h1v1h-1zM16 18h1v1h-1zM18 18h1v1h-1zM20 18h1v1h-1zM22 18h1v1h-1zM24 18h1v1h-1zM0 19h1v1h-1zM6 19h1v1h-1zM8 19h2v1h-2zM13 19h4v1h-4zM20 19h1v1h-1zM23 19h1v1h-1zM0 20h1v1h-1zM2 20h3v1h-3zM6 20h1v1h-1zM8 20h3v1h-3zM16 20h5v1h-5zM22 20h1v1h-1zM0 21h1v1h-1zM2 21h3v1h-3zM6 21h1v1h-1zM13 21h1v1h-1zM18 21h3v1h-3zM23 21h2v1h-2zM0 22h1v1h-1zM2 22h3v1h-3zM6 22h1v1h-1zM13 22h3v1h-3zM22 22h2v1h-2zM0 23h1v1h-1zM6 23h1v1h-1zM10 23h1v1h-1zM14 23h3v1h-3zM19 23h1v1h-1zM22 23h1v1h-1zM24 23h1v1h-1zM0 24h7v1h-7zM9 24h3v1h-3zM13 24h1v1h-1zM16 24h1v1h-1zM18 24h1v1h-1zM24 24h1v1h-1z"></path></svg>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1 1 auto">
+            <span style="font-size: 13px; font-weight: 500">1. Scannez avec votre application d'authentification</span>
+            <span style="font-size: 12px; color: #5A6679">Ou saisissez le secret à la main :</span>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D6DCE6; border-radius: 10px; background: #EEF1F6">
+              <code style="flex: 1 1 auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.05em; word-break: break-all">GEZD GNBV GY3T QOJQ 2N5X R7KA 4WMD E6ST</code>
+              <button type="button" style="height: 28px; padding: 0 9px; border: 1px solid #B9C2D1; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 12px; font-weight: 500; cursor: pointer">Copier</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; background: #EEF1F6; border-radius: 10px">
+          <label for="c-otp" style="font-size: 13px; font-weight: 500">2. Code de vérification</label>
+          <p id="c-otp-help" style="margin: 0; font-size: 12px; color: #5A6679">Six chiffres affichés par l'application pour PsyMate. 5 codes faux en 15 minutes verrouillent les essais 15 minutes.</p>
+          <input id="c-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000 000" aria-describedby="c-otp-help" style="width: 150px; height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 18px; letter-spacing: 0.25em; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF; text-align: center">
+        </div>
+
+        <button type="submit" style="height: 46px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">Activer et ouvrir l'administration</button>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6; text-align: center; line-height: 1.6">Les 10 codes de secours s'afficheront ensuite, une seule fois :<br>vous devrez confirmer les avoir enregistrés avant d'accéder à l'administration.</p>
+      </form>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

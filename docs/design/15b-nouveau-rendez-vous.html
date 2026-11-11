@@ -1,0 +1,141 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Nouveau rendez-vous</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select,textarea{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 900px; position: relative; background: #EEF1F6; font-size: 14px; line-height: 1.45; display: flex; flex-direction: column">
+
+  <!-- Arrière-plan : agenda estompé -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6; opacity: 0.55">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>Suivi</div>
+    <span style="font-size: 13px; color: #5A6679">Patients</span><span style="font-size: 13px; font-weight: 600">Agenda</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 12px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6; opacity: 0.55"><span style="font-size: 20px; font-weight: 600">Agenda</span><span style="font-size: 15px; font-weight: 600">26 octobre – 1<sup>er</sup> novembre 2026</span></div>
+  <div style="flex: 1 1 auto; margin: 16px 24px 24px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; opacity: 0.45; position: relative; min-height: 640px; background-image: linear-gradient(#E4E8F0 1px, transparent 1px); background-size: 100% 52px" aria-hidden="true">
+    <span style="position: absolute; left: 70px; top: 80px; width: 110px; height: 42px; border-radius: 6px; background: #E2F1EE; border-left: 3px solid #3E8E7E"></span>
+    <span style="position: absolute; left: 70px; top: 184px; width: 110px; height: 42px; border-radius: 6px; background: #E3EAF8; border-left: 3px solid #3A63C2"></span>
+    <span style="position: absolute; left: 200px; top: 80px; width: 110px; height: 42px; border-radius: 6px; background: #E2F1EE; border-left: 3px solid #3E8E7E"></span>
+    <span style="position: absolute; left: 330px; top: 106px; width: 110px; height: 42px; border-radius: 6px; background: #E3EAF8; border-left: 3px solid #3A63C2"></span>
+    <span style="position: absolute; left: 460px; top: 132px; width: 110px; height: 42px; border-radius: 6px; background: #E2F1EE; border-left: 3px solid #3E8E7E"></span>
+    <span style="position: absolute; left: 590px; top: 80px; width: 110px; height: 42px; border-radius: 6px; background: #E2F1EE; border-left: 3px solid #3E8E7E"></span>
+    <span style="position: absolute; left: 720px; top: 236px; width: 110px; height: 42px; border-radius: 6px; border: 2px dashed #3A63C2; background: #E3EAF8"></span>
+  </div>
+  <div style="position: absolute; inset: 0; background: rgba(30, 38, 51, 0.18)" aria-hidden="true"></div>
+
+  <!-- Panneau -->
+  <form onsubmit="return false" role="dialog" aria-labelledby="h-rdv" aria-modal="true" style="position: absolute; top: 0; right: 0; bottom: 0; width: 520px; background: #FFFFFF; border-left: 1px solid #D6DCE6; box-shadow: -12px 0 32px rgba(30,38,51,0.12); display: flex; flex-direction: column">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 22px; border-bottom: 1px solid #E4E8F0">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h1 id="h-rdv" style="margin: 0; font-size: 17px; font-weight: 600">Nouveau rendez-vous</h1>
+        <span style="font-size: 12px; color: #5A6679">Créneau cliqué : samedi 7 novembre, 10:00</span>
+      </div>
+      <button type="button" aria-label="Fermer" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: #5A6679; cursor: pointer; font-size: 18px">×</button>
+    </div>
+
+    <div style="flex: 1 1 auto; overflow: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 18px">
+
+      <!-- Patient -->
+      <section style="display: flex; flex-direction: column; gap: 8px">
+        <label for="patient" style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Patient</label>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 2px solid #3A63C2; border-radius: 10px; background: #E3EAF8">
+          <span style="width: 36px; height: 36px; border-radius: 10px; background: #FFFFFF; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px" aria-hidden="true">MD</span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+            <span style="font-weight: 600">Marie D.</span>
+            <span style="font-size: 12px; color: #2C4C99">34 ans · dernière séance le 31 oct. · rythme 1 à 2 semaines · cabinet</span>
+          </div>
+          <button type="button" style="height: 30px; padding: 0 10px; border: 1px solid #B9C2D1; border-radius: 8px; background: #FFFFFF; font-size: 12px; cursor: pointer">Changer</button>
+        </div>
+        <input id="patient" type="search" placeholder="Ou rechercher un autre patient…" style="height: 40px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+        <span style="font-size: 12px; color: #1E6B45; display: flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Le créneau respecte le rythme habituel (7 jours après le 31 oct.).</span>
+      </section>
+
+      <!-- Créneau -->
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Créneau</span>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="date" style="font-size: 13px; font-weight: 500">Date</label>
+            <input id="date" type="text" value="sam. 7 nov. 2026" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="heure" style="font-size: 13px; font-weight: 500">Début</label>
+            <input id="heure" type="text" value="10:00" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="duree" style="font-size: 13px; font-weight: 500">Durée</label>
+            <select id="duree" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 10px; font-size: 14px; color: #1E2633; background: #FFFFFF"><option>50 min</option><option>30 min</option><option>45 min</option><option>60 min</option><option>90 min</option></select>
+          </div>
+        </div>
+        <span style="font-size: 12px; color: #5A6679">Se termine à <span style="font-family: 'JetBrains Mono', monospace; color: #1E2633">10:50</span> · suivi de Théo B. à 11:30, pas de chevauchement.</span>
+      </section>
+
+      <!-- Modalité -->
+      <section style="display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Modalité</span>
+        <div role="group" aria-label="Modalité" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+          <button type="button" aria-pressed="true" style="height: 44px; border: 2px solid #3E8E7E; border-radius: 10px; background: #E2F1EE; font-size: 13px; font-weight: 600; color: #1E2633; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #3E8E7E" aria-hidden="true"></span>Cabinet</button>
+          <button type="button" aria-pressed="false" style="height: 44px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF; font-size: 13px; color: #1E2633; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #3A63C2" aria-hidden="true"></span>Visio</button>
+          <button type="button" aria-pressed="false" style="height: 44px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF; font-size: 13px; color: #1E2633; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #7F8EA8" aria-hidden="true"></span>Téléphone</button>
+        </div>
+        <span style="font-size: 12px; color: #5A6679">Cabinet · 12 rue Vendôme. En visio, le lien de réunion est ajouté à l'événement Google si vous l'y collez.</span>
+      </section>
+
+      <!-- Récurrence -->
+      <section style="display: flex; flex-direction: column; gap: 8px">
+        <label for="recur" style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Répéter</label>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <select id="recur" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 10px; font-size: 14px; color: #1E2633; background: #FFFFFF"><option>Ne pas répéter</option><option>Toutes les semaines</option><option selected>Toutes les 2 semaines</option><option>Toutes les 4 semaines</option></select>
+          <select aria-label="Nombre de répétitions" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 10px; font-size: 14px; color: #1E2633; background: #FFFFFF"><option>4 fois (jusqu'au 19 déc.)</option><option>8 fois</option><option>Jusqu'à une date…</option></select>
+        </div>
+        <span style="font-size: 12px; color: #5A6679">Chaque occurrence est un rendez-vous distinct ; vous pourrez en déplacer une sans toucher aux autres.</span>
+      </section>
+
+      <!-- Note -->
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="note" style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Note de planification <span style="font-weight: 400; text-transform: none; letter-spacing: 0; color: #8A94A6">(jamais envoyée à Google)</span></label>
+        <textarea id="note" rows="2" placeholder="ex. apporter le carnet du soir" style="border: 1px solid #B9C2D1; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5; color: #1E2633; resize: vertical"></textarea>
+      </div>
+
+      <!-- Ce qui part vers Google -->
+      <section aria-label="Synchronisation Google" style="padding: 12px 14px; border-radius: 10px; background: #EEF1F6; display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: #5A6679; line-height: 1.5">
+        <span style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #1E2633"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1E6B45" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Sera copié dans Google Agenda « Suivi »</span>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 8px">
+          <span style="width: 4px; height: 28px; border-radius: 2px; background: #3E8E7E" aria-hidden="true"></span>
+          <span style="display: flex; flex-direction: column"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #1E2633">Séance · M. D.</span><span>sam. 7 nov. · 10:00–10:50 · Cabinet · 4 occurrences</span></span>
+        </div>
+        <span>Niveau de détail : initiales seulement. <a href="#prefs" style="text-decoration: none">Modifier dans les préférences</a></span>
+      </section>
+
+      <!-- Avertissement conflit (exemple) -->
+      <div style="display: flex; gap: 10px; padding: 10px 12px; border-radius: 8px; background: #FBF1DC; color: #7A5A12; font-size: 12px; line-height: 1.5">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="flex-shrink: 0; margin-top: 2px"><path d="M8 2.5 1.8 13.5h12.4L8 2.5zM8 7v3M8 12h.01"></path></svg>
+        <span>L'occurrence du <strong style="font-weight: 600">5 décembre</strong> chevauche un bloc « Occupé · Google Pro » (09:00–12:00). Elle sera créée quand même ; vous pourrez la déplacer depuis l'agenda.</span>
+      </div>
+    </div>
+
+    <div style="padding: 14px 22px; border-top: 1px solid #E4E8F0; display: flex; align-items: center; gap: 10px">
+      <button type="submit" style="height: 42px; padding: 0 18px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Planifier 4 rendez-vous</button>
+      <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #5A6679; cursor: pointer"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #3A63C2"> À confirmer avec la patiente</label>
+      <div style="flex: 1 1 auto"></div>
+      <button type="button" style="height: 42px; padding: 0 12px; border: 0; background: transparent; font-size: 14px; color: #5A6679; cursor: pointer">Annuler <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">Échap</span></button>
+    </div>
+  </form>
+</div>
+
+</body>
+</html>

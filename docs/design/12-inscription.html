@@ -1,0 +1,168 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Inscription – créer un compte praticien</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 1660px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.5">
+
+  <!-- En-tête minimal -->
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 60px; padding: 0 40px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px">
+      <span style="width: 28px; height: 28px; border-radius: 8px; background: #3A63C2; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      </span>
+      Suivi
+    </div>
+    <span style="font-size: 13px; color: #5A6679">Déjà un compte ? <a href="#login" style="text-decoration: none; font-weight: 500">Se connecter</a></span>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 32px; padding: 36px 40px 48px; max-width: 1200px; width: 100%; margin: 0 auto; align-items: flex-start">
+
+    <!-- Formulaire -->
+    <form onsubmit="return false" style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px" aria-labelledby="h-signup">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h1 id="h-signup" style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em">Créer votre compte praticien</h1>
+        <p style="margin: 0; font-size: 14px; color: #5A6679">Trois minutes. Vous pourrez compléter votre profil public plus tard, il n'est pas obligatoire.</p>
+      </div>
+
+      <!-- Étape 1 -->
+      <section aria-labelledby="h-s1" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-s1" style="margin: 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #2C4C99; background: #E3EAF8; border-radius: 6px; padding: 2px 7px">1</span>Qui vous êtes</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="prenom" style="font-size: 13px; font-weight: 500">Prénom</label>
+            <input id="prenom" type="text" autocomplete="given-name" value="Claire" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="nom" style="font-size: 13px; font-weight: 500">Nom</label>
+            <input id="nom" type="text" autocomplete="family-name" value="Moreau" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2">
+            <label for="email" style="font-size: 13px; font-weight: 500">E-mail professionnel</label>
+            <input id="email" type="email" autocomplete="email" value="claire.moreau@exemple.fr" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; color: #1E2633; background: #FFFFFF">
+            <span style="font-size: 12px; color: #5A6679">Sert à vous connecter et à recevoir les messages de l'annuaire. Un e-mail de confirmation vous sera envoyé.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Étape 2 : profession -->
+      <section aria-labelledby="h-s2" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-s2" style="margin: 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #2C4C99; background: #E3EAF8; border-radius: 6px; padding: 2px 7px">2</span>Votre profession</h2>
+        <p style="margin: 0; font-size: 13px; color: #5A6679">Elle détermine le vocabulaire de l'application (par exemple le type « médicament » n'est proposé qu'aux psychiatres par défaut) et le libellé de votre fiche publique. Modifiable plus tard.</p>
+        <fieldset style="margin: 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+          <legend style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Profession</legend>
+          <label style="display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 2px solid #3A63C2; border-radius: 12px; background: #E3EAF8; cursor: pointer">
+            <span style="display: flex; align-items: center; justify-content: space-between"><span style="font-weight: 600; font-size: 15px">Psychologue</span><input type="radio" name="profession" checked style="width: 18px; height: 18px; accent-color: #3A63C2; margin: 0"></span>
+            <span style="font-size: 12px; color: #2C4C99; line-height: 1.5">Suivi psychothérapeutique. Entrées : note, événement, situation, ressenti, séance. Médicament en lecture seule si prescrit par un confrère.</span>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid #D6DCE6; border-radius: 12px; background: #FFFFFF; cursor: pointer">
+            <span style="display: flex; align-items: center; justify-content: space-between"><span style="font-weight: 600; font-size: 15px">Psychiatre</span><input type="radio" name="profession" style="width: 18px; height: 18px; accent-color: #3A63C2; margin: 0"></span>
+            <span style="font-size: 12px; color: #5A6679; line-height: 1.5">Suivi médical et thérapeutique. Tous les types d'entrées, dont médicament avec posologie et prescripteur.</span>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid #D6DCE6; border-radius: 12px; background: #FFFFFF; cursor: pointer">
+            <span style="display: flex; align-items: center; justify-content: space-between"><span style="font-weight: 600; font-size: 15px">Coach</span><input type="radio" name="profession" style="width: 18px; height: 18px; accent-color: #3A63C2; margin: 0"></span>
+            <span style="font-size: 12px; color: #5A6679; line-height: 1.5">Accompagnement. Vocabulaire « client » possible, type médicament masqué. Libellé public « Coach » ou « Coach mental ».</span>
+          </label>
+        </fieldset>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="numpro" style="font-size: 13px; font-weight: 500">Numéro professionnel <span style="color: #8A94A6; font-weight: 400">(ADELI / RPPS, facultatif)</span></label>
+            <input id="numpro" type="text" placeholder="69 93 1234 5" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="tel" style="font-size: 13px; font-weight: 500">Téléphone</label>
+            <input id="tel" type="tel" autocomplete="tel" placeholder="06 12 34 56 78" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+            <span style="font-size: 12px; color: #5A6679">Pour la vérification de votre dossier. Jamais affiché sans votre accord.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2">
+            <label for="adresse" style="font-size: 13px; font-weight: 500">Adresse du cabinet</label>
+            <input id="adresse" type="text" autocomplete="street-address" value="12 rue Vendôme" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="cp" style="font-size: 13px; font-weight: 500">Code postal</label>
+            <input id="cp" type="text" autocomplete="postal-code" value="69006" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="ville" style="font-size: 13px; font-weight: 500">Ville</label>
+            <input id="ville" type="text" autocomplete="address-level2" value="Lyon" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #5A6679; cursor: pointer; grid-column: span 2"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #3A63C2"> J'exerce uniquement en visioconsultation (pas d'adresse de cabinet)</label>
+        </div>
+        <p style="margin: 0; font-size: 13px; color: #7A5A12; background: #FBF1DC; border-radius: 8px; padding: 10px 14px">Après la création du compte, vous déposerez votre diplôme ou votre attestation d'inscription (ADELI, RPPS, certification de coaching…). Un administrateur vérifie le dossier sous 2 jours ouvrés ; l'annuaire public n'est accessible qu'une fois le dossier validé.</p>
+      </section>
+
+      <!-- Étape 3 : accès -->
+      <section aria-labelledby="h-s3" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-s3" style="margin: 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #2C4C99; background: #E3EAF8; border-radius: 6px; padding: 2px 7px">3</span>Votre accès</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="pwd" style="font-size: 13px; font-weight: 500">Mot de passe</label>
+            <input id="pwd" type="password" autocomplete="new-password" value="••••••••••••••" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; color: #1E2633; background: #FFFFFF">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #1E6B45">
+              <span style="display: inline-flex; gap: 3px" aria-hidden="true"><span style="width: 28px; height: 4px; border-radius: 2px; background: #1E6B45"></span><span style="width: 28px; height: 4px; border-radius: 2px; background: #1E6B45"></span><span style="width: 28px; height: 4px; border-radius: 2px; background: #1E6B45"></span><span style="width: 28px; height: 4px; border-radius: 2px; background: #D6DCE6"></span></span>
+              Bon · 14 caractères, pas dans les fuites connues
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="pwd2" style="font-size: 13px; font-weight: 500">Confirmer le mot de passe</label>
+            <input id="pwd2" type="password" autocomplete="new-password" value="••••••••••••••" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; color: #1E2633; background: #FFFFFF">
+          </div>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #5A6679">12 caractères minimum. La double authentification pourra être activée dans vos paramètres ; elle est recommandée pour un dossier clinique.</p>
+      </section>
+
+      <!-- Consentements -->
+      <section style="display: flex; flex-direction: column; gap: 10px; padding: 0 4px">
+        <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #1E2633; cursor: pointer; line-height: 1.5">
+          <input type="checkbox" style="width: 16px; height: 16px; accent-color: #3A63C2; margin-top: 2px; flex-shrink: 0">
+          <span>J'accepte les <a href="#cgu" style="text-decoration: none">conditions d'utilisation</a> et j'ai lu la <a href="#privacy" style="text-decoration: none">politique de confidentialité</a>. Je comprends que je suis responsable du traitement des données de mes patients et que la plateforme en est l'hébergeur.</span>
+        </label>
+        <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #5A6679; cursor: pointer; line-height: 1.5">
+          <input type="checkbox" style="width: 16px; height: 16px; accent-color: #3A63C2; margin-top: 2px; flex-shrink: 0">
+          <span>Je souhaite recevoir les nouveautés de la bêta (un e-mail par mois au plus).</span>
+        </label>
+      </section>
+
+      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+        <button type="submit" style="height: 46px; padding: 0 24px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">Créer mon compte</button>
+        <span style="font-size: 12px; color: #8A94A6">Vous recevrez un e-mail pour confirmer votre adresse avant la première connexion.</span>
+      </div>
+    </form>
+
+    <!-- Colonne latérale : ce qui vous attend -->
+    <aside aria-label="Après l'inscription" style="flex: 1 1 300px; max-width: 340px; display: flex; flex-direction: column; gap: 16px">
+      <section style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 12px">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Ensuite</h2>
+        <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 14px; line-height: 1.5">
+          <li style="display: flex; gap: 12px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679; margin-top: 2px">01</span><span>Confirmez votre e-mail.</span></li>
+          <li style="display: flex; gap: 12px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679; margin-top: 2px">02</span><span>Déposez votre diplôme ou attestation professionnelle (plusieurs documents possibles). Vous pouvez déjà utiliser l'outil pendant la vérification.</span></li>
+          <li style="display: flex; gap: 12px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679; margin-top: 2px">03</span><span>Un administrateur valide votre dossier sous 2 jours ouvrés. Vous recevez un e-mail.</span></li>
+          <li style="display: flex; gap: 12px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679; margin-top: 2px">04</span><span>Quand vous voulez, remplissez votre profil public pour apparaître dans l'annuaire. Rien n'est publié sans votre accord.</span></li>
+        </ol>
+      </section>
+      <section style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: #5A6679; line-height: 1.6">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Vos données</h2>
+        <p style="margin: 0">Hébergement en France, chiffrement au repos et en transit, sauvegardes quotidiennes. Chaque praticien ne voit que ses propres patients. Export complet de votre dossier à tout moment.</p>
+        <p style="margin: 0">Bêta privée : 50 praticiens. Vos retours façonnent la V1.</p>
+      </section>
+    </aside>
+  </div>
+</div>
+
+</body>
+</html>

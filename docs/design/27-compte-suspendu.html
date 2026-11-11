@@ -1,0 +1,122 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Compte suspendu – Suivi</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 760px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.5">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="max-width: 1120px; margin: 0 auto; padding: 0 24px; height: 64px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap">
+      <a href="Main.dc.html" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #1E2633; text-decoration: none">
+        <span style="width: 32px; height: 32px; border-radius: 9px; background: #3A63C2; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+        </span>
+        Suivi
+      </a>
+      <span style="margin-left: auto; font-size: 13px; color: #5A6679">Connecté·e en tant que <strong style="font-weight: 600; color: #1E2633">marc.lefevre@exemple.fr</strong> · <a href="#logout" style="text-decoration: none">Se déconnecter</a></span>
+    </div>
+  </header>
+
+  <main style="flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; justify-content: center; padding: 56px 24px 72px; max-width: 1120px; width: 100%; margin: 0 auto">
+
+    <!-- Bloc principal : statut et motif -->
+    <section style="flex: 2 1 480px; max-width: 640px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column" aria-labelledby="h-susp">
+      <div style="background: #FBE9E7; border-bottom: 1px solid #F0C9C4; padding: 14px 36px; display: flex; align-items: center; gap: 10px; color: #9A2F22; font-weight: 600; font-size: 13px">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M5.6 5.6l12.8 12.8"></path></svg>
+        Compte suspendu depuis le 23 oct. 2026
+      </div>
+
+      <div style="padding: 32px 36px; display: flex; flex-direction: column; gap: 22px">
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <h1 id="h-susp" style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25">Votre compte est suspendu</h1>
+          <p style="margin: 0; color: #5A6679; line-height: 1.65">Vous pouvez toujours vous connecter, consulter et exporter vos dossiers. En revanche, la saisie de nouvelles entrées, l'agenda et votre fiche publique sont désactivés jusqu'à la levée de la suspension.</p>
+        </div>
+
+        <div style="border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; background: #EEF1F6">
+          <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline">
+            <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Motif communiqué</span>
+            <span style="font-size: 12px; color: #8A94A6; font-family: 'JetBrains Mono', monospace">Décision n° VD-2026-0418</span>
+          </div>
+          <p style="margin: 0; color: #1E2633; line-height: 1.65">Le dossier de vérification a été <strong style="font-weight: 600">refusé</strong> : le diplôme transmis (Master 2 Psychologie clinique, 2019) n'a pu être rapproché d'aucun établissement habilité, et le numéro ADELI indiqué ne correspond pas à l'identité du compte.</p>
+          <p style="margin: 0; font-size: 12px; color: #8A94A6">Le détail vous a été envoyé par e-mail le 23 oct. 2026. Aucune donnée patient n'a été consultée dans le cadre de cette décision.</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 600">Ce que vous pouvez faire</h2>
+          <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
+            <li style="display: flex; gap: 12px; align-items: flex-start">
+              <span style="width: 28px; height: 28px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"></path></svg></span>
+              <span style="line-height: 1.55"><strong style="font-weight: 600">Exporter vos données</strong><br><span style="color: #5A6679">Dossiers, entrées et liens au format ouvert (JSON + PDF). Disponible sans limite de durée.</span></span>
+            </li>
+            <li style="display: flex; gap: 12px; align-items: flex-start">
+              <span style="width: 28px; height: 28px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4z"></path></svg></span>
+              <span style="line-height: 1.55"><strong style="font-weight: 600">Contester la décision</strong><br><span style="color: #5A6679">Un seul recours possible, avec de nouvelles pièces. Réponse sous 5 jours ouvrés.</span></span>
+            </li>
+            <li style="display: flex; gap: 12px; align-items: flex-start">
+              <span style="width: 28px; height: 28px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L4 7v5c0 5 3.4 8.5 8 9 4.6-.5 8-4 8-9V7z"></path></svg></span>
+              <span style="line-height: 1.55"><strong style="font-weight: 600">Vos dossiers restent protégés</strong><br><span style="color: #5A6679">Rien n'est supprimé pendant la suspension. En cas de clôture définitive, vous aurez 90 jours pour récupérer vos données.</span></span>
+            </li>
+          </ul>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; padding-top: 6px">
+          <a href="#export" style="height: 44px; padding: 0 18px; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center">Exporter mes données</a>
+          <a href="#appeal" style="height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid #B9C2D1; color: #1E2633; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; background: #FFFFFF">Contester la décision</a>
+          <a href="#patients" style="height: 44px; padding: 0 18px; color: #5A6679; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center">Consulter mes dossiers (lecture seule)</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Colonne latérale : recours et contact -->
+    <aside style="flex: 1 1 300px; max-width: 400px; display: flex; flex-direction: column; gap: 16px">
+      <form onsubmit="return false" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 14px" aria-labelledby="h-appeal">
+        <h2 id="h-appeal" style="margin: 0; font-size: 16px; font-weight: 600">Contester la décision</h2>
+        <p style="margin: 0; font-size: 13px; color: #5A6679; line-height: 1.6">Expliquez ce qui, selon vous, a été mal apprécié, et joignez les pièces manquantes. Le recours est examiné par une autre personne que celle qui a pris la décision.</p>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="appeal-text" style="font-size: 13px; font-weight: 500">Votre explication</label>
+          <textarea id="appeal-text" rows="5" placeholder="Le diplôme a été délivré par l'université de… Le numéro ADELI exact est…" style="border: 1px solid #B9C2D1; border-radius: 10px; padding: 10px 14px; font-size: 14px; color: #1E2633; background: #FFFFFF; font-family: inherit; resize: vertical; line-height: 1.5"></textarea>
+        </div>
+        <div style="border: 1.5px dashed #B9C2D1; border-radius: 10px; padding: 14px; text-align: center; font-size: 13px; color: #5A6679; background: #EEF1F6">
+          <strong style="font-weight: 600; color: #1E2633">Ajouter des pièces</strong><br>PDF, JPG ou PNG · 10 Mo max par fichier · chiffrées, purgées 90 jours après décision
+        </div>
+        <button type="submit" style="height: 44px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Envoyer le recours</button>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Un seul recours par décision. Après son examen, la décision devient définitive.</p>
+      </form>
+
+      <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #5A6679; line-height: 1.6">
+        <h2 style="margin: 0; font-size: 14px; font-weight: 600; color: #1E2633">Besoin de parler à quelqu'un ?</h2>
+        <p style="margin: 0">Équipe vérification : <a href="#mail" style="text-decoration: none">verification@suivi.exemple</a><br>Réponse sous 2 jours ouvrés, du lundi au vendredi.</p>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Merci de ne jamais joindre de document contenant des informations sur vos patients.</p>
+      </div>
+    </aside>
+  </main>
+
+  <footer style="background: #FFFFFF; border-top: 1px solid #D6DCE6">
+    <div style="max-width: 1120px; margin: 0 auto; padding: 20px 24px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; font-size: 12px; color: #8A94A6">
+      <span>© Suivi · Données hébergées en France</span>
+      <nav aria-label="Pied de page" style="margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap">
+        <a href="#confidentialite" style="text-decoration: none">Confidentialité</a>
+        <a href="#mentions" style="text-decoration: none">Mentions légales</a>
+        <a href="#contact" style="text-decoration: none">Contact</a>
+      </nav>
+    </div>
+  </footer>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Connexion – espace praticien</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 860px; display: flex; flex-wrap: wrap; background: #EEF1F6; font-size: 14px; line-height: 1.5">
+
+  <!-- Panneau gauche : identité et promesse -->
+  <div style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border-right: 1px solid #D6DCE6; padding: 40px 56px; display: flex; flex-direction: column; justify-content: space-between; gap: 40px">
+    <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px">
+      <span style="width: 32px; height: 32px; border-radius: 9px; background: #3A63C2; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      </span>
+      Suivi
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 28px; max-width: 460px">
+      <h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2">Le fil de vos patients, séance après séance.</h1>
+      <p style="margin: 0; font-size: 16px; color: #5A6679; line-height: 1.65">Noter en séance, relier ce qui va ensemble, retrouver en dix secondes où en est quelqu'un. Pour psychologues, psychiatres et coachs.</p>
+
+      <!-- Aperçu stylisé d'une timeline (décoratif) -->
+      <div style="border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px 18px; background: #EEF1F6; display: flex; flex-direction: column; gap: 12px" aria-hidden="true">
+        <div style="display: flex; align-items: center; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 3px; border: 2px solid #3E8E7E"></span><span style="height: 8px; width: 46%; background: #D6DCE6; border-radius: 4px"></span><span style="margin-left: auto; height: 8px; width: 48px; background: #D6DCE6; border-radius: 4px"></span></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding-left: 18px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #8B7BD6"></span><span style="height: 8px; width: 38%; background: #D6DCE6; border-radius: 4px"></span><span style="height: 8px; width: 22px; background: #ECE8F8; border-radius: 4px"></span></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding-left: 18px"><span style="width: 10px; height: 10px; transform: rotate(45deg); background: #3A63C2"></span><span style="height: 8px; width: 54%; background: #D6DCE6; border-radius: 4px"></span></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding-left: 18px"><span style="width: 14px; height: 6px; border-radius: 2px; background: #2F4F73"></span><span style="height: 8px; width: 30%; background: #D6DCE6; border-radius: 4px"></span><span style="height: 8px; width: 60px; background: #E1E9F2; border-radius: 4px"></span></div>
+      </div>
+    </div>
+
+    <p style="margin: 0; font-size: 12px; color: #8A94A6; line-height: 1.6">Données hébergées en France · chiffrées au repos · vous restez seul·e propriétaire de vos dossiers.<br><a href="#" style="text-decoration: none">Confidentialité</a> · <a href="#" style="text-decoration: none">Mentions légales</a> · <a href="#" style="text-decoration: none">Annuaire public</a></p>
+  </div>
+
+  <!-- Panneau droit : formulaire -->
+  <div style="flex: 1 1 480px; min-width: 0; display: flex; align-items: center; justify-content: center; padding: 40px 24px">
+    <form onsubmit="return false" style="width: 100%; max-width: 420px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; padding: 32px; display: flex; flex-direction: column; gap: 18px" aria-labelledby="h-login">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h2 id="h-login" style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Connexion</h2>
+        <p style="margin: 0; font-size: 13px; color: #5A6679">Espace réservé aux praticiens. <a href="#signup" style="text-decoration: none; font-weight: 500">Créer un compte</a></p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="email" style="font-size: 13px; font-weight: 500">E-mail professionnel</label>
+        <input id="email" type="email" autocomplete="username" value="claire.moreau@exemple.fr" style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; color: #1E2633; background: #FFFFFF">
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: baseline">
+          <label for="pwd" style="font-size: 13px; font-weight: 500">Mot de passe</label>
+          <a href="#forgot" style="font-size: 12px; text-decoration: none">Mot de passe oublié ?</a>
+        </div>
+        <div style="display: flex; align-items: center; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; padding-right: 6px">
+          <input id="pwd" type="password" autocomplete="current-password" value="••••••••••••" style="flex: 1 1 auto; min-width: 0; height: 42px; border: 0; outline: 0; background: transparent; padding: 0 14px; font-size: 15px; color: #1E2633; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em">
+          <button type="button" aria-label="Afficher le mot de passe" style="width: 34px; height: 34px; border: 0; border-radius: 8px; background: transparent; color: #5A6679; cursor: pointer; display: inline-flex; align-items: center; justify-content: center">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bloc code 2FA, visible seulement si activée pour ce compte -->
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; background: #EEF1F6; border-radius: 10px">
+        <label for="otp" style="font-size: 13px; font-weight: 500">Code de vérification</label>
+        <p style="margin: 0; font-size: 12px; color: #5A6679">Six chiffres de votre application d'authentification. Demandé car la double authentification est activée sur ce compte.</p>
+        <div style="display: flex; gap: 10px; align-items: center">
+          <input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000 000" style="width: 150px; height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 18px; letter-spacing: 0.25em; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF; text-align: center">
+          <a href="#recovery" style="font-size: 12px; text-decoration: none">Utiliser un code de secours</a>
+        </div>
+      </div>
+
+      <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #5A6679; cursor: pointer">
+        <input type="checkbox" style="width: 16px; height: 16px; accent-color: #3A63C2">
+        Rester connecté·e sur cet appareil pendant 30 jours
+      </label>
+
+      <button type="submit" style="height: 46px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">Se connecter</button>
+
+      <p style="margin: 0; font-size: 12px; color: #8A94A6; text-align: center; line-height: 1.6">Après 5 tentatives échouées, le compte est verrouillé 15 minutes.<br>Les connexions sont consignées dans votre journal de sécurité.</p>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>

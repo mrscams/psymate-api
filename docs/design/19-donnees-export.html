@@ -1,0 +1,332 @@
+<!-- Maquette statique · palette Nordique · écrite à la main depuis le contrat (M6-05, G Q18) et la fiche 27. Référence : docs/design/19-donnees-export.md (à écrire) -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mon compte – données et export</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<!-- UX-F1 (11 nov. 2026) : retrait du mot de passe d'archive (tuile et bloc du dialogue), de la progression par patient, des estimations de temps et de taille, de l'e-mail de fin et de la table « Exports récents » (hors contrat) ; un seul bloc « Dernier export » ; tuile « Conservée chiffrée » (contrat : zip conservé chiffré, remis déchiffré) ; « Journal des accès » sans lien. Nom de fichier attendu conservé à côté d'« Exporter ». -->
+
+<!-- ============================================================ -->
+<!-- ÉTAT A · Page « Données et export »                            -->
+<!-- ============================================================ -->
+<div style="padding: 10px 24px 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; background: #E4E8F0; border-bottom: 1px solid #D6DCE6">État A · Page « Données et export » (Mon compte)</div>
+
+<div style="min-height: 1240px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      PsyMate
+    </div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a>
+    <span style="color: #9AA5B8">/</span>
+    <span style="font-size: 13px; color: #1E2633">Mon compte</span>
+    <div style="flex: 1 1 auto"></div>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CM</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; align-items: flex-start">
+
+    <!-- Navigation du compte -->
+    <nav aria-label="Mon compte" style="flex: 0 1 220px; display: flex; flex-direction: column; gap: 4px">
+      <div style="padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 2px">
+        <span style="font-weight: 600; font-size: 15px">Claire Martin</span>
+        <span style="font-size: 12px; color: #5A6679">Psychologue · Lyon</span>
+      </div>
+      <a href="#profil" style="display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Profil public <span style="width: 8px; height: 8px; border-radius: 50%; background: #1E6B45" aria-label="publié"></span></a>
+      <a href="#prefs" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Préférences</a>
+      <a href="#emotions" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Émotions personnalisées</a>
+      <a href="#securite" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Compte et sécurité</a>
+      <a href="#donnees" aria-current="page" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; font-weight: 600; font-size: 13px; text-decoration: none">Données et export</a>
+    </nav>
+
+    <!-- Contenu -->
+    <div style="flex: 999 1 560px; min-width: 0; max-width: 960px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Données et export</h1>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Récupérez vos dossiers dans des formats ouverts. Un export ne modifie et n'efface rien : vos données restent dans PsyMate.</p>
+        </div>
+      </div>
+
+      <!-- Exporter un dossier patient -->
+      <section aria-labelledby="h-pat" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h2 id="h-pat" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Exporter un dossier patient</h2>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Un seul patient, téléchargé immédiatement. Le même export est disponible depuis la fiche de chaque patient.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 16px; align-items: end">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="pat-search" style="font-size: 13px; font-weight: 500">Patient</label>
+            <div style="position: relative">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A94A6" stroke-width="2" stroke-linecap="round" style="position: absolute; left: 14px; top: 13px"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+              <input id="pat-search" type="text" value="Marie D." role="combobox" aria-expanded="true" aria-controls="pat-list" aria-autocomplete="list" style="width: 100%; height: 42px; border: 1px solid #3A63C2; border-radius: 10px; padding: 0 14px 0 38px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+              <ul id="pat-list" role="listbox" aria-label="Patients correspondants" style="position: absolute; left: 0; right: 0; top: 46px; margin: 0; padding: 6px; list-style: none; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; box-shadow: 0 8px 24px rgba(30, 38, 51, 0.10); z-index: 2">
+                <li role="option" aria-selected="true" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; font-weight: 600; font-size: 13px">Marie D. <span style="font-weight: 400; font-size: 12px; color: #5A6679">34 ans · 31 séances</span></li>
+                <li role="option" aria-selected="false" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border-radius: 8px; font-size: 13px">Marius D. <span style="font-size: 12px; color: #5A6679">41 ans · 6 séances</span></li>
+                <li role="option" aria-selected="false" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border-radius: 8px; font-size: 13px; color: #8A94A6">Paul R. <span style="font-size: 12px">archivé · 12 séances</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span id="l-fmt" style="font-size: 13px; font-weight: 500">Format</span>
+            <div role="group" aria-labelledby="l-fmt" style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden; height: 42px">
+              <button type="button" aria-pressed="true" style="padding: 0 16px; border: 0; background: #E3EAF8; color: #2C4C99; font-size: 13px; font-weight: 600; cursor: pointer">PDF</button>
+              <button type="button" aria-pressed="false" style="padding: 0 16px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">Markdown</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- réserve d'espace pour la liste déroulante -->
+        <div style="height: 104px" aria-hidden="true"></div>
+
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap">
+          <button type="button" style="height: 42px; padding: 0 20px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"></path></svg>
+            Exporter
+          </button>
+          <span style="font-size: 12px; color: #5A6679">Fichier <span style="font-family: 'JetBrains Mono', monospace">export-marie-d-20261026.pdf</span> · séances et entrées en ordre chronologique, texte de la version courante</span>
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; background: #EEF1F6; font-size: 13px; color: #5A6679; line-height: 1.5">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 2px"><path d="M12 3L4 7v5c0 5 3.4 8.5 8 9 4.6-.5 8-4 8-9V7z"></path></svg>
+          <span><strong style="font-weight: 600; color: #1E2633">Les entrées privées ne sont jamais exportées</strong> · ni les entrées archivées ; un lien vers une entrée non exportée est omis · <strong style="font-weight: 600; color: #1E2633">thème clair</strong> pour le PDF quel que soit votre réglage · <strong style="font-weight: 600; color: #1E2633">ordre chronologique</strong> · langue du document : celle de l'interface.</span>
+        </div>
+      </section>
+
+      <!-- Exporter tout mon compte -->
+      <section aria-labelledby="h-cpt" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h2 id="h-cpt" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Exporter tout mon compte</h2>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Une archive complète, préparée en arrière-plan. Vous pouvez quitter la page : à votre retour, l'état du dernier export est relu.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+          <div style="border: 1px solid #D6DCE6; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+            <span style="width: 28px; height: 28px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h5l2 2h9v10H4z"></path><path d="M10 13h4"></path></svg></span>
+            <span style="font-weight: 600; font-size: 13px">Archive zip</span>
+            <span style="font-size: 12px; color: #5A6679; line-height: 1.5">Par patient, le PDF et le Markdown du dossier (comme l'export individuel), plus <span style="font-family: 'JetBrains Mono', monospace">patients.md</span>, la liste de vos patients.</span>
+          </div>
+          <div style="border: 1px solid #D6DCE6; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+            <span style="width: 28px; height: 28px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></span>
+            <span style="font-weight: 600; font-size: 13px">Conservée chiffrée</span>
+            <span style="font-size: 12px; color: #5A6679; line-height: 1.5">Chiffrée sur nos serveurs jusqu'à la purge, remise en clair au téléchargement : rangez-la sur un support chiffré.</span>
+          </div>
+          <div style="border: 1px solid #D6DCE6; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+            <span style="width: 28px; height: 28px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span>
+            <span style="font-weight: 600; font-size: 13px">Lien valable 7 jours</span>
+            <span style="font-size: 12px; color: #5A6679; line-height: 1.5">Après l'échéance, le fichier est purgé et le lien répond « expiré ». Il suffit de relancer un export.</span>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap">
+          <button type="button" disabled aria-describedby="cpt-note" style="height: 42px; padding: 0 20px; border: 0; border-radius: 10px; background: #B9C2D1; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: not-allowed">Préparer l'export</button>
+          <span id="cpt-note" style="font-size: 12px; color: #5A6679; display: inline-flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #B8862E" aria-hidden="true"></span>Un seul export à la fois : un export est en préparation (ci-dessous). Le bouton se réactive dès qu'il est terminé.</span>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Les entrées privées ne font pas partie de l'archive.</p>
+      </section>
+
+      <!-- Dernier export -->
+      <section aria-labelledby="h-rec" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+          <h2 id="h-rec" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Dernier export</h2>
+          <span style="font-size: 12px; color: #8A94A6">Export de compte en cours ou le plus récent</span>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px">
+          <thead><tr style="text-align: left; color: #5A6679; font-size: 12px">
+            <th scope="col" style="padding: 6px 8px 8px 0; font-weight: 500; border-bottom: 1px solid #E4E8F0">Demandé le</th>
+            <th scope="col" style="padding: 6px 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0; width: 46%">État</th>
+            <th scope="col" style="padding: 6px 0 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0; text-align: right">Action</th>
+          </tr></thead>
+          <tbody>
+            <!-- running -->
+            <tr>
+              <td style="padding: 12px 8px 12px 0; font-family: 'JetBrains Mono', monospace; white-space: nowrap">26 oct. 2026 · 09:40</td>
+              <td style="padding: 12px 8px">
+                <div aria-live="polite" style="display: flex; flex-direction: column; gap: 6px">
+                  <span style="display: inline-flex; align-items: center; gap: 8px; color: #7A5A12; font-weight: 500"><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: #FBF1DC; color: #7A5A12; font-size: 11px; font-weight: 600">En préparation</span><span style="font-size: 12px; color: #5A6679">vérification toutes les 3 s</span></span>
+                  <div role="progressbar" aria-label="Export en préparation" style="height: 6px; border-radius: 3px; background: #E4E8F0; overflow: hidden; max-width: 320px"><div style="width: 30%; height: 100%; background: #3A63C2; border-radius: 3px"></div></div>
+                </div>
+              </td>
+              <td style="padding: 12px 0 12px 8px; text-align: right"><span style="font-size: 12px; color: #8A94A6">Actualisation automatique</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Les exports de dossier patient sont générés à la volée et téléchargés immédiatement : ils ne sont pas conservés et n'apparaissent pas ici. Une seule ligne : le dernier export de compte. Prêt : « lien valable jusqu'au … » et « Télécharger » ; échec : motif et « Relancer » ; expiré (410) : « Expiré » et « Relancer ».</p>
+      </section>
+
+      <!-- Vos données -->
+      <section aria-labelledby="h-vd" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 12px">
+        <h2 id="h-vd" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Vos données</h2>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; font-size: 13px; line-height: 1.55">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-weight: 600">Hébergement</span>
+            <span style="color: #5A6679">Données hébergées en France, chiffrées au repos. Les archives d'export le sont aussi, jusqu'à leur purge.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-weight: 600">Journal des accès</span>
+            <span style="color: #5A6679">Chaque export et chaque téléchargement sont consignés côté serveur.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-weight: 600">Rien n'est effacé</span>
+            <span style="color: #5A6679">Exporter ne supprime rien ; aucune donnée clinique n'est jamais supprimée physiquement. <a href="#comment" style="text-decoration: none">Comment ça marche</a></span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ÉTAT B · Boîte de dialogue « Préparer l'export du compte »     -->
+<!-- ============================================================ -->
+<div style="padding: 10px 24px 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; background: #E4E8F0; border-top: 1px solid #D6DCE6; border-bottom: 1px solid #D6DCE6">État B · Confirmation « Préparer l'export du compte » (dialogue modal)</div>
+
+<div style="min-height: 720px; position: relative; background: #EEF1F6; font-size: 14px; line-height: 1.45; display: flex; align-items: center; justify-content: center; padding: 48px 24px">
+  <!-- voile -->
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(30, 38, 51, 0.38)"></div>
+
+  <div role="dialog" aria-modal="true" aria-labelledby="dlg-title" aria-describedby="dlg-desc" style="position: relative; width: 560px; max-width: 100%; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; box-shadow: 0 24px 64px rgba(30, 38, 51, 0.22); display: flex; flex-direction: column">
+    <div style="padding: 24px 28px 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h2 id="dlg-title" style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em">Préparer l'export du compte</h2>
+        <p id="dlg-desc" style="margin: 0; font-size: 13px; color: #5A6679">L'archive est préparée en arrière-plan. Rien n'est modifié ni supprimé dans vos dossiers.</p>
+      </div>
+      <button type="button" aria-label="Fermer" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: #5A6679; font-size: 18px; cursor: pointer; flex: 0 0 auto">×</button>
+    </div>
+
+    <div style="padding: 20px 28px; display: flex; flex-direction: column; gap: 18px">
+      <!-- Contenu de l'archive -->
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Contenu de l'archive</span>
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px">
+          <li style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E6B45" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg><span><strong style="font-weight: 600">23 patients</strong> (dont 2 archivés) · un dossier par patient avec le <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">.pdf</span> et le <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">.md</span></span></li>
+          <li style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E6B45" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg><span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">patients.md</span> · la liste de vos patients avec dates de suivi et drapeaux</span></li>
+          <li style="display: flex; align-items: center; gap: 10px; color: #5A6679"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A94A6" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg><span>Les entrées <strong style="font-weight: 600; color: #1E2633">privées</strong> et les entrées archivées restent hors de l'archive</span></li>
+        </ul>
+        <div style="display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: #5A6679">
+          <span>Lien de téléchargement valable <strong style="font-weight: 600; color: #1E2633">7 jours</strong></span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; background: #FBF1DC; color: #7A5A12; font-size: 12px; line-height: 1.5">
+        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><path d="M12 9v4M12 17h.01M10.3 3.9 2.6 17.2A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-2.8L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+        <span>L'archive contient des données de santé. Conservez-la sur un support chiffré et ne la transmettez jamais par e-mail.</span>
+      </div>
+    </div>
+
+    <div style="padding: 16px 28px 22px; border-top: 1px solid #E4E8F0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+      <button type="button" style="height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Lancer l'export</button>
+      <button type="button" style="height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: transparent; color: #5A6679; font-size: 14px; font-weight: 500; cursor: pointer">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ÉTAT C · Point d'entrée depuis la fiche patient (16)          -->
+<!-- ============================================================ -->
+<div style="padding: 10px 24px 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; background: #E4E8F0; border-top: 1px solid #D6DCE6; border-bottom: 1px solid #D6DCE6">État C · Fiche patient (16) · zone latérale avec le menu « Exporter ce dossier »</div>
+
+<div style="min-height: 560px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>PsyMate</div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a><span style="color: #9AA5B8">/</span>
+    <a href="#patient" style="font-size: 13px; color: #5A6679; text-decoration: none">Marie D.</a><span style="color: #9AA5B8">/</span>
+    <span style="font-size: 13px">Fiche</span>
+    <div style="flex: 1 1 auto"></div>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CM</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; align-items: flex-start; max-width: 1240px; width: 100%; margin: 0 auto">
+
+    <!-- Colonne principale (extrait de la fiche 16, tronqué) -->
+    <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Modifier la fiche · Marie D.</h1>
+        <p style="margin: 0; font-size: 13px; color: #5A6679">Créée le 3 mars 2025 · 31 séances · dernière modification de la fiche le 3 oct. 2026 (drapeau posé).</p>
+      </div>
+      <section aria-labelledby="h-id-c" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-id-c" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Identité</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2">
+            <label for="display-c" style="font-size: 13px; font-weight: 500">Nom affiché <span style="color: #9A2F22">*</span></label>
+            <input id="display-c" type="text" value="Marie D." style="height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="prenom-c" style="font-size: 13px; font-weight: 500">Prénom <span style="color: #8A94A6; font-weight: 400">(facultatif)</span></label>
+            <input id="prenom-c" type="text" value="Marie" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="nom-c" style="font-size: 13px; font-weight: 500">Nom <span style="color: #8A94A6; font-weight: 400">(facultatif)</span></label>
+            <input id="nom-c" type="text" value="Dubois" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">… le reste du formulaire est identique à la fiche 16 (contexte, suivi, drapeaux, tags, archivage).</p>
+      </section>
+    </div>
+
+    <!-- Aperçu latéral -->
+    <aside aria-label="Aperçu" style="flex: 1 1 300px; max-width: 340px; display: flex; flex-direction: column; gap: 16px">
+      <section style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Aperçu de l'en-tête</h2>
+        <div style="border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: #FAFBFD">
+          <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap"><span style="font-size: 18px; font-weight: 600">Marie D.</span><span style="font-size: 12px; color: #5A6679">34 ans · suivie depuis mars 2025</span></div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap">
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 999px; background: #FBF1DC; color: #7A5A12; font-size: 11px; font-weight: 500">à surveiller</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 999px; background: #E3EAF8; color: #2C4C99; font-size: 11px; font-weight: 500">suivi conjoint</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Export du dossier : point d'entrée -->
+      <section aria-labelledby="h-exp-c" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+        <h2 id="h-exp-c" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Export du dossier</h2>
+        <div style="position: relative">
+          <button type="button" aria-haspopup="menu" aria-expanded="true" aria-controls="menu-exp" style="width: 100%; height: 42px; padding: 0 14px; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; color: #1E2633; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; justify-content: space-between; gap: 8px">
+            <span style="display: inline-flex; align-items: center; gap: 8px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"></path></svg>Exporter ce dossier</span>
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+          </button>
+          <div id="menu-exp" role="menu" aria-label="Format d'export" style="position: absolute; left: 0; right: 0; top: 46px; padding: 6px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; box-shadow: 0 8px 24px rgba(30, 38, 51, 0.10); display: flex; flex-direction: column; gap: 2px; z-index: 2">
+            <a href="#export-pdf" role="menuitem" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none; background: #E3EAF8"><span style="display: inline-flex; align-items: center; gap: 8px"><span style="width: 18px; height: 18px; border-radius: 4px; background: #3A63C2; color: #FFFFFF; font-size: 9px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">PDF</span>PDF</span><span style="font-size: 11px; color: #5A6679">thème clair · à imprimer</span></a>
+            <a href="#export-md" role="menuitem" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none"><span style="display: inline-flex; align-items: center; gap: 8px"><span style="width: 18px; height: 18px; border-radius: 4px; border: 1px solid #B9C2D1; color: #5A6679; font-size: 9px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace" aria-hidden="true">MD</span>Markdown</span><span style="font-size: 11px; color: #5A6679">texte brut · réutilisable</span></a>
+          </div>
+        </div>
+        <!-- réserve d'espace pour le menu -->
+        <div style="height: 78px" aria-hidden="true"></div>
+        <p style="margin: 0; font-size: 12px; color: #5A6679; line-height: 1.5; display: flex; gap: 8px; align-items: flex-start">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 2px"><path d="M12 3L4 7v5c0 5 3.4 8.5 8 9 4.6-.5 8-4 8-9V7z"></path></svg>
+          <span><strong style="font-weight: 600; color: #1E2633">Entrées privées exclues</strong> · 31 séances, 118 entrées exportables, 4 privées non exportées. Ordre chronologique, version courante du texte.</span>
+        </p>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Téléchargement immédiat, rien n'est conservé côté serveur. Pour tous vos patients d'un coup : <a href="#donnees" style="text-decoration: none">Mon compte › Données et export</a>.</p>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #5A6679; line-height: 1.55">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Confidentialité</h2>
+        <p style="margin: 0">Les coordonnées du patient ne servent qu'aux rappels (plus tard) et ne sont jamais exportées dans l'annuaire.</p>
+        <p style="margin: 0">Historique des modifications de la fiche : <a href="#" style="text-decoration: none">3 versions</a>.</p>
+      </section>
+    </aside>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,6 +1,8 @@
 # Écran 5 · Éditeur d'entrée (panneau)
 
 > Spécification pour agents. Maquette : `05-editeur-entree.html` / `.png`. Palette : Nordique. Document B, écran 5 et B5 ; Document A, module `clinical` (M1-05) ; tâches web M1-08, M2-05, M6-02.
+>
+> Mis à jour le 11 novembre 2026 (UX-F1, audit UX du 9 novembre) : « Restaurer » et « valence » retirés de la maquette (écarts déjà notés ci-dessous) ; bloc Séance sans modalité ni durée. Maquette HTML corrigée.
 
 ## Objectif
 Saisir une entrée en séance en moins de 20 secondes au clavier, la compléter après, la corriger en gardant l'historique. Un seul panneau pour les six types (note, événement, situation, ressenti, séance, médicament). La maquette montre deux états : **A** création d'un ressenti (Anxiété 8/10, « n'a pas dormi », lié à l'événement « Entretien annuel ») par-dessus la vue d'ensemble, barre de capture remplie dans l'en-tête ; **B** correction d'un événement existant (2 versions, hors fenêtre de grâce) avec le panneau « Historique des versions » accolé à gauche.
@@ -22,9 +24,9 @@ Saisir une entrée en séance en moins de 20 secondes au clavier, la compléter 
 3. **Type** : six puces (forme + couleur), une seule pressée ; verrouillées en correction.
 4. **Champ principal** selon le type : ressenti = combobox Émotion (pastille de famille, liste filtrée par préfixe, dernière ligne « Créer l'émotion personnalisée « … » » + famille) + curseur d'intensité 1–10 avec valeur en JetBrains Mono + texte ; note/événement/situation = titre et/ou texte ; médicament = molécule + dose ; séance = durée + modalité.
 5. **Quand** : bouton « Maintenant », précision (exact · jour · mois · année · période · phase de vie), date mono ; situation : début et « en cours / fin ».
-6. **Séance** : séance courante présélectionnée, modifiable (liste des séances du patient).
+6. **Séance** : séance courante présélectionnée, modifiable (liste des séances du patient, lue par `GET /api/patients/{id}/timeline?types=session`) ; chaque option = « Séance du 24 oct. », « (en cours) » pour la séance ouverte, sans lieu, modalité ni durée (absents de `TimelineItemDto`).
 7. **Lié à…** : recherche + cinq entrées récentes ou actives, case à cocher et type de lien proposé (pointillé `#B9C2D1` tant qu'il n'est pas confirmé, plein `--primary` une fois coché). En correction : liens existants en lecture, bouton « Modifier » vers l'éditeur de lien (écran 6).
-8. **Plus** (`<details>` replié) : visibilité clinique/privée, tags, valence. En correction : champ « Motif de la correction » (`reason`).
+8. **Plus** (`<details>` replié) : visibilité clinique/privée, tags. En correction : champ « Motif de la correction » (`reason`).
 9. **Pied** : « Enregistrer » (`⏎`, « Enregistrer la version 3 » en correction), « Brouillon » (`Ctrl+S`), « Annuler » (`Échap`), ligne « Version 2 · Historique (2) » si plus d'une version.
 10. **Historique des versions** (`<aside>` 420 px, accolé à gauche du panneau, état B) : liste `v2 · 24 oct. 15:12 · Claire M. · courante · motif`, `v1 · 24 oct. 14:03`, puis différences champ par champ (titre, texte, date) ancien barré / nouveau surligné `#E3EAF8`, ligne « Inchangés : … ».
 
@@ -55,10 +57,11 @@ Saisir une entrée en séance en moins de 20 secondes au clavier, la compléter 
 - [ ] Aucune requête ne contient `authorType` ni `submissionId` (test unitaire du store).
 
 ## Écarts avec la maquette
-- « Restaurer une version » n'existe pas dans le contrat : `POST /api/entries/{id}/restore` ne restaure qu'une entrée **archivée** (`archivedAt` null), pas une version. Le lien « Restaurer » de la maquette est **hors V1** ; l'historique est en lecture seule.
+- « Restaurer une version » n'existe pas dans le contrat : `POST /api/entries/{id}/restore` ne restaure qu'une entrée **archivée** (`archivedAt` null), pas une version. L'historique est en lecture seule. **Maquette corrigée (UX-F1)** : lien « Restaurer » et phrase d'explication retirés.
 - Les types de liens proposés par défaut dans le rail suivent la matrice E5.3 (`docs/E-modele-donnees.md`, G Q12) et non une règle inventée : `triggers` E/S/X → F/S/E (« déclenché par »), `caused_by` F/S/E → E/S, `worsens` S/E/M → F/S (« aggravé par »), `relieves` E/S/M/X → F/S, `co_occurs` symétrique N/E/S/F/M, `follows` N/E/S/F → N/E/S/F (« fait suite à » ; la maquette écrit « suit », à corriger), `part_of` E/F/N → S/X, `treats` M → S/F (« traité par »). Le premier type autorisé pour le couple (type cible, type de l'entrée) est proposé, les autres offerts dans le menu ; source de vérité : `GET /api/vocabulary/link-types`.
 - La barre de commande et son aperçu interprété (texte « anx 8 n'a pas dormi > entretien », ligne « Ressenti · Anxiété 8/10 · … »), montrés dans l'en-tête de l'état A, sont la tâche **M6-02** ; cette fiche ne fait que réserver leur place dans l'en-tête (M1-07). Le rail « Lié à… » est M2-05.
-- Les textes des versions, le motif de correction et la « valence » du bloc Plus sont des exemples de seed, pas des champs du contrat (la valence n'existe pas dans `EntryFeelingRequest` : à ignorer).
+- Les textes des versions, le motif de correction et la « valence » du bloc Plus sont des exemples de seed, pas des champs du contrat (la valence n'existe pas dans `EntryFeelingRequest`). **Maquette corrigée (UX-F1)** : « valence » retirée du bloc Plus.
+- **Bloc Séance sans lieu (UX-F1)** : « · cabinet », « · 55 min » et « · clôturée » retirés des options de séance de la maquette (états A et B) : la liste vient de la timeline, qui ne porte ni modalité ni durée.
 
 ## Hors périmètre V1
 Restauration d'une version, `authorType` autre que `practitioner` et entrées du compagnon patient (A11), suggestions de liens par l'IA (provenance `ai_suggested`, V2), modification du type d'une entrée, pièces jointes, saisie tactile optimisée (formulaire guidé B5 alternative B derrière `Ctrl+⏎`, lot 6).

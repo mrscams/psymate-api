@@ -3,6 +3,8 @@
 > Spécification pour agents. Maquette : `14-preferences-praticien.html` / `.png`. Palette : Nordique. Document A, module `identity` (`practitioner.preferences JSONB`, `/api/me/preferences`, M1-12) ; `vocabulary` pour les émotions personnalisées ; M6-04 pour le thème.
 >
 > Mis à jour le 29 octobre 2026 (G) : `sessions.defaultDurationMin` vaut **60** par défaut ; `locale` `fr` par défaut, l'anglais pouvant être incomplet (Q23) ; promotion d'une émotion custom au vocabulaire global = V2 (Q8).
+>
+> Mis à jour le 11 novembre 2026 (UX-F1, audit UX du 9 novembre) : maquette alignée sur le délai de correction de 1 h 15 (G Q31) ; résumé « Compte et sécurité » limité à ce que le contrat fournit (trois tuiles, connexion précédente sans ville ni lien de journal). Voir « Écarts avec la maquette ».
 
 ## Objectif
 Un seul endroit pour tout ce qui est mémorisé **par compte** et retrouvé sur tous les appareils : affichage, vocabulaire, émotions personnalisées, sécurité. Chaque réglage s'enregistre immédiatement.
@@ -30,7 +32,7 @@ Un seul endroit pour tout ce qui est mémorisé **par compte** et retrouvé sur 
 2. **Affichage** : vue d'ensemble par défaut (Simple / Complète), fenêtre d'analyse (30 j / 90 j / 1 an), timeline (Par séance / Par mois / Chronologique), thème (Clair / Doux / Sombre / Système, avec vignette), langue (Français ; Anglais avec la mention « traduction partielle » tant que les fichiers EN sont en retard).
 3. **Vocabulaire et saisie** : désignation (Patient·e / Client·e), type médicament visible (interrupteur), visibilité par défaut (Clinique / Privée), durée de séance par défaut (60 min), délai de correction (lecture seule).
 4. **Émotions personnalisées · n** : tableau (émotion, famille avec pastille couleur, nombre d'utilisations, statut *custom*), lien « Gérer la liste complète » (page dédiée, écran 17 : ajouter, renommer, fusionner ; la promotion au vocabulaire global est V2).
-5. **Compte et sécurité** (résumé) : e-mail de connexion, double authentification (état + codes de secours), sessions actives (« Déconnecter les autres »), dernière connexion + lien journal de sécurité ; lien « Tout voir ».
+5. **Compte et sécurité** (résumé) : trois tuiles : **e-mail de connexion** (`GET /api/auth/me`) avec *Modifier* ; **double authentification** (état lu dans `twoFactorEnabled` de `GET /api/auth/me`, lien *Codes de secours* sans compteur) ; **sessions actives** (« n appareils », nombre de `sessions[]` de `GET /api/me/security`, action *Déconnecter les autres* = `POST /api/auth/sessions/revoke-others`). Sous les tuiles : « Connexion précédente : date · appareil » (`lastLogin` de `GET /api/me/security`, sans ville) ; lien « Tout voir » vers l'écran 18. Pas de lien « Journal de sécurité » (hors contrat, fiche 18).
 
 ## Interactions
 - Contrôles segmentés `role="group"` + `aria-pressed` ; thème en `<input type="radio">` réels (vignettes = `<label>`).
@@ -56,6 +58,10 @@ Un seul endroit pour tout ce qui est mémorisé **par compte** et retrouvé sur 
 - [ ] Praticien `coach` nouvellement inscrit → `subjectLabel = client`, `medicationVisible = false` sans action ; tout compte neuf lit `sessions.defaultDurationMin = 60` et `locale = fr`.
 - [ ] Désactiver le type médicament puis `/med sertraline` dans la barre → message « type masqué dans vos préférences » + lien.
 - [ ] Tableau des émotions : compteur d'utilisations exact vs `entry_feeling` (test d'intégration).
+
+## Écarts avec la maquette
+- **Délai de correction sans version** : 1 h 15 (G Q31, `versioning.grace-period = 75m`), pas 5 min. Maquette corrigée (UX-F1).
+- **Résumé sécurité** : `lastLogin.city` vaut toujours `null` en V1 et le journal de sécurité praticien est hors contrat (fiche 18) : la ligne devient « Connexion précédente : date · appareil », sans ville ni lien « Journal de sécurité ». Maquette corrigée (UX-F1). Les trois tuiles sont conservées : chacune s'appuie sur une route du contrat (`GET /api/auth/me`, `GET /api/me/security`, `POST /api/auth/sessions/revoke-others`).
 
 ## Hors périmètre V1
 Préférences par patient, thèmes personnalisés, délégation de compte (secrétariat), préférences d'agenda (hors V1, G Q25).

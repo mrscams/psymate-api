@@ -1,6 +1,8 @@
 # Écran 16 · Fiche patient (création et modification)
 
 > Spécification pour agents. Maquette : `16-fiche-patient.html` / `.png` (état « modification » ; la création est le même formulaire vide). Palette : Nordique. Document A, module `patients` (`POST /api/patients`, `GET/PATCH /api/patients/{id}`, `POST /api/patients/{id}/archive`).
+>
+> Mis à jour le 11 novembre 2026 (UX-F1, audit UX du 9 novembre) : carte « risque » en ambre et non en rouge (règle « jamais rouge sur un patient ») ; maquette HTML corrigée.
 
 ## Objectif
 Un seul formulaire pour créer un patient en trente secondes (seul le **nom affiché** est obligatoire) et pour compléter la fiche au fil du suivi. Rien de ce qui est saisi ici n'est une entrée clinique : la fiche décrit la personne et le cadre du suivi, la timeline décrit ce qui se passe.
@@ -35,7 +37,7 @@ Un seul formulaire pour créer un patient en trente secondes (seul le **nom affi
 - Création : Ctrl/Cmd+Entrée enregistre depuis n'importe quel champ.
 
 ## Tokens
-- Cartes de drapeau cochées : « à surveiller » `#FBF1DC` / `#7A5A12`, « risque » `#FBE9E7` / `#9A2F22`, « suivi conjoint » `#E3EAF8` / `#2C4C99`.
+- Cartes de drapeau cochées : « à surveiller » et « risque » `#FBF1DC` / `#7A5A12`, bordure et case `#B8862E` (ambre, distingués par leur libellé et leur aide, jamais par le rouge : fiche 00, `Etude-couleurs-Nordique.md` « Flags praticiens ») ; « suivi conjoint » `#E3EAF8` / `#2C4C99`.
 - Champs monospace (`JetBrains Mono`) pour les dates et le téléphone ; placeholders `[TARIF]` en `#8A94A6`.
 - Zone d'archivage : bordure `1.5px dashed #B9C2D1`, bouton `#9A2F22` sur fond blanc.
 
@@ -51,6 +53,10 @@ Un seul formulaire pour créer un patient en trente secondes (seul le **nom affi
 - [ ] Coché « à surveiller » sans raison → erreur ; avec raison → en-tête du patient et liste affichent le drapeau avec sa date.
 - [ ] Modifier le rythme → `patient_version` n+1 ; l'historique liste la différence champ par champ.
 - [ ] Archiver puis restaurer → aucune entrée ni lien perdu ; l'agenda retrouve les rendez-vous futurs.
+
+## Écarts avec la maquette
+- **Carte « risque » (UX-F1)** : la maquette et l'ancienne version de cette fiche la teintaient en rouge (`#9A2F22` / `#FBE9E7`) ; un drapeau est ambre, jamais rouge sur un patient (fiche 00, étude des couleurs). **Maquette corrigée** : case de la carte « Risque » en `#B8862E`. Le rouge reste réservé à l'astérisque d'obligation et au bouton « Archiver… » (action destructive), qui ne qualifient pas le patient.
+- **Champs date et mois (UX-F1)** : date de naissance, date du drapeau et dates du suivi passent par `pm-date-field` / `pm-month-field` (fiche 00 §8) : saisie `jj/mm/aaaa` ou `mm/aaaa` en JetBrains Mono, comme la maquette, plus un **bouton calendrier** à droite du champ, non dessiné. Maquette non modifiée.
 
 ## Hors périmètre V1
 Photo du patient, documents joints, import depuis un autre logiciel, partage avec un confrère.

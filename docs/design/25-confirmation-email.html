@@ -1,0 +1,106 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Confirmez votre e-mail – PsyMate</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+<!-- UX-F1 (11 nov. 2026) : page sans session (un compte email_pending ne peut pas se connecter : 403 EMAIL_NOT_CONFIRMED) → bandeau public de la fiche 00 sans « Connecté·e en tant que » ; état « en attente » montré avec l'adresse connue (juste après l'inscription ou un login refusé) : un seul geste « Renvoyer le lien » et « Corriger l'e-mail » ; sans adresse connue, le champ « Adresse du compte » précède le même bouton (voir la fiche) ; état « expiré » sans date d'émission du lien (le contrat ne lit pas le jeton) ; nom PsyMate. -->
+
+
+<div style="min-height: 760px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.5">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="max-width: 1120px; margin: 0 auto; padding: 0 24px; height: 64px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap">
+      <a href="Main.dc.html" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #1E2633; text-decoration: none">
+        <span style="width: 32px; height: 32px; border-radius: 9px; background: #3A63C2; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+        </span>
+        PsyMate
+      </a>
+      <nav aria-label="Navigation publique" style="margin-left: auto; display: flex; align-items: center; gap: 20px; font-size: 13px; flex-wrap: wrap">
+        <a href="#annuaire" style="text-decoration: none; color: #5A6679">Annuaire</a>
+        <a href="#comment" style="text-decoration: none; color: #5A6679">Comment ça marche</a>
+        <a href="#login" style="height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid #B9C2D1; color: #1E2633; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; background: #FFFFFF">Espace praticien</a>
+      </nav>
+    </div>
+  </header>
+
+  <main style="flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; justify-content: center; padding: 56px 24px 72px; max-width: 1120px; width: 100%; margin: 0 auto">
+
+    <!-- État 1 : e-mail envoyé, en attente -->
+    <section style="flex: 1 1 440px; max-width: 520px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; padding: 36px; display: flex; flex-direction: column; gap: 20px" aria-labelledby="h-wait">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <span style="width: 48px; height: 48px; border-radius: 12px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>
+        </span>
+        <h1 id="h-wait" style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25">Un dernier clic : confirmez votre e-mail</h1>
+        <p style="margin: 0; color: #5A6679; line-height: 1.65">Nous venons d'envoyer un lien à <strong style="font-weight: 600; color: #1E2633; font-family: 'JetBrains Mono', monospace; font-size: 13px">claire.moreau@exemple.fr</strong>. Il reste valable <strong style="font-weight: 600; color: #1E2633">24 heures</strong>. Dès que vous l'aurez ouvert, l'outil de suivi sera disponible.</p>
+      </div>
+
+      <ol style="margin: 0; padding: 0 0 0 20px; color: #5A6679; line-height: 1.7; font-size: 13px">
+        <li>Ouvrez votre boîte mail, dossier « Courrier indésirable » compris.</li>
+        <li>Cliquez sur « Confirmer mon adresse ».</li>
+        <li>Vous arriverez sur votre liste de patients, vide pour l'instant.</li>
+      </ol>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+        <button type="button" style="height: 44px; padding: 0 18px; border-radius: 10px; background: #3A63C2; color: #FFFFFF; border: 0; font-size: 14px; font-weight: 600; cursor: pointer">Renvoyer le lien</button>
+        <span style="font-size: 12px; color: #8A94A6">Nouveau renvoi possible dans <span style="font-family: 'JetBrains Mono', monospace; color: #5A6679">0:42</span></span>
+      </div>
+
+      <div style="border-top: 1px solid #D6DCE6; padding-top: 16px; display: flex; flex-direction: column; gap: 8px">
+        <p style="margin: 0; font-size: 13px; color: #5A6679">Mauvaise adresse ? <a href="#change-email" style="text-decoration: none; font-weight: 500">Corriger l'e-mail</a> — le lien précédent sera invalidé.</p>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6; line-height: 1.6">La vérification des diplômes est indépendante : vous pourrez déposer vos justificatifs juste après, et commencer à utiliser l'outil sans attendre notre réponse.</p>
+      </div>
+    </section>
+
+    <!-- État 2 : lien expiré ou déjà utilisé -->
+    <section style="flex: 1 1 440px; max-width: 520px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; padding: 36px; display: flex; flex-direction: column; gap: 20px" aria-labelledby="h-expired">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <span style="width: 48px; height: 48px; border-radius: 12px; background: #FBF1DC; color: #7A5A12; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+        </span>
+        <h1 id="h-expired" style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25">Ce lien de confirmation a expiré</h1>
+        <p style="margin: 0; color: #5A6679; line-height: 1.65">Les liens sont valables 24 heures et ne servent qu'une fois : celui-ci a expiré, a déjà servi ou a été remplacé par un envoi plus récent. Rien n'est perdu : votre compte existe, il attend simplement sa confirmation.</p>
+      </div>
+
+      <div style="background: #EEF1F6; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+        <label for="email-resend" style="font-size: 13px; font-weight: 500">Adresse du compte</label>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+          <input id="email-resend" type="email" autocomplete="username" value="claire.moreau@exemple.fr" style="flex: 1 1 220px; min-width: 0; height: 44px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 15px; color: #1E2633; background: #FFFFFF">
+          <button type="button" style="height: 44px; padding: 0 18px; border-radius: 10px; background: #3A63C2; color: #FFFFFF; border: 0; font-size: 14px; font-weight: 600; cursor: pointer">Recevoir un nouveau lien</button>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Si cette adresse correspond à un compte non confirmé, un nouveau lien partira dans la minute. Nous ne confirmons pas l'existence d'un compte.</p>
+      </div>
+
+      <p style="margin: 0; font-size: 13px; color: #5A6679">Déjà confirmé ? <a href="#login" style="text-decoration: none; font-weight: 500">Se connecter</a></p>
+    </section>
+  </main>
+
+  <footer style="background: #FFFFFF; border-top: 1px solid #D6DCE6">
+    <div style="max-width: 1120px; margin: 0 auto; padding: 20px 24px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; font-size: 12px; color: #8A94A6">
+      <span>© PsyMate · Données hébergées en France</span>
+      <nav aria-label="Pied de page" style="margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap">
+        <a href="#confidentialite" style="text-decoration: none">Confidentialité</a>
+        <a href="#mentions" style="text-decoration: none">Mentions légales</a>
+        <a href="#contact" style="text-decoration: none">Contact</a>
+      </nav>
+    </div>
+  </footer>
+</div>
+
+</body>
+</html>

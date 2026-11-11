@@ -1,0 +1,206 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Administration – validation des praticiens</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select,textarea{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<!-- UX-F1 (11 nov. 2026) : onglet « Signalements » retiré (V1.1, G Q26) et onglets dans l'ordre de la fiche 00 (Validation · Praticiens · Journal · Vocabulaire) ; nom affiché PsyMate ; liste de contrôle et décision dans une colonne droite collante qui commence en haut du dossier, à côté de l'en-tête. -->
+
+
+<div style="min-height: 1080px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <!-- Barre d'application admin (distincte : bande sombre) -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #1E2633; color: #FFFFFF">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#9FB4E8" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      PsyMate <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #1E2633; background: #FBF1DC; border-radius: 4px; padding: 2px 6px; margin-left: 4px">Admin</span>
+    </div>
+    <nav style="display: flex; align-items: center; gap: 4px; margin-left: 12px" aria-label="Administration">
+      <a href="#validation" aria-current="page" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; background: rgba(255,255,255,0.12); color: #FFFFFF; font-size: 13px; font-weight: 600; text-decoration: none">Validation <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-left: 8px; background: #FBF1DC; color: #7A5A12; border-radius: 999px; padding: 1px 7px">6</span></a>
+      <a href="#praticiens" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Praticiens</a>
+      <a href="#journal" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Journal</a>
+      <a href="#vocabulaire" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Vocabulaire</a>
+    </nav>
+    <div style="flex: 1 1 auto"></div>
+    <span style="font-size: 12px; color: #C9D2E3">Aucune donnée patient n'est accessible depuis l'administration.</span>
+    <div aria-label="Compte administrateur de Hayes" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #FBF1DC; color: #7A5A12; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">HA</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 20px; padding: 20px 24px 32px; align-items: flex-start">
+
+    <!-- File d'attente -->
+    <section aria-labelledby="h-file" style="flex: 1 1 340px; max-width: 420px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px">
+        <h1 id="h-file" style="margin: 0; font-size: 18px; font-weight: 600">À vérifier · 6</h1>
+        <select aria-label="Filtrer la file" style="height: 30px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; padding: 0 8px; font-size: 12px; color: #1E2633"><option>En attente (6)</option><option>Complément demandé (2)</option><option>Traités cette semaine (14)</option></select>
+      </div>
+      <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px" aria-label="Dossiers en attente">
+        <li style="background: #FFFFFF; border: 1px solid #3A63C2; box-shadow: 0 0 0 3px #E3EAF8; border-radius: 10px; padding: 12px 14px; display: flex; gap: 12px; align-items: center" aria-current="true">
+          <span style="width: 36px; height: 36px; border-radius: 10px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; flex-shrink: 0" aria-hidden="true">CM</span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-weight: 600">Claire Moreau</span>
+            <span style="font-size: 12px; color: #5A6679">Psychologue · Lyon · 2 documents</span>
+          </div>
+          <span style="font-size: 12px; color: #5A6679; font-family: 'JetBrains Mono', monospace; white-space: nowrap">il y a 1 j</span>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 14px; display: flex; gap: 12px; align-items: center">
+          <span style="width: 36px; height: 36px; border-radius: 10px; background: #E1E9F2; color: #2F4F73; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; flex-shrink: 0" aria-hidden="true">RL</span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-weight: 600">Dr Rémi Lenoir</span>
+            <span style="font-size: 12px; color: #5A6679">Psychiatre · Villeurbanne · 3 documents</span>
+          </div>
+          <span style="font-size: 12px; color: #5A6679; font-family: 'JetBrains Mono', monospace; white-space: nowrap">il y a 1 j</span>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 14px; display: flex; gap: 12px; align-items: center">
+          <span style="width: 36px; height: 36px; border-radius: 10px; background: #E2F1EE; color: #3E8E7E; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; flex-shrink: 0" aria-hidden="true">SB</span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-weight: 600">Samir Benali</span>
+            <span style="font-size: 12px; color: #5A6679">Coach · Paris · 1 document <span style="color: #7A5A12">· pièce d'identité manquante</span></span>
+          </div>
+          <span style="font-size: 12px; color: #5A6679; font-family: 'JetBrains Mono', monospace; white-space: nowrap">il y a 2 j</span>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 14px; display: flex; gap: 12px; align-items: center">
+          <span style="width: 36px; height: 36px; border-radius: 10px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; flex-shrink: 0" aria-hidden="true">AP</span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-weight: 600">Anaïs Petit</span>
+            <span style="font-size: 12px; color: #5A6679">Psychologue · Nantes · 2 documents</span>
+          </div>
+          <span style="font-size: 12px; color: #9A2F22; font-family: 'JetBrains Mono', monospace; white-space: nowrap">il y a 3 j</span>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 14px; display: flex; gap: 12px; align-items: center">
+          <span style="width: 36px; height: 36px; border-radius: 10px; background: #E2F1EE; color: #3E8E7E; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; flex-shrink: 0" aria-hidden="true">JV</span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-weight: 600">Julien Vasseur</span>
+            <span style="font-size: 12px; color: #5A6679">Coach mental · Lille · 2 documents</span>
+          </div>
+          <span style="font-size: 12px; color: #9A2F22; font-family: 'JetBrains Mono', monospace; white-space: nowrap">il y a 3 j</span>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 14px; display: flex; gap: 12px; align-items: center">
+          <span style="width: 36px; height: 36px; border-radius: 10px; background: #E1E9F2; color: #2F4F73; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; flex-shrink: 0" aria-hidden="true">MK</span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-weight: 600">Dr Maya Kaddour</span>
+            <span style="font-size: 12px; color: #5A6679">Psychiatre · Marseille · 2 documents</span>
+          </div>
+          <span style="font-size: 12px; color: #5A6679; font-family: 'JetBrains Mono', monospace; white-space: nowrap">il y a 4 h</span>
+        </li>
+      </ol>
+      <p style="margin: 0; font-size: 12px; color: #8A94A6; padding: 0 4px">En rouge : au-delà du délai de 2 jours ouvrés.</p>
+    </section>
+
+    <!-- Dossier ouvert -->
+    <section aria-labelledby="h-dossier" style="flex: 999 1 560px; min-width: 0; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+
+      <!-- Colonne gauche : en-tête, justificatifs, visionneuse -->
+      <div style="flex: 999 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+
+      <!-- En-tête du dossier -->
+      <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 22px; display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap">
+        <span style="width: 56px; height: 56px; border-radius: 12px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 20px; flex-shrink: 0" aria-hidden="true">CM</span>
+        <div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+          <h2 id="h-dossier" style="margin: 0; font-size: 20px; font-weight: 600">Claire Moreau</h2>
+          <div style="display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: #5A6679">
+            <span><span style="font-weight: 600; color: #2C4C99; background: #E3EAF8; border-radius: 6px; padding: 2px 8px; font-size: 12px">Psychologue</span></span>
+            <span>Compte créé le 24 oct. 2026</span>
+            <span>E-mail confirmé</span>
+            <span>Dossier soumis il y a 1 j</span>
+          </div>
+          <dl style="margin: 6px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 16px; font-size: 13px">
+            <div><dt style="color: #5A6679; font-size: 12px">E-mail</dt><dd style="margin: 0">claire.moreau@exemple.fr</dd></div>
+            <div><dt style="color: #5A6679; font-size: 12px">Téléphone</dt><dd style="margin: 0; font-family: 'JetBrains Mono', monospace">06 12 34 56 78</dd></div>
+            <div><dt style="color: #5A6679; font-size: 12px">N° ADELI déclaré</dt><dd style="margin: 0; font-family: 'JetBrains Mono', monospace">69 93 1234 5</dd></div>
+            <div style="grid-column: span 3"><dt style="color: #5A6679; font-size: 12px">Cabinet</dt><dd style="margin: 0">12 rue Vendôme, 69006 Lyon</dd></div>
+          </dl>
+        </div>
+      </div>
+
+        <!-- Documents + visionneuse -->
+        <div style="min-width: 0; display: flex; flex-direction: column; gap: 12px">
+          <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+            <h3 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Justificatifs · 2</h3>
+            <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px">
+              <li style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: #E3EAF8; border: 1px solid #3A63C2" aria-current="true">
+                <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px"><span style="font-weight: 600; font-size: 13px">Master 2 Psychologie clinique · Lyon 2 · 2014</span><span style="font-size: 12px; color: #5A6679">Diplôme · PDF · 1,8 Mo</span></span>
+                <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; color: #1E6B45; font-weight: 500"><input type="checkbox" checked style="width: 14px; height: 14px; accent-color: #1E6B45"> Conforme</label>
+              </li>
+              <li style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; border: 1px solid #D6DCE6">
+                <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px"><span style="font-weight: 600; font-size: 13px">Attestation ADELI · ARS ARA · 2015</span><span style="font-size: 12px; color: #5A6679">Attestation · JPG · 0,9 Mo</span></span>
+                <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; color: #5A6679"><input type="checkbox" style="width: 14px; height: 14px; accent-color: #1E6B45"> Conforme</label>
+              </li>
+            </ul>
+          </div>
+          <!-- Visionneuse -->
+          <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #D6DCE6; font-size: 12px; color: #5A6679">
+              <span style="font-family: 'JetBrains Mono', monospace">master-psycho-2014.pdf</span><span>· page 1 / 1</span>
+              <div style="flex: 1 1 auto"></div>
+              <button type="button" aria-label="Zoom arrière" style="width: 28px; height: 28px; border: 1px solid #D6DCE6; border-radius: 6px; background: #FFFFFF; cursor: pointer">−</button>
+              <button type="button" aria-label="Zoom avant" style="width: 28px; height: 28px; border: 1px solid #D6DCE6; border-radius: 6px; background: #FFFFFF; cursor: pointer">+</button>
+              <button type="button" aria-label="Pivoter" style="width: 28px; height: 28px; border: 1px solid #D6DCE6; border-radius: 6px; background: #FFFFFF; cursor: pointer">↻</button>
+              <a href="#" style="font-size: 12px; text-decoration: none">Ouvrir</a>
+            </div>
+            <div style="height: 300px; background: #E4E8F0; display: flex; align-items: center; justify-content: center; padding: 20px" role="img" aria-label="Aperçu du document déposé : diplôme scanné">
+              <div style="width: 220px; height: 260px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 4px; padding: 22px 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 14px rgba(30,38,51,0.12)" aria-hidden="true">
+                <span style="height: 8px; width: 60%; background: #D6DCE6; border-radius: 4px; align-self: center"></span>
+                <span style="height: 6px; width: 40%; background: #E4E8F0; border-radius: 3px; align-self: center"></span>
+                <span style="height: 1px; background: #E4E8F0; margin: 8px 0"></span>
+                <span style="height: 6px; width: 90%; background: #E4E8F0; border-radius: 3px"></span>
+                <span style="height: 6px; width: 80%; background: #E4E8F0; border-radius: 3px"></span>
+                <span style="height: 6px; width: 85%; background: #E4E8F0; border-radius: 3px"></span>
+                <span style="height: 6px; width: 50%; background: #E4E8F0; border-radius: 3px"></span>
+                <span style="flex: 1 1 auto"></span>
+                <span style="height: 24px; width: 24px; border-radius: 50%; border: 2px solid #D6DCE6; align-self: flex-end"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+        <!-- Vérification et décision : colonne droite collante, alignée sur le haut du dossier -->
+        <div style="flex: 1 1 300px; max-width: 380px; position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px">
+          <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
+            <h3 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Liste de contrôle</h3>
+            <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 13px">
+              <li><label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer"><input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #1E6B45; margin-top: 1px"> <span>Le nom sur les documents correspond au compte</span></label></li>
+              <li><label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer"><input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #1E6B45; margin-top: 1px"> <span>Le diplôme correspond à la profession déclarée</span></label></li>
+              <li><label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #1E6B45; margin-top: 1px"> <span>N° ADELI retrouvé dans le registre public <a href="#" style="text-decoration: none">Vérifier sur le site de l'ARS ↗</a></span></label></li>
+              <li><label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #1E6B45; margin-top: 1px"> <span>Documents lisibles, non tronqués, non altérés</span></label></li>
+            </ul>
+          </div>
+
+          <form onsubmit="return false" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px" aria-labelledby="h-decision">
+            <h3 id="h-decision" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Décision</h3>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="note" style="font-size: 13px; font-weight: 500">Note interne <span style="color: #8A94A6; font-weight: 400">(jamais envoyée au praticien)</span></label>
+              <textarea id="note" rows="2" placeholder="ex. ADELI vérifié le 25/10, numéro actif" style="border: 1px solid #B9C2D1; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5; color: #1E2633; resize: vertical"></textarea>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="msg" style="font-size: 13px; font-weight: 500">Message au praticien <span style="color: #8A94A6; font-weight: 400">(obligatoire si complément ou refus)</span></label>
+              <textarea id="msg" rows="3" placeholder="ex. Merci d'ajouter une pièce d'identité pour confirmer la concordance du nom." style="border: 1px solid #B9C2D1; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5; color: #1E2633; resize: vertical"></textarea>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <button type="submit" style="height: 42px; border: 0; border-radius: 10px; background: #1E6B45; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Approuver le praticien</button>
+              <button type="button" style="height: 40px; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; color: #7A5A12; font-size: 13px; font-weight: 600; cursor: pointer">Demander un complément</button>
+              <button type="button" style="height: 40px; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; color: #9A2F22; font-size: 13px; font-weight: 600; cursor: pointer">Refuser et suspendre le compte</button>
+            </div>
+            <p style="margin: 0; font-size: 12px; color: #8A94A6; line-height: 1.5">Approuver active le badge « Profil vérifié » et débloque l'annuaire. Toute décision est horodatée et signée dans le journal ; le praticien reçoit un e-mail.</p>
+          </form>
+        </div>
+    </section>
+  </div>
+</div>
+
+</body>
+</html>

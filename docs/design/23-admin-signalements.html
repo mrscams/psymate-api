@@ -1,0 +1,107 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Administration – signalements</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select,textarea{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 820px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #1E2633; color: #FFFFFF">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#9FB4E8" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>Suivi <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #1E2633; background: #FBF1DC; border-radius: 4px; padding: 2px 6px; margin-left: 4px">Admin</span></div>
+    <nav style="display: flex; align-items: center; gap: 4px; margin-left: 12px" aria-label="Administration">
+      <a href="#validation" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Validation <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-left: 8px; background: #FBF1DC; color: #7A5A12; border-radius: 999px; padding: 1px 7px">6</span></a>
+      <a href="#praticiens" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Praticiens</a>
+      <a href="#signalements" aria-current="page" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; background: rgba(255,255,255,0.12); color: #FFFFFF; font-size: 13px; font-weight: 600; text-decoration: none">Signalements <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-left: 8px; background: #FBE9E7; color: #9A2F22; border-radius: 999px; padding: 1px 7px">2</span></a>
+      <a href="#vocabulaire" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Vocabulaire</a>
+      <a href="#journal" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Journal</a>
+    </nav>
+    <div style="flex: 1 1 auto"></div>
+    <span style="font-size: 12px; color: #C9D2E3">Aucune donnée patient n'est accessible depuis l'administration.</span>
+    <div aria-label="Compte administrateur" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #FBF1DC; color: #7A5A12; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">HA</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 20px; padding: 20px 24px 32px; align-items: flex-start">
+
+    <!-- Liste -->
+    <section aria-labelledby="h-list" style="flex: 1 1 360px; max-width: 460px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px">
+        <h1 id="h-list" style="margin: 0; font-size: 18px; font-weight: 600">Signalements · 2 à traiter</h1>
+        <select aria-label="Filtrer" style="height: 30px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; padding: 0 8px; font-size: 12px"><option>À traiter (2)</option><option>Traités (9)</option><option>Tous</option></select>
+      </div>
+      <p style="margin: 0; font-size: 12px; color: #5A6679">Envoyés par les visiteurs depuis « Signaler un problème » sur une fiche publique. Ils ne concernent que l'annuaire.</p>
+      <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px">
+        <li style="background: #FFFFFF; border: 1px solid #3A63C2; box-shadow: 0 0 0 3px #E3EAF8; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px" aria-current="true">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Fiche de Julien Vasseur</span><span style="font-size: 12px; font-weight: 500; color: #9A2F22; background: #FBE9E7; border-radius: 999px; padding: 2px 8px">Titre trompeur</span></div>
+          <span style="font-size: 12px; color: #5A6679">« Se présente comme psychologue dans sa présentation alors que la fiche dit coach. » · visiteur · <span style="font-family: 'JetBrains Mono', monospace">il y a 5 h</span></span>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Fiche de Dr Rémi Lenoir</span><span style="font-size: 12px; font-weight: 500; color: #7A5A12; background: #FBF1DC; border-radius: 999px; padding: 2px 8px">Coordonnées erronées</span></div>
+          <span style="font-size: 12px; color: #5A6679">« Le numéro de téléphone ne répond pas depuis deux semaines. » · visiteur · <span style="font-family: 'JetBrains Mono', monospace">il y a 2 j</span></span>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; opacity: 0.7">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Fiche de Anaïs Petit</span><span style="font-size: 12px; font-weight: 500; color: #1E6B45; background: #E4F2EA; border-radius: 999px; padding: 2px 8px">Traité · sans suite</span></div>
+          <span style="font-size: 12px; color: #5A6679">« Photo de mauvaise qualité. » · <span style="font-family: 'JetBrains Mono', monospace">18 oct.</span> · NB</span>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Détail -->
+    <section aria-labelledby="h-detail" style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+      <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 22px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <h2 id="h-detail" style="margin: 0; font-size: 18px; font-weight: 600">Signalement · fiche de Julien Vasseur</h2>
+            <span style="font-size: 13px; color: #5A6679">Motif : <strong style="font-weight: 600; color: #1E2633">Titre trompeur</strong> · reçu le <span style="font-family: 'JetBrains Mono', monospace">25 oct. 07:14</span> · visiteur anonyme (e-mail fourni : <span style="font-family: 'JetBrains Mono', monospace">v…@exemple.fr</span>)</span>
+          </div>
+          <a href="#" style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #D6DCE6; background: #FFFFFF; font-size: 13px; text-decoration: none; color: #1E2633">Ouvrir la fiche publique ↗</a>
+        </div>
+        <blockquote style="margin: 0; padding: 12px 16px; border-left: 3px solid #D6DCE6; background: #F7F9FC; border-radius: 0 8px 8px 0; font-size: 14px; line-height: 1.6">« Se présente comme psychologue dans sa présentation alors que la fiche dit coach. Il parle de "thérapie" plusieurs fois. »</blockquote>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <!-- Extrait de la fiche concernée -->
+        <div style="flex: 999 1 340px; min-width: 0; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 22px; display: flex; flex-direction: column; gap: 10px">
+          <h3 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Extrait de la fiche · version publiée le 3 oct.</h3>
+          <div style="display: flex; align-items: center; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 10px; background: #E2F1EE; color: #3E8E7E; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px" aria-hidden="true">JV</span><span style="display: flex; flex-direction: column"><span style="font-weight: 600">Julien Vasseur</span><span style="font-size: 12px; font-weight: 600; color: #3E8E7E; background: #E2F1EE; border-radius: 6px; padding: 1px 8px; align-self: flex-start">Coach mental</span></span></div>
+          <p style="margin: 0; font-size: 13px; line-height: 1.6">Coach mental certifié, j'accompagne les sportifs et les cadres en <mark style="background: #FBF1DC; color: #1E2633; border-radius: 2px">thérapie</mark> brève vers la performance. Formé à la <mark style="background: #FBF1DC; color: #1E2633; border-radius: 2px">psychologie</mark> du sport, je propose une <mark style="background: #FBF1DC; color: #1E2633; border-radius: 2px">thérapie</mark> de la motivation…</p>
+          <span style="font-size: 12px; color: #5A6679">Dossier de vérification : <span style="color: #1E6B45">approuvé le 3 oct.</span> (certification ICF + pièce d'identité) · profession déclarée : coach</span>
+        </div>
+
+        <!-- Décision -->
+        <form onsubmit="return false" style="flex: 1 1 300px; max-width: 380px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 22px; display: flex; flex-direction: column; gap: 12px" aria-labelledby="h-act">
+          <h3 id="h-act" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Suite à donner</h3>
+          <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px">
+            <legend style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Action</legend>
+            <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 2px solid #3A63C2; border-radius: 10px; background: #E3EAF8; cursor: pointer; font-size: 13px"><input type="radio" name="act" checked style="width: 16px; height: 16px; accent-color: #3A63C2; margin: 2px 0 0"><span><strong style="font-weight: 600">Demander une correction</strong><br><span style="color: #2C4C99">E-mail au praticien avec le passage concerné ; fiche maintenue en ligne ; relance à 7 jours.</span></span></label>
+            <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; cursor: pointer; font-size: 13px"><input type="radio" name="act" style="width: 16px; height: 16px; accent-color: #3A63C2; margin: 2px 0 0"><span><strong style="font-weight: 600">Dépublier la fiche</strong><br><span style="color: #5A6679">Retirée de l'annuaire immédiatement ; le praticien garde l'accès à l'outil et doit republier après correction.</span></span></label>
+            <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; cursor: pointer; font-size: 13px"><input type="radio" name="act" style="width: 16px; height: 16px; accent-color: #3A63C2; margin: 2px 0 0"><span><strong style="font-weight: 600">Classer sans suite</strong><br><span style="color: #5A6679">Signalement infondé ; conservé dans le journal.</span></span></label>
+            <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; cursor: pointer; font-size: 13px"><input type="radio" name="act" style="width: 16px; height: 16px; accent-color: #9A2F22; margin: 2px 0 0"><span><strong style="font-weight: 600; color: #9A2F22">Rouvrir la vérification</strong><br><span style="color: #5A6679">Pour un doute sur la qualification : le dossier repasse en file de validation.</span></span></label>
+          </fieldset>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="msg" style="font-size: 13px; font-weight: 500">Message au praticien</label>
+            <textarea id="msg" rows="3" style="border: 1px solid #B9C2D1; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5; color: #1E2633; resize: vertical">Bonjour, votre présentation emploie les mots « thérapie » et « psychologie » alors que votre profession déclarée est coach. Merci de reformuler sous 7 jours pour éviter toute confusion pour les visiteurs.</textarea>
+          </div>
+          <button type="submit" style="height: 42px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Envoyer et marquer traité</button>
+          <span style="font-size: 12px; color: #8A94A6">Le visiteur qui a signalé reçoit un accusé de traitement, sans détail.</span>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+
+</body>
+</html>

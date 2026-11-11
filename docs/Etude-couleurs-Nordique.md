@@ -245,6 +245,7 @@ La palette est conforme WCAG 2.1 AA pour tout texte et tout élément porteur de
 | `entry-medication` #B07A2A sur blanc (icône) | 3,4:1 | AA graphique |
 | Erreur #9A2F22 sur #FBE9E7 | 7,2:1 | AAA |
 | Avertissement #7A5A12 sur #FBF1DC | 6,8:1 | AAA |
+| `admin-focus` #8DB7FF sur `admin-bar-bg` #1E2633 (anneau de focus de la barre admin) | 7,5:1 | AA graphique (3:1) ; le cobalt #3A63C2 n'y fait que 2,71:1 |
 
 Conséquence : les couleurs de types et de familles sont réservées aux icônes, pastilles, bordures et segments (seuil 3:1) ; le texte d'une chip est toujours en `text-primary` ou en teinte « texte » dédiée (`feeling-text`, #2F4F73…), jamais dans la couleur de la pastille.
 
@@ -259,6 +260,8 @@ Conséquence : les couleurs de types et de familles sont réservées aux icônes
 ### Autres garanties
 
 - Anneau de focus cobalt 2 px + halo 4 px `primary-tint` sur tout élément interactif, visible sur fond blanc comme sur `surface-ground`.
+- Cette règle vaut aussi pour les contrôles natifs (`select`, `textarea`, `input` texte et date) : anneau `primary` 2 px décalé de 2 px + halo 4 px `primary-tint`, imposé quel que soit le style de l'écran (audit UX du 9 novembre 2026 : un outline `primary-tint` seul faisait 1,21:1). Exception : un champ sans bordure dont le conteneur dessine le focus (`:focus-within`) n'a pas d'anneau propre, pour éviter deux anneaux imbriqués (fiche 00, « Focus et cibles »).
+- Sur la barre d'administration (fond `#1E2633`), l'anneau prend le token `admin-focus` #8DB7FF (7,5:1), identique dans les trois thèmes comme la barre elle-même.
 - Les états (actif, sélectionné, désactivé) combinent couleur et autre signal : soulignement, graisse, opacité, icône.
 - `prefers-reduced-motion` respecté ; aucune information portée par une animation de couleur.
 - Test automatisé axe-core sur chaque écran dans la suite e2e ; test unitaire de contraste sur le fichier de tokens (section 8).
@@ -308,6 +311,8 @@ $nordique-error: (
   --danger: #9A2F22; --danger-bg: #FBE9E7; --warning: #7A5A12; --warning-bg: #FBF1DC;
   --success: #1E6B45; --success-bg: #E4F2EA; --flag: #B8862E; --flag-bg: #FBF1DC;
   --link: #8A94A6; --link-proposed: #B9C2D1; --search-highlight: #FBF1DC;
+  /* barre d'administration (fiche 00 §5), mêmes valeurs dans les trois thèmes */
+  --admin-bar-bg: #1E2633; --admin-bar-text: #E6EAF2; --admin-focus: #8DB7FF;
 }
 :root[data-theme="dark"] {
   --surface-ground: #151A22; --surface-raised: #1E2530; --surface-sunken: #283040;

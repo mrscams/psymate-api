@@ -1,0 +1,268 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mon compte – profil public</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select,textarea{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 1820px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      Suivi
+    </div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a>
+    <span style="color: #9AA5B8">/</span>
+    <span style="font-size: 13px; color: #1E2633">Mon compte</span>
+    <div style="flex: 1 1 auto"></div>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CL</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; align-items: flex-start">
+
+    <!-- Navigation du compte -->
+    <nav aria-label="Mon compte" style="flex: 0 1 220px; display: flex; flex-direction: column; gap: 4px">
+      <div style="padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 2px">
+        <span style="font-weight: 600; font-size: 15px">Claire Moreau</span>
+        <span style="font-size: 12px; color: #5A6679">Psychologue · Lyon</span>
+      </div>
+      <a href="#profil" aria-current="page" style="display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; font-weight: 600; font-size: 13px; text-decoration: none">Profil public <span style="width: 8px; height: 8px; border-radius: 50%; background: #1E6B45" aria-label="publié"></span></a>
+      <a href="#prefs" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Préférences</a>
+      <a href="#emotions" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Émotions personnalisées</a>
+      <a href="#securite" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Compte et sécurité</a>
+      <a href="#donnees" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Données et export</a>
+    </nav>
+
+    <!-- Formulaire de profil -->
+    <form onsubmit="return false" style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 18px" aria-labelledby="h-profil">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h1 id="h-profil" style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Profil public</h1>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Ce que les visiteurs de l'annuaire voient. Rien n'est publié sans l'interrupteur ci-contre.</p>
+        </div>
+        <span style="font-size: 12px; color: #5A6679; margin-top: 6px">Enregistré automatiquement · dernière modification il y a 3 min</span>
+      </div>
+
+      <!-- Identité -->
+      <section aria-labelledby="h-id" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 16px">
+        <h2 id="h-id" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Identité</h2>
+        <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap">
+          <div style="display: flex; flex-direction: column; gap: 8px; align-items: center">
+            <div style="width: 96px; height: 96px; border-radius: 14px; background: #E3EAF8; color: #2C4C99; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 600" role="img" aria-label="Photo de profil : initiales CM">CM</div>
+            <button type="button" style="height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; cursor: pointer">Changer la photo</button>
+          </div>
+          <div style="flex: 1 1 320px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="nom" style="font-size: 13px; font-weight: 500">Nom affiché</label>
+              <input id="nom" type="text" value="Claire Moreau" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="prof" style="font-size: 13px; font-weight: 500">Profession</label>
+              <select id="prof" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #1E2633; background: #FFFFFF"><option>Psychologue</option><option>Psychiatre</option><option>Coach</option><option>Coach mental</option></select>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="titre" style="font-size: 13px; font-weight: 500">Titre affiché</label>
+              <input id="titre" type="text" value="Psychologue clinicienne" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="num" style="font-size: 13px; font-weight: 500">N° professionnel <span style="color: #8A94A6; font-weight: 400">(affiché si rempli)</span></label>
+              <input id="num" type="text" value="69 93 1234 5" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2">
+              <label for="dispo" style="font-size: 13px; font-weight: 500">Disponibilité</label>
+              <div role="group" aria-label="Disponibilité" style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden; align-self: flex-start">
+                <button type="button" aria-pressed="true" style="height: 36px; padding: 0 14px; border: 0; background: #E4F2EA; color: #1E6B45; font-size: 13px; font-weight: 600; cursor: pointer">Accepte de nouveaux patients</button>
+                <button type="button" aria-pressed="false" style="height: 36px; padding: 0 14px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">Liste d'attente</button>
+                <button type="button" aria-pressed="false" style="height: 36px; padding: 0 14px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">Complet</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Présentation et pratique -->
+      <section aria-labelledby="h-pres" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 16px">
+        <h2 id="h-pres" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Présentation et pratique</h2>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="presentation" style="font-size: 13px; font-weight: 500">Présentation <span style="color: #8A94A6; font-weight: 400">· 412 / 1 200 caractères</span></label>
+          <textarea id="presentation" rows="5" style="border: 1px solid #B9C2D1; border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.6; color: #1E2633; background: #FFFFFF; resize: vertical">Psychologue clinicienne depuis douze ans, je reçois des adultes et des jeunes adultes traversant une période d'anxiété, d'épuisement professionnel ou de transition de vie. Mon approche associe la thérapie cognitive et comportementale à un travail sur les émotions, dans un cadre bienveillant et sans jugement.
+
+Un premier échange téléphonique gratuit de quinze minutes permet de vérifier que nous pouvons travailler ensemble.</textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <label for="spec" style="font-size: 13px; font-weight: 500">Spécialités</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; min-height: 42px; align-items: center">
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 999px; padding: 4px 6px 4px 10px; background: #EEF1F6">Anxiété <button type="button" aria-label="Retirer Anxiété" style="width: 18px; height: 18px; border: 0; border-radius: 50%; background: #D6DCE6; color: #1E2633; font-size: 11px; cursor: pointer; line-height: 1">×</button></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 999px; padding: 4px 6px 4px 10px; background: #EEF1F6">Burn-out <button type="button" aria-label="Retirer Burn-out" style="width: 18px; height: 18px; border: 0; border-radius: 50%; background: #D6DCE6; color: #1E2633; font-size: 11px; cursor: pointer; line-height: 1">×</button></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 999px; padding: 4px 6px 4px 10px; background: #EEF1F6">Estime de soi <button type="button" aria-label="Retirer Estime de soi" style="width: 18px; height: 18px; border: 0; border-radius: 50%; background: #D6DCE6; color: #1E2633; font-size: 11px; cursor: pointer; line-height: 1">×</button></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 999px; padding: 4px 6px 4px 10px; background: #EEF1F6">Deuil <button type="button" aria-label="Retirer Deuil" style="width: 18px; height: 18px; border: 0; border-radius: 50%; background: #D6DCE6; color: #1E2633; font-size: 11px; cursor: pointer; line-height: 1">×</button></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 999px; padding: 4px 6px 4px 10px; background: #EEF1F6">TCC <button type="button" aria-label="Retirer TCC" style="width: 18px; height: 18px; border: 0; border-radius: 50%; background: #D6DCE6; color: #1E2633; font-size: 11px; cursor: pointer; line-height: 1">×</button></span>
+              <input id="spec" type="text" placeholder="Ajouter…" style="flex: 1 1 80px; min-width: 80px; height: 28px; border: 0; outline: 0; font-size: 13px; background: transparent">
+            </div>
+            <span style="font-size: 12px; color: #8A94A6">Liste commune à l'annuaire, 8 maximum.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <label for="publics" style="font-size: 13px; font-weight: 500">Publics</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; min-height: 42px; align-items: center">
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 999px; padding: 4px 6px 4px 10px; background: #EEF1F6">Adultes <button type="button" aria-label="Retirer Adultes" style="width: 18px; height: 18px; border: 0; border-radius: 50%; background: #D6DCE6; color: #1E2633; font-size: 11px; cursor: pointer; line-height: 1">×</button></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 999px; padding: 4px 6px 4px 10px; background: #EEF1F6">Jeunes adultes (18–25) <button type="button" aria-label="Retirer Jeunes adultes" style="width: 18px; height: 18px; border: 0; border-radius: 50%; background: #D6DCE6; color: #1E2633; font-size: 11px; cursor: pointer; line-height: 1">×</button></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 999px; padding: 4px 6px 4px 10px; background: #EEF1F6">Étudiants <button type="button" aria-label="Retirer Étudiants" style="width: 18px; height: 18px; border: 0; border-radius: 50%; background: #D6DCE6; color: #1E2633; font-size: 11px; cursor: pointer; line-height: 1">×</button></span>
+              <input id="publics" type="text" placeholder="Ajouter…" style="flex: 1 1 80px; min-width: 80px; height: 28px; border: 0; outline: 0; font-size: 13px; background: transparent">
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span style="font-size: 13px; font-weight: 500">Modalités</span>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px">
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer"><input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #3A63C2"> Au cabinet</label>
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer"><input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #3A63C2"> Visioconsultation</label>
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #5A6679"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #3A63C2"> À domicile</label>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px">
+            <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2">
+              <label for="langues" style="font-size: 13px; font-weight: 500">Langues</label>
+              <input id="langues" type="text" value="Français, anglais" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="tarif" style="font-size: 13px; font-weight: 500">Tarif <span style="color: #8A94A6; font-weight: 400">(facultatif)</span></label>
+              <input id="tarif" type="text" placeholder="[TARIF] €" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="duree" style="font-size: 13px; font-weight: 500">Durée de séance</label>
+              <input id="duree" type="text" value="50 min" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Moyens de contact : affichés ou non -->
+      <section aria-labelledby="h-contact" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h2 id="h-contact" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Moyens de contact</h2>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Chaque moyen a son interrupteur « afficher ». Le formulaire de contact de la fiche est toujours disponible et vous transmet les messages par e-mail.</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr) 150px; gap: 12px; align-items: center">
+            <label for="tel" style="font-size: 13px; font-weight: 500">Téléphone</label>
+            <input id="tel" type="tel" placeholder="[TÉLÉPHONE]" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; justify-content: flex-end"><input type="checkbox" checked role="switch" style="width: 16px; height: 16px; accent-color: #3A63C2"> Afficher</label>
+          </div>
+          <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr) 150px; gap: 12px; align-items: center">
+            <label for="mail" style="font-size: 13px; font-weight: 500">E-mail public</label>
+            <input id="mail" type="email" placeholder="[E-MAIL]" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; justify-content: flex-end"><input type="checkbox" checked role="switch" style="width: 16px; height: 16px; accent-color: #3A63C2"> Afficher</label>
+          </div>
+          <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr) 150px; gap: 12px; align-items: center">
+            <label for="site" style="font-size: 13px; font-weight: 500">Site web</label>
+            <input id="site" type="url" value="claire-moreau-psy.fr" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; justify-content: flex-end"><input type="checkbox" checked role="switch" style="width: 16px; height: 16px; accent-color: #3A63C2"> Afficher</label>
+          </div>
+          <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr) 150px; gap: 12px; align-items: center">
+            <label for="delai" style="font-size: 13px; font-weight: 500">Délai de réponse</label>
+            <select id="delai" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #1E2633; background: #FFFFFF"><option>Sous 48 h en général</option><option>Sous une semaine</option><option>Ne pas afficher</option></select>
+            <span></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cabinet -->
+      <section aria-labelledby="h-cab" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-cab" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Cabinet et horaires</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2">
+            <label for="adresse" style="font-size: 13px; font-weight: 500">Adresse</label>
+            <input id="adresse" type="text" value="12 rue Vendôme, 69006 Lyon" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="acces" style="font-size: 13px; font-weight: 500">Accès</label>
+            <input id="acces" type="text" value="Métro A · Foch (4 min à pied)" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="accessib" style="font-size: 13px; font-weight: 500">Accessibilité du lieu</label>
+            <input id="accessib" type="text" value="2e étage, sans ascenseur" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2">
+            <span style="font-size: 13px; font-weight: 500">Horaires de consultation</span>
+            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+              <div style="display: grid; grid-template-columns: 140px 110px 20px 110px; gap: 8px; align-items: center"><span>Lundi – jeudi</span><input type="text" value="09:00" aria-label="Lundi à jeudi, début" style="height: 34px; border: 1px solid #B9C2D1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px"><span style="text-align: center; color: #5A6679">–</span><input type="text" value="19:00" aria-label="Lundi à jeudi, fin" style="height: 34px; border: 1px solid #B9C2D1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px"></div>
+              <div style="display: grid; grid-template-columns: 140px 110px 20px 110px; gap: 8px; align-items: center"><span>Vendredi</span><input type="text" value="09:00" aria-label="Vendredi, début" style="height: 34px; border: 1px solid #B9C2D1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px"><span style="text-align: center; color: #5A6679">–</span><input type="text" value="13:00" aria-label="Vendredi, fin" style="height: 34px; border: 1px solid #B9C2D1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px"></div>
+              <button type="button" style="align-self: flex-start; height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; cursor: pointer">+ Ajouter une plage</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </form>
+
+    <!-- Colonne : publication + aperçu -->
+    <aside aria-label="Publication et aperçu" style="flex: 1 1 320px; max-width: 380px; display: flex; flex-direction: column; gap: 16px">
+
+      <section aria-labelledby="h-pub" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+          <h2 id="h-pub" style="margin: 0; font-size: 15px; font-weight: 600">Apparaître dans l'annuaire</h2>
+          <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 600; color: #1E6B45"><input type="checkbox" checked role="switch" style="width: 18px; height: 18px; accent-color: #1E6B45"> Publié</label>
+        </div>
+        <p style="margin: 0; font-size: 13px; color: #5A6679; line-height: 1.55">Votre fiche est visible à l'adresse <a href="#" style="text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 12px">/praticiens/claire-moreau</a>. Désactiver retire la fiche immédiatement et la sort des moteurs de recherche sous quelques jours.</p>
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+          <li style="display: flex; align-items: center; gap: 8px; color: #1E6B45"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Nom affiché, profession, ville</li>
+          <li style="display: flex; align-items: center; gap: 8px; color: #1E6B45"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Au moins un moyen de contact affiché</li>
+          <li style="display: flex; align-items: center; gap: 8px; color: #7A5A12"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2.5 1.8 13.5h12.4L8 2.5zM8 7v3M8 12h.01"></path></svg>Photo absente : les initiales sont affichées</li>
+        </ul>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <a href="#preview" style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #D6DCE6; background: #FFFFFF; color: #1E2633; font-size: 13px; text-decoration: none">Ouvrir la fiche publique</a>
+          <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 13px; cursor: pointer">Copier le lien</button>
+        </div>
+      </section>
+
+      <!-- Aperçu visiteur, mis à jour en direct -->
+      <section aria-labelledby="h-apercu" style="display: flex; flex-direction: column; gap: 8px">
+        <h2 id="h-apercu" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; padding: 0 4px">Aperçu · ce que voit un visiteur</h2>
+        <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+          <div style="display: flex; gap: 14px; align-items: flex-start">
+            <div style="width: 64px; height: 64px; border-radius: 12px; background: #E3EAF8; color: #2C4C99; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 600; flex-shrink: 0" aria-hidden="true">CM</div>
+            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+              <span style="font-size: 17px; font-weight: 700">Claire Moreau</span>
+              <span style="font-size: 12px; font-weight: 600; color: #2C4C99; background: #E3EAF8; border-radius: 6px; padding: 2px 8px; align-self: flex-start">Psychologue</span>
+              <span style="font-size: 12px; color: #5A6679">Lyon 6e · cabinet et visio</span>
+              <span style="font-size: 12px; color: #1E6B45; font-weight: 500">● Accepte de nouveaux patients</span>
+            </div>
+          </div>
+          <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #1E2633">Psychologue clinicienne depuis douze ans, je reçois des adultes et des jeunes adultes traversant une période d'anxiété, d'épuisement professionnel ou de transition de vie…</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <span style="font-size: 12px; border: 1px solid #D6DCE6; border-radius: 999px; padding: 4px 10px; background: #EEF1F6">Anxiété</span>
+            <span style="font-size: 12px; border: 1px solid #D6DCE6; border-radius: 999px; padding: 4px 10px; background: #EEF1F6">Burn-out</span>
+            <span style="font-size: 12px; border: 1px solid #D6DCE6; border-radius: 999px; padding: 4px 10px; background: #EEF1F6">Estime de soi</span>
+            <span style="font-size: 12px; border: 1px solid #D6DCE6; border-radius: 999px; padding: 4px 10px; background: #EEF1F6">+2</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; border-top: 1px solid #E4E8F0; padding-top: 12px">
+            <span style="color: #5A6679">Contact affiché</span>
+            <span style="font-family: 'JetBrains Mono', monospace">[TÉLÉPHONE]</span>
+            <span>[E-MAIL]</span>
+            <a href="#" style="text-decoration: none">claire-moreau-psy.fr</a>
+          </div>
+          <span style="display: inline-flex; align-items: center; justify-content: center; height: 38px; border-radius: 8px; background: #3A63C2; color: #FFFFFF; font-size: 13px; font-weight: 600" aria-hidden="true">Prendre contact</span>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6; padding: 0 4px; line-height: 1.5">L'aperçu se met à jour pendant la saisie. Les champs vides ne sont pas affichés sur la fiche.</p>
+      </section>
+    </aside>
+  </div>
+</div>
+
+</body>
+</html>

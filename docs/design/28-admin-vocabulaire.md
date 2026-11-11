@@ -1,6 +1,8 @@
 # Écran 28 · Admin · Vocabulaire de l'annuaire
 
 > Spécification pour agents. Maquette : `28-admin-vocabulaire.html` / `.png`. Palette : Nordique (barre admin sombre). Document A, module `identity.admin` + façade `directory.api` (M1-14b, G Q15). Tâche web : M7-07. **Ne dépend jamais des modules cliniques.**
+>
+> Mis à jour le 11 novembre 2026 (UX-F1, audit UX du 9 novembre) : barre admin sans onglet Signalements (déjà le cas de cette maquette, G Q26) ; le lien du `409` mène à `/admin/praticiens` sans filtre « publiés », que le contrat n'offre pas (fiche 21). Voir « Écarts avec la maquette ».
 
 ## Objectif
 Administrer la liste fermée des spécialités et des publics de l'annuaire (G Q15) : ajouter, renommer, ordonner, désactiver ou réactiver une entrée. C'est la liste que les praticiens voient dans « Mon profil public » (écran 10) et que les visiteurs voient dans les filtres de l'annuaire (écran 11). On désactive, on ne supprime jamais. Aucune donnée patient.
@@ -21,7 +23,7 @@ Administrer la liste fermée des spécialités et des publics de l'annuaire (G Q
 6. **Note de bas de page** : modalités et langues en lecture seule ; effet d'une désactivation sur les profils.
 
 ## Interactions
-- « Désactiver… » → boîte de dialogue `role="dialog"` ; si l'API répond `409 VOCABULARY_IN_USE`, encart danger « Utilisée par N profils publiés : demandez d'abord aux praticiens de la retirer ou choisissez une spécialité de remplacement », lien vers `/admin/praticiens?directory=published`, bouton « Fermer » ; la ligne reste active.
+- « Désactiver… » → boîte de dialogue `role="dialog"` ; si l'API répond `409 VOCABULARY_IN_USE`, encart danger « Utilisée par N profils publiés : demandez d'abord aux praticiens de la retirer ou choisissez une spécialité de remplacement », lien vers `/admin/praticiens`, bouton « Fermer » ; la ligne reste active.
 - « Réactiver » → `PATCH { active: true }` sans confirmation ; l'entrée réapparaît aussitôt dans `GET /api/vocabulary/directory`.
 - « Renommer » → panneau inline sous la ligne : libellé FR (obligatoire), libellé EN (vide = effacé), ordre ; note « le code ne change jamais ; les profils gardent la spécialité » ; « Désactiver » de la même ligne inactif pendant l'édition ; succès → toast « Libellé mis à jour · visible immédiatement dans l'annuaire ».
 - Ajout : `409 VOCABULARY_EXISTS` affiché sous le champ code (« Ce code existe déjà pour ce type ») ; les `422` sont affichés champ par champ depuis `errors[]`.
@@ -49,8 +51,10 @@ Administrer la liste fermée des spécialités et des publics de l'annuaire (G Q
 
 ## Écarts avec la maquette
 - Modalités et Langues sont fixes (pas administrables par l'endpoint) → onglets en lecture seule.
-- Le 409 ne renvoie qu'un compteur → la boîte de dialogue affiche « Utilisée par N profils publiés » et un lien vers `/admin/praticiens?directory=published` (filtre par spécialité à prévoir en V1.1, pas de liste nominative).
+- Le 409 ne renvoie qu'un compteur → la boîte de dialogue affiche « Utilisée par N profils publiés » et un lien vers `/admin/praticiens` (filtre par spécialité à prévoir en V1.1, pas de liste nominative).
 - Pas de date de désactivation dans le DTO → ne pas l'afficher.
+- **Filtre « publiés » de l'écran 21** : `GET /api/admin/practitioners` n'a pas de paramètre `directory` (contrat) ; le lien du `409` ouvre `/admin/praticiens` sans filtre (UX-F1). La maquette ne montre pas l'URL : inchangée.
+- **Barre admin** : déjà sans Signalements et dans l'ordre de la fiche 00 ; maquette inchangée (UX-F1).
 - Les 18 spécialités fictives ne sont pas le seed (le seed réel est la migration V04, `docs/E-modele-donnees.md`).
 
 ## Hors périmètre V1

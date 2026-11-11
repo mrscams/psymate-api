@@ -1,6 +1,8 @@
 # Écran 20 · Administration › Validation des praticiens
 
 > Spécification pour agents. Maquette : `20-admin-validation-praticiens.html` / `.png`. Palette : Nordique (barre sombre pour distinguer l'espace admin). Document A : module `identity` (rôle `admin`, sous-domaine *verification*) ; nouveau module front `admin` (lazy, garde de rôle). Pendant des écrans 12 et 13.
+>
+> Mis à jour le 11 novembre 2026 (UX-F1, audit UX du 9 novembre) : onglet Signalements retiré de la barre (V1.1, G Q26 ; fiche 00) ; liste de contrôle et décision dans une colonne droite collante qui commence en haut du dossier. Voir « Écarts avec la maquette ».
 
 ## Objectif
 Un administrateur de la plateforme passe en revue les dossiers soumis, consulte les justificatifs, coche une liste de contrôle, puis **approuve**, **demande un complément** ou **refuse**. Chaque décision est tracée et notifiée. L'administration n'a **aucun accès aux données patients**.
@@ -19,9 +21,9 @@ Un administrateur de la plateforme passe en revue les dossiers soumis, consulte 
 - SLA : `overdue = now − submittedAt > 2 jours ouvrés` (affiché en rouge), rappel quotidien aux admins par e-mail.
 
 ## Structure
-1. **Barre d'application admin** (fond `#1E2633`) : logo + étiquette `ADMIN`, onglets *Validation (n)* · Praticiens · Signalements · Vocabulaire · Journal, rappel « Aucune donnée patient n'est accessible depuis l'administration », avatar admin ambre.
+1. **Barre d'application admin** (fond `#1E2633`) : logo + étiquette `ADMIN`, onglets *Validation (n)* · Praticiens · Journal · Vocabulaire (fiche 00 ; pas de Signalements en V1, G Q26), rappel « Aucune donnée patient n'est accessible depuis l'administration », avatar admin ambre.
 2. **File d'attente** (gauche, 340–420 px) : titre « À vérifier · n », filtre (En attente / Complément demandé / Traités cette semaine), liste ordonnée du plus ancien au plus récent : initiales (teinte par profession : psychologue `#E3EAF8`, psychiatre `#E1E9F2`, coach `#E2F1EE`), nom, profession · ville · nombre de documents, indice de manque en ambre, ancienneté en mono (rouge si hors délai). Sélection = bordure primaire + halo.
-3. **Dossier ouvert** (droite) :
+3. **Dossier ouvert** (droite), sur deux colonnes dès 1 200 px : à gauche l'en-tête, les justificatifs et la visionneuse ; à droite, une colonne de 300 à 380 px **collante** (`position: sticky`) qui commence en haut du dossier, à la hauteur de l'en-tête, avec la liste de contrôle puis la décision. La décision reste visible à côté du document consulté, sans défilement à 1440 × 900. En dessous de 1 200 px, la colonne passe sous la visionneuse.
    - **En-tête** : initiales, nom, puce profession, compte créé le, e-mail confirmé, soumis il y a ; `dl` e-mail, téléphone, n° pro déclaré, cabinet.
    - **Justificatifs · n** : liste avec intitulé · établissement · année, type · format · taille, case **Conforme** par document ; document sélectionné surligné.
    - **Visionneuse** : nom de fichier mono, pagination, zoom ±, pivoter, « Ouvrir » ; zone grise avec le rendu du document.
@@ -53,6 +55,10 @@ Un administrateur de la plateforme passe en revue les dossiers soumis, consulte 
 - [ ] `approved` → badge visible sur la fiche publique dès publication ; `rejected` → sessions du praticien révoquées, login `403 suspended`.
 - [ ] Chaque ouverture de document crée une ligne `document_access_log` avec admin, document, horodatage.
 - [ ] Dossier soumis il y a 3 jours ouvrés → `overdue = true`, affiché en rouge.
+
+## Écarts avec la maquette
+- **Onglet Signalements** : V1.1 (G Q26) ; barre admin de la fiche 00 (Validation · Praticiens · Journal · Vocabulaire). Retiré de la maquette (UX-F1), qui affiche aussi « PsyMate » au lieu de « Suivi ».
+- **Colonne de décision** : la maquette la plaçait sous l'en-tête du dossier, à droite de la visionneuse ; elle commence désormais en haut du dossier et reste collante (constat de l'audit : décision à 1 600 px du haut dans le réalisé). Maquette corrigée (UX-F1). Choix de mise en page de l'audit (plan UX-E1), sans contrainte de G ni du contrat.
 
 ## Hors périmètre V1
 Vérification automatique des registres, workflow à deux validateurs, délégation à des modérateurs externes, tableau de bord statistique admin.

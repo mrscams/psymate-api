@@ -1,0 +1,523 @@
+<!-- Maquette statique · palette Nordique · écrite à la main depuis B4 écran 5 et B5. Référence : docs/design/05-editeur-entree.md (à écrire) -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Éditeur d'entrée – Marie D.</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select,textarea{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<!-- UX-F1 (11 nov. 2026) : « Restaurer » retiré de l'historique (pas de restauration de version au contrat ; l'historique est en lecture seule) ; « valence » retirée du bloc Plus (absente de EntryFeelingRequest) ; bloc Séance sans modalité ni durée (la liste des séances vient de la timeline, TimelineItemDto ne porte ni modalité ni durée). -->
+
+<!-- ============================================================ -->
+<!-- ÉTAT A : nouvelle entrée (Ressenti) par-dessus la vue d'ensemble -->
+<!-- ============================================================ -->
+<div style="position:relative;min-height:1460px;background:#EEF1F6;font-size:14px;line-height:1.45;display:flex;flex-direction:column;border-bottom:1px solid #B9C2D1">
+
+ <!-- Barre d'application -->
+ <div style="display:flex;align-items:center;gap:16px;height:48px;padding:0 24px;background:#FFFFFF;border-bottom:1px solid #D6DCE6">
+  <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px">
+   <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+   PsyMate
+  </div>
+  <a href="#patients" style="font-size:13px;color:#5A6679;text-decoration:none">Patients</a>
+  <span style="color:#8A94A6">/</span>
+  <span style="font-size:13px;color:#1E2633">Marie D.</span>
+  <div style="flex:1 1 auto"></div>
+  <button aria-label="Rechercher dans le dossier" style="display:flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:1px solid #D6DCE6;border-radius:8px;background:#FFFFFF;color:#5A6679;font-size:13px;cursor:pointer">
+   <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>
+   Rechercher <span style="font-family:'JetBrains Mono', monospace;font-size:11px;padding:1px 5px;border:1px solid #D6DCE6;border-radius:4px">/</span>
+  </button>
+  <div aria-label="Compte de Claire Martin" role="img" style="width:32px;height:32px;border-radius:50%;background:#3A63C2;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px">CM</div>
+ </div>
+
+ <!-- En-tête patient permanent, séance en cours + barre de capture -->
+ <div style="display:flex;flex-direction:column;gap:12px;padding:16px 24px 0;background:#FFFFFF;border-bottom:1px solid #D6DCE6">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+   <div style="display:flex;align-items:baseline;gap:10px">
+    <h1 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-0.01em">Marie D.</h1>
+    <span style="color:#5A6679;font-size:14px">34 ans · suivie depuis mars 2025</span>
+   </div>
+   <span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#FBF1DC;color:#7A5A12;font-size:12px;font-weight:500">
+    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M2 1v10M2 1h7l-1.5 2.5L9 6H2"></path></svg>
+    à surveiller
+   </span>
+   <div style="flex:1 1 auto"></div>
+   <div style="display:flex;align-items:center;gap:10px">
+    <span role="status" style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:1px solid #3E8E7E;border-radius:999px;background:#E4F2EA;color:#1E6B45;font-size:13px;font-weight:500">
+     <span aria-hidden="true" style="width:10px;height:10px;border-radius:3px;border:2px solid #3E8E7E"></span>
+     Séance du 24 oct. · en cours depuis <span style="font-family:'JetBrains Mono', monospace">18 min</span>
+    </span>
+    <button style="height:32px;padding:0 14px;border:1px solid #D6DCE6;border-radius:8px;background:#FFFFFF;color:#1E2633;font-size:13px;font-weight:600;cursor:pointer">Clôturer la séance</button>
+   </div>
+  </div>
+
+  <!-- Barre de capture rapide (B5, alternative A) -->
+  <div style="display:flex;flex-direction:column;gap:6px">
+   <div style="display:flex;align-items:center;gap:12px;height:40px;padding:0 14px;background:#FFFFFF;border:1px solid #3A63C2;border-radius:10px;box-shadow:0 0 0 3px #E3EAF8">
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round"><path d="M4 5l4 4-4 4M10 13h5"></path></svg>
+    <label for="capture-a" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Capture rapide</label>
+    <input id="capture-a" type="text" value="anx 8 n'a pas dormi > entretien" aria-describedby="capture-preview-a" style="flex:1 1 auto;min-width:0;height:36px;border:0;outline:0;background:transparent;font-family:'JetBrains Mono', monospace;font-size:13px;color:#1E2633">
+    <span style="font-size:11px;color:#8A94A6;white-space:nowrap"><span style="font-family:'JetBrains Mono', monospace">⏎</span> enregistre · <span style="font-family:'JetBrains Mono', monospace">Ctrl+⏎</span> affine · <span style="font-family:'JetBrains Mono', monospace">Ctrl+S</span> brouillon</span>
+   </div>
+   <!-- Aperçu interprété -->
+   <div id="capture-preview-a" aria-live="polite" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:0 14px 10px;font-size:13px;color:#5A6679">
+    <span aria-hidden="true" style="width:10px;height:10px;border-radius:50%;background:#8B7BD6"></span>
+    <span style="color:#4E3F9E;font-weight:600">Ressenti</span>
+    <span>·</span><span><span aria-hidden="true" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#7A68C9;margin-right:5px;vertical-align:middle"></span>Anxiété <span style="font-family:'JetBrains Mono', monospace;color:#1E2633">8/10</span></span>
+    <span>·</span><span>« n'a pas dormi »</span>
+    <span>·</span><span>aujourd'hui · séance du 24 oct.</span>
+    <span>·</span>
+    <span style="display:inline-flex;align-items:center;gap:6px">lié à <span aria-hidden="true" style="width:9px;height:9px;background:#3A63C2;transform:rotate(45deg);margin:0 1px"></span>Événement <strong style="color:#1E2633;font-weight:600">« Entretien annuel »</strong></span>
+    <span style="display:inline-flex;align-items:center;height:20px;padding:0 8px;border:1px dashed #B9C2D1;border-radius:999px;font-size:11px;color:#5A6679">lien « déclenché par » proposé</span>
+   </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:4px">
+   <a href="#overview" style="display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;text-decoration:none;color:#1E2633;font-weight:600;font-size:13px;border-bottom:2px solid #3A63C2"><span style="font-family:'JetBrains Mono', monospace;font-size:11px;color:#5A6679">1</span> Vue d'ensemble</a>
+   <a href="#timeline" style="display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;text-decoration:none;color:#5A6679;font-weight:500;font-size:13px;border-bottom:2px solid transparent"><span style="font-family:'JetBrains Mono', monospace;font-size:11px">2</span> Timeline</a>
+   <a href="#graph" style="display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;text-decoration:none;color:#5A6679;font-weight:500;font-size:13px;border-bottom:2px solid transparent"><span style="font-family:'JetBrains Mono', monospace;font-size:11px">3</span> Graphe</a>
+  </div>
+ </div>
+
+ <!-- Vue d'ensemble derrière le panneau (contenu réduit, estompé) -->
+ <div aria-hidden="true" style="width:100%;max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(12, minmax(0, 1fr));gap:16px;padding:16px 24px 32px;align-content:start;opacity:0.6">
+  <section style="grid-column:span 4;background:#FFFFFF;border:1px solid #D6DCE6;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px">
+   <h2 style="margin:0;font-size:12px;font-weight:600;color:#5A6679;text-transform:uppercase;letter-spacing:0.04em">Faits clés</h2>
+   <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:12px">
+    <div><div style="font-size:11px;color:#5A6679">Séances</div><div style="font-weight:600;font-size:22px">32</div></div>
+    <div><div style="font-size:11px;color:#5A6679">Entrées</div><div style="font-weight:600;font-size:22px">216</div></div>
+    <div><div style="font-size:11px;color:#5A6679">Liens</div><div style="font-weight:600;font-size:22px">59</div></div>
+   </div>
+   <div style="border-top:1px solid #D6DCE6;padding-top:10px;font-size:13px;display:flex;align-items:center;gap:8px"><span style="width:14px;height:8px;border-radius:999px;background:#B07A2A"></span><span style="flex:1 1 auto">Sertraline 75 mg · matin</span><span style="color:#5A6679;font-size:12px">depuis 12 sept.</span></div>
+  </section>
+  <section style="grid-column:span 8;background:#FFFFFF;border:1px solid #D6DCE6;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px">
+   <h2 style="margin:0;font-size:12px;font-weight:600;color:#5A6679;text-transform:uppercase;letter-spacing:0.04em">Séance en cours · 24 oct. · 18 min</h2>
+   <div style="display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid #E4E8F0"><span style="width:9px;height:9px;background:#3A63C2;transform:rotate(45deg);margin:0 1px"></span><span style="flex:1 1 auto">Entretien annuel</span><span style="font-size:11px;color:#5A6679">il y a 6 min</span></div>
+   <div style="display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0"><span style="width:10px;height:12px;border-radius:2px;background:#7F8EA8"></span><span style="flex:1 1 auto">Note · arrive en retard, essoufflée</span><span style="font-size:11px;color:#5A6679">il y a 17 min</span></div>
+  </section>
+ </div>
+
+ <!-- Voile -->
+ <div style="position:absolute;inset:0;background:rgba(30, 38, 51, 0.18)" aria-hidden="true"></div>
+
+ <!-- Panneau « Nouvelle entrée » -->
+ <form onsubmit="return false" role="dialog" aria-labelledby="h-new" aria-modal="true" style="position:absolute;top:0;right:0;bottom:0;width:480px;background:#FFFFFF;border-left:1px solid #D6DCE6;box-shadow:-12px 0 32px rgba(30,38,51,0.12);display:flex;flex-direction:column">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid #E4E8F0">
+   <div style="display:flex;flex-direction:column;gap:2px">
+    <h2 id="h-new" style="margin:0;font-size:17px;font-weight:600">Nouvelle entrée</h2>
+    <span style="font-size:12px;color:#5A6679">Marie D. · préremplie depuis la barre de capture</span>
+   </div>
+   <button type="button" aria-label="Fermer (Échap, le brouillon est conservé)" style="width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:#5A6679;cursor:pointer;font-size:18px">×</button>
+  </div>
+
+  <div style="flex:1 1 auto;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px">
+
+   <!-- 1 · Type -->
+   <section aria-labelledby="h-type-a" style="display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+     <h3 id="h-type-a" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Type</h3>
+     <span style="font-size:11px;color:#8A94A6">ou <span style="font-family:'JetBrains Mono', monospace">/evt /sit /res /med</span> dans la barre</span>
+    </div>
+    <div role="group" aria-label="Type d'entrée" style="display:flex;flex-wrap:wrap;gap:6px">
+     <button type="button" aria-pressed="false" style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #D6DCE6;border-radius:999px;background:#FFFFFF;font-size:13px;cursor:pointer;color:#1E2633"><span aria-hidden="true" style="width:9px;height:11px;border-radius:2px;background:#7F8EA8"></span>Note</button>
+     <button type="button" aria-pressed="false" style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #D6DCE6;border-radius:999px;background:#FFFFFF;font-size:13px;cursor:pointer;color:#1E2633"><span aria-hidden="true" style="width:9px;height:9px;background:#3A63C2;transform:rotate(45deg);margin:0 1px"></span>Événement</button>
+     <button type="button" aria-pressed="false" style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #D6DCE6;border-radius:999px;background:#FFFFFF;font-size:13px;cursor:pointer;color:#1E2633"><span aria-hidden="true" style="width:14px;height:6px;border-radius:999px;background:#2F4F73"></span>Situation</button>
+     <button type="button" aria-pressed="true" style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #8B7BD6;border-radius:999px;background:#ECE8F8;font-size:13px;font-weight:600;cursor:pointer;color:#4E3F9E"><span aria-hidden="true" style="width:10px;height:10px;border-radius:50%;background:#8B7BD6"></span>Ressenti</button>
+     <button type="button" aria-pressed="false" style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #D6DCE6;border-radius:999px;background:#FFFFFF;font-size:13px;cursor:pointer;color:#1E2633"><span aria-hidden="true" style="width:10px;height:10px;border-radius:3px;border:2px solid #3E8E7E"></span>Séance</button>
+     <button type="button" aria-pressed="false" style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #D6DCE6;border-radius:999px;background:#FFFFFF;font-size:13px;cursor:pointer;color:#1E2633"><span aria-hidden="true" style="width:14px;height:8px;border-radius:999px;background:#B07A2A"></span>Médicament</button>
+    </div>
+   </section>
+
+   <!-- 2 · Champ principal : émotion + intensité + texte -->
+   <section aria-labelledby="h-main-a" style="display:flex;flex-direction:column;gap:12px">
+    <h3 id="h-main-a" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Ressenti</h3>
+
+    <div style="display:flex;flex-direction:column;gap:6px;position:relative">
+     <label for="emotion-a" style="font-size:13px;font-weight:500">Émotion</label>
+     <div style="display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border:1px solid #3A63C2;border-radius:10px;background:#FFFFFF;box-shadow:0 0 0 3px #E3EAF8">
+      <span aria-hidden="true" style="width:10px;height:10px;border-radius:50%;background:#7A68C9;flex-shrink:0"></span>
+      <input id="emotion-a" type="text" role="combobox" aria-expanded="true" aria-controls="emotion-list-a" aria-autocomplete="list" aria-activedescendant="emo-anxiety" value="Anxiété" style="flex:1 1 auto;min-width:0;border:0;outline:0;font-size:14px;background:transparent;color:#1E2633">
+      <span style="font-size:11px;color:#5A6679;white-space:nowrap">famille peur</span>
+     </div>
+     <!-- Liste d'autocomplétion : GET /api/vocabulary/emotions (globales puis personnalisées) -->
+     <ul id="emotion-list-a" role="listbox" aria-label="Émotions correspondant à « anx »" style="margin:0;padding:6px;list-style:none;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF;box-shadow:0 8px 24px rgba(30,38,51,0.10);display:flex;flex-direction:column;gap:2px">
+      <li id="emo-anxiety" role="option" aria-selected="true" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:#ECE8F8;color:#4E3F9E;font-weight:600;font-size:13px"><span aria-hidden="true" style="width:10px;height:10px;border-radius:50%;background:#7A68C9"></span><span style="flex:1 1 auto"><mark style="background:#FBF1DC;color:inherit;padding:0 1px">Anx</mark>iété</span><span style="font-size:11px;font-weight:400;color:#5A6679">peur</span></li>
+      <li role="option" aria-selected="false" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:13px"><span aria-hidden="true" style="width:10px;height:10px;border-radius:50%;background:#7A68C9"></span><span style="flex:1 1 auto">Appréhension</span><span style="font-size:11px;color:#5A6679">peur · faible</span></li>
+      <li role="option" aria-selected="false" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:13px"><span aria-hidden="true" style="width:10px;height:10px;border-radius:50%;background:#7A68C9"></span><span style="flex:1 1 auto"><mark style="background:#FBF1DC;color:inherit;padding:0 1px">Anx</mark>iété de performance</span><span style="font-size:11px;color:#5A6679">peur · personnalisée</span></li>
+      <li role="option" aria-selected="false" style="display:flex;align-items:center;gap:10px;padding:8px 10px;margin-top:4px;border-top:1px solid #E4E8F0;border-radius:0 0 8px 8px;font-size:13px;color:#2C4C99">
+       <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>
+       <span style="flex:1 1 auto">Créer l'émotion personnalisée « anx »</span>
+       <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#5A6679">famille <span style="display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border:1px solid #D6DCE6;border-radius:6px;background:#FFFFFF;color:#1E2633">peur <svg aria-hidden="true" width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg></span></span>
+      </li>
+     </ul>
+    </div>
+
+    <!-- Intensité -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+     <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <span id="lbl-int-a" style="font-size:13px;font-weight:500">Intensité</span>
+      <span style="font-family:'JetBrains Mono', monospace;font-size:15px;font-weight:500;color:#4E3F9E"><span aria-hidden="true">8</span><span style="font-size:11px;color:#5A6679">/10</span></span>
+     </div>
+     <div role="slider" tabindex="0" aria-labelledby="lbl-int-a" aria-valuemin="1" aria-valuemax="10" aria-valuenow="8" aria-valuetext="8 sur 10" style="position:relative;height:24px;padding:0 8px;cursor:pointer">
+      <div aria-hidden="true" style="position:absolute;left:8px;right:8px;top:10px;height:4px;border-radius:2px;background:#E4E8F0"></div>
+      <div aria-hidden="true" style="position:absolute;left:8px;width:calc((100% - 16px) * 0.7778);top:10px;height:4px;border-radius:2px;background:#8B7BD6"></div>
+      <div aria-hidden="true" style="position:absolute;left:calc(8px + (100% - 16px) * 0.7778 - 8px);top:4px;width:16px;height:16px;border-radius:50%;background:#FFFFFF;border:2.5px solid #8B7BD6;box-shadow:0 1px 3px rgba(30,38,51,0.18)"></div>
+     </div>
+     <div aria-hidden="true" style="display:flex;justify-content:space-between;padding:0 8px;font-family:'JetBrains Mono', monospace;font-size:10px;color:#8A94A6">
+      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span style="color:#4E3F9E;font-weight:500">8</span><span>9</span><span>10</span>
+     </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:6px">
+     <label for="text-a" style="font-size:13px;font-weight:500">Texte <span style="font-weight:400;color:#8A94A6">(facultatif)</span></label>
+     <textarea id="text-a" rows="2" style="border:1px solid #B9C2D1;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.5;color:#1E2633;resize:vertical">n'a pas dormi</textarea>
+    </div>
+   </section>
+
+   <!-- 3 · Quand -->
+   <section aria-labelledby="h-when-a" style="display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+     <h3 id="h-when-a" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Quand</h3>
+     <button type="button" style="height:24px;padding:0 8px;border:0;border-radius:6px;background:transparent;font-size:12px;color:#2C4C99;cursor:pointer">Maintenant</button>
+    </div>
+    <div role="group" aria-label="Précision temporelle" style="display:inline-flex;border:1px solid #D6DCE6;border-radius:8px;overflow:hidden;align-self:flex-start">
+     <button type="button" aria-pressed="false" style="height:28px;padding:0 10px;border:0;background:#FFFFFF;color:#5A6679;font-size:12px;cursor:pointer">exact</button>
+     <button type="button" aria-pressed="true" style="height:28px;padding:0 10px;border:0;border-left:1px solid #D6DCE6;background:#E3EAF8;color:#2C4C99;font-size:12px;font-weight:600;cursor:pointer">jour</button>
+     <button type="button" aria-pressed="false" style="height:28px;padding:0 10px;border:0;border-left:1px solid #D6DCE6;background:#FFFFFF;color:#5A6679;font-size:12px;cursor:pointer">mois</button>
+     <button type="button" aria-pressed="false" style="height:28px;padding:0 10px;border:0;border-left:1px solid #D6DCE6;background:#FFFFFF;color:#5A6679;font-size:12px;cursor:pointer">année</button>
+     <button type="button" aria-pressed="false" style="height:28px;padding:0 10px;border:0;border-left:1px solid #D6DCE6;background:#FFFFFF;color:#5A6679;font-size:12px;cursor:pointer">période</button>
+     <button type="button" aria-pressed="false" style="height:28px;padding:0 10px;border:0;border-left:1px solid #D6DCE6;background:#FFFFFF;color:#5A6679;font-size:12px;cursor:pointer">phase de vie</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+     <label for="date-a" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Date</label>
+     <input id="date-a" type="text" value="24 oct. 2026" style="width:150px;height:36px;padding:0 12px;border:1px solid #B9C2D1;border-radius:10px;font-family:'JetBrains Mono', monospace;font-size:13px;color:#1E2633">
+     <span style="font-size:12px;color:#5A6679">précision « jour » : l'heure n'est pas enregistrée</span>
+    </div>
+   </section>
+
+   <!-- 4 · Séance -->
+   <section aria-labelledby="h-sess-a" style="display:flex;flex-direction:column;gap:8px">
+    <h3 id="h-sess-a" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Séance</h3>
+    <button type="button" aria-haspopup="listbox" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF;font-size:13px;color:#1E2633;cursor:pointer;text-align:left">
+     <span aria-hidden="true" style="width:10px;height:10px;border-radius:3px;border:2px solid #3E8E7E;flex-shrink:0"></span>
+     <span style="flex:1 1 auto"><strong style="font-weight:600">Séance du 24 oct.</strong> <span style="color:#1E6B45">(en cours)</span></span>
+     <span style="font-size:12px;color:#2C4C99">modifier</span>
+     <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#5A6679" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
+    </button>
+   </section>
+
+   <!-- 5 · Lié à… -->
+   <section aria-labelledby="h-link-a" style="display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+     <h3 id="h-link-a" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Lié à…</h3>
+     <span style="font-size:11px;color:#8A94A6">récentes et actives · <span style="font-family:'JetBrains Mono', monospace">Tab</span> pour atteindre</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF">
+     <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#5A6679" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>
+     <label for="link-search-a" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Rechercher une autre entrée à lier</label>
+     <input id="link-search-a" type="search" placeholder="Rechercher une autre entrée (titre, tag, date)…" style="flex:1 1 auto;border:0;outline:0;font-size:13px;background:transparent;color:#1E2633">
+    </div>
+    <fieldset style="margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:6px">
+     <legend style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Entrées à lier et type de lien</legend>
+     <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:2px solid #3A63C2;border-radius:10px;background:#E3EAF8;cursor:pointer">
+      <input type="checkbox" checked style="width:16px;height:16px;accent-color:#3A63C2;margin:0">
+      <span aria-hidden="true" style="width:9px;height:9px;background:#3A63C2;transform:rotate(45deg);margin:0 1px;flex-shrink:0"></span>
+      <span style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-weight:600;font-size:13px">Entretien annuel</span><span style="font-size:11px;color:#2C4C99">Événement · 18 oct. · depuis la barre</span></span>
+      <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 8px;border:1px solid #3A63C2;border-radius:999px;background:#FFFFFF;font-size:12px;color:#2C4C99;white-space:nowrap">déclenché par <svg aria-hidden="true" width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg></span>
+     </label>
+     <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF;cursor:pointer">
+      <input type="checkbox" style="width:16px;height:16px;accent-color:#3A63C2;margin:0">
+      <span aria-hidden="true" style="width:14px;height:6px;border-radius:999px;background:#2F4F73;flex-shrink:0"></span>
+      <span style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-weight:600;font-size:13px">Surcharge au travail</span><span style="font-size:11px;color:#5A6679">Situation · depuis mars 2026 · en cours</span></span>
+      <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 8px;border:1px dashed #B9C2D1;border-radius:999px;font-size:12px;color:#5A6679;white-space:nowrap">aggravé par</span>
+     </label>
+     <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF;cursor:pointer">
+      <input type="checkbox" style="width:16px;height:16px;accent-color:#3A63C2;margin:0">
+      <span aria-hidden="true" style="width:14px;height:6px;border-radius:999px;background:#2F4F73;flex-shrink:0"></span>
+      <span style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-weight:600;font-size:13px">Troubles du sommeil</span><span style="font-size:11px;color:#5A6679">Situation · depuis 6 semaines · en cours</span></span>
+      <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 8px;border:1px dashed #B9C2D1;border-radius:999px;font-size:12px;color:#5A6679;white-space:nowrap">co-occurrence</span>
+     </label>
+     <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF;cursor:pointer">
+      <input type="checkbox" style="width:16px;height:16px;accent-color:#3A63C2;margin:0">
+      <span aria-hidden="true" style="width:14px;height:8px;border-radius:999px;background:#B07A2A;flex-shrink:0"></span>
+      <span style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-weight:600;font-size:13px">Sertraline 75 mg</span><span style="font-size:11px;color:#5A6679">Médicament · depuis le 12 sept.</span></span>
+      <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 8px;border:1px dashed #B9C2D1;border-radius:999px;font-size:12px;color:#5A6679;white-space:nowrap">traité par</span>
+     </label>
+     <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF;cursor:pointer">
+      <input type="checkbox" style="width:16px;height:16px;accent-color:#3A63C2;margin:0">
+      <span aria-hidden="true" style="width:10px;height:10px;border-radius:50%;background:#8B7BD6;flex-shrink:0"></span>
+      <span style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-weight:600;font-size:13px">Anxiété 6/10 · le soir, avant l'entretien</span><span style="font-size:11px;color:#5A6679">Ressenti · 17 oct. · séance du 17 oct.</span></span>
+      <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 8px;border:1px dashed #B9C2D1;border-radius:999px;font-size:12px;color:#5A6679;white-space:nowrap">suit</span>
+     </label>
+    </fieldset>
+    <span style="font-size:11px;color:#8A94A6">Les liens cochés sont posés dans la même transaction que l'entrée (tout ou rien, 20 au plus).</span>
+   </section>
+
+   <!-- 6 · Plus (replié) -->
+   <details style="border-top:1px solid #E4E8F0;padding-top:10px">
+    <summary style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:#1E2633;list-style:none">
+     <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 2l4 3-4 3"></path></svg>
+     Plus
+     <span style="font-weight:400;color:#8A94A6">visibilité (clinique par défaut), tags</span>
+    </summary>
+    <div style="display:flex;flex-direction:column;gap:12px;padding:12px 0 0 18px">
+     <fieldset style="margin:0;padding:0;border:0;display:flex;align-items:center;gap:14px;font-size:13px">
+      <legend style="font-size:12px;font-weight:500;margin-bottom:6px">Visibilité</legend>
+      <label style="display:inline-flex;align-items:center;gap:6px"><input type="radio" name="vis-a" checked style="accent-color:#3A63C2;margin:0">Clinique</label>
+      <label style="display:inline-flex;align-items:center;gap:6px"><input type="radio" name="vis-a" style="accent-color:#3A63C2;margin:0">Privée <span style="font-size:11px;color:#8A94A6">(exclue de l'export)</span></label>
+     </fieldset>
+     <div style="display:flex;flex-direction:column;gap:6px"><label for="tags-a" style="font-size:12px;font-weight:500">Tags</label><input id="tags-a" type="text" placeholder="sommeil, travail…" style="height:34px;padding:0 12px;border:1px solid #B9C2D1;border-radius:8px;font-size:13px"></div>
+    </div>
+   </details>
+  </div>
+
+  <!-- 7 · Pied -->
+  <div style="padding:12px 20px;border-top:1px solid #E4E8F0;display:flex;flex-direction:column;gap:8px">
+   <div style="display:flex;align-items:center;gap:10px">
+    <button type="submit" style="height:40px;padding:0 16px;border:0;border-radius:10px;background:#3A63C2;color:#FFFFFF;font-size:14px;font-weight:600;cursor:pointer">Enregistrer <span style="font-family:'JetBrains Mono', monospace;font-size:11px;opacity:0.8;margin-left:6px">⏎</span></button>
+    <button type="button" style="height:40px;padding:0 14px;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF;font-size:14px;cursor:pointer">Brouillon <span style="font-family:'JetBrains Mono', monospace;font-size:11px;color:#5A6679;margin-left:6px">Ctrl+S</span></button>
+    <div style="flex:1 1 auto"></div>
+    <button type="button" style="height:40px;padding:0 10px;border:0;background:transparent;font-size:13px;color:#5A6679;cursor:pointer">Annuler <span style="font-family:'JetBrains Mono', monospace;font-size:11px">Échap</span></button>
+   </div>
+   <span style="font-size:11px;color:#8A94A6"><span style="font-family:'JetBrains Mono', monospace">Échap</span> ferme en gardant le brouillon · <span style="font-family:'JetBrains Mono', monospace">Ctrl+⏎</span> enregistre depuis le texte multi-ligne · <span style="font-family:'JetBrains Mono', monospace">Tab</span> suit l'ordre des blocs</span>
+  </div>
+ </form>
+</div>
+
+<!-- ============================================================ -->
+<!-- ÉTAT B : correction d'une entrée existante + historique des versions -->
+<!-- ============================================================ -->
+<div style="position:relative;min-height:1200px;background:#EEF1F6;font-size:14px;line-height:1.45;display:flex;flex-direction:column">
+
+ <!-- Arrière-plan (barre, en-tête, timeline) estompé -->
+ <div style="display:flex;align-items:center;gap:16px;height:48px;padding:0 24px;background:#FFFFFF;border-bottom:1px solid #D6DCE6">
+  <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>PsyMate</div>
+  <a href="#patients" style="font-size:13px;color:#5A6679;text-decoration:none">Patients</a><span style="color:#8A94A6">/</span><span style="font-size:13px">Marie D.</span>
+  <div style="flex:1 1 auto"></div>
+  <div aria-label="Compte de Claire Martin" role="img" style="width:32px;height:32px;border-radius:50%;background:#3A63C2;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px">CM</div>
+ </div>
+ <div style="display:flex;flex-direction:column;gap:12px;padding:16px 24px 0;background:#FFFFFF;border-bottom:1px solid #D6DCE6">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+   <div style="display:flex;align-items:baseline;gap:10px"><h1 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-0.01em">Marie D.</h1><span style="color:#5A6679">34 ans · suivie depuis mars 2025</span></div>
+   <div style="flex:1 1 auto"></div>
+   <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:1px solid #D6DCE6;border-radius:999px;background:#FFFFFF;color:#1E2633;font-size:13px">Séance du 24 oct. · clôturée à <span style="font-family:'JetBrains Mono', monospace">15:40</span></span>
+   <button style="height:32px;padding:0 14px;border:0;border-radius:8px;background:#3A63C2;color:#FFFFFF;font-size:13px;font-weight:600;cursor:pointer">Démarrer la séance</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:4px">
+   <a href="#overview-b" style="display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;text-decoration:none;color:#5A6679;font-weight:500;font-size:13px;border-bottom:2px solid transparent"><span style="font-family:'JetBrains Mono', monospace;font-size:11px">1</span> Vue d'ensemble</a>
+   <a href="#timeline-b" style="display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;text-decoration:none;color:#1E2633;font-weight:600;font-size:13px;border-bottom:2px solid #3A63C2"><span style="font-family:'JetBrains Mono', monospace;font-size:11px;color:#5A6679">2</span> Timeline</a>
+   <a href="#graph-b" style="display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;text-decoration:none;color:#5A6679;font-weight:500;font-size:13px;border-bottom:2px solid transparent"><span style="font-family:'JetBrains Mono', monospace;font-size:11px">3</span> Graphe</a>
+  </div>
+ </div>
+ <div aria-hidden="true" style="width:100%;max-width:1180px;margin:0 auto;padding:16px 24px 32px;opacity:0.6">
+  <section style="background:#FFFFFF;border:1px solid #D6DCE6;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;max-width:480px">
+   <h2 style="margin:0;font-size:12px;font-weight:600;color:#5A6679;text-transform:uppercase;letter-spacing:0.04em">Vendredi 24 octobre · séance · 55 min · cabinet</h2>
+   <div style="display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 10px;border-radius:8px;background:#E3EAF8;border:1px solid #3A63C2"><span style="width:9px;height:9px;background:#3A63C2;transform:rotate(45deg);margin:0 1px"></span><span style="flex:1 1 auto;font-weight:600">Entretien annuel</span><span style="font-size:11px;color:#5A6679;background:#FFFFFF;padding:1px 6px;border-radius:999px">v2</span><span style="font-size:11px;color:#5A6679">18 oct.</span></div>
+   <div style="display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 10px"><span style="width:10px;height:10px;border-radius:50%;background:#8B7BD6"></span><span style="flex:1 1 auto">Anxiété 8/10 · n'a pas dormi</span><span style="font-size:11px;color:#5A6679">1 lien</span></div>
+   <div style="display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 10px"><span style="width:10px;height:12px;border-radius:2px;background:#7F8EA8"></span><span style="flex:1 1 auto">Note · arrive en retard, essoufflée</span></div>
+   <div style="display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 10px"><span style="width:10px;height:10px;border-radius:3px;border:2px solid #3E8E7E"></span><span style="flex:1 1 auto">Compte rendu : préparation de l'entretien, pensées automatiques.</span></div>
+  </section>
+ </div>
+
+ <!-- Voile -->
+ <div style="position:absolute;inset:0;background:rgba(30, 38, 51, 0.18)" aria-hidden="true"></div>
+
+ <!-- Panneau secondaire « Historique des versions », accolé à gauche de l'éditeur -->
+ <aside aria-labelledby="h-hist" style="position:absolute;top:0;right:480px;bottom:0;width:420px;background:#EEF1F6;border-left:1px solid #D6DCE6;box-shadow:-12px 0 32px rgba(30,38,51,0.10);display:flex;flex-direction:column">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid #D6DCE6;background:#FFFFFF">
+   <div style="display:flex;flex-direction:column;gap:2px">
+    <h2 id="h-hist" style="margin:0;font-size:15px;font-weight:600">Historique des versions</h2>
+    <span style="font-size:12px;color:#5A6679">Entretien annuel · 2 versions · <span style="font-family:'JetBrains Mono', monospace;font-size:11px">GET /api/entries/{id}/versions</span></span>
+   </div>
+   <button type="button" aria-label="Masquer l'historique" style="width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:#5A6679;cursor:pointer;font-size:18px">×</button>
+  </div>
+  <div style="flex:1 1 auto;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+
+   <ol role="list" aria-label="Versions, de la plus récente à la plus ancienne" style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px">
+    <li aria-current="true" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid #3A63C2;border-radius:10px;background:#FFFFFF">
+     <span style="font-family:'JetBrains Mono', monospace;font-size:12px;font-weight:500;color:#2C4C99;width:24px">v2</span>
+     <span style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px">
+      <span style="font-size:13px"><span style="font-family:'JetBrains Mono', monospace">24 oct. 15:12</span> · Claire M. <span style="display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:999px;background:#E3EAF8;color:#2C4C99;font-size:11px;font-weight:600;margin-left:4px">courante</span></span>
+      <span style="font-size:12px;color:#5A6679">Motif : « titre et date précisés après relecture »</span>
+     </span>
+    </li>
+    <li style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF">
+     <span style="font-family:'JetBrains Mono', monospace;font-size:12px;font-weight:500;color:#5A6679;width:24px">v1</span>
+     <span style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px">
+      <span style="font-size:13px"><span style="font-family:'JetBrains Mono', monospace">24 oct. 14:03</span> · Claire M.</span>
+      <span style="font-size:12px;color:#5A6679">Création en séance, depuis la barre de capture</span>
+     </span>
+    </li>
+   </ol>
+
+   <!-- Différence champ par champ v1 → v2 -->
+   <section aria-labelledby="h-diff" style="background:#FFFFFF;border:1px solid #D6DCE6;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+     <h3 id="h-diff" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Différences v1 → v2</h3>
+     <span style="font-size:11px;color:#8A94A6">3 champs modifiés</span>
+    </div>
+    <dl style="margin:0;display:grid;grid-template-columns:64px 1fr;gap:10px 12px;font-size:13px">
+     <dt style="font-weight:500;color:#5A6679;padding-top:2px">Titre</dt>
+     <dd style="margin:0;display:flex;flex-direction:column;gap:4px">
+      <span style="display:flex;gap:8px;align-items:baseline"><span aria-label="ancien" style="font-family:'JetBrains Mono', monospace;font-size:10px;color:#8A94A6;width:36px;flex-shrink:0">v1</span><s style="color:#8A94A6;text-decoration-color:#B9C2D1">Entretien avec le manager</s></span>
+      <span style="display:flex;gap:8px;align-items:baseline"><span aria-label="nouveau" style="font-family:'JetBrains Mono', monospace;font-size:10px;color:#2C4C99;width:36px;flex-shrink:0">v2</span><span style="background:#E3EAF8;padding:0 3px;border-radius:3px">Entretien annuel</span></span>
+     </dd>
+     <dt style="font-weight:500;color:#5A6679;padding-top:2px">Texte</dt>
+     <dd style="margin:0;display:flex;flex-direction:column;gap:4px">
+      <span style="display:flex;gap:8px;align-items:baseline"><span aria-label="ancien" style="font-family:'JetBrains Mono', monospace;font-size:10px;color:#8A94A6;width:36px;flex-shrink:0">v1</span><s style="color:#8A94A6;text-decoration-color:#B9C2D1">Évaluation prévue, stress depuis une semaine.</s></span>
+      <span style="display:flex;gap:8px;align-items:baseline"><span aria-label="nouveau" style="font-family:'JetBrains Mono', monospace;font-size:10px;color:#2C4C99;width:36px;flex-shrink:0">v2</span><span>Entretien annuel d'évaluation avec le manager, <span style="background:#E3EAF8;padding:0 3px;border-radius:3px">redouté depuis une semaine ; réveils à 4 h</span>.</span></span>
+     </dd>
+     <dt style="font-weight:500;color:#5A6679;padding-top:2px">Date</dt>
+     <dd style="margin:0;display:flex;flex-direction:column;gap:4px">
+      <span style="display:flex;gap:8px;align-items:baseline"><span aria-label="ancien" style="font-family:'JetBrains Mono', monospace;font-size:10px;color:#8A94A6;width:36px;flex-shrink:0">v1</span><s style="color:#8A94A6;text-decoration-color:#B9C2D1;font-family:'JetBrains Mono', monospace;font-size:12px">17 oct. 2026 · jour</s></span>
+      <span style="display:flex;gap:8px;align-items:baseline"><span aria-label="nouveau" style="font-family:'JetBrains Mono', monospace;font-size:10px;color:#2C4C99;width:36px;flex-shrink:0">v2</span><span style="background:#E3EAF8;padding:0 3px;border-radius:3px;font-family:'JetBrains Mono', monospace;font-size:12px">18 oct. 2026 · jour</span></span>
+     </dd>
+    </dl>
+    <div style="border-top:1px solid #E4E8F0;padding-top:10px;font-size:12px;color:#5A6679;display:flex;flex-direction:column;gap:4px">
+     <span>Inchangés : séance (24 oct.), visibilité (clinique), tags (travail), liens (2).</span>
+     <span>Historique en lecture seule : une version ne se restaure pas ; rien n'est effacé.</span>
+    </div>
+   </section>
+  </div>
+ </aside>
+
+ <!-- Panneau « Modifier l'entrée » -->
+ <form onsubmit="return false" role="dialog" aria-labelledby="h-edit" aria-describedby="grace-b" aria-modal="true" style="position:absolute;top:0;right:0;bottom:0;width:480px;background:#FFFFFF;border-left:1px solid #D6DCE6;box-shadow:-12px 0 32px rgba(30,38,51,0.12);display:flex;flex-direction:column">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid #E4E8F0">
+   <div style="display:flex;flex-direction:column;gap:2px">
+    <h2 id="h-edit" style="margin:0;font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px">Modifier l'entrée <span style="display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;background:#E4E8F0;color:#5A6679;font-family:'JetBrains Mono', monospace;font-size:11px;font-weight:500">v2</span></h2>
+    <span style="font-size:12px;color:#5A6679">Marie D. · <span style="font-family:'JetBrains Mono', monospace;font-size:11px">PATCH /api/entries/{id}</span></span>
+   </div>
+   <button type="button" aria-label="Fermer (Échap, le brouillon est conservé)" style="width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:#5A6679;cursor:pointer;font-size:18px">×</button>
+  </div>
+
+  <!-- Bandeau fenêtre de grâce (G Q31 : 1 h 15) -->
+  <div id="grace-b" role="status" style="display:flex;align-items:flex-start;gap:10px;padding:10px 20px;background:#FBF1DC;color:#7A5A12;font-size:12px;line-height:1.5;border-bottom:1px solid #E4E8F0">
+   <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="flex-shrink:0;margin-top:1px"><circle cx="8" cy="8" r="6"></circle><path d="M8 4.5V8l2.5 1.5"></path></svg>
+   <span>Modifiée il y a <span style="font-family:'JetBrains Mono', monospace">2 h</span> · hors fenêtre de grâce (1 h 15) : cette correction créera la <strong style="font-weight:600">version 3</strong>. Les versions précédentes restent consultables.</span>
+  </div>
+
+  <div style="flex:1 1 auto;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px">
+
+   <!-- Type : figé en correction -->
+   <section aria-labelledby="h-type-b" style="display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+     <h3 id="h-type-b" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Type</h3>
+     <span style="font-size:11px;color:#8A94A6">le type ne se modifie pas</span>
+    </div>
+    <div role="group" aria-label="Type d'entrée (verrouillé)" style="display:flex;flex-wrap:wrap;gap:6px">
+     <button type="button" aria-pressed="false" disabled style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #E4E8F0;border-radius:999px;background:#FFFFFF;font-size:13px;color:#8A94A6"><span aria-hidden="true" style="width:9px;height:11px;border-radius:2px;background:#D6DCE6"></span>Note</button>
+     <button type="button" aria-pressed="true" style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #3A63C2;border-radius:999px;background:#E3EAF8;font-size:13px;font-weight:600;color:#2C4C99"><span aria-hidden="true" style="width:9px;height:9px;background:#3A63C2;transform:rotate(45deg);margin:0 1px"></span>Événement</button>
+     <button type="button" aria-pressed="false" disabled style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #E4E8F0;border-radius:999px;background:#FFFFFF;font-size:13px;color:#8A94A6"><span aria-hidden="true" style="width:14px;height:6px;border-radius:999px;background:#D6DCE6"></span>Situation</button>
+     <button type="button" aria-pressed="false" disabled style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #E4E8F0;border-radius:999px;background:#FFFFFF;font-size:13px;color:#8A94A6"><span aria-hidden="true" style="width:10px;height:10px;border-radius:50%;background:#D6DCE6"></span>Ressenti</button>
+     <button type="button" aria-pressed="false" disabled style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #E4E8F0;border-radius:999px;background:#FFFFFF;font-size:13px;color:#8A94A6"><span aria-hidden="true" style="width:10px;height:10px;border-radius:3px;border:2px solid #D6DCE6"></span>Séance</button>
+     <button type="button" aria-pressed="false" disabled style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #E4E8F0;border-radius:999px;background:#FFFFFF;font-size:13px;color:#8A94A6"><span aria-hidden="true" style="width:14px;height:8px;border-radius:999px;background:#D6DCE6"></span>Médicament</button>
+    </div>
+   </section>
+
+   <!-- Champ principal : titre + texte -->
+   <section aria-labelledby="h-main-b" style="display:flex;flex-direction:column;gap:12px">
+    <h3 id="h-main-b" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Événement</h3>
+    <div style="display:flex;flex-direction:column;gap:6px">
+     <label for="title-b" style="font-size:13px;font-weight:500">Titre <span style="font-weight:400;color:#8A94A6">(obligatoire pour un événement)</span></label>
+     <input id="title-b" type="text" value="Entretien annuel" style="height:40px;padding:0 12px;border:1px solid #B9C2D1;border-radius:10px;font-size:14px;color:#1E2633">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+     <label for="text-b" style="font-size:13px;font-weight:500">Texte</label>
+     <textarea id="text-b" rows="3" style="border:1px solid #3A63C2;box-shadow:0 0 0 3px #E3EAF8;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.5;color:#1E2633;resize:vertical">Entretien annuel d'évaluation avec le manager, redouté depuis une semaine ; réveils à 4 h. Issue : objectifs maintenus, pas d'augmentation.</textarea>
+     <span style="font-size:11px;color:#8A94A6">Modifié par rapport à la v2 · <span style="font-family:'JetBrains Mono', monospace">Ctrl+⏎</span> pour enregistrer depuis ce champ</span>
+    </div>
+   </section>
+
+   <!-- Quand -->
+   <section aria-labelledby="h-when-b" style="display:flex;flex-direction:column;gap:8px">
+    <h3 id="h-when-b" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Quand</h3>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+     <div role="group" aria-label="Précision temporelle" style="display:inline-flex;border:1px solid #D6DCE6;border-radius:8px;overflow:hidden">
+      <button type="button" aria-pressed="false" style="height:28px;padding:0 10px;border:0;background:#FFFFFF;color:#5A6679;font-size:12px;cursor:pointer">exact</button>
+      <button type="button" aria-pressed="true" style="height:28px;padding:0 10px;border:0;border-left:1px solid #D6DCE6;background:#E3EAF8;color:#2C4C99;font-size:12px;font-weight:600;cursor:pointer">jour</button>
+      <button type="button" aria-pressed="false" style="height:28px;padding:0 10px;border:0;border-left:1px solid #D6DCE6;background:#FFFFFF;color:#5A6679;font-size:12px;cursor:pointer">mois</button>
+      <button type="button" aria-pressed="false" style="height:28px;padding:0 10px;border:0;border-left:1px solid #D6DCE6;background:#FFFFFF;color:#5A6679;font-size:12px;cursor:pointer">année</button>
+      <button type="button" aria-pressed="false" style="height:28px;padding:0 10px;border:0;border-left:1px solid #D6DCE6;background:#FFFFFF;color:#5A6679;font-size:12px;cursor:pointer">période</button>
+      <button type="button" aria-pressed="false" style="height:28px;padding:0 10px;border:0;border-left:1px solid #D6DCE6;background:#FFFFFF;color:#5A6679;font-size:12px;cursor:pointer">phase de vie</button>
+     </div>
+     <label for="date-b" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Date</label>
+     <input id="date-b" type="text" value="18 oct. 2026" style="width:150px;height:36px;padding:0 12px;border:1px solid #B9C2D1;border-radius:10px;font-family:'JetBrains Mono', monospace;font-size:13px;color:#1E2633">
+    </div>
+   </section>
+
+   <!-- Séance -->
+   <section aria-labelledby="h-sess-b" style="display:flex;flex-direction:column;gap:8px">
+    <h3 id="h-sess-b" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Séance</h3>
+    <button type="button" aria-haspopup="listbox" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF;font-size:13px;color:#1E2633;cursor:pointer;text-align:left">
+     <span aria-hidden="true" style="width:10px;height:10px;border-radius:3px;border:2px solid #3E8E7E;flex-shrink:0"></span>
+     <span style="flex:1 1 auto"><strong style="font-weight:600">Séance du 24 oct.</strong></span>
+     <span style="font-size:12px;color:#2C4C99">modifier</span>
+     <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#5A6679" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
+    </button>
+   </section>
+
+   <!-- Liens existants -->
+   <section aria-labelledby="h-link-b" style="display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+     <h3 id="h-link-b" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Lié à… · 2</h3>
+     <span style="font-size:11px;color:#8A94A6">les liens se modifient dans l'éditeur de lien</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #D6DCE6;border-radius:10px;font-size:13px"><span aria-hidden="true" style="width:10px;height:10px;border-radius:50%;background:#8B7BD6;flex-shrink:0"></span><span style="flex:1 1 auto"><strong style="font-weight:600">déclenche</strong> Anxiété 8/10 · n'a pas dormi</span><a href="#link-1" style="font-size:12px;text-decoration:none">Modifier</a></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #D6DCE6;border-radius:10px;font-size:13px"><span aria-hidden="true" style="width:14px;height:6px;border-radius:999px;background:#2F4F73;flex-shrink:0"></span><span style="flex:1 1 auto"><strong style="font-weight:600">fait partie de</strong> Surcharge au travail</span><a href="#link-2" style="font-size:12px;text-decoration:none">Modifier</a></div>
+   </section>
+
+   <!-- Motif de la correction (reason du PATCH) -->
+   <div style="display:flex;flex-direction:column;gap:6px">
+    <label for="reason-b" style="font-size:13px;font-weight:500">Motif de la correction <span style="font-weight:400;color:#8A94A6">(facultatif, conservé sur la version 3)</span></label>
+    <input id="reason-b" type="text" placeholder="ex. issue de l'entretien ajoutée après la séance" style="height:36px;padding:0 12px;border:1px solid #B9C2D1;border-radius:10px;font-size:13px;color:#1E2633">
+   </div>
+
+   <details style="border-top:1px solid #E4E8F0;padding-top:10px">
+    <summary style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:#1E2633;list-style:none">
+     <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 2l4 3-4 3"></path></svg>
+     Plus
+     <span style="font-weight:400;color:#8A94A6">visibilité clinique · tags : travail · un changement de tags seul ne crée pas de version</span>
+    </summary>
+    <div style="display:flex;flex-direction:column;gap:12px;padding:12px 0 0 18px">
+     <fieldset style="margin:0;padding:0;border:0;display:flex;align-items:center;gap:14px;font-size:13px">
+      <legend style="font-size:12px;font-weight:500;margin-bottom:6px">Visibilité</legend>
+      <label style="display:inline-flex;align-items:center;gap:6px"><input type="radio" name="vis-b" checked style="accent-color:#3A63C2;margin:0">Clinique</label>
+      <label style="display:inline-flex;align-items:center;gap:6px"><input type="radio" name="vis-b" style="accent-color:#3A63C2;margin:0">Privée</label>
+     </fieldset>
+     <div style="display:flex;flex-direction:column;gap:6px"><label for="tags-b" style="font-size:12px;font-weight:500">Tags</label><input id="tags-b" type="text" value="travail" style="height:34px;padding:0 12px;border:1px solid #B9C2D1;border-radius:8px;font-size:13px"></div>
+    </div>
+   </details>
+  </div>
+
+  <!-- Pied : version + historique -->
+  <div style="padding:12px 20px;border-top:1px solid #E4E8F0;display:flex;flex-direction:column;gap:8px">
+   <div style="display:flex;align-items:center;gap:10px">
+    <button type="submit" style="height:40px;padding:0 16px;border:0;border-radius:10px;background:#3A63C2;color:#FFFFFF;font-size:14px;font-weight:600;cursor:pointer">Enregistrer la version 3 <span style="font-family:'JetBrains Mono', monospace;font-size:11px;opacity:0.8;margin-left:6px">⏎</span></button>
+    <button type="button" style="height:40px;padding:0 14px;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF;font-size:14px;cursor:pointer">Brouillon <span style="font-family:'JetBrains Mono', monospace;font-size:11px;color:#5A6679;margin-left:6px">Ctrl+S</span></button>
+    <div style="flex:1 1 auto"></div>
+    <button type="button" style="height:40px;padding:0 10px;border:0;background:transparent;font-size:13px;color:#5A6679;cursor:pointer">Annuler <span style="font-family:'JetBrains Mono', monospace;font-size:11px">Échap</span></button>
+   </div>
+   <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#5A6679">
+    <span>Version 2 · créée le <span style="font-family:'JetBrains Mono', monospace">24 oct. 14:03</span>, modifiée le <span style="font-family:'JetBrains Mono', monospace">15:12</span></span>
+    <span>·</span>
+    <a href="#history" aria-expanded="true" aria-controls="h-hist" style="text-decoration:none;font-weight:500">Historique (2)</a>
+    <span style="flex:1 1 auto"></span>
+    <span style="font-size:11px;color:#8A94A6"><span style="font-family:'JetBrains Mono', monospace">Échap</span> garde le brouillon</span>
+   </div>
+  </div>
+ </form>
+</div>
+
+</body>
+</html>

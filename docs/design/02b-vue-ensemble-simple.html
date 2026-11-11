@@ -1,0 +1,233 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Vue d'ensemble du patient – version Récit</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<!-- UX-F1 (11 nov. 2026) : le « Point d'attention » ne reprend que la phrase du serveur (NarrativeDto.attention, issue des drapeaux actifs) ; la règle « trois ressentis à 7 ou plus en huit jours, sommeil noté deux fois » n'est pas calculée côté serveur et n'est pas affichée. Note sans titre de « Depuis la séance » nommée « Note · 22 oct. » (SinceLastSessionEntryDto n'a pas de texte). -->
+
+
+<div style="min-height: 1040px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      Suivi
+    </div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a>
+    <span style="color: #9AA5B8">/</span>
+    <span style="font-size: 13px; color: #1E2633">Marie D.</span>
+    <div style="flex: 1 1 auto"></div>
+    <button aria-label="Rechercher dans le dossier" style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>
+      Rechercher <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 1px 5px; border: 1px solid #D6DCE6; border-radius: 4px">/</span>
+    </button>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CL</div>
+  </div>
+
+  <!-- En-tête patient permanent -->
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 0; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+      <div style="display: flex; align-items: baseline; gap: 10px">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Marie D.</h1>
+        <span style="color: #5A6679; font-size: 14px">34 ans · suivie depuis mars 2025</span>
+      </div>
+      <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; background: #FBF1DC; color: #7A5A12; font-size: 12px; font-weight: 500">
+        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M2 1v10M2 1h7l-1.5 2.5L9 6H2"></path></svg>
+        à surveiller
+      </span>
+      <div style="flex: 1 1 auto"></div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <button style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; color: #1E2633; font-size: 13px; cursor: pointer">Dernière séance : 17 oct.
+          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
+        </button>
+        <button style="height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: #3A63C2; color: #FFFFFF; font-size: 13px; font-weight: 600; cursor: pointer">Démarrer la séance</button>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 4px">
+      <a href="#overview" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; text-decoration: none; color: #1E2633; font-weight: 600; font-size: 13px; border-bottom: 2px solid #3A63C2"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">1</span> Vue d'ensemble</a>
+      <a href="#timeline" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; text-decoration: none; color: #5A6679; font-weight: 500; font-size: 13px; border-bottom: 2px solid transparent"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">2</span> Timeline</a>
+      <a href="#graph" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; text-decoration: none; color: #5A6679; font-weight: 500; font-size: 13px; border-bottom: 2px solid transparent"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">3</span> Graphe</a>
+      <div style="flex: 1 1 auto"></div>
+      <div role="group" aria-label="Niveau de détail de la vue d'ensemble" style="display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: #5A6679; margin-bottom: 4px">
+        Vue
+        <span style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+          <button aria-pressed="true" style="height: 28px; padding: 0 12px; border: 0; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; cursor: pointer">Simple</button>
+          <button aria-pressed="false" style="height: 28px; padding: 0 12px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 12px; font-weight: 500; cursor: pointer">Complète</button>
+        </span>
+        <span style="font-size: 11px; color: #8A94A6">mémorisée dans vos préférences</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barre de capture (repliée) -->
+  <div style="padding: 12px 24px 0">
+    <div style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 14px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round"><path d="M4 5l4 4-4 4M10 13h5"></path></svg>
+      <label for="capture" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Capture rapide</label>
+      <input id="capture" type="text" placeholder="Saisir une entrée… (/evt, /sit, /res, /med) — touche N" style="flex: 1 1 auto; min-width: 0; height: 36px; border: 0; outline: 0; background: transparent; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #1E2633">
+    </div>
+  </div>
+
+  <!-- Contenu : colonne de lecture + colonne latérale -->
+  <div style="display: flex; flex-wrap: wrap; gap: 20px; padding: 16px 24px 32px; align-items: flex-start">
+
+    <!-- Colonne de lecture -->
+    <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+      <!-- En bref -->
+      <section aria-labelledby="h-bref" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+          <h2 id="h-bref" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">En bref</h2>
+          <span style="font-size: 12px; color: #8A94A6">Assemblé à partir des entrées · mis à jour il y a 2 min</span>
+        </div>
+        <p style="margin: 0; font-size: 16px; line-height: 1.7; max-width: 72ch">
+          Marie est suivie depuis <strong style="font-weight: 600">mars 2025</strong>, toutes les une à deux semaines, au cabinet. La dernière séance remonte au <strong style="font-weight: 600">samedi 17 octobre</strong>.
+          Depuis fin août, <strong style="font-weight: 600; color: #4E3F9E">l'anxiété monte</strong> : les ressentis notés passent de 4/10 à 8/10 cette semaine, presque toujours en lien avec la <strong style="font-weight: 600">surcharge au travail</strong>. La tristesse reste stable et basse.
+          Le passage de la sertraline à <strong style="font-weight: 600">75 mg le 12 septembre</strong> n'a pas encore infléchi la courbe.
+          Un <strong style="font-weight: 600">entretien d'évaluation avec son manager</strong> a eu lieu le 18 octobre ; elle n'en a pas encore parlé en séance.
+        </p>
+        <p style="margin: 0; font-size: 14px; color: #7A5A12; background: #FBF1DC; border-radius: 8px; padding: 10px 14px; display: flex; gap: 10px; align-items: flex-start">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="flex-shrink: 0; margin-top: 2px"><path d="M8 2.5 1.8 13.5h12.4L8 2.5zM8 7v3M8 12h.01"></path></svg>
+          <span><strong style="font-weight: 600">Point d'attention :</strong> À surveiller depuis le 3 octobre 2026 (motif : Troubles du sommeil).</span>
+        </p>
+      </section>
+
+      <!-- Comment évoluent les ressentis -->
+      <section aria-labelledby="h-tend" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+            <h2 id="h-tend" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Comment évoluent les ressentis</h2>
+            <div style="flex: 1 1 auto"></div>
+            <div role="group" aria-label="Fenêtre d'analyse" style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+              <button aria-pressed="false" style="height: 28px; padding: 0 12px; border: 0; background: #FFFFFF; color: #5A6679; font-size: 12px; font-weight: 500; cursor: pointer">30 j</button>
+              <button aria-pressed="true" style="height: 28px; padding: 0 12px; border: 0; border-left: 1px solid #D6DCE6; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; cursor: pointer">90 j</button>
+              <button aria-pressed="false" style="height: 28px; padding: 0 12px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 12px; font-weight: 500; cursor: pointer">1 an</button>
+            </div>
+          </div>
+          <p style="margin: 0; font-size: 16px; font-weight: 500">L'anxiété monte depuis fin août : <span style="font-family: 'JetBrains Mono', monospace">4/10 → 8/10</span>. La tristesse reste autour de <span style="font-family: 'JetBrains Mono', monospace">3–5/10</span>.</p>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Chaque point est un ressenti que vous avez noté, avec son intensité sur 10. Pas de moyenne : ce sont les valeurs réelles.</p>
+        </div>
+        <svg role="img" aria-label="Ressentis notés sur 90 jours : anxiété de 4 à 8 sur 10, tristesse entre 3 et 5 ; changement de médicament le 12 septembre" viewBox="0 0 860 230" width="100%" style="display: block; max-width: 100%; height: auto">
+          <!-- axes -->
+          <line x1="60" y1="20" x2="60" y2="180" stroke="#D6DCE6"></line>
+          <line x1="60" y1="180" x2="840" y2="180" stroke="#B9C2D1"></line>
+          <line x1="60" y1="20" x2="840" y2="20" stroke="#E4E8F0" stroke-dasharray="3 4"></line>
+          <line x1="60" y1="100" x2="840" y2="100" stroke="#E4E8F0" stroke-dasharray="3 4"></line>
+          <text x="50" y="24" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="11" fill="#5A6679">10</text>
+          <text x="50" y="104" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="11" fill="#5A6679">5</text>
+          <text x="50" y="184" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="11" fill="#5A6679">0</text>
+          <!-- repères -->
+          <line x1="440" y1="20" x2="440" y2="180" stroke="#B07A2A" stroke-width="1.5" stroke-dasharray="4 3"></line>
+          <text x="446" y="34" font-family="Inter, sans-serif" font-size="11" fill="#7A5A12">sertraline 50 → 75 mg · 12 sept.</text>
+          <!-- séances -->
+          <g fill="#3E8E7E">
+            <rect x="118" y="186" width="4" height="8" rx="1"></rect><rect x="200" y="186" width="4" height="8" rx="1"></rect><rect x="300" y="186" width="4" height="8" rx="1"></rect><rect x="398" y="186" width="4" height="8" rx="1"></rect><rect x="520" y="186" width="4" height="8" rx="1"></rect><rect x="620" y="186" width="4" height="8" rx="1"></rect><rect x="700" y="186" width="4" height="8" rx="1"></rect><rect x="776" y="186" width="4" height="8" rx="1"></rect>
+          </g>
+          <!-- tristesse -->
+          <polyline fill="none" stroke="#3C66A6" stroke-width="1.5" stroke-opacity="0.6" points="150,132 330,132 560,100 720,116"></polyline>
+          <g fill="#FFFFFF" stroke="#3C66A6" stroke-width="2">
+            <circle cx="150" cy="132" r="5"></circle><circle cx="330" cy="132" r="5"></circle><circle cx="560" cy="100" r="5"></circle><circle cx="720" cy="116" r="5"></circle>
+          </g>
+          <!-- anxiété -->
+          <polyline fill="none" stroke="#8B7BD6" stroke-width="2" points="100,116 210,100 300,116 390,84 470,68 540,84 630,52 700,52 760,36 820,36"></polyline>
+          <g fill="#8B7BD6">
+            <circle cx="100" cy="116" r="6"></circle><circle cx="210" cy="100" r="6"></circle><circle cx="300" cy="116" r="6"></circle><circle cx="390" cy="84" r="6"></circle><circle cx="470" cy="68" r="6"></circle><circle cx="540" cy="84" r="6"></circle><circle cx="630" cy="52" r="6"></circle><circle cx="700" cy="52" r="6"></circle><circle cx="760" cy="36" r="6"></circle><circle cx="820" cy="36" r="7" stroke="#4E3F9E" stroke-width="2"></circle>
+          </g>
+          <g font-family="JetBrains Mono, monospace" font-size="11" fill="#4E3F9E" text-anchor="middle">
+            <text x="100" y="106">4</text><text x="210" y="90">5</text><text x="300" y="106">4</text><text x="390" y="74">6</text><text x="470" y="58">7</text><text x="540" y="74">6</text><text x="630" y="42">8</text><text x="700" y="42">8</text><text x="760" y="26">9</text><text x="820" y="25">8</text>
+          </g>
+          <!-- dates -->
+          <g font-family="JetBrains Mono, monospace" font-size="11" fill="#5A6679">
+            <text x="100" y="212" text-anchor="middle">27 juil.</text><text x="300" y="212" text-anchor="middle">fin août</text><text x="560" y="212" text-anchor="middle">fin sept.</text><text x="820" y="212" text-anchor="middle">24 oct.</text>
+          </g>
+          <!-- légende -->
+          <g font-family="Inter, sans-serif" font-size="12" fill="#5A6679">
+            <circle cx="66" cy="226" r="5" fill="#8B7BD6"></circle><text x="76" y="230">Anxiété (10 ressentis)</text>
+            <circle cx="226" cy="226" r="5" fill="#FFFFFF" stroke="#3C66A6" stroke-width="2"></circle><text x="236" y="230">Tristesse (4 ressentis)</text>
+            <rect x="382" y="221" width="4" height="9" rx="1" fill="#3E8E7E"></rect><text x="392" y="230">Séance</text>
+          </g>
+        </svg>
+      </section>
+
+      <!-- Dernière séance -->
+      <section aria-labelledby="h-seance" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+          <h2 id="h-seance" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Dernière séance</h2>
+          <a href="#timeline" style="font-size: 13px; text-decoration: none">Toutes les séances dans la timeline</a>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600">
+          <span style="width: 12px; height: 12px; border-radius: 3px; border: 2px solid #3E8E7E; display: inline-block" aria-hidden="true"></span>
+          Samedi 17 octobre · 50 min · cabinet
+        </div>
+        <p style="margin: 0; font-size: 15px; line-height: 1.7; max-width: 72ch">Reprise du thème du travail. Marie arrive tendue, parle vite, décrit des réveils à 4 h depuis une semaine. Elle anticipe l'entretien d'évaluation du 18 avec son manager et craint qu'on lui reproche les retards du projet. On a repéré ensemble deux pensées automatiques (« je vais être prise en défaut », « si je ralentis tout s'effondre ») et préparé trois phrases pour l'entretien. Objectif jusqu'à la prochaine séance : noter chaque soir l'intensité de l'anxiété et ce qui l'a précédée.</p>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: #5A6679; border-top: 1px solid #E4E8F0; padding-top: 12px">
+          <span>Noté pendant la séance : <span style="color: #1E2633">anxiété 6/10 le soir avant l'entretien</span> · <span style="color: #1E2633">entretien d'évaluation prévu le 18</span> · <span style="color: #1E2633">« semble plus détendue en fin de séance »</span>.</span>
+          <span>Séances précédentes : <span style="color: #1E2633">10 oct. (visio)</span> — sommeil, mise en place du carnet du soir · <span style="color: #1E2633">26 sept. (cabinet)</span> — effets du passage à 75 mg, pas d'effet indésirable.</span>
+        </div>
+      </section>
+
+      <!-- Situations en cours -->
+      <section aria-labelledby="h-sit" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 12px">
+        <h2 id="h-sit" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Situations en cours</h2>
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.55">
+          <li style="display: flex; gap: 12px; align-items: flex-start"><span style="width: 14px; height: 6px; border-radius: 2px; background: #2F4F73; display: inline-block; margin-top: 9px; flex-shrink: 0" aria-hidden="true"></span><span><strong style="font-weight: 600">Surcharge au travail</strong>, depuis mars 2026 — cinq ressentis liés, tous d'anxiété, en hausse. C'est le fil conducteur de la période. <a href="#graph" style="text-decoration: none">Voir dans le graphe</a></span></li>
+          <li style="display: flex; gap: 12px; align-items: flex-start"><span style="width: 14px; height: 6px; border-radius: 2px; background: #2F4F73; display: inline-block; margin-top: 9px; flex-shrink: 0" aria-hidden="true"></span><span><strong style="font-weight: 600">Conflit avec la sœur</strong>, depuis 2023 — deux ressentis liés, de tristesse, sans évolution récente. Pas abordé depuis juin.</span></li>
+          <li style="display: flex; gap: 12px; align-items: flex-start"><span style="width: 14px; height: 6px; border-radius: 2px; background: #2F4F73; display: inline-block; margin-top: 9px; flex-shrink: 0" aria-hidden="true"></span><span><strong style="font-weight: 600">Troubles du sommeil</strong>, depuis six semaines — un seul ressenti lié pour l'instant, mais mentionnés dans trois notes. Probablement à relier à la surcharge.</span></li>
+        </ul>
+      </section>
+    </div>
+
+    <!-- Colonne latérale -->
+    <aside aria-label="Repères" style="flex: 1 1 300px; max-width: 360px; display: flex; flex-direction: column; gap: 16px">
+
+      <section aria-labelledby="h-depuis" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+        <h2 id="h-depuis" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Depuis la séance du 17 oct.</h2>
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 14px; line-height: 1.5">
+          <li style="display: flex; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #8B7BD6; display: inline-block; margin-top: 5px; flex-shrink: 0" aria-hidden="true"></span><span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679">24 oct.</span><br><strong style="font-weight: 600">Anxiété 8/10</strong> — n'a pas dormi, monte avant les appels du soir.</span></li>
+          <li style="display: flex; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #7F8EA8; display: inline-block; margin-top: 5px; flex-shrink: 0" aria-hidden="true"></span><span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679">22 oct.</span><br>Note · 22 oct.</span></li>
+          <li style="display: flex; gap: 10px"><span style="width: 10px; height: 10px; transform: rotate(45deg); background: #3A63C2; display: inline-block; margin-top: 5px; flex-shrink: 0" aria-hidden="true"></span><span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679">18 oct.</span><br>Entretien d'évaluation avec le manager — pas encore commenté.</span></li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="h-trait" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+        <h2 id="h-trait" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Traitement</h2>
+        <p style="margin: 0; font-size: 14px; line-height: 1.55; display: flex; gap: 10px"><span style="width: 16px; height: 8px; border-radius: 999px; background: #B07A2A; display: inline-block; margin-top: 7px; flex-shrink: 0" aria-hidden="true"></span><span><strong style="font-weight: 600">Sertraline 75 mg</strong> le matin, depuis le 12 septembre (50 mg de mars à septembre). Prescrit par le Dr Lenoir. Aucun effet indésirable signalé.</span></p>
+      </section>
+
+      <section aria-labelledby="h-cadre" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+        <h2 id="h-cadre" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Cadre du suivi</h2>
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5">
+          <li>Toutes les 1 à 2 semaines, au cabinet, le samedi.</li>
+          <li>Prochaine séance : <strong style="font-weight: 600">samedi 31 octobre, 10 h</strong>.</li>
+          <li>Drapeau « à surveiller » posé le 3 oct. : <span style="color: #5A6679">montée de l'anxiété et sommeil.</span> <a href="#flag" style="text-decoration: none">Modifier</a></li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="h-todo" style="background: #FBF1DC; border: 1px solid #F0DDB0; border-radius: 12px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px">
+        <h2 id="h-todo" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #7A5A12">À compléter</h2>
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: #1E2633">
+          <li><a href="#drafts" style="text-decoration: none; color: #1E2633">2 brouillons à relire</a></li>
+          <li><a href="#close" style="text-decoration: none; color: #1E2633">Séance du 17 oct. à clôturer</a></li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+</div>
+
+</body>
+</html>

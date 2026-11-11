@@ -1,0 +1,241 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Vue d'ensemble du patient</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<!-- UX-F1 (11 nov. 2026) : « Faits clés » sans les compteurs Séances / Entrées / Liens ni « Rythme » (OverviewFactsDto ne porte ni nombre d'entrées, ni nombre de liens, ni rythme ; le nombre de séances est dans la tuile « Séances » du résumé décrit par la fiche 02) ; note sans titre de l'activité récente nommée « Note · 24 oct. » (RecentActivityItemDto n'a pas de texte). La rangée de quatre tuiles du résumé (Séances, Ressentis, Intensité moyenne, Situations actives) n'est pas dessinée : voir la fiche. -->
+
+
+<div style="min-height: 1080px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.4">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      Suivi
+    </div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a>
+    <span style="color: #9AA5B8">/</span>
+    <span style="font-size: 13px; color: #1E2633">Marie D.</span>
+    <div style="flex: 1 1 auto"></div>
+    <button aria-label="Rechercher dans le dossier" style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>
+      Rechercher <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 1px 5px; border: 1px solid #D6DCE6; border-radius: 4px">/</span>
+    </button>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CL</div>
+  </div>
+
+  <!-- En-tête patient permanent -->
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 0; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+      <div style="display: flex; align-items: baseline; gap: 10px">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Marie D.</h1>
+        <span style="color: #5A6679; font-size: 14px">34 ans · suivie depuis mars 2025</span>
+      </div>
+      <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; background: #FBF1DC; color: #7A5A12; font-size: 12px; font-weight: 500">
+        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M2 1v10M2 1h7l-1.5 2.5L9 6H2"></path></svg>
+        à surveiller
+      </span>
+      <div style="flex: 1 1 auto"></div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <button style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; color: #1E2633; font-size: 13px; cursor: pointer">Dernière séance : 17 oct.
+          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
+        </button>
+        <button style="height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: #3A63C2; color: #FFFFFF; font-size: 13px; font-weight: 600; cursor: pointer">Démarrer la séance</button>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 4px">
+      <a href="#overview" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; text-decoration: none; color: #1E2633; font-weight: 600; font-size: 13px; border-bottom: 2px solid #3A63C2"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">1</span> Vue d'ensemble</a>
+      <a href="#timeline" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; text-decoration: none; color: #5A6679; font-weight: 500; font-size: 13px; border-bottom: 2px solid transparent"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">2</span> Timeline</a>
+      <a href="#graph" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; text-decoration: none; color: #5A6679; font-weight: 500; font-size: 13px; border-bottom: 2px solid transparent"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">3</span> Graphe</a>
+      <div style="flex: 1 1 auto"></div>
+      <div role="group" aria-label="Niveau de détail de la vue d'ensemble" style="display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: #5A6679; margin-bottom: 4px">
+        Vue
+        <span style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+          <button aria-pressed="false" style="height: 28px; padding: 0 12px; border: 0; background: #FFFFFF; color: #5A6679; font-size: 12px; font-weight: 500; cursor: pointer">Simple</button>
+          <button aria-pressed="true" style="height: 28px; padding: 0 12px; border: 0; border-left: 1px solid #D6DCE6; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; cursor: pointer">Complète</button>
+        </span>
+        <span style="font-size: 11px; color: #8A94A6">mémorisée dans vos préférences</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barre de capture (repliée) -->
+  <div style="padding: 12px 24px 0">
+    <div style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 14px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="#5A6679" stroke-width="2" stroke-linecap="round"><path d="M4 5l4 4-4 4M10 13h5"></path></svg>
+      <label for="capture" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Capture rapide</label>
+      <input id="capture" type="text" placeholder="Saisir une entrée… (/evt, /sit, /res, /med) — touche N" style="flex: 1 1 auto; min-width: 0; height: 36px; border: 0; outline: 0; background: transparent; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #1E2633">
+    </div>
+  </div>
+
+  <!-- Grille de la vue d'ensemble -->
+  <div style="display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; padding: 16px 24px 32px; align-content: start">
+
+    <!-- Faits clés -->
+    <section style="grid-column: span 4; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">Faits clés</h2>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px">
+        <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 14px; height: 8px; border-radius: 999px; background: #B07A2A; flex: 0 0 auto"></span><span style="flex: 1 1 auto">Sertraline 75 mg · matin</span><span style="color: #5A6679; font-size: 12px">depuis 12 sept.</span></div>
+        <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #FBF1DC; border: 1.5px solid #B8862E; flex: 0 0 auto"></span><span style="flex: 1 1 auto">Flag « à surveiller » posé le 3 oct.</span><a href="#flag" style="font-size: 12px; text-decoration: none">Modifier</a></div>
+      </div>
+    </section>
+
+    <!-- Tendance d'intensité -->
+    <section style="grid-column: span 8; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">Tendance d'intensité · 90 jours</h2>
+        <span style="font-size: 12px; color: #5A6679">moyenne glissante 7 j</span>
+        <div style="flex: 1 1 auto"></div>
+        <div role="group" aria-label="Période" style="display: flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+          <button aria-pressed="false" style="height: 28px; padding: 0 10px; border: 0; background: #FFFFFF; color: #5A6679; font-size: 12px; cursor: pointer">30 j</button>
+          <button aria-pressed="true" style="height: 28px; padding: 0 10px; border: 0; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; cursor: pointer">90 j</button>
+          <button aria-pressed="false" style="height: 28px; padding: 0 10px; border: 0; background: #FFFFFF; color: #5A6679; font-size: 12px; cursor: pointer">1 an</button>
+        </div>
+      </div>
+      <svg role="img" aria-label="Intensité moyenne des ressentis sur 90 jours, de 4 à 8, en hausse depuis septembre ; marqueurs des séances et du changement de médicament" viewBox="0 0 880 170" width="100%" height="170" style="display: block">
+        <line x1="36" y1="20" x2="880" y2="20" stroke="#D6DCE6" stroke-width="1" stroke-dasharray="3 4"></line>
+        <line x1="36" y1="80" x2="880" y2="80" stroke="#D6DCE6" stroke-width="1" stroke-dasharray="3 4"></line>
+        <line x1="36" y1="140" x2="880" y2="140" stroke="#D6DCE6" stroke-width="1"></line>
+        <text x="0" y="24" font-size="11" fill="#5A6679" font-family="Inter, sans-serif">10</text>
+        <text x="6" y="84" font-size="11" fill="#5A6679" font-family="Inter, sans-serif">5</text>
+        <text x="6" y="144" font-size="11" fill="#5A6679" font-family="Inter, sans-serif">0</text>
+        <path d="M60 92 L130 86 L200 94 L270 80 L340 84 L410 70 L480 74 L550 60 L620 64 L690 50 L760 46 L830 38" fill="none" stroke="#8B7BD6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        <circle cx="60" cy="92" r="3" fill="#8B7BD6"></circle><circle cx="200" cy="94" r="3" fill="#8B7BD6"></circle><circle cx="340" cy="84" r="3" fill="#8B7BD6"></circle><circle cx="480" cy="74" r="3" fill="#8B7BD6"></circle><circle cx="620" cy="64" r="3" fill="#8B7BD6"></circle><circle cx="760" cy="46" r="3" fill="#8B7BD6"></circle>
+        <circle cx="830" cy="38" r="4.5" fill="#FFFFFF" stroke="#8B7BD6" stroke-width="2.5"></circle>
+        <path d="M130 140 l0 -8 M270 140 l0 -8 M410 140 l0 -8 M550 140 l0 -8 M690 140 l0 -8 M760 140 l0 -8" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"></path>
+        <path d="M300 140 l0 -12" stroke="#B07A2A" stroke-width="2.5" stroke-linecap="round"></path>
+        <text x="300" y="160" font-size="11" fill="#7A5A12" font-family="Inter, sans-serif" text-anchor="middle">75 mg</text>
+        <text x="60" y="160" font-size="11" fill="#5A6679" font-family="Inter, sans-serif" text-anchor="middle">27 juil.</text>
+        <text x="445" y="160" font-size="11" fill="#5A6679" font-family="Inter, sans-serif" text-anchor="middle">sept.</text>
+        <text x="830" y="160" font-size="11" fill="#5A6679" font-family="Inter, sans-serif" text-anchor="middle">24 oct.</text>
+      </svg>
+      <div style="display: flex; align-items: center; gap: 16px; font-size: 11px; color: #5A6679; flex-wrap: wrap">
+        <span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 14px; height: 3px; border-radius: 2px; background: #8B7BD6"></span>Intensité des ressentis</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 2px; height: 10px; background: #3A63C2"></span>Séance</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 2px; height: 10px; background: #B07A2A"></span>Changement de médicament</span>
+        <span style="margin-left: auto">Cliquer un point ouvre le ressenti</span>
+      </div>
+    </section>
+
+    <!-- Situations actives -->
+    <section style="grid-column: span 4; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">Situations actives</h2>
+        <span style="font-size: 12px; color: #5A6679">· 3</span>
+      </div>
+      <a href="#sit-1" style="display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px; border: 1px solid #D6DCE6; text-decoration: none; color: #1E2633">
+        <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 14px; height: 6px; border-radius: 999px; background: #2F4F73; flex: 0 0 auto"></span><strong style="font-size: 14px; flex: 1 1 auto">Surcharge au travail</strong><span style="font-size: 12px; color: #5A6679">7 mois</span></div>
+        <div style="font-size: 12px; color: #5A6679; padding-left: 22px">5 ressentis liés · intensité moy. 7,4 · <span style="color: #2C4C99">voir dans le graphe</span></div>
+      </a>
+      <a href="#sit-2" style="display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px; border: 1px solid #D6DCE6; text-decoration: none; color: #1E2633">
+        <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 14px; height: 6px; border-radius: 999px; background: #2F4F73; flex: 0 0 auto"></span><strong style="font-size: 14px; flex: 1 1 auto">Conflit avec la sœur</strong><span style="font-size: 12px; color: #5A6679">3 ans</span></div>
+        <div style="font-size: 12px; color: #5A6679; padding-left: 22px">2 ressentis liés · intensité moy. 5,0</div>
+      </a>
+      <a href="#sit-3" style="display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px; border: 1px solid #D6DCE6; text-decoration: none; color: #1E2633">
+        <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 14px; height: 6px; border-radius: 999px; background: #2F4F73; flex: 0 0 auto"></span><strong style="font-size: 14px; flex: 1 1 auto">Troubles du sommeil</strong><span style="font-size: 12px; color: #5A6679">6 sem.</span></div>
+        <div style="font-size: 12px; color: #5A6679; padding-left: 22px">1 ressenti lié · pas encore de tendance</div>
+      </a>
+    </section>
+
+    <!-- Dernières séances -->
+    <section style="grid-column: span 5; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em; flex: 1 1 auto">Dernières séances</h2>
+        <a href="#timeline-sessions" style="font-size: 12px; text-decoration: none">Toutes dans la timeline</a>
+      </div>
+      <!-- séance dépliée -->
+      <div style="border: 1px solid #D6DCE6; border-radius: 10px; overflow: hidden">
+        <button aria-expanded="true" style="width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0; background: #F3F5F9; text-align: left; cursor: pointer; font-size: 13px; color: #1E2633">
+          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
+          <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; border: 2px solid #3E8E7E"></span>
+          <strong style="flex: 1 1 auto">Samedi 17 octobre · 50 min · cabinet</strong>
+          <span style="color: #5A6679; font-size: 12px">4 entrées</span>
+        </button>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; font-size: 13px">
+          <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #8B7BD6; opacity: 0.8"></span><span style="flex: 1 1 auto">Anxiété 6/10 · le soir, avant l'entretien</span><span style="font-size: 11px; color: #5A6679">1 lien</span></div>
+          <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 9px; height: 9px; background: #3A63C2; transform: rotate(45deg); margin: 0 1px"></span><span style="flex: 1 1 auto">Entretien d'évaluation prévu le 18</span><span style="font-size: 11px; color: #5A6679">1 lien</span></div>
+          <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 12px; border-radius: 2px; background: #7F8EA8"></span><span style="flex: 1 1 auto">Note · semble plus détendue, parle plus vite</span></div>
+          <div style="font-size: 12px; color: #5A6679; padding-top: 4px; border-top: 1px solid #D6DCE6">Compte rendu : reprise du thème du travail ; objectif, préparer l'entretien et repérer les pensées automatiques.</div>
+        </div>
+      </div>
+      <button aria-expanded="false" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF; text-align: left; cursor: pointer; font-size: 13px; color: #1E2633">
+        <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 2l4 3-4 3"></path></svg>
+        <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; border: 2px solid #3E8E7E"></span>
+        <strong style="flex: 1 1 auto">Samedi 10 octobre · 50 min · visio</strong>
+        <span style="color: #5A6679; font-size: 12px">2 entrées</span>
+      </button>
+      <button aria-expanded="false" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF; text-align: left; cursor: pointer; font-size: 13px; color: #1E2633">
+        <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 2l4 3-4 3"></path></svg>
+        <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; border: 2px solid #3E8E7E"></span>
+        <strong style="flex: 1 1 auto">Samedi 26 septembre · 50 min · cabinet</strong>
+        <span style="color: #5A6679; font-size: 12px">5 entrées</span>
+      </button>
+    </section>
+
+    <!-- Colonne droite : émotions dominantes + à compléter -->
+    <div style="grid-column: span 3; display: flex; flex-direction: column; gap: 16px">
+      <section style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">Émotions dominantes · 90 j</h2>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px">
+          <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #7A68C9"></span><span style="flex: 1 1 auto">Anxiété</span><strong>18</strong><span style="font-size: 11px; color: #9A2F22; width: 28px; text-align: right">+6</span></div>
+          <div aria-hidden="true" style="height: 4px; border-radius: 2px; background: #E4E8F0"><div style="width: 72%; height: 4px; border-radius: 2px; background: #7A68C9"></div></div>
+          <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #3C66A6"></span><span style="flex: 1 1 auto">Tristesse</span><strong>6</strong><span style="font-size: 11px; color: #5A6679; width: 28px; text-align: right">=</span></div>
+          <div aria-hidden="true" style="height: 4px; border-radius: 2px; background: #E4E8F0"><div style="width: 24%; height: 4px; border-radius: 2px; background: #3C66A6"></div></div>
+          <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #B8463C"></span><span style="flex: 1 1 auto">Colère</span><strong>3</strong><span style="font-size: 11px; color: #1E6B45; width: 28px; text-align: right">−2</span></div>
+          <div aria-hidden="true" style="height: 4px; border-radius: 2px; background: #E4E8F0"><div style="width: 12%; height: 4px; border-radius: 2px; background: #B8463C"></div></div>
+          <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #3E8E7E"></span><span style="flex: 1 1 auto">Calme</span><strong>2</strong><span style="font-size: 11px; color: #5A6679; width: 28px; text-align: right">=</span></div>
+          <div aria-hidden="true" style="height: 4px; border-radius: 2px; background: #E4E8F0"><div style="width: 8%; height: 4px; border-radius: 2px; background: #3E8E7E"></div></div>
+        </div>
+        <div style="font-size: 11px; color: #5A6679">Variation par rapport aux 90 jours précédents</div>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">À compléter</h2>
+        <a href="#drafts" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: #FBF1DC; color: #7A5A12; text-decoration: none; font-size: 13px">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 13l1-4 7-7 3 3-7 7z"></path></svg>
+          <span style="flex: 1 1 auto">2 brouillons</span>
+          <span style="font-size: 11px">ouvrir</span>
+        </a>
+        <a href="#close-session" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: #FBF1DC; color: #7A5A12; text-decoration: none; font-size: 13px">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"></circle><path d="M8 4.5V8l2.5 1.5"></path></svg>
+          <span style="flex: 1 1 auto">Séance du 17 oct. non clôturée</span>
+          <span style="font-size: 11px">clôturer</span>
+        </a>
+      </section>
+    </div>
+
+    <!-- Activité récente (live) -->
+    <section style="grid-column: span 12; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em; flex: 1 1 auto">Activité récente</h2>
+        <span style="font-size: 11px; color: #5A6679">toutes versions confondues · en direct</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; font-size: 13px">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #8B7BD6"></span><span style="flex: 1 1 auto">Anxiété 8/10 · n'a pas dormi</span><span style="font-size: 11px; color: #7A5A12; background: #FBF1DC; padding: 1px 6px; border-radius: 999px">brouillon</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">il y a 2 min</span></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 9px; height: 9px; background: #3A63C2; transform: rotate(45deg); margin: 0 1px"></span><span style="flex: 1 1 auto">Entretien d'évaluation avec le manager</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">il y a 6 min</span></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 10px; height: 12px; border-radius: 2px; background: #7F8EA8"></span><span style="flex: 1 1 auto">Note · 24 oct.</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">il y a 17 min</span></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; border: 2px solid #3E8E7E"></span><span style="flex: 1 1 auto">Séance du 17 oct. · compte rendu modifié</span><span style="font-size: 11px; color: #5A6679; background: #E4E8F0; padding: 1px 6px; border-radius: 999px">v2</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">hier</span></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 14px; height: 6px; border-radius: 999px; background: #2F4F73"></span><span style="flex: 1 1 auto">Troubles du sommeil · situation ouverte</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">12 sept.</span></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 14px; height: 8px; border-radius: 999px; background: #B07A2A"></span><span style="flex: 1 1 auto">Sertraline 50 → 75 mg</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">12 sept.</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+</body>
+</html>

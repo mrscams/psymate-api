@@ -1,6 +1,8 @@
 # Écran 2 · Vue d'ensemble d'un patient
 
 > Spécification pour agents. Maquette : `02-vue-ensemble-patient.html` / `.png`. Palette : Nordique. Document B, écran 2 (page d'accueil d'un patient) ; Document A, module `overview` (A4.8, UC-9).
+>
+> Mis à jour le 11 novembre 2026 (UX-F1, audit UX du 9 novembre) : tuile « Situations actives » à la place de « liens actifs » ; « Faits clés » limités à ce que porte `OverviewFactsDto` ; « Point d'attention » de la vue simple limité aux drapeaux ; notes sans titre nommées « Note · date ». Maquettes 02 et 02b corrigées en conséquence.
 
 ## Objectif
 En moins de 10 secondes, avant ou pendant une séance, le praticien voit **où en est le patient** : tendance des ressentis, situations actives, dernière séance, traitement en cours, alertes. C'est une **lecture** (projection calculée), jamais une saisie.
@@ -14,7 +16,7 @@ En moins de 10 secondes, avant ou pendant une séance, le praticien voit **où e
 1. **Barre d'application** + **en-tête patient** (partagés) : nom, âge, « suivie depuis », drapeau, sélecteur de dernière séance, bouton **« Démarrer la séance »** ; onglets 1/2/3.
 2. **Barre de saisie repliée** (partagée) : champ « Noter quelque chose… » → s'ouvre en éditeur d'entrée ; séance obligatoire → pré-remplie avec la séance ouverte ou la dernière.
 3. **Grille 12 colonnes**, gap 20 px :
-   - **Résumé (12 col.)** : 4 tuiles chiffrées : *ressentis 30 j* (nombre + variation), *intensité moyenne* (/10, tendance ↑↓), *séances* (nombre sur la fenêtre), *liens actifs*. Chaque tuile a une ligne de contexte (« 3 de plus qu'en septembre »).
+   - **Résumé (12 col.)** : 4 tuiles chiffrées : *ressentis 30 j* (nombre + variation), *intensité moyenne* (/10, tendance ↑↓), *séances* (`facts.sessionCount`, avec le nombre sur la fenêtre en contexte), *situations actives* (`activeSituations`, « en cours, sans fin connue »). Chaque tuile a une ligne de contexte (« 3 de plus qu'en septembre »).
    - **Tendance des ressentis (8 col.)** : graphe ECharts ligne + aire, x = temps, y = intensité 0–10, une série par famille d'émotion présente (couleurs `--emo-*`), points = entrées ; survol = tooltip (date, émotion, intensité, séance). Sélecteur de fenêtre *30 j / 90 j / 12 mois*. État vide : « Pas encore de ressentis sur cette période ».
    - **Alertes (4 col.)** : liste courte, calculée par `overview` : *intensité ≥ 8 trois fois en 7 j*, *aucune séance depuis 45 j*, *médicament sans suivi depuis 30 j*. Chaque alerte → lien vers la timeline filtrée. Pas d'IA : règles explicites en V1 (`OverviewRules`).
    - **Situations actives (6 col.)** : cartes : titre, « depuis … », nombre de ressentis liés, mini barre d'intensité, bouton « Voir dans le graphe ».
@@ -45,6 +47,13 @@ En moins de 10 secondes, avant ou pendant une séance, le praticien voit **où e
 - [ ] Alerte « aucune séance depuis 45 j » apparaît/disparaît selon seed.
 - [ ] Mode sombre : tokens dark appliqués, contraste vérifié (axe-core en CI).
 - [ ] Snapshot Vitest de `OverviewSummaryComponent` avec données vides.
+
+## Écarts avec la maquette
+- **Tuile « Situations actives » (UX-F1)** : remplace « liens actifs » : le contrat n'expose aucun nombre de liens du dossier, `activeSituations` est servi. La rangée des quatre tuiles du résumé n'est **pas dessinée** dans la maquette 02 (ajout non trivial) : la fiche fait foi.
+- **« Faits clés » (UX-F1)** : `OverviewFactsDto` porte âge, suivi depuis, nombre de séances, médicaments en cours et drapeaux ; ni nombre d'entrées, ni nombre de liens, ni rythme des séances. **Maquette 02 corrigée** : compteurs Séances / Entrées / Liens et ligne « Rythme » retirés du bloc (le nombre de séances est dans la tuile *Séances*).
+- **« Point d'attention » de la vue simple (UX-F1)** : le serveur ne calcule que `narrative.attention`, phrase issue des drapeaux actifs (« À surveiller depuis le … (motif : …) »), jamais le mot « risque ». La règle « trois ressentis à 7 ou plus en huit jours, sommeil noté deux fois » n'est pas côté serveur : pas d'encart calculé par le client tant qu'elle n'y est pas. **Maquette 02b corrigée** : l'encart reprend la phrase du serveur.
+- **Notes sans titre (UX-F1)** : `RecentActivityItemDto` et `SinceLastSessionEntryDto` n'ont pas de texte ; une note sans titre est nommée par le titre de repli partagé `entryTitle()` (fiche 00) : « Note · 24 oct. ». **Maquettes 02 (activité récente) et 02b (« Depuis la séance ») corrigées.**
+- Chiffres, noms, courbes et durées : valeurs fictives, **ignorer**.
 
 ## Hors périmètre V1
 Résumé textuel automatique, comparaisons inter-patients, prédictions (V2, module `ai`).

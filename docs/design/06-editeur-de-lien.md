@@ -1,6 +1,8 @@
 # Écran 6 · Éditeur de lien (panneau latéral sur le graphe)
 
 > Spécification pour agents. Maquette : `06-editeur-de-lien.html` / `.png`. Palette : Nordique. Document A, module `linking` (`POST/PATCH/DELETE /api/patients/{id}/links`) ; Document B, écran 6.
+>
+> Mis à jour le 11 novembre 2026 (UX-F1, audit UX du 9 novembre) : pas de nombre de liens sur les cibles (absent du contrat) ; maquette HTML corrigée.
 
 ## Objectif
 Poser, en moins de dix secondes, un lien typé et orienté entre deux entrées d'un dossier, sans quitter le graphe ni la timeline. Le lien est **lisible en français** avant d'être enregistré, pour que le praticien vérifie le sens.
@@ -17,7 +19,7 @@ Poser, en moins de dix secondes, un lien typé et orienté entre deux entrées d
    - En-tête : « Lier deux entrées » + rappel patient + bouton fermer.
    - **Depuis** : carte de l'entrée source (forme + couleur du type, texte, date, séance) + « Changer ».
    - **Relation** : bouton « Inverser le sens » puis chips des types ; types incompatibles affichés désactivés avec une aide (« “est traité par” n'est possible que depuis un médicament »).
-   - **Vers** : champ de recherche (même moteur que l'écran 7, limité au dossier), puis liste radio « Récentes et situations en cours » ; chaque option = texte, type, date, nombre de liens, mention « déjà lié (aggrave) » si un lien existe déjà avec la source.
+   - **Vers** : champ de recherche (même moteur que l'écran 7, limité au dossier), puis liste radio « Récentes et situations en cours » ; chaque option = texte (titre de repli de la fiche 00 si l'entrée n'a pas de titre), type, date, mention « déjà lié (aggrave) » si un lien existe déjà avec la source.
    - **Le lien se lira** : phrase recomposée `<source> <verbe> <cible>` + description de la forme dans le graphe (trait plein + flèche, pointillé pour `co_occurs`).
    - **Pourquoi** (textarea facultatif, `rationale`, 500 caractères) — champ pensé pour l'IA V2.
    - **Liens déjà posés sur cette entrée · n** : liste compacte avec « Modifier ».
@@ -48,6 +50,9 @@ Poser, en moins de dix secondes, un lien typé et orienté entre deux entrées d
 - [ ] Doublon exact → `409`, panneau propose « Modifier le lien existant ».
 - [ ] Échap avec aucun choix → fermeture immédiate ; avec un type choisi → confirmation.
 - [ ] Le lien apparaît dans le graphe et la timeline sans rechargement (store `LinksStore` mis à jour depuis la réponse `201`).
+
+## Écarts avec la maquette
+- **« n liens » sur les cibles (UX-F1)** : la liste « Vers » est lue par `GET /api/patients/{id}/search` ; `EntrySearchItemDto` ne porte pas de nombre de liens. **Maquette corrigée** : « · 2 liens » retiré de la méta de la cible.
 
 ## Hors périmètre V1
 Liens multi-cibles en une fois, liens entre patients, suggestions automatiques de liens (V2 IA, qui utilisera `rationale`).

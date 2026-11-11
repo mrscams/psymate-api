@@ -1,0 +1,175 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mon compte – préférences</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<!-- UX-F1 (11 nov. 2026) : nom affiché PsyMate ; délai de correction sans version 1 h 15 (G Q31) au lieu de 5 min ; résumé sécurité : « Connexion précédente » sans ville ni lien « Journal de sécurité » (city toujours null, journal praticien hors contrat). Les trois tuiles (e-mail, double authentification, sessions actives) sont conservées. -->
+
+
+<div style="min-height: 1540px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      PsyMate
+    </div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a>
+    <span style="color: #9AA5B8">/</span>
+    <span style="font-size: 13px; color: #1E2633">Mon compte</span>
+    <div style="flex: 1 1 auto"></div>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CL</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; align-items: flex-start">
+
+    <!-- Navigation du compte -->
+    <nav aria-label="Mon compte" style="flex: 0 1 220px; display: flex; flex-direction: column; gap: 4px">
+      <div style="padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 2px">
+        <span style="font-weight: 600; font-size: 15px">Claire Moreau</span>
+        <span style="font-size: 12px; color: #5A6679">Psychologue · Lyon</span>
+      </div>
+      <a href="#profil" style="display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Profil public <span style="width: 8px; height: 8px; border-radius: 50%; background: #1E6B45" aria-label="publié"></span></a>
+      <a href="#prefs" aria-current="page" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; font-weight: 600; font-size: 13px; text-decoration: none">Préférences</a>
+      <a href="#emotions" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Émotions personnalisées</a>
+      <a href="#securite" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Compte et sécurité</a>
+      <a href="#donnees" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: #1E2633; font-size: 13px; text-decoration: none">Données et export</a>
+    </nav>
+
+    <!-- Contenu -->
+    <div style="flex: 999 1 560px; min-width: 0; max-width: 960px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Préférences</h1>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Mémorisées sur votre compte : vous les retrouvez sur tous vos appareils. Chaque changement est enregistré immédiatement.</p>
+        </div>
+        <span style="font-size: 12px; color: #5A6679; margin-top: 6px">Enregistré · il y a quelques secondes</span>
+      </div>
+
+      <!-- Affichage -->
+      <section aria-labelledby="h-aff" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 18px">
+        <h2 id="h-aff" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Affichage</h2>
+
+        <div style="display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 12px 24px; align-items: center">
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Vue d'ensemble par défaut</span><span style="font-size: 12px; color: #5A6679">Aussi modifiable depuis la page du patient.</span></div>
+          <div role="group" aria-label="Vue d'ensemble par défaut" style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden; align-self: flex-start">
+            <button type="button" aria-pressed="true" style="height: 36px; padding: 0 16px; border: 0; background: #E3EAF8; color: #2C4C99; font-size: 13px; font-weight: 600; cursor: pointer">Simple</button>
+            <button type="button" aria-pressed="false" style="height: 36px; padding: 0 16px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">Complète</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Fenêtre d'analyse</span><span style="font-size: 12px; color: #5A6679">Pour la tendance des ressentis et les situations actives.</span></div>
+          <div role="group" aria-label="Fenêtre d'analyse" style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden; align-self: flex-start">
+            <button type="button" aria-pressed="false" style="height: 36px; padding: 0 16px; border: 0; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">30 j</button>
+            <button type="button" aria-pressed="true" style="height: 36px; padding: 0 16px; border: 0; border-left: 1px solid #D6DCE6; background: #E3EAF8; color: #2C4C99; font-size: 13px; font-weight: 600; cursor: pointer">90 j</button>
+            <button type="button" aria-pressed="false" style="height: 36px; padding: 0 16px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">1 an</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Timeline</span><span style="font-size: 12px; color: #5A6679">Regroupement par défaut.</span></div>
+          <div role="group" aria-label="Regroupement de la timeline" style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden; align-self: flex-start">
+            <button type="button" aria-pressed="true" style="height: 36px; padding: 0 16px; border: 0; background: #E3EAF8; color: #2C4C99; font-size: 13px; font-weight: 600; cursor: pointer">Par séance</button>
+            <button type="button" aria-pressed="false" style="height: 36px; padding: 0 16px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">Par mois</button>
+            <button type="button" aria-pressed="false" style="height: 36px; padding: 0 16px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">Chronologique</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Thème</span><span style="font-size: 12px; color: #5A6679">« Doux » réduit les contrastes pour les longues sessions.</span></div>
+          <div role="group" aria-label="Thème" style="display: flex; gap: 10px; flex-wrap: wrap">
+            <label style="display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; border: 2px solid #3A63C2; border-radius: 10px; background: #E3EAF8; cursor: pointer; font-size: 13px; font-weight: 500"><span style="width: 28px; height: 20px; border-radius: 5px; background: #EEF1F6; border: 1px solid #B9C2D1; display: inline-block" aria-hidden="true"></span>Clair<input type="radio" name="theme" checked style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"></label>
+            <label style="display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF; cursor: pointer; font-size: 13px"><span style="width: 28px; height: 20px; border-radius: 5px; background: #F4F6F9; border: 1px solid #D6DCE6; display: inline-block" aria-hidden="true"></span>Doux<input type="radio" name="theme" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"></label>
+            <label style="display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF; cursor: pointer; font-size: 13px"><span style="width: 28px; height: 20px; border-radius: 5px; background: #1A2130; border: 1px solid #2A3345; display: inline-block" aria-hidden="true"></span>Sombre<input type="radio" name="theme" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"></label>
+            <label style="display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; border: 1px solid #D6DCE6; border-radius: 10px; background: #FFFFFF; cursor: pointer; font-size: 13px"><span style="width: 28px; height: 20px; border-radius: 5px; background: linear-gradient(90deg, #EEF1F6 50%, #1A2130 50%); border: 1px solid #B9C2D1; display: inline-block" aria-hidden="true"></span>Système<input type="radio" name="theme" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"></label>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Langue</span><span style="font-size: 12px; color: #5A6679">Interface et vocabulaire. Vos entrées ne sont pas traduites.</span></div>
+          <select aria-label="Langue" style="height: 40px; width: 200px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #1E2633; background: #FFFFFF"><option>Français</option><option>English</option></select>
+        </div>
+      </section>
+
+      <!-- Vocabulaire et saisie -->
+      <section aria-labelledby="h-voc" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 18px">
+        <h2 id="h-voc" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Vocabulaire et saisie</h2>
+        <div style="display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 14px 24px; align-items: center">
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Désignation des personnes suivies</span><span style="font-size: 12px; color: #5A6679">Les coachs préfèrent souvent « client ».</span></div>
+          <div role="group" aria-label="Désignation" style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden; align-self: flex-start">
+            <button type="button" aria-pressed="true" style="height: 36px; padding: 0 16px; border: 0; background: #E3EAF8; color: #2C4C99; font-size: 13px; font-weight: 600; cursor: pointer">Patient·e</button>
+            <button type="button" aria-pressed="false" style="height: 36px; padding: 0 16px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">Client·e</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Type « médicament »</span><span style="font-size: 12px; color: #5A6679">Masqué par défaut pour les psychologues et les coachs.</span></div>
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px"><input type="checkbox" checked role="switch" style="width: 16px; height: 16px; accent-color: #3A63C2"> Afficher le type médicament dans la saisie et la timeline</label>
+
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Visibilité par défaut des nouvelles entrées</span><span style="font-size: 12px; color: #5A6679">« Privée » exclut l'entrée des exports et des partages futurs.</span></div>
+          <div role="group" aria-label="Visibilité par défaut" style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden; align-self: flex-start">
+            <button type="button" aria-pressed="true" style="height: 36px; padding: 0 16px; border: 0; background: #E3EAF8; color: #2C4C99; font-size: 13px; font-weight: 600; cursor: pointer">Clinique</button>
+            <button type="button" aria-pressed="false" style="height: 36px; padding: 0 16px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">Privée</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Durée de séance par défaut</span><span style="font-size: 12px; color: #5A6679">Pré-remplie à l'ouverture d'une séance.</span></div>
+          <div style="display: flex; align-items: center; gap: 8px"><input type="number" value="50" aria-label="Durée de séance par défaut en minutes" style="width: 80px; height: 40px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #1E2633"><span style="font-size: 13px; color: #5A6679">min</span></div>
+
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Délai de correction sans version</span><span style="font-size: 12px; color: #5A6679">Pendant ce délai, corriger une entrée ne crée pas de nouvelle version.</span></div>
+          <div style="display: flex; align-items: center; gap: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 14px">1 h 15</span><span style="font-size: 12px; color: #8A94A6">· fixé par l'application en V1</span></div>
+        </div>
+      </section>
+
+      <!-- Émotions personnalisées (résumé, lien vers la page dédiée) -->
+      <section aria-labelledby="h-emo" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+          <h2 id="h-emo" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Émotions personnalisées · 3</h2>
+          <a href="#emotions" style="font-size: 13px; text-decoration: none">Gérer la liste complète</a>
+        </div>
+        <p style="margin: 0; font-size: 13px; color: #5A6679">Vos émotions ajoutées au vocabulaire global. Chacune est rattachée à une famille, ce qui permet de la placer dans les courbes et le graphe.</p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px">
+          <thead><tr style="text-align: left; color: #5A6679; font-size: 12px"><th scope="col" style="padding: 6px 8px 8px 0; font-weight: 500; border-bottom: 1px solid #E4E8F0">Émotion</th><th scope="col" style="padding: 6px 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0">Famille</th><th scope="col" style="padding: 6px 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0">Utilisée</th><th scope="col" style="padding: 6px 0 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0; text-align: right">Statut</th></tr></thead>
+          <tbody>
+            <tr><td style="padding: 10px 8px 10px 0; border-bottom: 1px solid #E4E8F0; font-weight: 500">Appréhension sociale</td><td style="padding: 10px 8px; border-bottom: 1px solid #E4E8F0"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #7A68C9" aria-hidden="true"></span>Peur</span></td><td style="padding: 10px 8px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace">41 fois</td><td style="padding: 10px 0 10px 8px; border-bottom: 1px solid #E4E8F0; text-align: right"><span style="font-size: 12px; color: #5A6679">custom</span></td></tr>
+            <tr><td style="padding: 10px 8px 10px 0; border-bottom: 1px solid #E4E8F0; font-weight: 500">Soulagement</td><td style="padding: 10px 8px; border-bottom: 1px solid #E4E8F0"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #D9A426" aria-hidden="true"></span>Joie</span></td><td style="padding: 10px 8px; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace">12 fois</td><td style="padding: 10px 0 10px 8px; border-bottom: 1px solid #E4E8F0; text-align: right"><span style="font-size: 12px; color: #1E6B45">promue au vocabulaire global</span></td></tr>
+            <tr><td style="padding: 10px 8px 10px 0; font-weight: 500">Lassitude</td><td style="padding: 10px 8px"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #3C66A6" aria-hidden="true"></span>Tristesse</span></td><td style="padding: 10px 8px; font-family: 'JetBrains Mono', monospace">3 fois</td><td style="padding: 10px 0 10px 8px; text-align: right"><span style="font-size: 12px; color: #5A6679">custom</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Compte et sécurité (résumé) -->
+      <section aria-labelledby="h-sec" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+          <h2 id="h-sec" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Compte et sécurité</h2>
+          <a href="#securite" style="font-size: 13px; text-decoration: none">Tout voir</a>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+          <div style="border: 1px solid #D6DCE6; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 12px; color: #5A6679">E-mail de connexion</span>
+            <span style="font-weight: 500">claire.moreau@exemple.fr</span>
+            <a href="#" style="font-size: 12px; text-decoration: none">Modifier</a>
+          </div>
+          <div style="border: 1px solid #D6DCE6; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 12px; color: #5A6679">Double authentification</span>
+            <span style="font-weight: 500; color: #1E6B45; display: inline-flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Activée</span>
+            <a href="#" style="font-size: 12px; text-decoration: none">Codes de secours</a>
+          </div>
+          <div style="border: 1px solid #D6DCE6; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 12px; color: #5A6679">Sessions actives</span>
+            <span style="font-weight: 500">2 appareils</span>
+            <a href="#" style="font-size: 12px; text-decoration: none">Déconnecter les autres</a>
+          </div>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Connexion précédente : aujourd'hui 09:12 · Chrome · Windows</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

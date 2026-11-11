@@ -1,0 +1,181 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Recherche dans le dossier de Marie D.</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select{font-family:inherit}
+mark{background:#FBF1DC;color:#1E2633;border-radius:2px;padding:0 1px}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<!-- UX-F1 (11 nov. 2026) : bascule de tri « Pertinence | Plus récent » retirée (GET /api/patients/{id}/search n'a pas de paramètre de tri : pertinence avec un texte, date décroissante sans texte). -->
+
+
+<div style="min-height: 960px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      Suivi
+    </div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a>
+    <span style="color: #9AA5B8">/</span>
+    <a href="#patient" style="font-size: 13px; color: #5A6679; text-decoration: none">Marie D.</a>
+    <span style="color: #9AA5B8">/</span>
+    <span style="font-size: 13px; color: #1E2633">Recherche</span>
+    <div style="flex: 1 1 auto"></div>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CL</div>
+  </div>
+
+  <!-- Zone de recherche -->
+  <div style="padding: 20px 24px 0; display: flex; flex-direction: column; gap: 12px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6; padding-bottom: 16px">
+    <form onsubmit="return false" style="display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 16px; background: #FFFFFF; border: 2px solid #3A63C2; border-radius: 12px; max-width: 1000px">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#3A63C2" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>
+      <label for="q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Rechercher dans le dossier</label>
+      <input id="q" type="search" value="entretien manager" style="flex: 1 1 auto; min-width: 0; height: 40px; border: 0; outline: 0; background: transparent; font-size: 16px; color: #1E2633">
+      <span style="font-size: 12px; color: #5A6679; white-space: nowrap">dans le dossier de Marie D.</span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 2px 6px; border: 1px solid #D6DCE6; border-radius: 4px; color: #5A6679">Échap</span>
+    </form>
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px">
+      <span style="color: #5A6679; margin-right: 4px">Types</span>
+      <button aria-pressed="true" style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid #3A63C2; border-radius: 999px; background: #E3EAF8; color: #2C4C99; font-weight: 500; cursor: pointer">Tous <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">14</span></button>
+      <button aria-pressed="false" style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; color: #1E2633; cursor: pointer"><span style="width: 8px; height: 8px; border-radius: 2px; background: #7F8EA8" aria-hidden="true"></span>Notes <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">5</span></button>
+      <button aria-pressed="false" style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; color: #1E2633; cursor: pointer"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: #3A63C2" aria-hidden="true"></span>Événements <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">3</span></button>
+      <button aria-pressed="false" style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; color: #1E2633; cursor: pointer"><span style="width: 10px; height: 4px; border-radius: 2px; background: #2F4F73" aria-hidden="true"></span>Situations <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">1</span></button>
+      <button aria-pressed="false" style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; color: #1E2633; cursor: pointer"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8B7BD6" aria-hidden="true"></span>Ressentis <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">3</span></button>
+      <button aria-pressed="false" style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; color: #1E2633; cursor: pointer"><span style="width: 8px; height: 8px; border-radius: 2px; border: 2px solid #3E8E7E" aria-hidden="true"></span>Séances <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">2</span></button>
+      <button aria-pressed="false" style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 999px; background: #FFFFFF; color: #5A6679; cursor: pointer"><span style="width: 10px; height: 5px; border-radius: 999px; background: #B07A2A" aria-hidden="true"></span>Médicaments <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">0</span></button>
+      <span style="width: 1px; height: 20px; background: #D6DCE6; margin: 0 6px" aria-hidden="true"></span>
+      <label for="periode" style="color: #5A6679">Période</label>
+      <select id="periode" style="height: 30px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; padding: 0 8px; font-size: 13px; color: #1E2633"><option>Tout le dossier</option><option>90 derniers jours</option><option>Cette année</option></select>
+      <label for="seance" style="color: #5A6679">Séance</label>
+      <select id="seance" style="height: 30px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; padding: 0 8px; font-size: 13px; color: #1E2633"><option>Toutes</option><option>17 oct.</option><option>10 oct.</option></select>
+      <label style="display: inline-flex; align-items: center; gap: 6px; color: #5A6679; margin-left: 6px; cursor: pointer"><input type="checkbox" style="width: 14px; height: 14px; accent-color: #3A63C2"> inclure les entrées archivées</label>
+    </div>
+  </div>
+
+  <!-- Résultats + aperçu -->
+  <div style="display: flex; flex-wrap: wrap; gap: 20px; padding: 16px 24px 32px; align-items: flex-start">
+
+    <!-- Liste des résultats -->
+    <div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+        <span style="font-size: 13px; color: #5A6679"><strong style="color: #1E2633; font-weight: 600">14 résultats</strong> pour « entretien manager » · recherche sans accents, par trigrammes · <span style="font-family: 'JetBrains Mono', monospace">42 ms</span></span>
+      </div>
+
+      <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px" aria-label="Résultats">
+
+        <li style="background: #FFFFFF; border: 1px solid #3A63C2; box-shadow: 0 0 0 3px #E3EAF8; border-radius: 10px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start" aria-current="true">
+          <span style="width: 12px; height: 12px; transform: rotate(45deg); background: #3A63C2; display: inline-block; margin-top: 5px; flex-shrink: 0" aria-hidden="true"></span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
+              <a href="#e1" style="font-weight: 600; text-decoration: none; color: #1E2633"><mark>Entretien</mark> d'évaluation avec le <mark>manager</mark></a>
+              <span style="font-size: 12px; color: #5A6679">Événement · <span style="font-family: 'JetBrains Mono', monospace">18 oct. 2026</span> · précision jour</span>
+            </div>
+            <p style="margin: 0; color: #5A6679; font-size: 13px">Annoncé le 17 en séance. Marie craint qu'on lui reproche les retards du projet. … préparé trois phrases pour l'<mark>entretien</mark>.</p>
+            <div style="display: flex; gap: 12px; font-size: 12px; color: #5A6679; flex-wrap: wrap"><span>Séance du 17 oct.</span><span>2 liens</span><span>#travail</span></div>
+          </div>
+        </li>
+
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start">
+          <span style="width: 12px; height: 12px; border-radius: 50%; background: #8B7BD6; display: inline-block; margin-top: 4px; flex-shrink: 0" aria-hidden="true"></span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
+              <a href="#e2" style="font-weight: 600; text-decoration: none; color: #1E2633">Anxiété 6/10 · le soir, avant l'<mark>entretien</mark></a>
+              <span style="font-size: 12px; color: #5A6679">Ressenti · <span style="font-family: 'JetBrains Mono', monospace">17 oct. 2026 · 19:40</span></span>
+            </div>
+            <p style="margin: 0; color: #5A6679; font-size: 13px">« Je sais que ça va se passer, mais je tourne en boucle sur ce que je vais dire au <mark>manager</mark>. »</p>
+            <div style="display: flex; gap: 12px; font-size: 12px; color: #5A6679; flex-wrap: wrap"><span>Séance du 17 oct.</span><span>déclenché par <em>Entretien d'évaluation</em></span></div>
+          </div>
+        </li>
+
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start">
+          <span style="width: 12px; height: 12px; border-radius: 3px; border: 2px solid #3E8E7E; display: inline-block; margin-top: 4px; flex-shrink: 0" aria-hidden="true"></span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
+              <a href="#e3" style="font-weight: 600; text-decoration: none; color: #1E2633">Séance du 17 octobre · compte rendu</a>
+              <span style="font-size: 12px; color: #5A6679">Séance · 50 min · cabinet · <span style="font-family: 'JetBrains Mono', monospace">v2</span></span>
+            </div>
+            <p style="margin: 0; color: #5A6679; font-size: 13px">… elle anticipe l'<mark>entretien</mark> d'évaluation du 18 avec son <mark>manager</mark> et craint qu'on lui reproche les retards du projet. On a repéré ensemble deux pensées automatiques …</p>
+          </div>
+        </li>
+
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start">
+          <span style="width: 12px; height: 12px; border-radius: 2px; background: #7F8EA8; display: inline-block; margin-top: 4px; flex-shrink: 0" aria-hidden="true"></span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
+              <a href="#e4" style="font-weight: 600; text-decoration: none; color: #1E2633">Note · le <mark>manager</mark> a changé en juin</a>
+              <span style="font-size: 12px; color: #5A6679">Note · <span style="font-family: 'JetBrains Mono', monospace">14 juin 2026</span></span>
+            </div>
+            <p style="margin: 0; color: #5A6679; font-size: 13px">Nouveau <mark>manager</mark> depuis le 1er juin, « plus exigeant, moins disponible ». Première mention de la surcharge.</p>
+            <div style="display: flex; gap: 12px; font-size: 12px; color: #5A6679; flex-wrap: wrap"><span>Séance du 14 juin</span><span>#travail</span></div>
+          </div>
+        </li>
+
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start">
+          <span style="width: 14px; height: 6px; border-radius: 2px; background: #2F4F73; display: inline-block; margin-top: 7px; flex-shrink: 0" aria-hidden="true"></span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
+              <a href="#e5" style="font-weight: 600; text-decoration: none; color: #1E2633">Surcharge au travail</a>
+              <span style="font-size: 12px; color: #5A6679">Situation · depuis mars 2026 · en cours</span>
+            </div>
+            <p style="margin: 0; color: #5A6679; font-size: 13px">Trouvée par ses liens : 2 entrées liées mentionnent « <mark>entretien</mark> » ou « <mark>manager</mark> ».</p>
+          </div>
+        </li>
+
+        <li style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 10px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start; opacity: 0.85">
+          <span style="width: 12px; height: 12px; transform: rotate(45deg); background: #3A63C2; display: inline-block; margin-top: 5px; flex-shrink: 0" aria-hidden="true"></span>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
+              <a href="#e6" style="font-weight: 600; text-decoration: none; color: #1E2633"><mark>Entretien</mark> annuel 2025</a>
+              <span style="font-size: 12px; color: #5A6679">Événement · <span style="font-family: 'JetBrains Mono', monospace">nov. 2025</span> · précision mois</span>
+            </div>
+            <p style="margin: 0; color: #5A6679; font-size: 13px">« S'est bien passé, mais j'ai eu peur pendant deux semaines avant. »</p>
+          </div>
+        </li>
+      </ol>
+      <button style="align-self: center; height: 36px; padding: 0 16px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; cursor: pointer">Afficher les 8 autres résultats</button>
+    </div>
+
+    <!-- Aperçu du résultat sélectionné -->
+    <aside aria-label="Aperçu de l'entrée sélectionnée" style="flex: 1 1 320px; max-width: 420px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span style="width: 12px; height: 12px; transform: rotate(45deg); background: #3A63C2; display: inline-block" aria-hidden="true"></span>
+        <h2 style="margin: 0; font-size: 16px; font-weight: 600; flex: 1 1 auto">Entretien d'évaluation avec le manager</h2>
+        <span style="font-size: 12px; color: #2C4C99; background: #E3EAF8; border-radius: 6px; padding: 2px 8px">Événement</span>
+      </div>
+      <dl style="margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; font-size: 13px">
+        <div><dt style="color: #5A6679; font-size: 12px">Quand</dt><dd style="margin: 0"><span style="font-family: 'JetBrains Mono', monospace">18 oct. 2026</span> · jour</dd></div>
+        <div><dt style="color: #5A6679; font-size: 12px">Séance</dt><dd style="margin: 0">17 oct. (annoncé)</dd></div>
+        <div><dt style="color: #5A6679; font-size: 12px">Saisi</dt><dd style="margin: 0"><span style="font-family: 'JetBrains Mono', monospace">17 oct. · 10:42</span> · v1</dd></div>
+        <div><dt style="color: #5A6679; font-size: 12px">Visibilité</dt><dd style="margin: 0">clinique</dd></div>
+      </dl>
+      <p style="margin: 0; font-size: 14px; line-height: 1.6">Annoncé le 17 en séance. Marie craint qu'on lui reproche les retards du projet. On a préparé trois phrases pour l'entretien : rappeler le périmètre initial, demander une priorisation, proposer un point hebdomadaire.</p>
+      <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #E4E8F0; padding-top: 12px">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Liens · 2</span>
+        <span style="font-size: 13px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8B7BD6; display: inline-block; margin-right: 6px" aria-hidden="true"></span>déclenche <strong style="font-weight: 600">Anxiété 6/10 · 17 oct.</strong></span>
+        <span style="font-size: 13px"><span style="width: 10px; height: 4px; border-radius: 2px; background: #2F4F73; display: inline-block; margin-right: 6px; vertical-align: middle" aria-hidden="true"></span>fait partie de <strong style="font-weight: 600">Surcharge au travail</strong></span>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px">
+        <a href="#timeline" style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 8px; background: #3A63C2; color: #FFFFFF; font-size: 13px; font-weight: 600; text-decoration: none">Ouvrir dans la timeline</a>
+        <a href="#graph" style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #D6DCE6; background: #FFFFFF; color: #1E2633; font-size: 13px; text-decoration: none">Voir dans le graphe</a>
+        <a href="#edit" style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #D6DCE6; background: #FFFFFF; color: #1E2633; font-size: 13px; text-decoration: none">Modifier</a>
+      </div>
+      <p style="margin: 0; font-size: 12px; color: #8A94A6; border-top: 1px solid #E4E8F0; padding-top: 10px">↑ ↓ pour parcourir les résultats · Entrée ouvre dans la timeline · <span style="font-family: 'JetBrains Mono', monospace">tag:</span>, <span style="font-family: 'JetBrains Mono', monospace">émotion:</span>, <span style="font-family: 'JetBrains Mono', monospace">avant:</span> pour affiner</p>
+    </aside>
+  </div>
+</div>
+
+</body>
+</html>

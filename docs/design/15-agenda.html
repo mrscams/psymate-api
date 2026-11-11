@@ -1,0 +1,231 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Agenda – semaine du 26 octobre</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 1000px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.4">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      Suivi
+    </div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a>
+    <a href="#agenda" aria-current="page" style="font-size: 13px; color: #1E2633; font-weight: 600; text-decoration: none; border-bottom: 2px solid #3A63C2; padding-bottom: 2px">Agenda</a>
+    <div style="flex: 1 1 auto"></div>
+    <button aria-label="Rechercher" style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>
+      Rechercher <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 1px 5px; border: 1px solid #D6DCE6; border-radius: 4px">/</span>
+    </button>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CL</div>
+  </div>
+
+  <!-- Barre d'outils de l'agenda -->
+  <div style="display: flex; align-items: center; gap: 12px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6; flex-wrap: wrap">
+    <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em">Agenda</h1>
+    <button style="height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 13px; cursor: pointer">Aujourd'hui</button>
+    <div style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+      <button aria-label="Semaine précédente" style="width: 32px; height: 32px; border: 0; background: #FFFFFF; cursor: pointer; color: #1E2633">‹</button>
+      <button aria-label="Semaine suivante" style="width: 32px; height: 32px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; cursor: pointer; color: #1E2633">›</button>
+    </div>
+    <span style="font-size: 15px; font-weight: 600">26 octobre – 1<sup>er</sup> novembre 2026</span>
+    <span style="font-size: 12px; color: #5A6679">· semaine 44 · 14 séances</span>
+    <div style="flex: 1 1 auto"></div>
+    <div role="group" aria-label="Vue" style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
+      <button aria-pressed="false" style="height: 32px; padding: 0 12px; border: 0; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">Jour</button>
+      <button aria-pressed="true" style="height: 32px; padding: 0 12px; border: 0; border-left: 1px solid #D6DCE6; background: #E3EAF8; color: #2C4C99; font-size: 13px; font-weight: 600; cursor: pointer">Semaine</button>
+      <button aria-pressed="false" style="height: 32px; padding: 0 12px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">Mois</button>
+      <button aria-pressed="false" style="height: 32px; padding: 0 12px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 13px; cursor: pointer">Liste</button>
+    </div>
+    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #1E6B45; background: #E4F2EA; border-radius: 999px; padding: 5px 10px">
+      <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+      Google Agenda synchronisé · il y a 2 min
+    </span>
+    <button style="height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: #3A63C2; color: #FFFFFF; font-size: 13px; font-weight: 600; cursor: pointer">+ Rendez-vous</button>
+  </div>
+
+  <!-- Corps : rail gauche · grille semaine · détail -->
+  <div style="display: flex; gap: 16px; padding: 16px 24px 24px; align-items: flex-start; flex-wrap: wrap">
+
+    <!-- Rail gauche -->
+    <aside aria-label="Navigation de l'agenda" style="flex: 0 1 220px; display: flex; flex-direction: column; gap: 14px">
+      <!-- Mini mois -->
+      <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600"><span>Octobre 2026</span><span style="display: inline-flex; gap: 4px"><button aria-label="Mois précédent" style="width: 24px; height: 24px; border: 0; background: transparent; cursor: pointer; color: #5A6679">‹</button><button aria-label="Mois suivant" style="width: 24px; height: 24px; border: 0; background: transparent; cursor: pointer; color: #5A6679">›</button></span></div>
+        <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; font-size: 11px; text-align: center; color: #8A94A6"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+        <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; font-size: 12px; text-align: center; font-family: 'JetBrains Mono', monospace">
+          <span style="padding: 4px 0; color: #B9C2D1">28</span><span style="padding: 4px 0; color: #B9C2D1">29</span><span style="padding: 4px 0; color: #B9C2D1">30</span><span style="padding: 4px 0">1</span><span style="padding: 4px 0">2</span><span style="padding: 4px 0">3</span><span style="padding: 4px 0; color: #8A94A6">4</span>
+          <span style="padding: 4px 0">5</span><span style="padding: 4px 0">6</span><span style="padding: 4px 0">7</span><span style="padding: 4px 0">8</span><span style="padding: 4px 0">9</span><span style="padding: 4px 0">10</span><span style="padding: 4px 0; color: #8A94A6">11</span>
+          <span style="padding: 4px 0">12</span><span style="padding: 4px 0">13</span><span style="padding: 4px 0">14</span><span style="padding: 4px 0">15</span><span style="padding: 4px 0">16</span><span style="padding: 4px 0">17</span><span style="padding: 4px 0; color: #8A94A6">18</span>
+          <span style="padding: 4px 0">19</span><span style="padding: 4px 0">20</span><span style="padding: 4px 0">21</span><span style="padding: 4px 0">22</span><span style="padding: 4px 0">23</span><span style="padding: 4px 0">24</span><span style="padding: 4px 0; border-radius: 6px; background: #1E2633; color: #FFFFFF" aria-label="Aujourd'hui, 25 octobre">25</span>
+          <span style="padding: 4px 0; background: #E3EAF8; border-radius: 6px 0 0 6px; color: #2C4C99; font-weight: 500">26</span><span style="padding: 4px 0; background: #E3EAF8; color: #2C4C99; font-weight: 500">27</span><span style="padding: 4px 0; background: #E3EAF8; color: #2C4C99; font-weight: 500">28</span><span style="padding: 4px 0; background: #E3EAF8; color: #2C4C99; font-weight: 500">29</span><span style="padding: 4px 0; background: #E3EAF8; color: #2C4C99; font-weight: 500">30</span><span style="padding: 4px 0; background: #E3EAF8; color: #2C4C99; font-weight: 500">31</span><span style="padding: 4px 0; background: #E3EAF8; border-radius: 0 6px 6px 0; color: #8A94A6">1</span>
+        </div>
+      </div>
+
+      <!-- Agendas -->
+      <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Mes agendas</h2>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer"><input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #3E8E7E"><span style="width: 12px; height: 12px; border-radius: 3px; background: #3E8E7E" aria-hidden="true"></span>Séances au cabinet</label>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer"><input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #3A63C2"><span style="width: 12px; height: 12px; border-radius: 3px; background: #3A63C2" aria-hidden="true"></span>Séances en visio</label>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer"><input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #7F8EA8"><span style="width: 12px; height: 12px; border-radius: 3px; background: #7F8EA8" aria-hidden="true"></span>Contacts (appels)</label>
+        <div style="height: 1px; background: #E4E8F0; margin: 2px 0"></div>
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; display: flex; align-items: center; justify-content: space-between">Google Agenda <span style="font-size: 10px; font-weight: 500; color: #1E6B45; text-transform: none; letter-spacing: 0">connecté</span></h2>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer"><input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #5A6679"><span style="width: 12px; height: 12px; border-radius: 3px; background: repeating-linear-gradient(135deg, #B9C2D1 0 2px, #FFFFFF 2px 4px); border: 1px solid #B9C2D1" aria-hidden="true"></span>Pro <span style="font-size: 11px; color: #8A94A6">· lecture</span></label>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer"><input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #5A6679"><span style="width: 12px; height: 12px; border-radius: 3px; background: repeating-linear-gradient(135deg, #B9C2D1 0 2px, #FFFFFF 2px 4px); border: 1px solid #B9C2D1" aria-hidden="true"></span>Perso <span style="font-size: 11px; color: #8A94A6">· lecture</span></label>
+        <p style="margin: 2px 0 0; font-size: 11px; color: #8A94A6; line-height: 1.5">Vos séances sont copiées dans l'agenda Google « Suivi » sous la forme « Séance · M. D. ». <a href="#prefs" style="text-decoration: none">Régler</a></p>
+      </div>
+
+      <!-- Légende -->
+      <div style="padding: 0 4px; display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #5A6679">
+        <span style="display: flex; align-items: center; gap: 8px"><span style="width: 14px; height: 10px; border-radius: 2px; border: 1px dashed #5A6679" aria-hidden="true"></span>À confirmer</span>
+        <span style="display: flex; align-items: center; gap: 8px"><span style="width: 14px; height: 10px; border-radius: 2px; background: repeating-linear-gradient(135deg, #B9C2D1 0 2px, #FFFFFF 2px 4px)" aria-hidden="true"></span>Indisponible (Google)</span>
+      </div>
+    </aside>
+
+    <!-- Grille semaine -->
+    <section aria-label="Semaine du 26 octobre au 1er novembre" style="flex: 999 1 560px; min-width: 0; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; overflow: hidden">
+      <!-- En-têtes de jours -->
+      <div style="display: grid; grid-template-columns: 56px repeat(7, minmax(0, 1fr)); border-bottom: 1px solid #D6DCE6">
+        <div></div>
+        <div style="padding: 10px 8px; text-align: center; border-left: 1px solid #E4E8F0"><div style="font-size: 11px; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">lun.</div><div style="font-size: 18px; font-weight: 600; font-family: 'JetBrains Mono', monospace">26</div></div>
+        <div style="padding: 10px 8px; text-align: center; border-left: 1px solid #E4E8F0"><div style="font-size: 11px; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">mar.</div><div style="font-size: 18px; font-weight: 600; font-family: 'JetBrains Mono', monospace">27</div></div>
+        <div style="padding: 10px 8px; text-align: center; border-left: 1px solid #E4E8F0"><div style="font-size: 11px; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">mer.</div><div style="font-size: 18px; font-weight: 600; font-family: 'JetBrains Mono', monospace">28</div></div>
+        <div style="padding: 10px 8px; text-align: center; border-left: 1px solid #E4E8F0"><div style="font-size: 11px; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">jeu.</div><div style="font-size: 18px; font-weight: 600; font-family: 'JetBrains Mono', monospace">29</div></div>
+        <div style="padding: 10px 8px; text-align: center; border-left: 1px solid #E4E8F0"><div style="font-size: 11px; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">ven.</div><div style="font-size: 18px; font-weight: 600; font-family: 'JetBrains Mono', monospace">30</div></div>
+        <div style="padding: 10px 8px; text-align: center; border-left: 1px solid #E4E8F0; background: #E3EAF8"><div style="font-size: 11px; color: #2C4C99; text-transform: uppercase; letter-spacing: 0.04em">sam.</div><div style="font-size: 18px; font-weight: 600; font-family: 'JetBrains Mono', monospace; color: #2C4C99">31</div></div>
+        <div style="padding: 10px 8px; text-align: center; border-left: 1px solid #E4E8F0; color: #8A94A6"><div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em">dim.</div><div style="font-size: 18px; font-weight: 600; font-family: 'JetBrains Mono', monospace">1</div></div>
+      </div>
+
+      <!-- Corps horaire 8h → 19h, 52 px par heure -->
+      <div style="display: grid; grid-template-columns: 56px repeat(7, minmax(0, 1fr)); height: 572px; background-image: linear-gradient(#E4E8F0 1px, transparent 1px); background-size: 100% 52px; background-position: 0 0">
+        <!-- Heures -->
+        <div style="position: relative; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">
+          <span style="position: absolute; top: -7px; right: 8px">08:00</span><span style="position: absolute; top: 45px; right: 8px">09:00</span><span style="position: absolute; top: 97px; right: 8px">10:00</span><span style="position: absolute; top: 149px; right: 8px">11:00</span><span style="position: absolute; top: 201px; right: 8px">12:00</span><span style="position: absolute; top: 253px; right: 8px">13:00</span><span style="position: absolute; top: 305px; right: 8px">14:00</span><span style="position: absolute; top: 357px; right: 8px">15:00</span><span style="position: absolute; top: 409px; right: 8px">16:00</span><span style="position: absolute; top: 461px; right: 8px">17:00</span><span style="position: absolute; top: 513px; right: 8px">18:00</span>
+        </div>
+
+        <!-- Lundi 26 -->
+        <div style="position: relative; border-left: 1px solid #E4E8F0">
+          <a href="#rdv-1" style="position: absolute; top: 52px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #E2F1EE; border-left: 3px solid #3E8E7E; padding: 4px 8px; text-decoration: none; color: #1E2633; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Omar B.</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">09:00–09:50</span></a>
+          <a href="#rdv-2" style="position: absolute; top: 156px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #E3EAF8; border-left: 3px solid #3A63C2; padding: 4px 8px; text-decoration: none; color: #1E2633; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Léa T.</span> <span style="color: #5A6679">· visio</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">11:00–11:50</span></a>
+          <div style="position: absolute; top: 312px; left: 4px; right: 4px; height: 102px; border-radius: 6px; background: repeating-linear-gradient(135deg, #E4E8F0 0 3px, #FFFFFF 3px 6px); border: 1px solid #D6DCE6; padding: 4px 8px; font-size: 11px; color: #5A6679" role="img" aria-label="Indisponible de 14h à 16h, agenda Google Pro">Occupé · Google Pro<br><span style="font-family: 'JetBrains Mono', monospace">14:00 – 16:00</span></div>
+          <a href="#rdv-3" style="position: absolute; top: 468px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #E2F1EE; border-left: 3px solid #3E8E7E; padding: 4px 8px; text-decoration: none; color: #1E2633; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Julie M.</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">17:00–17:50</span></a>
+        </div>
+
+        <!-- Mardi 27 -->
+        <div style="position: relative; border-left: 1px solid #E4E8F0">
+          <a href="#rdv-4" style="position: absolute; top: 52px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #E2F1EE; border-left: 3px solid #3E8E7E; padding: 4px 8px; text-decoration: none; color: #1E2633; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Samira K.</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">09:00–09:50</span></a>
+          <a href="#rdv-5" style="position: absolute; top: 104px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #E2F1EE; border-left: 3px solid #3E8E7E; padding: 4px 8px; text-decoration: none; color: #1E2633; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Nathan R.</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">10:00–10:50</span></a>
+          <a href="#rdv-6" style="position: absolute; top: 364px; left: 4px; right: 4px; height: 14px; border-radius: 4px; background: #EEF1F6; border-left: 3px solid #7F8EA8; padding: 0 8px; text-decoration: none; color: #1E2633; font-size: 11px; overflow: hidden; line-height: 14px"><span style="font-weight: 600">Appel · Inès V.</span> <span style="font-family: 'JetBrains Mono', monospace; color: #5A6679">15:00</span></a>
+        </div>
+
+        <!-- Mercredi 28 -->
+        <div style="position: relative; border-left: 1px solid #E4E8F0">
+          <a href="#rdv-7" style="position: absolute; top: 78px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #E3EAF8; border-left: 3px solid #3A63C2; padding: 4px 8px; text-decoration: none; color: #1E2633; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Adam D.</span> <span style="color: #5A6679">· visio</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">09:30–10:20</span></a>
+          <div style="position: absolute; top: 260px; left: 4px; right: 4px; height: 50px; border-radius: 6px; background: repeating-linear-gradient(135deg, #E4E8F0 0 3px, #FFFFFF 3px 6px); border: 1px solid #D6DCE6; padding: 4px 8px; font-size: 11px; color: #5A6679" role="img" aria-label="Indisponible de 13h à 14h, agenda Google Perso">Occupé · Google Perso<br><span style="font-family: 'JetBrains Mono', monospace">13:00 – 14:00</span></div>
+          <a href="#rdv-8" style="position: absolute; top: 416px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #E2F1EE; border-left: 3px solid #3E8E7E; padding: 4px 8px; text-decoration: none; color: #1E2633; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Paul L.</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">16:00–16:50</span></a>
+        </div>
+
+        <!-- Jeudi 29 -->
+        <div style="position: relative; border-left: 1px solid #E4E8F0">
+          <a href="#rdv-9" style="position: absolute; top: 104px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #E2F1EE; border-left: 3px solid #3E8E7E; padding: 4px 8px; text-decoration: none; color: #1E2633; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Chloé F.</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">10:00–10:50</span></a>
+          <a href="#rdv-10" style="position: absolute; top: 156px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #FFFFFF; border: 1px dashed #3E8E7E; border-left: 3px solid #3E8E7E; padding: 4px 8px; text-decoration: none; color: #1E2633; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Yanis M.</span> <span style="color: #7A5A12">· à confirmer</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">11:00–11:50</span></a>
+          <a href="#rdv-11" style="position: absolute; top: 312px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #E3EAF8; border-left: 3px solid #3A63C2; padding: 4px 8px; text-decoration: none; color: #1E2633; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Sofia R.</span> <span style="color: #5A6679">· visio</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">14:00–14:50</span></a>
+        </div>
+
+        <!-- Vendredi 30 -->
+        <div style="position: relative; border-left: 1px solid #E4E8F0">
+          <a href="#rdv-12" style="position: absolute; top: 52px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #E2F1EE; border-left: 3px solid #3E8E7E; padding: 4px 8px; text-decoration: none; color: #1E2633; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Hugo P.</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">09:00–09:50</span></a>
+          <div style="position: absolute; top: 156px; left: 4px; right: 4px; height: 102px; border-radius: 6px; background: repeating-linear-gradient(135deg, #E4E8F0 0 3px, #FFFFFF 3px 6px); border: 1px solid #D6DCE6; padding: 4px 8px; font-size: 11px; color: #5A6679" role="img" aria-label="Indisponible de 11h à 13h, agenda Google Pro">Occupé · Google Pro<br><span style="font-family: 'JetBrains Mono', monospace">11:00 – 13:00</span></div>
+          <div style="position: absolute; top: 260px; left: 0; right: 0; bottom: 0; background: repeating-linear-gradient(0deg, #F6F8FB 0 8px, #FFFFFF 8px 16px); opacity: 0.6" aria-hidden="true"></div>
+        </div>
+
+        <!-- Samedi 31 -->
+        <div style="position: relative; border-left: 1px solid #E4E8F0; background: #F7F9FC">
+          <a href="#rdv-13" aria-current="true" style="position: absolute; top: 104px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #3E8E7E; border-left: 3px solid #2B6A5D; box-shadow: 0 0 0 3px #E2F1EE; padding: 4px 8px; text-decoration: none; color: #FFFFFF; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Marie D.</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #E2F1EE">10:00–10:50</span></a>
+          <a href="#rdv-14" style="position: absolute; top: 182px; left: 4px; right: 4px; height: 42px; border-radius: 6px; background: #E2F1EE; border-left: 3px solid #3E8E7E; padding: 4px 8px; text-decoration: none; color: #1E2633; font-size: 12px; overflow: hidden"><span style="font-weight: 600">Théo B.</span><br><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">11:30–12:20</span></a>
+          <div style="position: absolute; top: 260px; left: 0; right: 0; bottom: 0; background: repeating-linear-gradient(0deg, #F6F8FB 0 8px, #FFFFFF 8px 16px); opacity: 0.6" aria-hidden="true"></div>
+        </div>
+
+        <!-- Dimanche 1er -->
+        <div style="position: relative; border-left: 1px solid #E4E8F0; background: repeating-linear-gradient(0deg, #F6F8FB 0 8px, #FFFFFF 8px 16px)" aria-label="Dimanche, non travaillé"></div>
+      </div>
+    </section>
+
+    <!-- Détail du rendez-vous sélectionné -->
+    <aside aria-label="Détail du rendez-vous" style="flex: 1 1 320px; max-width: 360px; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden">
+      <div style="padding: 16px 18px 14px; border-bottom: 1px solid #E4E8F0; display: flex; flex-direction: column; gap: 10px; border-top: 4px solid #3E8E7E">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px">
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #3E8E7E">Séance planifiée · cabinet</span>
+          <button aria-label="Fermer le détail" style="width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: #5A6679; cursor: pointer; font-size: 16px; margin: -6px -6px 0 0">×</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 44px; height: 44px; border-radius: 12px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 15px" aria-hidden="true">MD</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+            <a href="#patient" style="font-size: 17px; font-weight: 600; color: #1E2633; text-decoration: none">Marie D.</a>
+            <span style="font-size: 12px; color: #5A6679">34 ans · suivie depuis mars 2025 · <span style="color: #7A5A12">à surveiller</span></span>
+          </div>
+        </div>
+        <div style="font-size: 15px; font-weight: 500">Samedi 31 octobre · <span style="font-family: 'JetBrains Mono', monospace">10:00 – 10:50</span></div>
+        <div style="display: flex; gap: 14px; font-size: 13px; color: #5A6679; flex-wrap: wrap"><span>Cabinet · 12 rue Vendôme</span><span>Séance n° 32</span><span>Rythme : toutes les 1 à 2 semaines</span></div>
+      </div>
+
+      <div style="padding: 14px 18px; display: flex; flex-direction: column; gap: 14px; flex: 1 1 auto">
+        <!-- Préparer -->
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Préparer</h2>
+          <p style="margin: 0; font-size: 13px; line-height: 1.55">Dernière séance le <strong style="font-weight: 600">17 oct.</strong> — objectif fixé : noter chaque soir l'intensité de l'anxiété. Depuis : <strong style="font-weight: 600; color: #4E3F9E">2 ressentis</strong> (8/10 et 9/10) et <strong style="font-weight: 600">1 événement</strong> non commenté (entretien d'évaluation).</p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap">
+            <a href="#overview" style="display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #D6DCE6; background: #FFFFFF; font-size: 13px; text-decoration: none; color: #1E2633">Vue d'ensemble</a>
+            <a href="#timeline" style="display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #D6DCE6; background: #FFFFFF; font-size: 13px; text-decoration: none; color: #1E2633">Timeline</a>
+          </div>
+        </div>
+
+        <!-- Note de planification -->
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="note" style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Note de planification</label>
+          <textarea id="note" rows="2" style="border: 1px solid #B9C2D1; border-radius: 8px; padding: 8px 10px; font-size: 13px; line-height: 1.5; color: #1E2633; resize: vertical; font-family: inherit">Reprendre l'entretien du 18 et le carnet du soir.</textarea>
+          <span style="font-size: 11px; color: #8A94A6">Visible seulement ici ; jamais envoyée à Google.</span>
+        </div>
+
+        <!-- Google -->
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: #EEF1F6; border-radius: 8px; font-size: 12px; color: #5A6679; line-height: 1.5">
+          <span style="display: flex; align-items: center; gap: 6px; color: #1E6B45; font-weight: 500"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Dans Google Agenda « Suivi » : <span style="font-family: 'JetBrains Mono', monospace; color: #1E2633">Séance · M. D.</span></span>
+          <span>Créé par Suivi · déplacé depuis Google le 22 oct. (9:00 → 10:00), répercuté ici.</span>
+        </div>
+
+        <!-- Rappel -->
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer"><input type="checkbox" role="switch" style="width: 16px; height: 16px; accent-color: #3A63C2"> Rappel SMS à la patiente la veille <span style="font-size: 11px; color: #8A94A6">· non activé</span></label>
+      </div>
+
+      <div style="padding: 14px 18px; border-top: 1px solid #E4E8F0; display: flex; flex-direction: column; gap: 8px">
+        <button style="height: 42px; border: 0; border-radius: 8px; background: #3A63C2; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Démarrer la séance</button>
+        <div style="display: flex; gap: 8px">
+          <button style="flex: 1 1 auto; height: 36px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 13px; cursor: pointer">Déplacer</button>
+          <button style="flex: 1 1 auto; height: 36px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 13px; cursor: pointer">Dupliquer</button>
+          <button style="flex: 1 1 auto; height: 36px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 13px; color: #9A2F22; cursor: pointer">Annuler</button>
+        </div>
+        <span style="font-size: 11px; color: #8A94A6; text-align: center">Glisser le rendez-vous dans la grille pour le déplacer · <span style="font-family: 'JetBrains Mono', monospace">Échap</span> ferme le détail</span>
+      </div>
+    </aside>
+  </div>
+</div>
+
+</body>
+</html>

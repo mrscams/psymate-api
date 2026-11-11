@@ -1,0 +1,168 @@
+<!-- Maquette statique · palette Nordique · générée depuis le canevas Design. Référence : docs/design/*.md -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Dossier professionnel – justificatifs et vérification</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#1E2633;background:#EEF1F6}
+a{color:#3A63C2}a:hover{color:#2C4C99}
+*{box-sizing:border-box}
+input,button,select{font-family:inherit}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+
+<div style="min-height: 1130px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
+
+  <!-- Barre d'application -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
+      Suivi
+    </div>
+    <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a>
+    <span style="color: #9AA5B8">/</span>
+    <span style="font-size: 13px; color: #1E2633">Mon compte · Dossier professionnel</span>
+    <div style="flex: 1 1 auto"></div>
+    <button style="height: 32px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">FR</button>
+    <div aria-label="Compte de Claire" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #3A63C2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">CL</div>
+  </div>
+
+  <!-- Bandeau d'état du compte (visible partout tant que non vérifié) -->
+  <div style="display: flex; align-items: center; gap: 12px; padding: 10px 24px; background: #FBF1DC; border-bottom: 1px solid #F0DDB0; color: #7A5A12; font-size: 13px">
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+    <span><strong style="font-weight: 600">Dossier en cours de vérification.</strong> Vous pouvez utiliser l'application pour vos patients. L'annuaire public et le badge « Profil vérifié » seront disponibles après validation.</span>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; align-items: flex-start; max-width: 1240px; width: 100%; margin: 0 auto">
+
+    <!-- Colonne principale -->
+    <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Dossier professionnel</h1>
+        <p style="margin: 0; font-size: 14px; color: #5A6679; max-width: 70ch">Déposez au moins un justificatif de votre qualification. Les documents ne sont visibles que par les administrateurs chargés de la vérification, jamais par les visiteurs ni par les autres praticiens.</p>
+      </div>
+
+      <!-- Étapes -->
+      <ol style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px" aria-label="Progression">
+        <li style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; background: #FFFFFF; border: 1px solid #D6DCE6"><span style="height: 4px; border-radius: 2px; background: #1E6B45" aria-hidden="true"></span><span style="font-size: 12px; color: #1E6B45; font-weight: 600">Compte créé</span><span style="font-size: 12px; color: #5A6679">24 oct.</span></li>
+        <li style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; background: #FFFFFF; border: 1px solid #D6DCE6"><span style="height: 4px; border-radius: 2px; background: #1E6B45" aria-hidden="true"></span><span style="font-size: 12px; color: #1E6B45; font-weight: 600">E-mail confirmé</span><span style="font-size: 12px; color: #5A6679">24 oct.</span></li>
+        <li style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; background: #FFFFFF; border: 2px solid #3A63C2" aria-current="step"><span style="height: 4px; border-radius: 2px; background: #3A63C2" aria-hidden="true"></span><span style="font-size: 12px; color: #2C4C99; font-weight: 600">Justificatifs</span><span style="font-size: 12px; color: #5A6679">2 déposés · 1 manquant</span></li>
+        <li style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; background: #FFFFFF; border: 1px solid #D6DCE6"><span style="height: 4px; border-radius: 2px; background: #D6DCE6" aria-hidden="true"></span><span style="font-size: 12px; color: #5A6679; font-weight: 600">Validation</span><span style="font-size: 12px; color: #8A94A6">sous 2 jours ouvrés</span></li>
+      </ol>
+
+      <!-- Informations professionnelles -->
+      <section aria-labelledby="h-info" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <h2 id="h-info" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Informations professionnelles</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="prof" style="font-size: 13px; font-weight: 500">Profession déclarée</label>
+            <select id="prof" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #1E2633; background: #FFFFFF"><option>Psychologue</option><option>Psychiatre</option><option>Coach</option></select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="num" style="font-size: 13px; font-weight: 500">N° ADELI / RPPS <span style="color: #8A94A6; font-weight: 400">(obligatoire pour psychologues et psychiatres)</span></label>
+            <input id="num" type="text" value="69 93 1234 5" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="tel" style="font-size: 13px; font-weight: 500">Téléphone de contact</label>
+            <input id="tel" type="tel" value="06 12 34 56 78" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #1E2633; background: #FFFFFF">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="adresse" style="font-size: 13px; font-weight: 500">Adresse du cabinet</label>
+            <input id="adresse" type="text" value="12 rue Vendôme, 69006 Lyon" style="height: 42px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 14px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+          </div>
+        </div>
+      </section>
+
+      <!-- Justificatifs -->
+      <section aria-labelledby="h-docs" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h2 id="h-docs" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Justificatifs</h2>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">PDF, JPG ou PNG, 10 Mo maximum par fichier. Vous pouvez déposer plusieurs documents : diplômes, attestation d'inscription, certification, carte professionnelle.</p>
+        </div>
+
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
+          <li style="display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid #D6DCE6; border-radius: 10px">
+            <span style="width: 40px; height: 48px; border-radius: 6px; background: #E3EAF8; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2C4C99" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path></svg></span>
+            <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+              <span style="font-weight: 600">Master 2 Psychologie clinique · Université Lyon 2 · 2014</span>
+              <span style="font-size: 12px; color: #5A6679">Diplôme · <span style="font-family: 'JetBrains Mono', monospace">master-psycho-2014.pdf</span> · 1,8 Mo · déposé le 24 oct.</span>
+            </div>
+            <span style="font-size: 12px; font-weight: 500; color: #7A5A12; background: #FBF1DC; border-radius: 999px; padding: 4px 10px; white-space: nowrap">En attente de vérification</span>
+            <button type="button" aria-label="Retirer ce document" style="width: 32px; height: 32px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #5A6679; cursor: pointer; font-size: 14px">×</button>
+          </li>
+          <li style="display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid #D6DCE6; border-radius: 10px">
+            <span style="width: 40px; height: 48px; border-radius: 6px; background: #E3EAF8; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2C4C99" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="m21 16-5-5-8 8"></path></svg></span>
+            <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+              <span style="font-weight: 600">Attestation d'inscription ADELI · ARS Auvergne-Rhône-Alpes · 2015</span>
+              <span style="font-size: 12px; color: #5A6679">Attestation · <span style="font-family: 'JetBrains Mono', monospace">adeli-2015.jpg</span> · 0,9 Mo · déposé le 24 oct.</span>
+            </div>
+            <span style="font-size: 12px; font-weight: 500; color: #7A5A12; background: #FBF1DC; border-radius: 999px; padding: 4px 10px; white-space: nowrap">En attente de vérification</span>
+            <button type="button" aria-label="Retirer ce document" style="width: 32px; height: 32px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #5A6679; cursor: pointer; font-size: 14px">×</button>
+          </li>
+        </ul>
+
+        <!-- Ajout d'un document -->
+        <form onsubmit="return false" style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px dashed #B9C2D1; border-radius: 10px; background: #EEF1F6">
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="type" style="font-size: 13px; font-weight: 500">Type de document</label>
+              <select id="type" style="height: 40px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #1E2633; background: #FFFFFF"><option>Diplôme</option><option>Attestation d'inscription (ADELI / RPPS)</option><option>Certification (coaching)</option><option>Carte professionnelle</option><option>Pièce d'identité</option><option>Autre</option></select>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="intitule" style="font-size: 13px; font-weight: 500">Intitulé</label>
+              <input id="intitule" type="text" placeholder="ex. DU Thérapies cognitives" style="height: 40px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="annee" style="font-size: 13px; font-weight: 500">Établissement · année</label>
+              <input id="annee" type="text" placeholder="Université, organisme · 2019" style="height: 40px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #1E2633; background: #FFFFFF">
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+            <label for="fichier" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; font-size: 13px; font-weight: 500; cursor: pointer">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"></path><path d="M16 8l-4-4-4 4"></path><path d="M12 4v12"></path></svg>
+              Choisir un fichier
+            </label>
+            <input id="fichier" type="file" accept=".pdf,.jpg,.jpeg,.png" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">
+            <span style="font-size: 13px; color: #5A6679">ou glissez-le ici</span>
+            <div style="flex: 1 1 auto"></div>
+            <button type="submit" style="height: 40px; padding: 0 16px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 13px; font-weight: 600; cursor: pointer">Ajouter au dossier</button>
+          </div>
+        </form>
+
+        <p style="margin: 0; font-size: 12px; color: #8A94A6; line-height: 1.5">Les fichiers sont chiffrés et supprimés 90 jours après la décision de l'administrateur ; seule la mention « vérifié le … » est conservée.</p>
+      </section>
+
+      <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap">
+        <button type="button" style="height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Soumettre le dossier pour vérification</button>
+        <a href="#patients" style="font-size: 13px; text-decoration: none">Plus tard — aller à mes patients</a>
+      </div>
+    </div>
+
+    <!-- Colonne latérale -->
+    <aside aria-label="Aide" style="flex: 1 1 300px; max-width: 340px; display: flex; flex-direction: column; gap: 16px">
+      <section style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 12px">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Justificatifs acceptés</h2>
+        <dl style="margin: 0; display: flex; flex-direction: column; gap: 10px; font-size: 13px; line-height: 1.5">
+          <div><dt style="font-weight: 600; display: flex; align-items: center; gap: 8px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8B7BD6" aria-hidden="true"></span>Psychologue</dt><dd style="margin: 4px 0 0 16px; color: #5A6679">Master 2 de psychologie <strong style="font-weight: 500; color: #1E2633">et</strong> n° ADELI ; ou attestation d'inscription au registre.</dd></div>
+          <div><dt style="font-weight: 600; display: flex; align-items: center; gap: 8px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #2F4F73" aria-hidden="true"></span>Psychiatre</dt><dd style="margin: 4px 0 0 16px; color: #5A6679">N° RPPS <strong style="font-weight: 500; color: #1E2633">et</strong> diplôme de médecine ou carte CPS.</dd></div>
+          <div><dt style="font-weight: 600; display: flex; align-items: center; gap: 8px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #3E8E7E" aria-hidden="true"></span>Coach</dt><dd style="margin: 4px 0 0 16px; color: #5A6679">Certification reconnue (ICF, EMCC, RNCP…) ou diplôme universitaire de coaching, plus pièce d'identité.</dd></div>
+        </dl>
+      </section>
+      <section style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: #5A6679; line-height: 1.6">
+        <h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Comment ça se passe</h2>
+        <p style="margin: 0">Un administrateur compare vos documents à votre profession déclarée et, si possible, au registre public (ADELI / RPPS). Il peut vous demander un document supplémentaire par e-mail.</p>
+        <p style="margin: 0">Décision sous 2 jours ouvrés. En cas de refus, le motif vous est communiqué et vous pouvez compléter le dossier.</p>
+      </section>
+    </aside>
+  </div>
+</div>
+
+</body>
+</html>

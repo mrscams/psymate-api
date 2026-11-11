@@ -2,6 +2,8 @@
 
 Mis à jour le 29 octobre 2026 : renommages et décisions de docs/G-decisions.md (PsyMate, psymate-web ; agenda hors V1, signalements V1.1, tâche M1-14b). Quand une fiche et G se contredisent, G l'emporte.
 
+Mis à jour le 11 novembre 2026 (UX-F1, après l'audit UX du 9 novembre) : les maquettes `.html`, qui n'existaient que dans la copie `docs/design` de psymate-web, sont versionnées ici ; les écarts voulus entre l'écran et la maquette (décisions G, contrat, fiche 00) y sont reportés, chaque maquette modifiée porte en tête un commentaire `UX-F1` et sa fiche le détaille dans « Écarts avec la maquette ». Les `.png` restent dans psymate-web et ne sont pas régénérés : ceux des écrans 01, 02, 02b, 06, 07, 11, 12, 14, 16, 17, 20, 21, 22, 25, 26 et 27 ne reflètent plus la maquette `.html`, qui fait foi.
+
 Chaque écran est livré en trois fichiers du même nom :
 
 | Fichier | Usage par l'agent |

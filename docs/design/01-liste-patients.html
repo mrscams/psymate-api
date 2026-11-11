@@ -16,6 +16,7 @@ input,button,select{font-family:inherit}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+<!-- UX-F1 (11 nov. 2026) : colonne « Prochaine » retirée (aucune séance planifiée au contrat, agenda hors V1, G Q25) ; tri « Prochaine séance, puis dernière » retiré, tris du contrat ajoutés (Nom, Dernière modification, Date de création) à côté de « Dernière séance » et « Flags d'abord » (calculés sur les résumés lus dans overview). Le comportement au-delà de 20 patients n'est pas dessiné (voir fiche 01). -->
 
 
 <div style="min-height: 900px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.4">
@@ -64,7 +65,7 @@ input,button,select{font-family:inherit}
       </div>
       <label for="sort" style="font-size: 13px; color: #5A6679">Trier par</label>
       <select id="sort" style="height: 40px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 13px; color: #1E2633">
-        <option>Prochaine séance, puis dernière</option><option>Nom</option><option>Dernière séance</option><option>Flags d'abord</option>
+        <option>Dernière séance</option><option>Flags d'abord</option><option>Nom A → Z</option><option>Dernière modification</option><option>Date de création</option>
       </select>
       <div role="group" aria-label="Filtres rapides" style="display: flex; gap: 6px">
         <button aria-pressed="true" style="height: 32px; padding: 0 10px; border: 1px solid #3A63C2; border-radius: 999px; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 500; cursor: pointer">Tous · 24</button>
@@ -82,7 +83,6 @@ input,button,select{font-family:inherit}
             <tr style="background: #F3F5F9; color: #5A6679; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em">
               <th scope="col" style="text-align: left; font-weight: 600; padding: 10px 16px; border-bottom: 1px solid #D6DCE6">Patient</th>
               <th scope="col" style="text-align: left; font-weight: 600; padding: 10px 16px; border-bottom: 1px solid #D6DCE6">Dernière séance</th>
-              <th scope="col" style="text-align: left; font-weight: 600; padding: 10px 16px; border-bottom: 1px solid #D6DCE6">Prochaine</th>
               <th scope="col" style="text-align: left; font-weight: 600; padding: 10px 16px; border-bottom: 1px solid #D6DCE6">Émotions dominantes · 30 j</th>
               <th scope="col" style="text-align: left; font-weight: 600; padding: 10px 16px; border-bottom: 1px solid #D6DCE6">Situations actives</th>
               <th scope="col" style="text-align: left; font-weight: 600; padding: 10px 16px; border-bottom: 1px solid #D6DCE6">Flags</th>
@@ -99,7 +99,6 @@ input,button,select{font-family:inherit}
                 </a>
               </td>
               <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0; color: #1E2633">il y a 7 j <span style="color: #5A6679">· 17 oct.</span></td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0"><span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 999px; background: #FFFFFF; border: 1px solid #3A63C2; color: #2C4C99; font-size: 12px; font-weight: 500">Aujourd'hui 14:00</span></td>
               <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0">
                 <span style="display: inline-flex; align-items: center; gap: 6px">
                   <span title="Anxiété" aria-label="Anxiété" style="width: 12px; height: 12px; border-radius: 50%; background: #7A68C9; display: inline-block"></span>
@@ -121,7 +120,6 @@ input,button,select{font-family:inherit}
                 </a>
               </td>
               <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0">il y a 2 sem. <span style="color: #5A6679">· 10 oct.</span></td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0"><span style="display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 999px; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 500">Aujourd'hui 16:30</span></td>
               <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0">
                 <span style="display: inline-flex; align-items: center; gap: 6px">
                   <span title="Tristesse" aria-label="Tristesse" style="width: 12px; height: 12px; border-radius: 50%; background: #3C66A6; display: inline-block"></span>
@@ -142,7 +140,6 @@ input,button,select{font-family:inherit}
                 </a>
               </td>
               <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0">il y a 3 j <span style="color: #5A6679">· 21 oct.</span></td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0; color: #5A6679">jeu. 29 oct. 10:00</td>
               <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0">
                 <span style="display: inline-flex; align-items: center; gap: 6px">
                   <span title="Anxiété" aria-label="Anxiété" style="width: 12px; height: 12px; border-radius: 50%; background: #7A68C9; display: inline-block"></span>
@@ -163,7 +160,6 @@ input,button,select{font-family:inherit}
                 </a>
               </td>
               <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0">il y a 5 sem. <span style="color: #5A6679">· 19 sept.</span></td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0; color: #8A94A6">non planifiée</td>
               <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0">
                 <span style="display: inline-flex; align-items: center; gap: 6px">
                   <span title="Colère" aria-label="Colère" style="width: 12px; height: 12px; border-radius: 50%; background: #B8463C; display: inline-block"></span>
@@ -184,7 +180,6 @@ input,button,select{font-family:inherit}
                 </a>
               </td>
               <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0">hier <span style="color: #5A6679">· 23 oct.</span></td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0"><span style="display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 999px; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 500">Aujourd'hui 18:00 · visio</span></td>
               <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0; color: #8A94A6; font-size: 12px">première séance faite · pas encore de ressenti</td>
               <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0; color: #8A94A6">—</td>
               <td style="padding: 12px 16px; border-bottom: 1px solid #E4E8F0; color: #8A94A6">—</td>
@@ -199,7 +194,6 @@ input,button,select{font-family:inherit}
                 </a>
               </td>
               <td style="padding: 12px 16px; color: #5A6679">—</td>
-              <td style="padding: 12px 16px; color: #8A94A6">—</td>
               <td style="padding: 12px 16px">
                 <span style="display: inline-flex; align-items: center; gap: 6px">
                   <span title="Anxiété" aria-label="Anxiété" style="width: 12px; height: 12px; border-radius: 50%; background: #7A68C9; display: inline-block"></span>

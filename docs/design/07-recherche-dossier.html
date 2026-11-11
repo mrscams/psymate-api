@@ -17,6 +17,7 @@ mark{background:#FBF1DC;color:#1E2633;border-radius:2px;padding:0 1px}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+<!-- UX-F1 (11 nov. 2026) : bascule de tri « Pertinence | Plus récent » retirée (GET /api/patients/{id}/search n'a pas de paramètre de tri : pertinence avec un texte, date décroissante sans texte). -->
 
 
 <div style="min-height: 960px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
@@ -71,12 +72,6 @@ mark{background:#FBF1DC;color:#1E2633;border-radius:2px;padding:0 1px}
     <div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 10px">
       <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
         <span style="font-size: 13px; color: #5A6679"><strong style="color: #1E2633; font-weight: 600">14 résultats</strong> pour « entretien manager » · recherche sans accents, par trigrammes · <span style="font-family: 'JetBrains Mono', monospace">42 ms</span></span>
-        <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #5A6679">Tri
-          <span style="display: inline-flex; border: 1px solid #D6DCE6; border-radius: 8px; overflow: hidden">
-            <button aria-pressed="true" style="height: 26px; padding: 0 10px; border: 0; background: #E3EAF8; color: #2C4C99; font-size: 12px; font-weight: 600; cursor: pointer">Pertinence</button>
-            <button aria-pressed="false" style="height: 26px; padding: 0 10px; border: 0; border-left: 1px solid #D6DCE6; background: #FFFFFF; color: #5A6679; font-size: 12px; cursor: pointer">Plus récent</button>
-          </span>
-        </div>
       </div>
 
       <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px" aria-label="Résultats">

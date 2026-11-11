@@ -16,6 +16,7 @@ input,button{font-family:inherit}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+<!-- UX-F1 (11 nov. 2026) : « Faits clés » sans les compteurs Séances / Entrées / Liens ni « Rythme » (OverviewFactsDto ne porte ni nombre d'entrées, ni nombre de liens, ni rythme ; le nombre de séances est dans la tuile « Séances » du résumé décrit par la fiche 02) ; note sans titre de l'activité récente nommée « Note · 24 oct. » (RecentActivityItemDto n'a pas de texte). La rangée de quatre tuiles du résumé (Séances, Ressentis, Intensité moyenne, Situations actives) n'est pas dessinée : voir la fiche. -->
 
 
 <div style="min-height: 1080px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.4">
@@ -88,14 +89,8 @@ input,button{font-family:inherit}
     <!-- Faits clés -->
     <section style="grid-column: span 4; background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
       <h2 style="margin: 0; font-size: 12px; font-weight: 600; color: #5A6679; text-transform: uppercase; letter-spacing: 0.04em">Faits clés</h2>
-      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
-        <div><div style="font-size: 11px; color: #5A6679">Séances</div><div style="font-weight: 600; font-size: 22px; letter-spacing: -0.01em">31</div></div>
-        <div><div style="font-size: 11px; color: #5A6679">Entrées</div><div style="font-weight: 600; font-size: 22px; letter-spacing: -0.01em">214</div></div>
-        <div><div style="font-size: 11px; color: #5A6679">Liens</div><div style="font-weight: 600; font-size: 22px; letter-spacing: -0.01em">58</div></div>
-      </div>
-      <div style="border-top: 1px solid #D6DCE6; padding-top: 10px; display: flex; flex-direction: column; gap: 8px; font-size: 13px">
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px">
         <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 14px; height: 8px; border-radius: 999px; background: #B07A2A; flex: 0 0 auto"></span><span style="flex: 1 1 auto">Sertraline 75 mg · matin</span><span style="color: #5A6679; font-size: 12px">depuis 12 sept.</span></div>
-        <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; border: 2px solid #3E8E7E; flex: 0 0 auto"></span><span style="flex: 1 1 auto">Rythme : toutes les 1 à 2 semaines</span><span style="color: #5A6679; font-size: 12px">cabinet</span></div>
         <div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #FBF1DC; border: 1.5px solid #B8862E; flex: 0 0 auto"></span><span style="flex: 1 1 auto">Flag « à surveiller » posé le 3 oct.</span><a href="#flag" style="font-size: 12px; text-decoration: none">Modifier</a></div>
       </div>
     </section>
@@ -233,7 +228,7 @@ input,button{font-family:inherit}
       <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; font-size: 13px">
         <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #8B7BD6"></span><span style="flex: 1 1 auto">Anxiété 8/10 · n'a pas dormi</span><span style="font-size: 11px; color: #7A5A12; background: #FBF1DC; padding: 1px 6px; border-radius: 999px">brouillon</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">il y a 2 min</span></div>
         <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 9px; height: 9px; background: #3A63C2; transform: rotate(45deg); margin: 0 1px"></span><span style="flex: 1 1 auto">Entretien d'évaluation avec le manager</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">il y a 6 min</span></div>
-        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 10px; height: 12px; border-radius: 2px; background: #7F8EA8"></span><span style="flex: 1 1 auto">Note · arrive en retard, essoufflée</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">il y a 17 min</span></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 10px; height: 12px; border-radius: 2px; background: #7F8EA8"></span><span style="flex: 1 1 auto">Note · 24 oct.</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">il y a 17 min</span></div>
         <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; border: 2px solid #3E8E7E"></span><span style="flex: 1 1 auto">Séance du 17 oct. · compte rendu modifié</span><span style="font-size: 11px; color: #5A6679; background: #E4E8F0; padding: 1px 6px; border-radius: 999px">v2</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">hier</span></div>
         <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 14px; height: 6px; border-radius: 999px; background: #2F4F73"></span><span style="flex: 1 1 auto">Troubles du sommeil · situation ouverte</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">12 sept.</span></div>
         <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E4E8F0"><span aria-hidden="true" style="width: 14px; height: 8px; border-radius: 999px; background: #B07A2A"></span><span style="flex: 1 1 auto">Sertraline 50 → 75 mg</span><span style="font-size: 11px; color: #5A6679; width: 70px; text-align: right">12 sept.</span></div>

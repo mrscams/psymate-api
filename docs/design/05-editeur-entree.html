@@ -16,6 +16,7 @@ input,button,select,textarea{font-family:inherit}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+<!-- UX-F1 (11 nov. 2026) : « Restaurer » retiré de l'historique (pas de restauration de version au contrat ; l'historique est en lecture seule) ; « valence » retirée du bloc Plus (absente de EntryFeelingRequest) ; bloc Séance sans modalité ni durée (la liste des séances vient de la timeline, TimelineItemDto ne porte ni modalité ni durée). -->
 
 <!-- ============================================================ -->
 <!-- ÉTAT A : nouvelle entrée (Ressenti) par-dessus la vue d'ensemble -->
@@ -209,7 +210,7 @@ input,button,select,textarea{font-family:inherit}
     <h3 id="h-sess-a" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Séance</h3>
     <button type="button" aria-haspopup="listbox" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF;font-size:13px;color:#1E2633;cursor:pointer;text-align:left">
      <span aria-hidden="true" style="width:10px;height:10px;border-radius:3px;border:2px solid #3E8E7E;flex-shrink:0"></span>
-     <span style="flex:1 1 auto"><strong style="font-weight:600">Séance du 24 oct.</strong> <span style="color:#1E6B45">(en cours)</span> · cabinet</span>
+     <span style="flex:1 1 auto"><strong style="font-weight:600">Séance du 24 oct.</strong> <span style="color:#1E6B45">(en cours)</span></span>
      <span style="font-size:12px;color:#2C4C99">modifier</span>
      <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#5A6679" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
     </button>
@@ -267,7 +268,7 @@ input,button,select,textarea{font-family:inherit}
     <summary style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:#1E2633;list-style:none">
      <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 2l4 3-4 3"></path></svg>
      Plus
-     <span style="font-weight:400;color:#8A94A6">visibilité (clinique par défaut), tags, valence</span>
+     <span style="font-weight:400;color:#8A94A6">visibilité (clinique par défaut), tags</span>
     </summary>
     <div style="display:flex;flex-direction:column;gap:12px;padding:12px 0 0 18px">
      <fieldset style="margin:0;padding:0;border:0;display:flex;align-items:center;gap:14px;font-size:13px">
@@ -276,7 +277,6 @@ input,button,select,textarea{font-family:inherit}
       <label style="display:inline-flex;align-items:center;gap:6px"><input type="radio" name="vis-a" style="accent-color:#3A63C2;margin:0">Privée <span style="font-size:11px;color:#8A94A6">(exclue de l'export)</span></label>
      </fieldset>
      <div style="display:flex;flex-direction:column;gap:6px"><label for="tags-a" style="font-size:12px;font-weight:500">Tags</label><input id="tags-a" type="text" placeholder="sommeil, travail…" style="height:34px;padding:0 12px;border:1px solid #B9C2D1;border-radius:8px;font-size:13px"></div>
-     <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500">Valence</span><span style="font-size:12px;color:#5A6679">Déduite de la famille (peur → désagréable), modifiable.</span></div>
     </div>
    </details>
   </div>
@@ -357,7 +357,6 @@ input,button,select,textarea{font-family:inherit}
       <span style="font-size:13px"><span style="font-family:'JetBrains Mono', monospace">24 oct. 14:03</span> · Claire M.</span>
       <span style="font-size:12px;color:#5A6679">Création en séance, depuis la barre de capture</span>
      </span>
-     <a href="#restore-v1" style="font-size:12px;text-decoration:none;font-weight:500;white-space:nowrap">Restaurer</a>
     </li>
    </ol>
 
@@ -386,7 +385,7 @@ input,button,select,textarea{font-family:inherit}
     </dl>
     <div style="border-top:1px solid #E4E8F0;padding-top:10px;font-size:12px;color:#5A6679;display:flex;flex-direction:column;gap:4px">
      <span>Inchangés : séance (24 oct.), visibilité (clinique), tags (travail), liens (2).</span>
-     <span>« Restaurer » recopie la version choisie dans une nouvelle version ; rien n'est effacé. Entrée archivée : <span style="font-family:'JetBrains Mono', monospace;font-size:11px">POST /api/entries/{id}/restore</span>.</span>
+     <span>Historique en lecture seule : une version ne se restaure pas ; rien n'est effacé.</span>
     </div>
    </section>
   </div>
@@ -462,7 +461,7 @@ input,button,select,textarea{font-family:inherit}
     <h3 id="h-sess-b" style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5A6679">Séance</h3>
     <button type="button" aria-haspopup="listbox" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border:1px solid #D6DCE6;border-radius:10px;background:#FFFFFF;font-size:13px;color:#1E2633;cursor:pointer;text-align:left">
      <span aria-hidden="true" style="width:10px;height:10px;border-radius:3px;border:2px solid #3E8E7E;flex-shrink:0"></span>
-     <span style="flex:1 1 auto"><strong style="font-weight:600">Séance du 24 oct.</strong> · 55 min · cabinet · clôturée</span>
+     <span style="flex:1 1 auto"><strong style="font-weight:600">Séance du 24 oct.</strong></span>
      <span style="font-size:12px;color:#2C4C99">modifier</span>
      <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#5A6679" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3 3 3-3"></path></svg>
     </button>

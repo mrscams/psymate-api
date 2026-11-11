@@ -16,6 +16,7 @@ input,button{font-family:inherit}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+<!-- UX-F1 (11 nov. 2026) : le « Point d'attention » ne reprend que la phrase du serveur (NarrativeDto.attention, issue des drapeaux actifs) ; la règle « trois ressentis à 7 ou plus en huit jours, sommeil noté deux fois » n'est pas calculée côté serveur et n'est pas affichée. Note sans titre de « Depuis la séance » nommée « Note · 22 oct. » (SinceLastSessionEntryDto n'a pas de texte). -->
 
 
 <div style="min-height: 1040px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
@@ -102,7 +103,7 @@ input,button{font-family:inherit}
         </p>
         <p style="margin: 0; font-size: 14px; color: #7A5A12; background: #FBF1DC; border-radius: 8px; padding: 10px 14px; display: flex; gap: 10px; align-items: flex-start">
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="flex-shrink: 0; margin-top: 2px"><path d="M8 2.5 1.8 13.5h12.4L8 2.5zM8 7v3M8 12h.01"></path></svg>
-          <span><strong style="font-weight: 600">Point d'attention :</strong> trois ressentis à 7 ou plus en huit jours, et un sommeil dégradé noté deux fois. Le drapeau « à surveiller » a été posé le 3 octobre.</span>
+          <span><strong style="font-weight: 600">Point d'attention :</strong> À surveiller depuis le 3 octobre 2026 (motif : Troubles du sommeil).</span>
         </p>
       </section>
 
@@ -198,7 +199,7 @@ input,button{font-family:inherit}
         <h2 id="h-depuis" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Depuis la séance du 17 oct.</h2>
         <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 14px; line-height: 1.5">
           <li style="display: flex; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #8B7BD6; display: inline-block; margin-top: 5px; flex-shrink: 0" aria-hidden="true"></span><span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679">24 oct.</span><br><strong style="font-weight: 600">Anxiété 8/10</strong> — n'a pas dormi, monte avant les appels du soir.</span></li>
-          <li style="display: flex; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #7F8EA8; display: inline-block; margin-top: 5px; flex-shrink: 0" aria-hidden="true"></span><span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679">22 oct.</span><br>Note — arrive en retard, essoufflée, appelle pour décaler.</span></li>
+          <li style="display: flex; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #7F8EA8; display: inline-block; margin-top: 5px; flex-shrink: 0" aria-hidden="true"></span><span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679">22 oct.</span><br>Note · 22 oct.</span></li>
           <li style="display: flex; gap: 10px"><span style="width: 10px; height: 10px; transform: rotate(45deg); background: #3A63C2; display: inline-block; margin-top: 5px; flex-shrink: 0" aria-hidden="true"></span><span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679">18 oct.</span><br>Entretien d'évaluation avec le manager — pas encore commenté.</span></li>
         </ul>
       </section>

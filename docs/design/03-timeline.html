@@ -35,6 +35,7 @@ input,button{font-family:inherit}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+<!-- UX-F1 (11 nov. 2026) : état A sans extrait de texte, sans posologie ni « changement de posologie », sans « déclenché par » / « aggrave … » (TimelineItemDto ne porte ni texte, ni détail de médicament, ni liens nommés : seulement linkCount) ; note sans titre ni texte nommée « Note · 10 oct. » ; « Voir par séance » et « Clôturer… » retirés des cartes (Ouvrir · Corriger · Lier · Voir dans le graphe restent dans le menu ⋯). -->
 
 
 <div style="min-height: 1080px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.4">
@@ -192,13 +193,10 @@ input,button{font-family:inherit}
             <span class="m">24 oct. 2026 · 07:40</span>
             <span class="s">précision : exacte</span>
           </div>
-          <p class="x">N'a pas dormi ; ruminations sur l'entretien, « je vais me faire démonter ». Souffle court au réveil.</p>
           <div class="s" style="display: flex; align-items: center; gap: 8px">
             <span class="tag">#travail</span>
             <span class="tag">#sommeil</span>
             <span>2 liens</span>
-            <span aria-hidden="true">·</span>
-            <span>déclenché par Entretien d'évaluation</span>
           </div>
         </article>
 
@@ -217,7 +215,6 @@ input,button{font-family:inherit}
             <span class="s">précision : jour</span>
             <button aria-label="Actions sur l'entrée" aria-haspopup="menu" aria-expanded="true" style="width: 24px; height: 24px; border: 1px solid #D6DCE6; border-radius: 6px; background: #E3EAF8; color: #2C4C99; cursor: pointer; font-size: 14px; line-height: 1">⋯</button>
           </div>
-          <p class="x">Entretien annuel ; craint une remise en cause de son poste après la réorganisation. Préparé en séance : repérer les pensées automatiques.</p>
           <div class="s" style="display: flex; align-items: center; gap: 8px">
             <span class="tag">#travail</span>
             <span>1 lien</span>
@@ -245,9 +242,7 @@ input,button{font-family:inherit}
             <span style="font-size: 11px; color: #7A5A12; background: #FBF1DC; padding: 1px 6px; border-radius: 999px">non clôturée</span>
             <div style="flex: 1 1 auto"></div>
             <span class="m">17 oct. 2026 · 18:00 → 18:50</span>
-            <a href="#session-17" style="font-size: 12px; text-decoration: none">Voir par séance</a>
           </div>
-          <p class="x">Compte rendu : reprise du thème du travail ; objectif, préparer l'entretien et repérer les pensées automatiques.</p>
         </article>
 
         <!-- Ligne 4 · 10 oct. · note, date exacte -->
@@ -258,13 +253,12 @@ input,button{font-family:inherit}
         <article role="listitem" class="c" style="grid-column: 4; grid-row: 4; border-left-color: #7F8EA8">
           <div style="display: flex; align-items: center; gap: 8px">
             <span aria-hidden="true" style="width: 10px; height: 12px; border-radius: 2px; background: #7F8EA8"></span>
-            <strong style="font-size: 14px">Note</strong>
+            <strong style="font-size: 14px">Note · 10 oct.</strong>
             <span class="said"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 2px; border: 1.5px solid #3E8E7E"></span>dit en séance du 10 oct.</span>
             <div style="flex: 1 1 auto"></div>
             <span class="m">10 oct. 2026 · 18:12</span>
             <span class="s">précision : exacte</span>
           </div>
-          <p class="x">Semble plus détendue en visio, parle plus vite ; évoque spontanément la reprise de la course à pied.</p>
         </article>
 
         <!-- Ligne 5 · oct. 2026 · ressenti, précision mois -->
@@ -281,7 +275,6 @@ input,button{font-family:inherit}
             <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679">oct. 2026</span>
             <span style="font-size: 11px; color: #5A6679; border: 1px dashed #B9C2D1; padding: 0 6px; border-radius: 999px">précision : mois</span>
           </div>
-          <p class="x">« Depuis le début du mois, des moments de vide le soir, sans raison identifiée. » Durée d'au moins deux semaines.</p>
         </article>
 
         <!-- Ligne 6 · 26 sept. · séance (compacte) -->
@@ -306,15 +299,10 @@ input,button{font-family:inherit}
           <div style="display: flex; align-items: center; gap: 8px">
             <span aria-hidden="true" style="width: 14px; height: 8px; border-radius: 999px; background: #B07A2A"></span>
             <strong style="font-size: 14px">Sertraline</strong>
-            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6679; text-decoration: line-through">50 mg</span>
-            <span aria-hidden="true" style="color: #5A6679">→</span>
-            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; color: #1E2633">75 mg · matin</span>
-            <span style="font-size: 11px; color: #7A5A12; background: #FBF1DC; padding: 1px 8px; border-radius: 999px">changement de posologie</span>
             <div style="flex: 1 1 auto"></div>
             <span class="m">12 sept. 2026</span>
             <span class="s">précision : jour</span>
           </div>
-          <p class="x">Prescrit par le Dr Lenoir (psychiatre) ; rapporté par la patiente. Effets attendus sous 3 à 4 semaines.</p>
         </article>
 
         <!-- Ligne 8 · 3 sept. · début de situation « Surcharge au travail » -->
@@ -329,9 +317,7 @@ input,button{font-family:inherit}
             <span style="font-size: 11px; color: #2C4C99; background: #E3EAF8; padding: 1px 8px; border-radius: 999px">en cours</span>
             <div style="flex: 1 1 auto"></div>
             <span class="m">depuis le 3 sept. 2026</span>
-            <button style="height: 24px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 6px; background: #FFFFFF; color: #1E2633; font-size: 12px; cursor: pointer">Clôturer…</button>
           </div>
-          <p class="x">Réorganisation du service, deux postes non remplacés. 5 ressentis liés · intensité moyenne 7,4 · glisser la bande pour clôturer.</p>
         </article>
 
         <!-- Ligne 9 · 28 août · ressenti colère -->
@@ -348,8 +334,7 @@ input,button{font-family:inherit}
             <span class="m">28 août 2026 · 21:30</span>
             <span class="s">précision : exacte</span>
           </div>
-          <p class="x">Dispute au téléphone avec son ex-compagnon au sujet du logement. « Il décide encore pour moi. »</p>
-          <div class="s" style="display: flex; align-items: center; gap: 8px"><span class="tag">#couple</span><span>1 lien · aggrave Séparation</span></div>
+          <div class="s" style="display: flex; align-items: center; gap: 8px"><span class="tag">#couple</span><span>1 lien</span></div>
         </article>
 
         <!-- Ligne 10 · 15 août · début de situation « Séparation » (clôturée) -->

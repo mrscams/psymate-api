@@ -1,6 +1,8 @@
 # Écran 7 · Recherche dans le dossier d'un patient
 
 > Spécification pour agents. Maquette : `07-recherche-dossier.html` / `.png`. Palette : Nordique. Document B, écran 7 ; Document A, module `search` (pg_trgm + unaccent, UC-10).
+>
+> Mis à jour le 11 novembre 2026 (UX-F1, audit UX du 9 novembre) : pas de choix de tri (absent du contrat) ; maquette HTML corrigée.
 
 ## Objectif
 Retrouver une entrée du dossier par un mot, un tag, une émotion ou une période, en moins de 5 secondes, puis l'ouvrir dans la timeline ou le graphe. La recherche est **scopée au patient courant** ; la recherche multi-patients est hors V1.
@@ -15,7 +17,7 @@ Retrouver une entrée du dossier par un mot, un tag, une émotion ou une périod
 ## Structure
 1. **Barre d'application** (fil d'Ariane Patients / Marie D. / Recherche).
 2. **Zone de recherche** (fond blanc) : champ 48 px bordure primaire, valeur en cours, mention « dans le dossier de … », touche `Échap`. Dessous : puces **Types** (Tous + une par type avec sa forme et son compteur), sélecteurs **Période** et **Séance**, case « inclure les entrées archivées ».
-3. **Résultats** (colonne gauche, `flex: 999 1 520px`) : ligne de synthèse (`N résultats pour « … » · sans accents, par trigrammes · 42 ms`), tri *Pertinence / Plus récent*. Liste `<ol>` : icône de type, titre avec `<mark>`, méta (type · date mono · précision), extrait avec `<mark>`, ligne de contexte (séance, liens, tags). Le résultat sélectionné a une bordure primaire + halo `#E3EAF8`. Une entrée trouvée **par ses liens** porte l'explication (« Trouvée par ses liens : … »). Bouton « Afficher les N autres ».
+3. **Résultats** (colonne gauche, `flex: 999 1 520px`) : ligne de synthèse (`N résultats pour « … » · sans accents, par trigrammes · 42 ms`) ; pas de choix de tri (le contrat n'en a pas : pertinence avec un texte, date décroissante sans texte). Liste `<ol>` : icône de type, titre avec `<mark>`, méta (type · date mono · précision), extrait avec `<mark>`, ligne de contexte (séance, liens, tags). Le résultat sélectionné a une bordure primaire + halo `#E3EAF8`. Une entrée trouvée **par ses liens** porte l'explication (« Trouvée par ses liens : … »). Bouton « Afficher les N autres ».
 4. **Aperçu** (colonne droite 320–420 px) : type, titre, `dl` Quand / Séance / Saisi / Visibilité, texte complet, liens, boutons **Ouvrir dans la timeline** (primaire), *Voir dans le graphe*, *Modifier* ; pied d'aide clavier et syntaxe.
 
 ## Interactions
@@ -42,6 +44,10 @@ Retrouver une entrée du dossier par un mot, un tag, une émotion ou une périod
 - [ ] 2 000 entrées : réponse < 150 ms (index GIN, Testcontainers).
 - [ ] Aucune entrée `private` d'un autre praticien dans les résultats (test d'intégration).
 - [ ] Parcours clavier `/ → saisie → ↓ → Entrée` ouvre la timeline sur l'entrée.
+
+## Écarts avec la maquette
+- **Tri « Pertinence | Plus récent » (UX-F1)** : `GET /api/patients/{id}/search` n'a pas de paramètre de tri ; le serveur classe par pertinence (avec un boost pour les entrées récentes) quand il y a un texte, par date décroissante sinon. **Maquette corrigée** : bascule retirée. Un paramètre `sort` serait une évolution du contrat (tâche API).
+- Compteurs, durées (« 42 ms ») et textes : valeurs fictives, **ignorer**.
 
 ## Hors périmètre V1
 Recherche multi-patients, recherche sémantique (V2 `ai`), recherche dans les pièces jointes.

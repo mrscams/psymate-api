@@ -16,6 +16,7 @@ input,button,select{font-family:inherit}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+<!-- UX-F1 (11 nov. 2026) : état A : compteur « 8 codes de secours restants sur 10 » retiré (non fourni par GET /api/me/security) ; ville retirée des sessions et de la connexion précédente (city toujours null) ; « Dernière connexion » devient « Connexion précédente » (lastLogin), sans méthode de connexion ni lien « Voir le journal de sécurité » (hors contrat) ; sessions bornées : cet appareil puis 4 lignes regroupées par appareil (device), plus récente activité d'abord, puis « Afficher les n autres appareils ». -->
 
 <!-- Repère entre les trois états (hors application) -->
 <div style="padding: 10px 24px; background: #E4E8F0; color: #5A6679; font-size: 12px; border-bottom: 1px solid #D6DCE6">État A · Page « Compte et sécurité » d'une praticienne, double authentification déjà activée (GET /api/auth/session → twoFactorEnabled = true)</div>
@@ -99,7 +100,7 @@ input,button,select{font-family:inherit}
 
           <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Codes de secours</span><span style="font-size: 12px; color: #5A6679">À usage unique, si vous perdez votre téléphone.</span></div>
           <div style="display: flex; align-items: center; gap: 10px">
-            <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px">8</span><span style="font-size: 13px">codes de secours restants sur 10</span>
+            <span style="font-size: 13px">10 codes remis à l'activation ; à conserver hors ligne</span>
           </div>
           <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #B9C2D1; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">Régénérer les codes</button>
         </div>
@@ -109,7 +110,7 @@ input,button,select{font-family:inherit}
       <!-- Sessions actives -->
       <section aria-labelledby="h-sess" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap">
-          <h2 id="h-sess" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Sessions actives · 2</h2>
+          <h2 id="h-sess" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Sessions actives · 11</h2>
           <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #B9C2D1; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer">Déconnecter les autres</button>
         </div>
         <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
@@ -117,31 +118,58 @@ input,button,select{font-family:inherit}
             <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8M12 16v4"></path></svg>
             <div style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto">
               <span style="font-weight: 500">Cet appareil <span style="margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #E3EAF8; color: #2C4C99; font-size: 11px; font-weight: 600">session courante</span></span>
-              <span style="font-size: 12px; color: #5A6679">Chrome · Windows · Paris</span>
+              <span style="font-size: 12px; color: #5A6679">Chrome · Windows</span>
             </div>
             <span style="font-size: 12px; color: #5A6679">maintenant</span>
-            <span style="font-size: 12px; color: #8A94A6; min-width: 150px; text-align: right">expire dans 11 h 40 (12 h)</span>
+            <span style="min-width: 150px; text-align: right"><span style="font-size: 12px; color: #8A94A6">expire dans 11 h 40 (12 h)</span></span>
           </li>
-          <li style="display: flex; align-items: center; gap: 14px; padding: 12px 0">
+          <li style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #E4E8F0">
             <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><path d="M11 18h2"></path></svg>
             <div style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto">
-              <span style="font-weight: 500">iPad</span>
-              <span style="font-size: 12px; color: #5A6679">Safari · iPadOS · Paris</span>
+              <span style="font-weight: 500">Safari · iPadOS</span>
+              <span style="font-size: 12px; color: #5A6679">1 session · « rester connectée » · 30 j</span>
             </div>
             <span style="font-size: 12px; color: #5A6679">il y a 2 j</span>
-            <span style="font-size: 12px; color: #8A94A6; min-width: 150px; text-align: right">« rester connectée » · 30 j</span>
+            <span style="min-width: 150px; text-align: right"><button type="button" style="height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; color: #1E2633; cursor: pointer">Déconnecter</button></span>
+          </li>
+          <li style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #E4E8F0">
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8M12 16v4"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto">
+              <span style="font-weight: 500">Chrome · Windows</span>
+              <span style="font-size: 12px; color: #5A6679">3 sessions · la plus récente expire dans 27 j</span>
+            </div>
+            <span style="font-size: 12px; color: #5A6679">il y a 3 j</span>
+            <span style="min-width: 150px; text-align: right"><button type="button" style="height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; color: #1E2633; cursor: pointer">Voir les 3 sessions</button></span>
+          </li>
+          <li style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #E4E8F0">
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8M12 16v4"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto">
+              <span style="font-weight: 500">Firefox · Linux</span>
+              <span style="font-size: 12px; color: #5A6679">1 session · expire dans 6 h</span>
+            </div>
+            <span style="font-size: 12px; color: #5A6679">il y a 6 h</span>
+            <span style="min-width: 150px; text-align: right"><button type="button" style="height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; color: #1E2633; cursor: pointer">Déconnecter</button></span>
+          </li>
+          <li style="display: flex; align-items: center; gap: 14px; padding: 12px 0">
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5A6679" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8M12 16v4"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto">
+              <span style="font-weight: 500">Appareil non identifié</span>
+              <span style="font-size: 12px; color: #5A6679">2 sessions ouvertes avant le suivi des appareils</span>
+            </div>
+            <span style="font-size: 12px; color: #5A6679">il y a 9 j</span>
+            <span style="min-width: 150px; text-align: right"><button type="button" style="height: 30px; padding: 0 10px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; font-size: 12px; color: #1E2633; cursor: pointer">Voir les 2 sessions</button></span>
           </li>
         </ul>
+        <button type="button" style="align-self: flex-start; height: 32px; padding: 0 12px; border: 0; background: transparent; color: #3A63C2; font-size: 13px; font-weight: 500; cursor: pointer">Afficher les 2 autres appareils</button>
         <p style="margin: 0; font-size: 12px; color: #8A94A6">Une session dure 12 h d'inactivité, ou 30 jours avec « rester connectée ». « Déconnecter les autres » conserve cet appareil et consigne l'opération.</p>
       </section>
 
       <!-- Dernière connexion -->
       <section aria-labelledby="h-last" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 26px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
         <div style="display: flex; flex-direction: column; gap: 4px">
-          <h2 id="h-last" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Dernière connexion</h2>
-          <span style="font-size: 13px"><span style="font-family: 'JetBrains Mono', monospace">24 oct. 09:12</span> · Paris · Chrome · mot de passe + code</span>
+          <h2 id="h-last" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Connexion précédente</h2>
+          <span style="font-size: 13px"><span style="font-family: 'JetBrains Mono', monospace">24 oct. 09:12</span> · Chrome · Windows</span>
         </div>
-        <a href="#journal" style="font-size: 13px; text-decoration: none; font-weight: 500">Voir le journal de sécurité</a>
       </section>
     </div>
   </div>

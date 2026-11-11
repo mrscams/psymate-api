@@ -16,6 +16,7 @@ input,button,select,textarea{font-family:inherit}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+<!-- UX-F1 (11 nov. 2026) : onglet « Signalements » retiré (V1.1, G Q26) et onglets dans l'ordre de la fiche 00 (Validation · Praticiens · Journal · Vocabulaire) ; nom affiché PsyMate ; liste de contrôle et décision dans une colonne droite collante qui commence en haut du dossier, à côté de l'en-tête. -->
 
 
 <div style="min-height: 1080px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
@@ -24,14 +25,13 @@ input,button,select,textarea{font-family:inherit}
   <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #1E2633; color: #FFFFFF">
     <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
       <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#9FB4E8" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
-      Suivi <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #1E2633; background: #FBF1DC; border-radius: 4px; padding: 2px 6px; margin-left: 4px">Admin</span>
+      PsyMate <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #1E2633; background: #FBF1DC; border-radius: 4px; padding: 2px 6px; margin-left: 4px">Admin</span>
     </div>
     <nav style="display: flex; align-items: center; gap: 4px; margin-left: 12px" aria-label="Administration">
       <a href="#validation" aria-current="page" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; background: rgba(255,255,255,0.12); color: #FFFFFF; font-size: 13px; font-weight: 600; text-decoration: none">Validation <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-left: 8px; background: #FBF1DC; color: #7A5A12; border-radius: 999px; padding: 1px 7px">6</span></a>
       <a href="#praticiens" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Praticiens</a>
-      <a href="#signalements" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Signalements</a>
-      <a href="#vocabulaire" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Vocabulaire</a>
       <a href="#journal" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Journal</a>
+      <a href="#vocabulaire" style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #C9D2E3; font-size: 13px; text-decoration: none">Vocabulaire</a>
     </nav>
     <div style="flex: 1 1 auto"></div>
     <span style="font-size: 12px; color: #C9D2E3">Aucune donnée patient n'est accessible depuis l'administration.</span>
@@ -100,7 +100,10 @@ input,button,select,textarea{font-family:inherit}
     </section>
 
     <!-- Dossier ouvert -->
-    <section aria-labelledby="h-dossier" style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+    <section aria-labelledby="h-dossier" style="flex: 999 1 560px; min-width: 0; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+
+      <!-- Colonne gauche : en-tête, justificatifs, visionneuse -->
+      <div style="flex: 999 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
 
       <!-- En-tête du dossier -->
       <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 18px 22px; display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap">
@@ -122,10 +125,8 @@ input,button,select,textarea{font-family:inherit}
         </div>
       </div>
 
-      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
-
         <!-- Documents + visionneuse -->
-        <div style="flex: 999 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+        <div style="min-width: 0; display: flex; flex-direction: column; gap: 12px">
           <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
             <h3 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Justificatifs · 2</h3>
             <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px">
@@ -165,8 +166,10 @@ input,button,select,textarea{font-family:inherit}
           </div>
         </div>
 
-        <!-- Vérification et décision -->
-        <div style="flex: 1 1 300px; max-width: 380px; display: flex; flex-direction: column; gap: 12px">
+      </div>
+
+        <!-- Vérification et décision : colonne droite collante, alignée sur le haut du dossier -->
+        <div style="flex: 1 1 300px; max-width: 380px; position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px">
           <div style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
             <h3 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Liste de contrôle</h3>
             <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 13px">
@@ -195,7 +198,6 @@ input,button,select,textarea{font-family:inherit}
             <p style="margin: 0; font-size: 12px; color: #8A94A6; line-height: 1.5">Approuver active le badge « Profil vérifié » et débloque l'annuaire. Toute décision est horodatée et signée dans le journal ; le praticien reçoit un e-mail.</p>
           </form>
         </div>
-      </div>
     </section>
   </div>
 </div>

@@ -16,6 +16,7 @@ input,button,select{font-family:inherit}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+<!-- UX-F1 (11 nov. 2026) : nom affiché PsyMate ; délai de correction sans version 1 h 15 (G Q31) au lieu de 5 min ; résumé sécurité : « Connexion précédente » sans ville ni lien « Journal de sécurité » (city toujours null, journal praticien hors contrat). Les trois tuiles (e-mail, double authentification, sessions actives) sont conservées. -->
 
 
 <div style="min-height: 1540px; display: flex; flex-direction: column; background: #EEF1F6; font-size: 14px; line-height: 1.45">
@@ -24,7 +25,7 @@ input,button,select{font-family:inherit}
   <div style="display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D6DCE6">
     <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px">
       <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3A63C2" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="10" r="2.5"></circle><circle cx="15" cy="5" r="2.5"></circle><circle cx="15" cy="15" r="2.5"></circle><path d="M7.2 9l5.6-3M7.2 11l5.6 3"></path></svg>
-      Suivi
+      PsyMate
     </div>
     <a href="#patients" style="font-size: 13px; color: #5A6679; text-decoration: none">Patients</a>
     <span style="color: #9AA5B8">/</span>
@@ -120,7 +121,7 @@ input,button,select{font-family:inherit}
           <div style="display: flex; align-items: center; gap: 8px"><input type="number" value="50" aria-label="Durée de séance par défaut en minutes" style="width: 80px; height: 40px; border: 1px solid #B9C2D1; border-radius: 10px; padding: 0 12px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #1E2633"><span style="font-size: 13px; color: #5A6679">min</span></div>
 
           <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Délai de correction sans version</span><span style="font-size: 12px; color: #5A6679">Pendant ce délai, corriger une entrée ne crée pas de nouvelle version.</span></div>
-          <div style="display: flex; align-items: center; gap: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 14px">5 min</span><span style="font-size: 12px; color: #8A94A6">· fixé par l'application en V1</span></div>
+          <div style="display: flex; align-items: center; gap: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 14px">1 h 15</span><span style="font-size: 12px; color: #8A94A6">· fixé par l'application en V1</span></div>
         </div>
       </section>
 
@@ -164,7 +165,7 @@ input,button,select{font-family:inherit}
             <a href="#" style="font-size: 12px; text-decoration: none">Déconnecter les autres</a>
           </div>
         </div>
-        <p style="margin: 0; font-size: 12px; color: #8A94A6">Dernière connexion : aujourd'hui 09:12 · Lyon · Chrome. <a href="#" style="text-decoration: none">Journal de sécurité</a></p>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Connexion précédente : aujourd'hui 09:12 · Chrome · Windows</p>
       </section>
     </div>
   </div>

@@ -16,6 +16,7 @@ input,button,select{font-family:inherit}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+<!-- UX-F1 (11 nov. 2026) : retrait du mot de passe d'archive (tuile et bloc du dialogue), de la progression par patient, des estimations de temps et de taille, de l'e-mail de fin et de la table « Exports récents » (hors contrat) ; un seul bloc « Dernier export » ; tuile « Conservée chiffrée » (contrat : zip conservé chiffré, remis déchiffré) ; « Journal des accès » sans lien. Nom de fichier attendu conservé à côté d'« Exporter ». -->
 
 <!-- ============================================================ -->
 <!-- ÉTAT A · Page « Données et export »                            -->
@@ -113,19 +114,19 @@ input,button,select{font-family:inherit}
       <section aria-labelledby="h-cpt" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 16px">
         <div style="display: flex; flex-direction: column; gap: 4px">
           <h2 id="h-cpt" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Exporter tout mon compte</h2>
-          <p style="margin: 0; font-size: 13px; color: #5A6679">Une archive complète, préparée en arrière-plan. Vous pouvez quitter la page : vous recevrez un e-mail quand elle sera prête.</p>
+          <p style="margin: 0; font-size: 13px; color: #5A6679">Une archive complète, préparée en arrière-plan. Vous pouvez quitter la page : à votre retour, l'état du dernier export est relu.</p>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
           <div style="border: 1px solid #D6DCE6; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
             <span style="width: 28px; height: 28px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h5l2 2h9v10H4z"></path><path d="M10 13h4"></path></svg></span>
-            <span style="font-weight: 600; font-size: 13px">Archive zip chiffrée</span>
+            <span style="font-weight: 600; font-size: 13px">Archive zip</span>
             <span style="font-size: 12px; color: #5A6679; line-height: 1.5">Par patient, le PDF et le Markdown du dossier (comme l'export individuel), plus <span style="font-family: 'JetBrains Mono', monospace">patients.md</span>, la liste de vos patients.</span>
           </div>
           <div style="border: 1px solid #D6DCE6; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
             <span style="width: 28px; height: 28px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></span>
-            <span style="font-weight: 600; font-size: 13px">Mot de passe affiché une seule fois</span>
-            <span style="font-size: 12px; color: #5A6679; line-height: 1.5">Généré au lancement, montré dans la confirmation, jamais conservé par PsyMate. Sans lui, l'archive est illisible.</span>
+            <span style="font-weight: 600; font-size: 13px">Conservée chiffrée</span>
+            <span style="font-size: 12px; color: #5A6679; line-height: 1.5">Chiffrée sur nos serveurs jusqu'à la purge, remise en clair au téléchargement : rangez-la sur un support chiffré.</span>
           </div>
           <div style="border: 1px solid #D6DCE6; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
             <span style="width: 28px; height: 28px; border-radius: 8px; background: #E3EAF8; color: #2C4C99; display: inline-flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span>
@@ -138,56 +139,36 @@ input,button,select{font-family:inherit}
           <button type="button" disabled aria-describedby="cpt-note" style="height: 42px; padding: 0 20px; border: 0; border-radius: 10px; background: #B9C2D1; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: not-allowed">Préparer l'export</button>
           <span id="cpt-note" style="font-size: 12px; color: #5A6679; display: inline-flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #B8862E" aria-hidden="true"></span>Un seul export à la fois : un export est en préparation (ci-dessous). Le bouton se réactive dès qu'il est terminé.</span>
         </div>
-        <p style="margin: 0; font-size: 12px; color: #8A94A6">Taille habituelle : 2 à 20 Mo pour une vingtaine de patients. Les entrées privées ne font pas partie de l'archive.</p>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Les entrées privées ne font pas partie de l'archive.</p>
       </section>
 
-      <!-- Exports récents -->
+      <!-- Dernier export -->
       <section aria-labelledby="h-rec" style="background: #FFFFFF; border: 1px solid #D6DCE6; border-radius: 12px; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px">
         <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
-          <h2 id="h-rec" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Exports récents · 3</h2>
-          <span style="font-size: 12px; color: #8A94A6">Exports de compte des 90 derniers jours</span>
+          <h2 id="h-rec" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Dernier export</h2>
+          <span style="font-size: 12px; color: #8A94A6">Export de compte en cours ou le plus récent</span>
         </div>
         <table style="width: 100%; border-collapse: collapse; font-size: 13px">
           <thead><tr style="text-align: left; color: #5A6679; font-size: 12px">
             <th scope="col" style="padding: 6px 8px 8px 0; font-weight: 500; border-bottom: 1px solid #E4E8F0">Demandé le</th>
-            <th scope="col" style="padding: 6px 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0">Type</th>
             <th scope="col" style="padding: 6px 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0; width: 46%">État</th>
             <th scope="col" style="padding: 6px 0 8px 8px; font-weight: 500; border-bottom: 1px solid #E4E8F0; text-align: right">Action</th>
           </tr></thead>
           <tbody>
             <!-- running -->
             <tr>
-              <td style="padding: 12px 8px 12px 0; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace; white-space: nowrap">26 oct. 2026 · 09:40</td>
-              <td style="padding: 12px 8px; border-bottom: 1px solid #E4E8F0">Compte · 23 patients</td>
-              <td style="padding: 12px 8px; border-bottom: 1px solid #E4E8F0">
+              <td style="padding: 12px 8px 12px 0; font-family: 'JetBrains Mono', monospace; white-space: nowrap">26 oct. 2026 · 09:40</td>
+              <td style="padding: 12px 8px">
                 <div aria-live="polite" style="display: flex; flex-direction: column; gap: 6px">
-                  <span style="display: inline-flex; align-items: center; gap: 8px; color: #7A5A12; font-weight: 500"><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: #FBF1DC; color: #7A5A12; font-size: 11px; font-weight: 600">En préparation</span><span style="font-size: 12px; color: #5A6679">14 patients sur 23 · environ 1 min restante</span></span>
-                  <div role="progressbar" aria-label="Progression de l'export" aria-valuemin="0" aria-valuemax="23" aria-valuenow="14" style="height: 6px; border-radius: 3px; background: #E4E8F0; overflow: hidden; max-width: 320px"><div style="width: 61%; height: 100%; background: #3A63C2; border-radius: 3px"></div></div>
+                  <span style="display: inline-flex; align-items: center; gap: 8px; color: #7A5A12; font-weight: 500"><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: #FBF1DC; color: #7A5A12; font-size: 11px; font-weight: 600">En préparation</span><span style="font-size: 12px; color: #5A6679">vérification toutes les 3 s</span></span>
+                  <div role="progressbar" aria-label="Export en préparation" style="height: 6px; border-radius: 3px; background: #E4E8F0; overflow: hidden; max-width: 320px"><div style="width: 30%; height: 100%; background: #3A63C2; border-radius: 3px"></div></div>
                 </div>
               </td>
-              <td style="padding: 12px 0 12px 8px; border-bottom: 1px solid #E4E8F0; text-align: right"><span style="font-size: 12px; color: #8A94A6">Actualisation automatique</span></td>
-            </tr>
-            <!-- done -->
-            <tr>
-              <td style="padding: 12px 8px 12px 0; border-bottom: 1px solid #E4E8F0; font-family: 'JetBrains Mono', monospace; white-space: nowrap">24 oct. 2026 · 14:12</td>
-              <td style="padding: 12px 8px; border-bottom: 1px solid #E4E8F0">Compte · 23 patients</td>
-              <td style="padding: 12px 8px; border-bottom: 1px solid #E4E8F0">
-                <span style="display: inline-flex; align-items: center; gap: 8px"><span style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px; background: #E4F2EA; color: #1E6B45; font-size: 11px; font-weight: 600"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Prêt</span><span style="font-size: 12px; color: #5A6679">terminé en 2 min 10 · 11,4 Mo · lien valable jusqu'au <strong style="font-weight: 600; color: #1E2633">31 oct. 2026</strong></span></span>
-              </td>
-              <td style="padding: 12px 0 12px 8px; border-bottom: 1px solid #E4E8F0; text-align: right"><a href="#dl" style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid #B9C2D1; border-radius: 8px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; text-decoration: none"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"></path></svg>Télécharger <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6679">.zip</span></a></td>
-            </tr>
-            <!-- expired (410) -->
-            <tr>
-              <td style="padding: 12px 8px 12px 0; font-family: 'JetBrains Mono', monospace; white-space: nowrap; color: #5A6679">2 oct. 2026 · 18:05</td>
-              <td style="padding: 12px 8px; color: #5A6679">Compte · 22 patients</td>
-              <td style="padding: 12px 8px">
-                <span style="display: inline-flex; align-items: center; gap: 8px"><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: #E4E8F0; color: #5A6679; font-size: 11px; font-weight: 600">Expiré</span><span style="font-size: 12px; color: #5A6679">lien échu le 9 oct. · fichier purgé <span style="font-family: 'JetBrains Mono', monospace; color: #8A94A6">(410 EXPORT_EXPIRED)</span></span></span>
-              </td>
-              <td style="padding: 12px 0 12px 8px; text-align: right"><button type="button" disabled style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid #D6DCE6; border-radius: 8px; background: #FFFFFF; color: #8A94A6; font-size: 13px; font-weight: 500; cursor: not-allowed" title="Disponible dès la fin de l'export en cours"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5"></path><path d="M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"></path></svg>Relancer</button></td>
+              <td style="padding: 12px 0 12px 8px; text-align: right"><span style="font-size: 12px; color: #8A94A6">Actualisation automatique</span></td>
             </tr>
           </tbody>
         </table>
-        <p style="margin: 0; font-size: 12px; color: #8A94A6">Les exports de dossier patient sont générés à la volée et téléchargés immédiatement : ils ne sont pas conservés et n'apparaissent pas ici. En cas d'échec d'un export de compte, la ligne passe en « Échec » avec le motif et un bouton « Relancer ».</p>
+        <p style="margin: 0; font-size: 12px; color: #8A94A6">Les exports de dossier patient sont générés à la volée et téléchargés immédiatement : ils ne sont pas conservés et n'apparaissent pas ici. Une seule ligne : le dernier export de compte. Prêt : « lien valable jusqu'au … » et « Télécharger » ; échec : motif et « Relancer » ; expiré (410) : « Expiré » et « Relancer ».</p>
       </section>
 
       <!-- Vos données -->
@@ -200,7 +181,7 @@ input,button,select{font-family:inherit}
           </div>
           <div style="display: flex; flex-direction: column; gap: 4px">
             <span style="font-weight: 600">Journal des accès</span>
-            <span style="color: #5A6679">Chaque export et chaque téléchargement sont consignés avec la date et l'appareil. <a href="#securite" style="text-decoration: none">Voir dans Compte et sécurité</a></span>
+            <span style="color: #5A6679">Chaque export et chaque téléchargement sont consignés côté serveur.</span>
           </div>
           <div style="display: flex; flex-direction: column; gap: 4px">
             <span style="font-weight: 600">Rien n'est effacé</span>
@@ -215,7 +196,7 @@ input,button,select{font-family:inherit}
 <!-- ============================================================ -->
 <!-- ÉTAT B · Boîte de dialogue « Préparer l'export du compte »     -->
 <!-- ============================================================ -->
-<div style="padding: 10px 24px 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; background: #E4E8F0; border-top: 1px solid #D6DCE6; border-bottom: 1px solid #D6DCE6">État B · Confirmation « Préparer l'export du compte » (dialogue modal, mot de passe affiché une seule fois)</div>
+<div style="padding: 10px 24px 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679; background: #E4E8F0; border-top: 1px solid #D6DCE6; border-bottom: 1px solid #D6DCE6">État B · Confirmation « Préparer l'export du compte » (dialogue modal)</div>
 
 <div style="min-height: 720px; position: relative; background: #EEF1F6; font-size: 14px; line-height: 1.45; display: flex; align-items: center; justify-content: center; padding: 48px 24px">
   <!-- voile -->
@@ -240,24 +221,8 @@ input,button,select{font-family:inherit}
           <li style="display: flex; align-items: center; gap: 10px; color: #5A6679"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A94A6" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg><span>Les entrées <strong style="font-weight: 600; color: #1E2633">privées</strong> et les entrées archivées restent hors de l'archive</span></li>
         </ul>
         <div style="display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: #5A6679">
-          <span>Temps estimé : <strong style="font-weight: 600; color: #1E2633; font-family: 'JetBrains Mono', monospace">2 à 3 min</strong></span>
-          <span>Taille estimée : <strong style="font-weight: 600; color: #1E2633; font-family: 'JetBrains Mono', monospace">≈ 11 Mo</strong></span>
           <span>Lien de téléchargement valable <strong style="font-weight: 600; color: #1E2633">7 jours</strong></span>
         </div>
-      </div>
-
-      <!-- Mot de passe -->
-      <div style="border: 1px solid #D6DCE6; border-radius: 12px; background: #EEF1F6; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
-        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
-          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6679">Mot de passe de l'archive</span>
-          <span style="font-size: 12px; color: #7A5A12; font-weight: 500">Affiché une seule fois</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
-          <output for="dlg-title" aria-label="Mot de passe de l'archive" style="flex: 1 1 280px; height: 44px; display: inline-flex; align-items: center; padding: 0 14px; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: 0.04em; color: #1E2633">corail-lampe-7Q-sillon-vague</output>
-          <button type="button" style="height: 44px; padding: 0 14px; border: 1px solid #B9C2D1; border-radius: 10px; background: #FFFFFF; color: #1E2633; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a1 1 0 0 1 1-1h10"></path></svg>Copier</button>
-        </div>
-        <p style="margin: 0; font-size: 12px; color: #5A6679; line-height: 1.5">PsyMate ne le conserve pas et ne pourra pas vous le redonner. Rangez-le dans votre gestionnaire de mots de passe avant de continuer.</p>
-        <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; cursor: pointer"><input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #3A63C2; margin: 0"> Je l'ai enregistré</label>
       </div>
 
       <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; background: #FBF1DC; color: #7A5A12; font-size: 12px; line-height: 1.5">
@@ -269,8 +234,6 @@ input,button,select{font-family:inherit}
     <div style="padding: 16px 28px 22px; border-top: 1px solid #E4E8F0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
       <button type="button" style="height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: #3A63C2; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Lancer l'export</button>
       <button type="button" style="height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: transparent; color: #5A6679; font-size: 14px; font-weight: 500; cursor: pointer">Annuler</button>
-      <span style="flex: 1 1 auto"></span>
-      <span style="font-size: 12px; color: #8A94A6">Le bouton reste inactif tant que la case n'est pas cochée.</span>
     </div>
   </div>
 </div>

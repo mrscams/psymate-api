@@ -8,8 +8,11 @@ import com.psymate.agenda.api.AppointmentRescheduled;
 import com.psymate.agenda.dto.AppointmentAssembler;
 import com.psymate.agenda.dto.AppointmentCreatedDto;
 import com.psymate.agenda.dto.AppointmentDto;
+import com.psymate.agenda.dto.AppointmentSeriesDto;
 import com.psymate.agenda.dto.AppointmentUpdatedDto;
+import com.psymate.agenda.dto.ConflictDto;
 import com.psymate.agenda.dto.CreateAppointmentRequest;
+import com.psymate.agenda.dto.RecurrenceRequest;
 import com.psymate.agenda.dto.UpdateAppointmentRequest;
 import com.psymate.agenda.model.Appointment;
 import com.psymate.agenda.model.AppointmentException;
@@ -25,8 +28,10 @@ import com.psymate.shared.problem.ProblemException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,7 +40,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Cycle de vie d'un rendez-vous (M11-05) : créer, lire, déplacer, annuler, confirmer.
+ * Cycle de vie d'un rendez-vous (M11-05) : créer, lire, déplacer, annuler, confirmer ; séries
+ * (M11-07) : créer toutes les occurrences d'une répétition, annuler une série. Déplacer ou annuler
+ * une occurrence ne touche jamais aux autres (G Q55).
  *
  * <p>Règles (G Q52 à Q54, Q58, Q59) : le praticien et le cabinet viennent de la session, jamais du
  * corps ; le patient doit être au praticien (garde, 403 / 404) et non archivé (422
@@ -110,9 +117,13 @@ public class AppointmentService {
 
   // ---- cas d'usage
 
-  /** Crée un rendez-vous ; les chevauchements sont signalés, jamais bloquants (G Q54). */
+  /**
+   * Crée un rendez-vous, ou toutes les occurrences d'une série dans la même transaction (G Q55 :
+   * même {@code series_id}, même statut, même note, à heure locale constante dans {@code zone}).
+   * Les chevauchements de chaque occurrence sont signalés, jamais bloquants (G Q54).
+   */
   @Transactional
-  public AppointmentCreatedDto create(CreateAppointmentRequest request) {
+  public AppointmentCreatedDto create(CreateAppointmentRequest request, ZoneId zone) {
     CurrentPractitioner me = me();
     guard.requireOwned(request.patientId());
     // Une seule lecture des patients du praticien par requête : archivé, DTO et conflits.
@@ -125,25 +136,66 @@ public class AppointmentService {
     if (patient.archived()) {
       throw AppointmentException.patientArchived();
     }
-    OffsetDateTime startsAt = utc(request.startsAt());
-    Appointment appointment =
-        new Appointment(
-            UUID.randomUUID(),
-            me.tenantId(),
-            me.id(),
-            request.patientId(),
-            null,
-            startsAt,
-            endsAt(startsAt, request.durationMin()),
-            AppointmentModality.valueOf(request.modality()),
-            Boolean.TRUE.equals(request.tentative()),
-            request.planningNote(),
-            now());
-    List<Appointment> conflicts = overlapsOf(appointment);
-    appointments.save(appointment);
-    events.publish(event(AppointmentPlanned::new, appointment));
+    RecurrenceRequest recurrence = request.recurrence();
+    Instant first = utc(request.startsAt()).toInstant();
+    // Toutes les occurrences sont calculées avant toute écriture : au-delà de 26, rien n'est créé.
+    List<Instant> starts =
+        recurrence == null
+            ? List.of(first)
+            : RecurrenceCalculator.occurrences(
+                first, zone, recurrence.everyWeeks(), recurrence.count(), recurrence.until());
+    UUID seriesId = recurrence == null ? null : UUID.randomUUID();
+    OffsetDateTime createdAt = now();
+    List<Appointment> created = new ArrayList<>();
+    List<ConflictDto> conflicts = new ArrayList<>();
+    for (Instant start : starts) {
+      OffsetDateTime startsAt = utc(start);
+      Appointment appointment =
+          new Appointment(
+              UUID.randomUUID(),
+              me.tenantId(),
+              me.id(),
+              request.patientId(),
+              seriesId,
+              startsAt,
+              endsAt(startsAt, request.durationMin()),
+              AppointmentModality.valueOf(request.modality()),
+              Boolean.TRUE.equals(request.tentative()),
+              request.planningNote(),
+              createdAt);
+      // Lu avant toute insertion : les occurrences d'une série, à une semaine au moins d'écart et
+      // de 600 minutes au plus, ne se chevauchent jamais entre elles.
+      conflicts.addAll(assembler.conflicts(overlapsOf(appointment), refs, start));
+      created.add(appointment);
+    }
+    appointments.saveAll(created);
+    created.forEach(a -> events.publish(event(AppointmentPlanned::new, a)));
     return new AppointmentCreatedDto(
-        List.of(assembler.toDto(appointment, refs)), assembler.conflicts(conflicts, refs));
+        created.stream().map(a -> assembler.toDto(a, refs)).toList(), conflicts);
+  }
+
+  /**
+   * Annule une série (G Q53, Q55) : chaque occurrence encore active ({@code planned}, {@code
+   * tentative}) passe à {@code cancelled} avec le même motif, déplacée ou non ; les occurrences
+   * annulées ou terminées restent telles quelles. 404 SERIES_NOT_FOUND si aucune occurrence n'est
+   * au praticien. Un {@code AppointmentCancelled} par occurrence annulée. Rien n'est supprimé.
+   */
+  @Transactional
+  public AppointmentSeriesDto cancelSeries(UUID seriesId, String reason) {
+    CurrentPractitioner me = me();
+    List<Appointment> series =
+        appointments.findBySeriesIdAndPractitionerIdOrderByStartsAtAscIdAsc(seriesId, me.id());
+    if (series.isEmpty()) {
+      throw AppointmentException.seriesNotFound();
+    }
+    OffsetDateTime at = now();
+    for (Appointment appointment : series) {
+      if (appointment.getStatus().isActive()) {
+        appointment.cancel(reason, at);
+        events.publish(event(AppointmentCancelled::new, appointment));
+      }
+    }
+    return new AppointmentSeriesDto(assembler.toDtos(series));
   }
 
   /** Détail d'un rendez-vous du praticien courant. */
@@ -189,7 +241,8 @@ public class AppointmentService {
     }
     Map<UUID, PatientRef> refs = assembler.patientsOf(appointment.getPractitionerId());
     return new AppointmentUpdatedDto(
-        assembler.toDto(appointment, refs), assembler.conflicts(overlapsOf(appointment), refs));
+        assembler.toDto(appointment, refs),
+        assembler.conflicts(overlapsOf(appointment), refs, appointment.getStartsAt().toInstant()));
   }
 
   /**

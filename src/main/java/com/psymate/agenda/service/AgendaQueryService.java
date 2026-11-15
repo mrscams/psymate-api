@@ -128,7 +128,7 @@ public class AgendaQueryService {
             .orElse(null);
     Map<UUID, PatientRef> refs = assembler.patientsOf(practitionerId);
     return new FreeBusyDto(
-        assembler.conflicts(conflicts, refs),
+        assembler.conflicts(conflicts, refs, from),
         previous == null ? null : assembler.toDto(previous, refs),
         next == null ? null : assembler.toDto(next, refs));
   }

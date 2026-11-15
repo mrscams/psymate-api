@@ -3,6 +3,7 @@ package com.psymate.agenda.dto;
 import com.psymate.agenda.model.Appointment;
 import com.psymate.patients.api.PatientFacade;
 import com.psymate.patients.api.PatientRef;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -60,11 +61,11 @@ public class AppointmentAssembler {
   }
 
   /**
-   * Chevauchements signalés (G Q54), avec la liste des patients du praticien déjà lue par
-   * l'appelant ({@link #patientsOf}).
+   * Chevauchements signalés (G Q54) du créneau demandé qui commence à {@code occurrenceStartsAt},
+   * avec la liste des patients du praticien déjà lue par l'appelant ({@link #patientsOf}).
    */
   public List<ConflictDto> conflicts(
-      Collection<Appointment> overlapping, Map<UUID, PatientRef> refs) {
+      Collection<Appointment> overlapping, Map<UUID, PatientRef> refs, Instant occurrenceStartsAt) {
     return overlapping.stream()
         .map(
             a ->
@@ -72,7 +73,8 @@ public class AppointmentAssembler {
                     a.getId(),
                     a.getStartsAt().toInstant(),
                     a.getEndsAt().toInstant(),
-                    patient(a.getPatientId(), refs).displayName()))
+                    patient(a.getPatientId(), refs).displayName(),
+                    occurrenceStartsAt))
         .toList();
   }
 

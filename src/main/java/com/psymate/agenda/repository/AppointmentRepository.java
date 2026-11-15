@@ -44,6 +44,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
       @Param("to") OffsetDateTime to,
       @Param("excludeId") UUID excludeId);
 
+  // ---- M11-07 : séries (G Q55)
+
+  /**
+   * Occurrences d'une série appartenant au praticien, tous statuts, triées par début : une série
+   * d'un autre praticien est vide, donc introuvable (G Q58).
+   */
+  List<Appointment> findBySeriesIdAndPractitionerIdOrderByStartsAtAscIdAsc(
+      UUID seriesId, UUID practitionerId);
+
   // ---- lectures de l'agenda (M11-06)
 
   /**

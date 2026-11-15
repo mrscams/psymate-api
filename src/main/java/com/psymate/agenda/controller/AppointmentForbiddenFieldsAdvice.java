@@ -31,9 +31,9 @@ import tools.jackson.databind.json.JsonMapper;
  * Refuse, avant la désérialisation, les clés de premier niveau que le client n'a pas le droit
  * d'envoyer à {@link AppointmentController} (422 VALIDATION_FAILED, code de champ UNKNOWN_FIELD) :
  * ce que le serveur fixe seul (status, practitionerId, tenantId, sessionEntryId, et authorType,
- * submissionId comme dans clinical, A11), la répétition (recurrence : M11-07) et, sur un PATCH, ce
- * qui ne se modifie pas (patientId ; tentative, qui passe par /confirm). Les autres clés inconnues
- * restent ignorées (défaut Boot). Sur le modèle de {@code
+ * submissionId comme dans clinical, A11) et, sur un PATCH, ce qui ne se modifie pas (patientId ;
+ * tentative, qui passe par /confirm ; recurrence, acceptée à la création seulement depuis M11-07).
+ * Les autres clés inconnues restent ignorées (défaut Boot). Sur le modèle de {@code
  * clinical.controller.ForbiddenFieldsAdvice} : corps lu en octets, inspecté en arbre (Jackson 3),
  * puis rejoué tel quel au convertisseur.
  */
@@ -46,10 +46,10 @@ class AppointmentForbiddenFieldsAdvice extends RequestBodyAdviceAdapter {
       List.of(
           "authorType", "submissionId", "status", "practitionerId", "tenantId", "sessionEntryId");
 
-  /** Refusés à la création en plus (M11-07 ouvrira recurrence). */
-  static final List<String> CREATE_FIELDS = List.of("recurrence");
-
-  /** Refusés à la modification en plus. */
+  /**
+   * Refusés à la modification en plus : une occurrence se déplace seule, la répétition ne se change
+   * pas après coup (G Q55).
+   */
   static final List<String> UPDATE_FIELDS = List.of("patientId", "tentative", "recurrence");
 
   private final JsonMapper json;
@@ -82,10 +82,7 @@ class AppointmentForbiddenFieldsAdvice extends RequestBodyAdviceAdapter {
     JsonNode root = parse(bytes);
     if (root != null && root.isObject()) {
       List<String> forbidden = new ArrayList<>(SERVER_FIELDS);
-      Class<?> type = parameter.getParameterType();
-      if (type == CreateAppointmentRequest.class) {
-        forbidden.addAll(CREATE_FIELDS);
-      } else if (type == UpdateAppointmentRequest.class) {
+      if (parameter.getParameterType() == UpdateAppointmentRequest.class) {
         forbidden.addAll(UPDATE_FIELDS);
       }
       List<String> present = forbidden.stream().filter(root::has).toList();

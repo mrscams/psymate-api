@@ -241,6 +241,7 @@ class GuestPurgeJobIT {
   }
 
   private int count() {
-    return jdbc.queryForObject("select count(*) from appointment", Integer.class);
+    return jdbc.queryForObject(
+        "select count(*) from appointment where practitioner_id = ?", Integer.class, alice);
   }
 }

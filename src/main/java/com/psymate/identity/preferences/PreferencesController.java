@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
     name = "Préférences",
     description =
         "Préférences d'affichage et de saisie du praticien connecté, mémorisées par compte :"
-            + " neuf clés plates, modifiées par merge-patch (RFC 7396).")
+            + " treize clés plates (affichage, saisie, agenda), modifiées par merge-patch (RFC 7396).")
 @RestController
 @RequestMapping("/api/me/preferences")
 class PreferencesController {
@@ -38,7 +38,7 @@ class PreferencesController {
       summary = "Préférences du compte (valeurs stockées complétées par les défauts)",
       description =
           """
-          Session praticien. Renvoie toujours les 9 clés : la valeur enregistrée si elle est \
+          Session praticien. Renvoie toujours les 13 clés : la valeur enregistrée si elle est \
           valide, sinon le défaut calculé selon la profession (coach : vocabulary.subjectLabel = \
           client et entryTypes.medicationVisible = false ; psychiatre : entryTypes.medicationVisible \
           = true). Les clés inconnues stockées ne sont pas renvoyées.\
@@ -46,7 +46,7 @@ class PreferencesController {
   @ApiResponses(
       @ApiResponse(
           responseCode = "200",
-          description = "Les 9 préférences effectives du compte.",
+          description = "Les 13 préférences effectives du compte.",
           content =
               @Content(
                   mediaType = "application/json",
@@ -64,7 +64,7 @@ class PreferencesController {
           avec seulement les clés à changer : les autres sont conservées. null remet la clé à son \
           défaut ; une clé inconnue est ignorée sans erreur. Une seule valeur hors domaine rejette \
           toute la requête (422, errors[].field = clé fautive) et rien n'est appliqué. Renvoie les \
-          9 préférences effectives après fusion ; un PATCH qui ne change rien est un succès.\
+          13 préférences effectives après fusion ; un PATCH qui ne change rien est un succès.\
           """,
       requestBody =
           @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -81,7 +81,7 @@ class PreferencesController {
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
-        description = "Les 9 préférences effectives après fusion.",
+        description = "Les 13 préférences effectives après fusion.",
         content =
             @Content(
                 mediaType = "application/json",

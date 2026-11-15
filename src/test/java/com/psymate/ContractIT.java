@@ -75,8 +75,9 @@ class ContractIT {
     @SuppressWarnings("unchecked")
     Map<String, Object> info = (Map<String, Object>) doc.get("info");
     assertThat(info.get("version")).isEqualTo(contractVersion);
-    // Plan des tags D6-A4 : v0.11.0 = sessions actives (M10-06).
-    assertThat(contractVersion).isEqualTo("0.11.0");
+    // Plan des tags D6-A4 : v0.11.0 = sessions actives (M10-06) ; 0.11.1 = preferences agenda.*
+    // (M11-04).
+    assertThat(contractVersion).isEqualTo("0.11.1");
     assertThat(info.get("title")).isEqualTo("PsyMate API");
   }
 

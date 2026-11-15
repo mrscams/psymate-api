@@ -12,6 +12,8 @@ import java.util.List;
  * @param age âge en années à la date de l'export, nul si la date de naissance est inconnue
  * @param sessions séances dans l'ordre chronologique croissant
  * @param unassigned entrées dont la séance n'est pas exportée (« Sans séance »)
+ * @param appointments rendez-vous du patient, triés par début (G Q61, M11-11) ; section omise si
+ *     vide
  */
 public record ExportDocument(
     String patientName,
@@ -19,11 +21,24 @@ public record ExportDocument(
     Integer age,
     LocalDate exportedOn,
     List<SessionBlock> sessions,
-    List<EntryBlock> unassigned) {
+    List<EntryBlock> unassigned,
+    List<AppointmentBlock> appointments) {
 
   public ExportDocument {
     sessions = List.copyOf(sessions);
     unassigned = List.copyOf(unassigned);
+    appointments = List.copyOf(appointments);
+  }
+
+  /** Dossier sans rendez-vous. */
+  public ExportDocument(
+      String patientName,
+      LocalDate birthDate,
+      Integer age,
+      LocalDate exportedOn,
+      List<SessionBlock> sessions,
+      List<EntryBlock> unassigned) {
+    this(patientName, birthDate, age, exportedOn, sessions, unassigned, List.of());
   }
 
   /** Une séance (accueil, séance, contact) avec ses entrées. */
@@ -61,6 +76,25 @@ public record ExportDocument(
       links = List.copyOf(links);
     }
   }
+
+  /**
+   * Un rendez-vous (G Q61), cellules déjà formatées : dates et heures en UTC comme le reste de
+   * l'export, libellés localisés. {@code person} et {@code phone} ne servent qu'au fichier {@code
+   * rendez-vous.md} de l'export du compte (nuls dans un dossier) ; les champs facultatifs absents
+   * sont nuls.
+   */
+  public record AppointmentBlock(
+      String date,
+      String hours,
+      String duration,
+      String modality,
+      String status,
+      String person,
+      String phone,
+      String series,
+      String planningNote,
+      String cancelReason,
+      String cancelledAt) {}
 
   public int sessionCount() {
     return sessions.size();

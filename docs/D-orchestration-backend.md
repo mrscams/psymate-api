@@ -77,6 +77,7 @@ Lecture des colonnes « Dépend de » corrigées par rapport à C2 :
 | M11-08b | *(conditionnelle)* `POST /api/appointments/{id}/start` | agenda | M11-08a | M11-09 (tag `contract-v0.12.2`) |
 | M11-09 | Seed `make seed` (rendez-vous sur 8 semaines), tag de contrat, suivi | racine (`tools/seed`) | M11-07 (et M11-08b si retenue) | jalon web « Agenda » (H) |
 | M11-10 | Rendez-vous invité (G Q60) : `V13__agenda_guest.sql`, `guest` à la création et au PATCH, `attach-patient`, purge à 6 mois, contrat `0.13.0` (I8) | agenda (+ docs) | M11-09 | jalon web « Agenda » (carte « Premier contact ») |
+| M11-11 | Export des rendez-vous (G Q61) : `AppointmentExportFacade` dans `agenda.api`, `rendez-vous.md` dans le zip du compte, section « Rendez-vous » de l'export d'un dossier ; `agenda` cesse de dépendre de `clinical`, `clinical` dépend de `agenda :: api` (I9) | agenda (api) + clinical.export (+ docs) | M11-10 | — |
 
 ## D2. Graphe de dépendances
 

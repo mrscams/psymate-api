@@ -55,6 +55,11 @@ class MarkdownRenderer {
         entry(out, e, t);
       }
     }
+    // Rendez-vous du patient (G Q61) après les séances et « Sans séance » ; omis s'il n'y en a pas.
+    if (!doc.appointments().isEmpty()) {
+      out.append("\n## ").append(t.get("appointments.title")).append("\n\n");
+      AppointmentRows.markdownTable(out, doc.appointments(), t, false);
+    }
     return out.toString();
   }
 

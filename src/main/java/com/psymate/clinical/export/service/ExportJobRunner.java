@@ -1,5 +1,6 @@
 package com.psymate.clinical.export.service;
 
+import com.psymate.agenda.api.AppointmentExportFacade;
 import com.psymate.clinical.export.model.ExportDocument;
 import com.psymate.clinical.export.model.ExportFormat;
 import com.psymate.clinical.export.repository.ExportJobRepository;
@@ -33,8 +34,9 @@ import org.springframework.stereotype.Component;
 /**
  * Travail d'export du compte (fiche 27, G Q18), exécuté hors requête par le pool privé de {@link
  * ExportJobService}. Charge les patients du praticien, construit un zip en mémoire ({@code
- * patients.md} puis, par patient, {@code patients/nom-xxxxxxxx.md} et {@code .pdf}, le même rendu
- * que l'export d'un patient), le chiffre et le stocke sous {@code exports/<jobId>.zip}.
+ * patients.md}, {@code rendez-vous.md} (tous les rendez-vous du praticien, G Q61) puis, par
+ * patient, {@code patients/nom-xxxxxxxx.md} et {@code .pdf}, le même rendu que l'export d'un
+ * patient), le chiffre et le stocke sous {@code exports/<jobId>.zip}.
  *
  * <p>Il n'y a pas de session ici : le praticien est connu par le job. Les catalogues d'émotions et
  * de tags de clinical sont ceux du praticien courant ; le travail pose donc un principal sur son
@@ -46,6 +48,9 @@ public class ExportJobRunner {
 
   public static final int MAX_ERROR = 500;
 
+  /** Rendez-vous du praticien dans le zip (G Q61). */
+  static final String APPOINTMENTS_FILE = "rendez-vous.md";
+
   private static final Logger LOG = LoggerFactory.getLogger(ExportJobRunner.class);
   private static final Locale LOCALE = Locale.FRENCH;
 
@@ -53,6 +58,7 @@ public class ExportJobRunner {
   private final PatientFacade patients;
   private final PractitionerFacade practitioners;
   private final PatientExportService exports;
+  private final AppointmentExportFacade appointments;
   private final EncryptedStorageFacade storage;
   private final Clock clock;
 
@@ -61,12 +67,14 @@ public class ExportJobRunner {
       PatientFacade patients,
       PractitionerFacade practitioners,
       PatientExportService exports,
+      AppointmentExportFacade appointments,
       EncryptedStorageFacade storage,
       Clock clock) {
     this.jobs = jobs;
     this.patients = patients;
     this.practitioners = practitioners;
     this.exports = exports;
+    this.appointments = appointments;
     this.storage = storage;
     this.clock = clock;
   }
@@ -134,7 +142,7 @@ public class ExportJobRunner {
     SecurityContextHolder.setContext(context);
   }
 
-  /** Zip en mémoire : patients.md d'abord, puis les fichiers de chaque patient. */
+  /** Zip en mémoire : patients.md, rendez-vous.md, puis les fichiers de chaque patient. */
   byte[] buildZip(UUID practitionerId) throws IOException {
     ExportTexts texts = ExportTexts.of(LOCALE);
     Map<String, byte[]> files = new LinkedHashMap<>();
@@ -163,6 +171,7 @@ public class ExportJobRunner {
     ByteArrayOutputStream bytes = new ByteArrayOutputStream();
     try (ZipOutputStream zip = new ZipOutputStream(bytes, StandardCharsets.UTF_8)) {
       add(zip, "patients.md", index(texts, lines).getBytes(StandardCharsets.UTF_8));
+      add(zip, APPOINTMENTS_FILE, appointmentsFile(texts, practitionerId));
       for (Map.Entry<String, byte[]> file : files.entrySet()) {
         add(zip, file.getKey(), file.getValue());
       }
@@ -185,6 +194,30 @@ public class ExportJobRunner {
       sb.append("- ").append(line).append('\n');
     }
     return sb.toString();
+  }
+
+  /**
+   * {@code rendez-vous.md} (G Q61) : tous les rendez-vous du praticien, patients et invités, tous
+   * statuts, triés par début ; une ligne « Aucun rendez-vous » s'il n'y en a pas.
+   */
+  private byte[] appointmentsFile(ExportTexts texts, UUID practitionerId) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("# ").append(texts.get("appointments.file.title")).append("\n\n");
+    sb.append("- ")
+        .append(
+            texts.get(
+                "account.exportedOn",
+                ExportDates.day(java.time.LocalDate.now(clock.withZone(java.time.ZoneOffset.UTC)))))
+        .append('\n');
+    sb.append("- ").append(texts.get("timezone")).append("\n\n");
+    List<ExportDocument.AppointmentBlock> blocks =
+        AppointmentRows.blocks(appointments.allOfPractitioner(practitionerId), texts, true);
+    if (blocks.isEmpty()) {
+      sb.append(texts.get("appointments.empty")).append('\n');
+    } else {
+      AppointmentRows.markdownTable(sb, blocks, texts, true);
+    }
+    return sb.toString().getBytes(StandardCharsets.UTF_8);
   }
 
   private static void add(ZipOutputStream zip, String name, byte[] content) throws IOException {

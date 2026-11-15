@@ -4,9 +4,9 @@ Fichier genere par `ModularityTests.writesModuleDocumentation` (`./mvnw verify`)
 
 | Module | Package | Dependances autorisees | Dependances utilisees | Interfaces nommees |
 | --- | --- | --- | --- | --- |
-| agenda | `com.psymate.agenda` | clinical, events, identity, patients, shared | events, identity, patients, shared | api |
+| agenda | `com.psymate.agenda` | events, identity, patients, shared | events, identity, patients, shared | api |
 | ai | `com.psymate.ai` | clinical, events, linking, shared | — | — |
-| clinical | `com.psymate.clinical` | events, identity, patients, shared, vocabulary | events, identity, patients, shared, vocabulary | api |
+| clinical | `com.psymate.clinical` | agenda, events, identity, patients, shared, vocabulary | agenda, events, identity, patients, shared, vocabulary | api |
 | companion | `com.psymate.companion` | clinical, events, patients, shared | — | — |
 | directory | `com.psymate.directory` | events, identity, shared | events, identity, shared | api |
 | events | `com.psymate.events` | shared | — | api |

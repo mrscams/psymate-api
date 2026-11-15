@@ -1,5 +1,6 @@
 package com.psymate.clinical.export.service;
 
+import com.psymate.agenda.api.AppointmentExportFacade;
 import com.psymate.clinical.api.EntryLinksReadPort;
 import com.psymate.clinical.api.LinkedEntryView;
 import com.psymate.clinical.export.model.ExportDocument;
@@ -60,6 +61,7 @@ public class PatientExportService {
   private final TagFacade tags;
   private final LinkTypeCatalog linkTypes;
   private final ObjectProvider<EntryLinksReadPort> links;
+  private final AppointmentExportFacade appointments;
   private final MarkdownRenderer markdown;
   private final HtmlRenderer html;
   private final PdfRenderer pdf;
@@ -73,6 +75,7 @@ public class PatientExportService {
       TagFacade tags,
       LinkTypeCatalog linkTypes,
       ObjectProvider<EntryLinksReadPort> links,
+      AppointmentExportFacade appointments,
       MarkdownRenderer markdown,
       HtmlRenderer html,
       PdfRenderer pdf,
@@ -84,6 +87,7 @@ public class PatientExportService {
     this.tags = tags;
     this.linkTypes = linkTypes;
     this.links = links;
+    this.appointments = appointments;
     this.markdown = markdown;
     this.html = html;
     this.pdf = pdf;
@@ -194,7 +198,15 @@ public class PatientExportService {
               blankToNull(s.body()),
               bySession.getOrDefault(s.id(), List.of())));
     }
-    return new ExportDocument(name, birth, age, today, sessions, unassigned);
+    // Rendez-vous du patient (G Q61) : mêmes colonnes que rendez-vous.md, sans la personne.
+    return new ExportDocument(
+        name,
+        birth,
+        age,
+        today,
+        sessions,
+        unassigned,
+        AppointmentRows.blocks(appointments.ofPatient(patientId), texts, false));
   }
 
   private EntryBlock entryBlock(

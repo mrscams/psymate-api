@@ -87,7 +87,86 @@ class PreferencesTest {
             map("vocabulary.subjectLabel", "client", "timeline.groupBy", "month"),
             map("vocabulary.subjectLabel", "client", "timeline.groupBy", "month"),
             List.of("vocabulary.subjectLabel", "timeline.groupBy"),
-            List.of()));
+            List.of()),
+        // Agenda (Q57) : bornes de la journée.
+        Arguments.of(map(), map(START, 0), map(START, 0), List.of(START), List.of()),
+        Arguments.of(
+            map(),
+            map(START, 23, END, 24),
+            map(START, 23, END, 24),
+            List.of(START, END),
+            List.of()),
+        Arguments.of(map(), map(START, -1), map(), List.of(), List.of(START)),
+        Arguments.of(map(), map(START, 24), map(), List.of(), List.of(START)),
+        Arguments.of(map(), map(START, "8"), map(), List.of(), List.of(START)),
+        Arguments.of(map(), map(END, 0), map(), List.of(), List.of(END)),
+        Arguments.of(map(), map(END, 25), map(), List.of(), List.of(END)),
+        Arguments.of(map(), map(END, 7L), map(), List.of(), List.of(END)),
+        Arguments.of(map(START, 8), map(END, 8), map(), List.of(), List.of(END)),
+        Arguments.of(map(END, 19), map(START, 19), map(), List.of(), List.of(END)),
+        Arguments.of(map(END, 19), map(START, 20), map(), List.of(), List.of(END)),
+        Arguments.of(map(START, 20), map(START, null), map(), List.of(START), List.of()),
+        Arguments.of(
+            map(START, 10, END, 12), map(END, null), map(START, 10), List.of(END), List.of()),
+        Arguments.of(
+            map(START, 12, END, 14), map(START, null), map(END, 14), List.of(START), List.of()),
+        Arguments.of(
+            map(START, 20, END, 22), map(END, null), map(START, 20), List.of(), List.of(END)),
+        // Agenda : jours travaillés.
+        Arguments.of(
+            map(), map(DAYS, List.of(6, 7)), map(DAYS, List.of(6, 7)), List.of(DAYS), List.of()),
+        Arguments.of(
+            map(), map(DAYS, List.of(1L, 2L)), map(DAYS, List.of(1, 2)), List.of(DAYS), List.of()),
+        Arguments.of(map(), map(DAYS, List.of(1, 1, 8)), map(), List.of(), List.of(DAYS)),
+        Arguments.of(map(), map(DAYS, List.of(1, 1)), map(), List.of(), List.of(DAYS)),
+        Arguments.of(map(), map(DAYS, List.of(0)), map(), List.of(), List.of(DAYS)),
+        Arguments.of(map(), map(DAYS, List.of()), map(), List.of(), List.of(DAYS)),
+        Arguments.of(map(), map(DAYS, List.of("1")), map(), List.of(), List.of(DAYS)),
+        Arguments.of(map(), map(DAYS, "1,2"), map(), List.of(), List.of(DAYS)),
+        Arguments.of(
+            map(DAYS, List.of(1, 2)),
+            map(DAYS, List.of(1, 2)),
+            map(DAYS, List.of(1, 2)),
+            List.of(),
+            List.of()),
+        // Agenda : vue par défaut.
+        Arguments.of(map(), map(VIEW, "list"), map(VIEW, "list"), List.of(VIEW), List.of()),
+        Arguments.of(map(), map(VIEW, "year"), map(), List.of(), List.of(VIEW)));
+  }
+
+  private static final String START = "agenda.dayStartHour";
+  private static final String END = "agenda.dayEndHour";
+  private static final String DAYS = "agenda.workingDays";
+  private static final String VIEW = "agenda.defaultView";
+
+  @Test
+  void dayEndNotAfterDayStartIsOutOfRangeOnDayEndHour() {
+    Preferences.MergeResult r = Preferences.merge(map(), map(END, 7));
+    assertThat(r.violations()).containsExactly(new Preferences.Violation(END, "OUT_OF_RANGE"));
+    assertThat(Preferences.merge(map(), map(END, 25)).violations())
+        .containsExactly(new Preferences.Violation(END, "OUT_OF_RANGE"));
+    assertThat(Preferences.merge(map(), map(END, "19")).violations())
+        .containsExactly(new Preferences.Violation(END, "INVALID_VALUE"));
+    assertThat(Preferences.merge(map(), map(DAYS, List.of(1, 1, 8))).violations())
+        .containsExactly(new Preferences.Violation(DAYS, "INVALID_VALUE"));
+    assertThat(Preferences.merge(map(), map(DAYS, List.of(8))).violations())
+        .containsExactly(new Preferences.Violation(DAYS, "OUT_OF_RANGE"));
+    assertThat(Preferences.merge(map(), map(VIEW, "year")).violations())
+        .containsExactly(new Preferences.Violation(VIEW, "INVALID_VALUE"));
+    // Un PATCH qui ne touche pas aux bornes n'est jamais rejeté pour elles.
+    assertThat(Preferences.merge(map(START, 20, END, 19), map("theme", "dark")).violations())
+        .isEmpty();
+  }
+
+  @Test
+  void effectiveRestoresDefaultBoundsWhenStoredBoundsAreInconsistent() {
+    assertThat(Preferences.effective("coach", map(START, 20, END, 19)))
+        .containsEntry(START, 8)
+        .containsEntry(END, 19);
+    assertThat(Preferences.effective("coach", map(START, 7, END, 20L, DAYS, List.of(7L))))
+        .containsEntry(START, 7)
+        .containsEntry(END, 20)
+        .containsEntry(DAYS, List.of(7));
   }
 
   @ParameterizedTest
@@ -115,7 +194,11 @@ class PreferencesTest {
         .containsEntry(MED, false)
         .containsEntry(DUR, 60)
         .containsEntry("locale", "fr")
-        .hasSize(9);
+        .containsEntry(START, 8)
+        .containsEntry(END, 19)
+        .containsEntry(DAYS, List.of(1, 2, 3, 4, 5, 6))
+        .containsEntry(VIEW, "week")
+        .hasSize(13);
     assertThat(Preferences.defaults("coach"))
         .containsEntry("vocabulary.subjectLabel", "client")
         .containsEntry(MED, false);
@@ -130,6 +213,6 @@ class PreferencesTest {
         .containsEntry("theme", "dark")
         .containsEntry("locale", "fr")
         .doesNotContainKey("foo")
-        .hasSize(9);
+        .hasSize(13);
   }
 }

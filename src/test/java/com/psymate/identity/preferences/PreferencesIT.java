@@ -1,6 +1,7 @@
 package com.psymate.identity.preferences;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -111,11 +112,11 @@ class PreferencesIT {
   }
 
   @Test
-  void freshAccountReadsAllNineDefaults() throws Exception {
+  void freshAccountReadsAllThirteenDefaults() throws Exception {
     UUID id = insertPractitioner("psychologist", "{}");
     getPrefs(id, "psychologist")
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(9))
+        .andExpect(jsonPath("$.length()").value(13))
         .andExpect(jsonPath("$['overview.view']").value("simple"))
         .andExpect(jsonPath("$['overview.window']").value("90d"))
         .andExpect(jsonPath("$['timeline.groupBy']").value("session"))
@@ -124,7 +125,11 @@ class PreferencesIT {
         .andExpect(jsonPath("$['vocabulary.subjectLabel']").value("patient"))
         .andExpect(jsonPath("$['entryTypes.medicationVisible']").value(false))
         .andExpect(jsonPath("$['entries.defaultVisibility']").value("clinical"))
-        .andExpect(jsonPath("$['sessions.defaultDurationMin']").value(60));
+        .andExpect(jsonPath("$['sessions.defaultDurationMin']").value(60))
+        .andExpect(jsonPath("$['agenda.dayStartHour']").value(8))
+        .andExpect(jsonPath("$['agenda.dayEndHour']").value(19))
+        .andExpect(jsonPath("$['agenda.workingDays']", contains(1, 2, 3, 4, 5, 6)))
+        .andExpect(jsonPath("$['agenda.defaultView']").value("week"));
   }
 
   @Test
@@ -178,7 +183,7 @@ class PreferencesIT {
     patchJson(id, "psychologist", "{\"foo\":1}")
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.foo").doesNotExist())
-        .andExpect(jsonPath("$.length()").value(9));
+        .andExpect(jsonPath("$.length()").value(13));
     assertThat(stored(id)).isEqualTo("{}");
   }
 
@@ -240,8 +245,122 @@ class PreferencesIT {
         .containsEntry("theme", "soft")
         .containsEntry("vocabulary.subjectLabel", "client")
         .containsEntry("sessions.defaultDurationMin", 60)
-        .hasSize(9);
+        .containsEntry("agenda.dayStartHour", 8)
+        .containsEntry("agenda.dayEndHour", 19)
+        .containsEntry("agenda.workingDays", List.of(1, 2, 3, 4, 5, 6))
+        .containsEntry("agenda.defaultView", "week")
+        .hasSize(13);
     assertThat(facade.preferencesOf(UUID.randomUUID())).isEmpty();
+  }
+
+  // Agenda (M11-04, G Q57)
+
+  @Test
+  void agendaDayEndNotAfterDayStartIsRejectedOutOfRangeOnDayEndHour() throws Exception {
+    UUID id = insertPractitioner("psychologist", "{}");
+    patchJson(id, "psychologist", "{\"agenda.dayEndHour\":7}")
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.errors.length()").value(1))
+        .andExpect(jsonPath("$.errors[0].field").value("agenda.dayEndHour"))
+        .andExpect(jsonPath("$.errors[0].code").value("OUT_OF_RANGE"))
+        .andExpect(jsonPath("$.errors[0].message").isNotEmpty());
+    assertThat(stored(id)).isEqualTo("{}");
+    // Égalité refusée, même en déplaçant le début ; la faute porte toujours sur la fin.
+    patchJson(id, "psychologist", "{\"agenda.dayStartHour\":19}")
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.errors[0].field").value("agenda.dayEndHour"))
+        .andExpect(jsonPath("$.errors[0].code").value("OUT_OF_RANGE"));
+    // Les deux bornes dans la même requête : cohérentes entre elles, acceptées.
+    patchJson(id, "psychologist", "{\"agenda.dayStartHour\":20,\"agenda.dayEndHour\":23}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$['agenda.dayStartHour']").value(20))
+        .andExpect(jsonPath("$['agenda.dayEndHour']").value(23));
+  }
+
+  @Test
+  void agendaHoursOutOfBoundsAreRejectedOutOfRange() throws Exception {
+    UUID id = insertPractitioner("psychologist", "{}");
+    patchJson(id, "psychologist", "{\"agenda.dayStartHour\":24}")
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.errors[0].field").value("agenda.dayStartHour"))
+        .andExpect(jsonPath("$.errors[0].code").value("OUT_OF_RANGE"));
+    patchJson(id, "psychologist", "{\"agenda.dayEndHour\":25}")
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.errors[0].field").value("agenda.dayEndHour"))
+        .andExpect(jsonPath("$.errors[0].code").value("OUT_OF_RANGE"));
+    patchJson(id, "psychologist", "{\"agenda.dayStartHour\":\"8\"}")
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.errors[0].field").value("agenda.dayStartHour"))
+        .andExpect(jsonPath("$.errors[0].code").value("INVALID_VALUE"));
+    patchJson(id, "psychologist", "{\"agenda.dayStartHour\":0,\"agenda.dayEndHour\":24}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$['agenda.dayStartHour']").value(0))
+        .andExpect(jsonPath("$['agenda.dayEndHour']").value(24));
+    assertThat(stored(id))
+        .contains("\"agenda.dayStartHour\": 0")
+        .contains("\"agenda.dayEndHour\": 24");
+  }
+
+  @Test
+  void agendaWorkingDaysRejectDuplicatesAndOutOfRangeAndKeepOrder() throws Exception {
+    UUID id = insertPractitioner("psychologist", "{}");
+    patchJson(id, "psychologist", "{\"agenda.workingDays\":[1,1,8]}")
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.errors.length()").value(1))
+        .andExpect(jsonPath("$.errors[0].field").value("agenda.workingDays"))
+        .andExpect(jsonPath("$.errors[0].message").isNotEmpty());
+    patchJson(id, "psychologist", "{\"agenda.workingDays\":[]}")
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.errors[0].field").value("agenda.workingDays"))
+        .andExpect(jsonPath("$.errors[0].code").value("INVALID_VALUE"));
+    patchJson(id, "psychologist", "{\"agenda.workingDays\":[0]}")
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.errors[0].field").value("agenda.workingDays"))
+        .andExpect(jsonPath("$.errors[0].code").value("OUT_OF_RANGE"));
+    assertThat(stored(id)).isEqualTo("{}");
+    patchJson(id, "psychologist", "{\"agenda.workingDays\":[6,7]}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$['agenda.workingDays']", contains(6, 7)));
+    getPrefs(id, "psychologist")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$['agenda.workingDays']", contains(6, 7)));
+    assertThat(facade.preferencesOf(id)).containsEntry("agenda.workingDays", List.of(6, 7));
+    patchJson(id, "psychologist", "{\"agenda.workingDays\":null}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$['agenda.workingDays']", contains(1, 2, 3, 4, 5, 6)));
+    assertThat(stored(id)).isEqualTo("{}");
+  }
+
+  @Test
+  void agendaDefaultViewOutsideDomainIsRejectedInvalidValue() throws Exception {
+    UUID id = insertPractitioner("psychologist", "{}");
+    patchJson(id, "psychologist", "{\"agenda.defaultView\":\"year\"}")
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.errors.length()").value(1))
+        .andExpect(jsonPath("$.errors[0].field").value("agenda.defaultView"))
+        .andExpect(jsonPath("$.errors[0].code").value("INVALID_VALUE"));
+    assertThat(stored(id)).isEqualTo("{}");
+    patchJson(id, "psychologist", "{\"agenda.defaultView\":\"list\"}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$['agenda.defaultView']").value("list"));
+    getPrefs(id, "psychologist").andExpect(jsonPath("$['agenda.defaultView']").value("list"));
+  }
+
+  @Test
+  void facadeExposesStoredAgendaPreferences() {
+    UUID id =
+        insertPractitioner(
+            "coach",
+            "{\"agenda.dayStartHour\":9,\"agenda.dayEndHour\":18,\"agenda.workingDays\":[2,4],"
+                + "\"agenda.defaultView\":\"day\"}");
+    assertThat(facade.preferencesOf(id))
+        .containsEntry("agenda.dayStartHour", 9)
+        .containsEntry("agenda.dayEndHour", 18)
+        .containsEntry("agenda.workingDays", List.of(2, 4))
+        .containsEntry("agenda.defaultView", "day")
+        .hasSize(13);
   }
 
   @Test

@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-15T14:21:32.768Z",
+  "task": "M11-04",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Préférences agenda.* (Q57) : agenda.dayStartHour, dayEndHour, workingDays, defaultView avec défauts et validation ; 13 clés ; contrat 0.11.1 ; verify vert (449 unitaires, 1051 IT)",
+  "notes": "Bornes hors plage et fin non supérieure au début : OUT_OF_RANGE (sur agenda.dayEndHour) ; type, doublon, liste vide, vue inconnue : INVALID_VALUE. Liste de jours vide refusée. Lecture garantit dayEndHour > dayStartHour (défauts si stockage incohérent). ContractIT fige la version 0.11.1. Aucune dépendance Maven.",
+  "next": "M11-05 à M11-07 lisent les clés via PractitionerFacade.preferencesOf ; mentions (9 clés) de docs/ A, E, fiche 14 à mettre à jour par M11-01",
+  "pr": "https://github.com/mrscams/psymate-api/pull/88",
+  "branch": "claude/m11-04-agenda-prefs-fff1b1",
+  "checkout": "m11-04-agenda-prefs-fff1b1"
+}

@@ -3209,8 +3209,44 @@ components:
           type: string
       type: object
     Preferences:
-      description: 'Préférences à plat du compte : 9 clés connues, aux noms pointés (par exemple "overview.view"), sans objet imbriqué. En lecture, les 9 clés sont toujours présentes (valeur enregistrée, sinon défaut selon la profession). En PATCH, toutes les clés sont optionnelles : null remet la clé à son défaut, une clé inconnue est ignorée.'
+      description: 'Préférences à plat du compte : 13 clés connues, aux noms pointés (par exemple "overview.view"), sans objet imbriqué. En lecture, les 13 clés sont toujours présentes (valeur enregistrée, sinon défaut selon la profession). En PATCH, toutes les clés sont optionnelles : null remet la clé à son défaut, une clé inconnue est ignorée. Les bornes de la journée de l''agenda doivent rester cohérentes : agenda.dayEndHour strictement supérieur à agenda.dayStartHour, sinon 422 OUT_OF_RANGE sur agenda.dayEndHour.'
       properties:
+        agenda.dayEndHour:
+          description: 'Dernière heure affichée dans la grille de l''agenda (entier de 1 à 24), strictement supérieure à agenda.dayStartHour après fusion. Hors bornes ou non supérieure au début : 422 OUT_OF_RANGE. Défaut : 19.'
+          example: 19
+          format: int32
+          maximum: 24
+          minimum: 1
+          type: integer
+        agenda.dayStartHour:
+          description: 'Première heure affichée dans la grille de l''agenda (entier de 0 à 23). Hors bornes : 422 OUT_OF_RANGE. Défaut : 8.'
+          example: 8
+          format: int32
+          maximum: 23
+          minimum: 0
+          type: integer
+        agenda.defaultView:
+          description: 'Vue ouverte par défaut dans l''agenda : day = jour, week = semaine, month = mois, list = liste. Défaut : week.'
+          enum:
+          - day
+          - week
+          - month
+          - list
+          example: week
+          type: string
+        agenda.workingDays:
+          description: 'Jours travaillés affichés dans l''agenda : tableau d''entiers de 1 (lundi) à 7 (dimanche), sans doublon, au moins un jour, dans l''ordre enregistré (jour hors 1–7 : 422 OUT_OF_RANGE ; doublon, liste vide ou autre type : 422 INVALID_VALUE). Défaut : [1,2,3,4,5,6].'
+          example:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          items:
+            format: int32
+            type: integer
+          type: array
         entries.defaultVisibility:
           description: 'Visibilité proposée par défaut pour une nouvelle entrée : clinical = clinique, private = privée. Défaut : clinical.'
           enum:
@@ -4816,7 +4852,7 @@ info:
 
     **Version du contrat** : `info.version` est incrémentée à chaque changement du contrat et un tag `contract-vX.Y.Z` est posé. Les tags regroupent les opérations par contrôleur, dans l'ordre d'usage : identité, dossier clinique, exploration, annuaire, administration.
   title: PsyMate API
-  version: 0.11.0
+  version: 0.11.1
 openapi: 3.1.0
 paths:
   /api/admin/appeals:
@@ -7714,7 +7750,7 @@ paths:
       - Export de compte
   /api/me/preferences:
     get:
-      description: 'Session praticien. Renvoie toujours les 9 clés : la valeur enregistrée si elle est valide, sinon le défaut calculé selon la profession (coach : vocabulary.subjectLabel = client et entryTypes.medicationVisible = false ; psychiatre : entryTypes.medicationVisible = true). Les clés inconnues stockées ne sont pas renvoyées.'
+      description: 'Session praticien. Renvoie toujours les 13 clés : la valeur enregistrée si elle est valide, sinon le défaut calculé selon la profession (coach : vocabulary.subjectLabel = client et entryTypes.medicationVisible = false ; psychiatre : entryTypes.medicationVisible = true). Les clés inconnues stockées ne sont pas renvoyées.'
       operationId: getPreferences
       responses:
         '200':
@@ -7722,7 +7758,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Preferences'
-          description: Les 9 préférences effectives du compte.
+          description: Les 13 préférences effectives du compte.
         '401':
           content:
             application/problem+json:
@@ -7751,7 +7787,7 @@ paths:
       tags:
       - Préférences
     patch:
-      description: 'Session praticien. Corps JSON plat (application/json ou application/merge-patch+json) avec seulement les clés à changer : les autres sont conservées. null remet la clé à son défaut ; une clé inconnue est ignorée sans erreur. Une seule valeur hors domaine rejette toute la requête (422, errors[].field = clé fautive) et rien n''est appliqué. Renvoie les 9 préférences effectives après fusion ; un PATCH qui ne change rien est un succès.'
+      description: 'Session praticien. Corps JSON plat (application/json ou application/merge-patch+json) avec seulement les clés à changer : les autres sont conservées. null remet la clé à son défaut ; une clé inconnue est ignorée sans erreur. Une seule valeur hors domaine rejette toute la requête (422, errors[].field = clé fautive) et rien n''est appliqué. Renvoie les 13 préférences effectives après fusion ; un PATCH qui ne change rien est un succès.'
       operationId: updatePreferences
       requestBody:
         content:
@@ -7769,7 +7805,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Preferences'
-          description: Les 9 préférences effectives après fusion.
+          description: Les 13 préférences effectives après fusion.
         '401':
           content:
             application/problem+json:
@@ -11131,7 +11167,7 @@ tags:
   name: Authentification
 - description: Activation, désactivation et codes de secours de la double authentification TOTP du praticien connecté.
   name: Double authentification
-- description: 'Préférences d''affichage et de saisie du praticien connecté, mémorisées par compte : neuf clés plates, modifiées par merge-patch (RFC 7396).'
+- description: 'Préférences d''affichage et de saisie du praticien connecté, mémorisées par compte : treize clés plates (affichage, saisie, agenda), modifiées par merge-patch (RFC 7396).'
   name: Préférences
 - description: 'Dossier professionnel du praticien connecté : justificatifs, informations professionnelles, soumission du dossier à l''examen de l''administration.'
   name: Vérification du praticien

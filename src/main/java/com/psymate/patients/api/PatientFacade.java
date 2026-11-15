@@ -29,6 +29,14 @@ public interface PatientFacade {
   Optional<LocalDate> birthDate(UUID patientId);
 
   /**
+   * Cadre du suivi (depuis quand, rythme, modalité, durée de séance) lu dans {@code
+   * patient.follow_up} : vide si le patient n'existe pas, sinon présent même quand le JSON est vide
+   * (quatre champs null). Lecture seule, sans contrôle d'accès : l'appelant passe d'abord par
+   * {@link PatientOwnershipGuard}. Ni {@code fee} ni {@code prescriber} (G Q56, M11-03).
+   */
+  Optional<FollowUpView> followUp(UUID patientId);
+
+  /**
    * Incrémente patient.clinical_rev : à appeler par les services d'écriture clinical et linking à
    * chaque écriture clinique (E7 O10, tranché par G Q30 : « application »). Sans contrôle d'accès
    * (l'appelant a déjà passé par {@link PatientOwnershipGuard}, ou réagit à un événement).

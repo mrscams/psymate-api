@@ -2,6 +2,7 @@ package com.psymate.patients.service;
 
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.patients.api.FollowUpView;
 import com.psymate.patients.api.PatientAccessException;
 import com.psymate.patients.api.PatientArchived;
 import com.psymate.patients.api.PatientCreated;
@@ -156,6 +157,50 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Transactional(readOnly = true)
   public Optional<LocalDate> birthDate(UUID patientId) {
     return patients.findById(patientId).map(Patient::getBirthDate);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Optional<FollowUpView> followUp(UUID patientId) {
+    return patients.findById(patientId).map(p -> followUpView(p.getFollowUp()));
+  }
+
+  /**
+   * Projection tolérante de {@code patient.follow_up} (JSON libre côté patient, G Q56) : une clé
+   * absente ou d'un type inattendu vaut null, jamais une exception. fee et prescriber ne sont pas
+   * lus.
+   */
+  static FollowUpView followUpView(Map<String, Object> followUp) {
+    Map<String, Object> f = followUp == null ? Map.of() : followUp;
+    return new FollowUpView(
+        isoDate(f.get("since")),
+        text(f.get("rhythm")),
+        text(f.get("modality")),
+        durationMin(f.get("durationMin")));
+  }
+
+  private static LocalDate isoDate(Object v) {
+    if (!(v instanceof String s) || s.isBlank()) {
+      return null;
+    }
+    try {
+      return LocalDate.parse(s.strip());
+    } catch (DateTimeParseException e) {
+      return null;
+    }
+  }
+
+  private static String text(Object v) {
+    return v instanceof String s && !s.isBlank() ? s : null;
+  }
+
+  /** Entier entre 1 et 600 minutes, sinon null ("soixante", 900, 45.5, true : null). */
+  private static Integer durationMin(Object v) {
+    if (!(v instanceof Number n) || n.doubleValue() != Math.rint(n.doubleValue())) {
+      return null;
+    }
+    long value = n.longValue();
+    return value >= 1 && value <= 600 ? (int) value : null;
   }
 
   @Override

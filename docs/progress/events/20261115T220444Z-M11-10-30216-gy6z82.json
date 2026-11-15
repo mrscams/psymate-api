@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-15T22:04:44.625Z",
+  "task": "M11-10",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Rendez-vous invite : V13 guest_*, creation et PATCH guest, attach-patient, purge a 6 mois (GuestPurgeJob), contrat 0.13.0, G Q60",
+  "pr": "https://github.com/mrscams/psymate-api/pull/94",
+  "branch": "worktree-agent-ac3c158f7c477decd",
+  "checkout": "agent-ac3c158f7c477decd"
+}

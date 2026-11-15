@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-15T16:07:51.247Z",
+  "task": "M11-05",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Rendez-vous : créer, lire, déplacer, annuler, confirmer ; événements AppointmentPlanned/Rescheduled/Cancelled/Confirmed (@Reserved) ; contrat 0.12.0",
+  "notes": "verify vert (464 unitaires, 1099 IT). Reviewer : 1 bloquant (@Reserved) corrigé, contre-revue 0 bloquant. Hors liste I4 : application.yml, ContractIT, docs/generated (conflit trivial pour M11-06). AppointmentDto/Mapper/Assembler/ConflictDto inchangés depuis 987e2b2.",
+  "next": "Fusion de #91 puis rebase de M11-06 (#90) ; M11-07 séries",
+  "pr": "https://github.com/mrscams/psymate-api/pull/91",
+  "branch": "claude/m11-05-appointment-lifecycle-1a81e8",
+  "checkout": "m11-05-appointment-lifecycle-1a81e8"
+}

@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-15T22:45:42.485Z",
+  "task": "M11-11",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Rendez-vous dans l'export : rendez-vous.md dans le zip du compte, section Rendez-vous dans l'export d'un dossier ; AppointmentExportFacade ; agenda ne depend plus de clinical (G Q61)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/95",
+  "branch": "claude/m11-11-appointments-export",
+  "checkout": "agent-a1fde2859cba46353"
+}

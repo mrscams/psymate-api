@@ -14,6 +14,7 @@ import com.psymate.identity.api.PractitionerFacade;
 import com.psymate.patients.api.FollowUpView;
 import com.psymate.patients.api.PatientFacade;
 import com.psymate.patients.api.PatientOwnershipGuard;
+import com.psymate.patients.api.PatientRef;
 import com.psymate.shared.problem.ProblemException;
 import java.time.Clock;
 import java.time.Instant;
@@ -24,6 +25,7 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Limit;
@@ -78,7 +80,7 @@ public class AgendaQueryService {
   private static UUID me() {
     return CurrentPractitioner.get()
         .map(CurrentPractitioner::id)
-        .orElseThrow(() -> new ProblemException(401, "UNAUTHENTICATED", "Non authentifié."));
+        .orElseThrow(() -> new ProblemException(401, "UNAUTHENTICATED", "Session requise."));
   }
 
   private static OffsetDateTime utc(Instant at) {
@@ -124,10 +126,11 @@ public class AgendaQueryService {
             .stream()
             .findFirst()
             .orElse(null);
+    Map<UUID, PatientRef> refs = assembler.patientsOf(practitionerId);
     return new FreeBusyDto(
-        assembler.conflicts(conflicts),
-        previous == null ? null : assembler.toDto(previous),
-        next == null ? null : assembler.toDto(next));
+        assembler.conflicts(conflicts, refs),
+        previous == null ? null : assembler.toDto(previous, refs),
+        next == null ? null : assembler.toDto(next, refs));
   }
 
   /**

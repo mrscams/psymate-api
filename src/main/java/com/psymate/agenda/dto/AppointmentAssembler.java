@@ -16,8 +16,9 @@ import org.springframework.stereotype.Component;
  * archivé), jamais d'une table du module patients. Les appelants ont déjà vérifié la propriété du
  * patient (garde) ou ne lisent que des rendez-vous du praticien courant.
  *
- * <p>La façade n'expose l'indicateur « archivé » que par la liste des patients du praticien : une
- * seule lecture par appel, quel que soit le nombre de rendez-vous à composer.
+ * <p>La façade n'expose l'indicateur « archivé » que par la liste des patients du praticien : le
+ * service la lit une fois par requête ({@link #patientsOf}) et la passe aux surcharges qui la
+ * prennent, quel que soit le nombre de rendez-vous à composer.
  */
 @Component
 public class AppointmentAssembler {
@@ -39,27 +40,31 @@ public class AppointmentAssembler {
     return byId;
   }
 
+  /** Un rendez-vous ; lit la liste des patients de son praticien. */
   public AppointmentDto toDto(Appointment appointment) {
-    return toDtos(List.of(appointment)).getFirst();
+    return toDto(appointment, patientsOf(appointment.getPractitionerId()));
   }
 
-  /** Rendez-vous d'un même praticien. */
+  /** Un rendez-vous, avec la liste des patients déjà lue par l'appelant ({@link #patientsOf}). */
+  public AppointmentDto toDto(Appointment appointment, Map<UUID, PatientRef> refs) {
+    return mapper.toDto(appointment, patient(appointment.getPatientId(), refs));
+  }
+
+  /** Rendez-vous d'un même praticien : une seule lecture des patients. */
   public List<AppointmentDto> toDtos(Collection<Appointment> appointments) {
     if (appointments.isEmpty()) {
       return List.of();
     }
     Map<UUID, PatientRef> refs = patientsOf(appointments.iterator().next().getPractitionerId());
-    return appointments.stream()
-        .map(a -> mapper.toDto(a, patient(a.getPatientId(), refs)))
-        .toList();
+    return appointments.stream().map(a -> toDto(a, refs)).toList();
   }
 
-  /** Chevauchements signalés (G Q54), rendez-vous d'un même praticien. */
-  public List<ConflictDto> conflicts(Collection<Appointment> overlapping) {
-    if (overlapping.isEmpty()) {
-      return List.of();
-    }
-    Map<UUID, PatientRef> refs = patientsOf(overlapping.iterator().next().getPractitionerId());
+  /**
+   * Chevauchements signalés (G Q54), avec la liste des patients du praticien déjà lue par
+   * l'appelant ({@link #patientsOf}).
+   */
+  public List<ConflictDto> conflicts(
+      Collection<Appointment> overlapping, Map<UUID, PatientRef> refs) {
     return overlapping.stream()
         .map(
             a ->

@@ -24,6 +24,6 @@ public record AgendaWindowDto(
             arraySchema =
                 @Schema(
                     description =
-                        "Réservé aux indisponibilités externes (agenda Google, jalon ultérieur) :"
-                            + " toujours vide dans cette version."))
+                        "Réservé aux indisponibilités externes (jalon ultérieur) : toujours"
+                            + " vide dans cette version."))
         List<Object> busy) {}

@@ -483,7 +483,7 @@ components:
             $ref: '#/components/schemas/AppointmentDto'
           type: array
         busy:
-          description: 'Réservé aux indisponibilités externes (agenda Google, jalon ultérieur) : toujours vide dans cette version.'
+          description: 'Réservé aux indisponibilités externes (jalon ultérieur) : toujours vide dans cette version.'
           items: {}
           type: array
         from:

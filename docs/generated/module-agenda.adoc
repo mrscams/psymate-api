@@ -2,4 +2,8 @@
 |===
 |Base package
 |`com.psymate.agenda`
+|Bean references
+|* `c.p.e.api.DomainEventPublisher` (in Events)
+* `c.p.p.api.PatientFacade` (in Patients)
+* `c.p.p.api.PatientOwnershipGuard` (in Patients)
 |===

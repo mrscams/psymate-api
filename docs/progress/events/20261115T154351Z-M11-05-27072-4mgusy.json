@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-15T15:43:51.849Z",
+  "task": "M11-05",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "1 bloquant(s), 2 à corriger, 7 remarque(s)",
+  "notes": "ApiUsageTests : AppointmentPlanned, AppointmentRescheduled, AppointmentCancelled, AppointmentConfirmed (agenda.api) sans consommateur hors module ni @Reserved ; ajouter @Reserved(consumer = M12, reason = G Q59)",
+  "branch": "claude/m11-05-appointment-lifecycle-1a81e8",
+  "checkout": "m11-05-appointment-lifecycle-1a81e8"
+}

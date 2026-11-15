@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-15T22:55:15.770Z",
+  "task": "PROJET",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Complements M11 fusionnes : M11-10 rendez-vous invite (PR #94, tag contract-v0.13.0) et M11-11 export des rendez-vous (PR #95). Agenda ne depend plus de clinical (G Q61).",
+  "next": "Jalon web Agenda sur contract-v0.13.0 ; a trancher : heure locale dans tout l export ; M12 Google/Outlook (etude docs/etudes/etude-sync-agendas-externes.md)",
+  "checkout": "wt-main-log"
+}

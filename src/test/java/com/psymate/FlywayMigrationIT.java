@@ -103,7 +103,10 @@ class FlywayMigrationIT {
             "ux_tag_practitioner_label",
             "ix_patient_tag_tag",
             "ix_export_job_practitioner",
-            "ix_export_job_purge");
+            "ix_export_job_purge",
+            "ix_appointment_practitioner_time",
+            "ix_appointment_patient",
+            "ix_appointment_series");
   }
 
   @Test
@@ -338,5 +341,56 @@ class FlywayMigrationIT {
                         + " where t.relname = 'link' and c.contype = 'c'",
                     String.class))
         .contains("ck_link_not_self");
+  }
+
+  /**
+   * V12 (M11-02, G Q51 a Q53) : appointment sans colonne Google ni table practitioner_integration,
+   * ses deux contraintes CHECK nommees, ses cles etrangeres vers tenant, practitioner, patient et
+   * entry, et l'index partiel des series.
+   */
+  @Test
+  void v12CreatesAppointmentWithItsChecksAndNoGoogleColumn() {
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select version from flyway_schema_history where success order by"
+                        + " installed_rank",
+                    String.class))
+        .contains("12");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select conname from pg_constraint c join pg_class t on t.oid = c.conrelid"
+                        + " where t.relname = 'appointment' and c.contype = 'c'",
+                    String.class))
+        .contains("ck_appointment_order", "ck_appointment_cancel");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select f.relname from pg_constraint c join pg_class t on t.oid = c.conrelid"
+                        + " join pg_class f on f.oid = c.confrelid"
+                        + " where t.relname = 'appointment' and c.contype = 'f'",
+                    String.class))
+        .containsExactlyInAnyOrder("tenant", "practitioner", "patient", "entry");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select column_name from information_schema.columns where table_schema ="
+                        + " 'public' and table_name = 'appointment'",
+                    String.class))
+        .doesNotContain("google_event_id", "google_etag", "source");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select table_name from information_schema.tables where table_schema ="
+                        + " 'public' and table_name = 'practitioner_integration'",
+                    String.class))
+        .isEmpty();
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select indexdef from pg_indexes where indexname = 'ix_appointment_series'",
+                    String.class))
+        .contains("WHERE (series_id IS NOT NULL)");
   }
 }

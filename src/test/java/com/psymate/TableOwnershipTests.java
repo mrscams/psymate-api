@@ -91,6 +91,7 @@ class TableOwnershipTests {
           Map.entry("practitioner_profile", "directory"),
           Map.entry("directory_vocabulary", "directory"),
           Map.entry("contact_request", "directory"),
+          Map.entry("appointment", "agenda"),
           Map.entry("entry_embedding", "ai"),
           Map.entry("entry_chunk", "ai"),
           Map.entry("ai_feedback", "ai"),

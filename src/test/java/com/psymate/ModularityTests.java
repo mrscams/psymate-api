@@ -38,6 +38,7 @@ class ModularityTests {
           "overview",
           "events",
           "directory",
+          "agenda",
           "shared",
           "ai",
           "companion");
@@ -48,6 +49,15 @@ class ModularityTests {
    * permanente a « autorise ⊆ utilise ».
    */
   static final Set<String> RESERVED_MODULES = Set.of("ai", "companion");
+
+  /**
+   * Modules en construction dont le {@code package-info.java} declare deja toutes les dependances
+   * de leur jalon (G Q50 pour agenda) alors que leurs premieres taches n'en utilisent qu'une
+   * partie. Exception temporaire a « autorise ⊆ utilise » : agenda y entre avec M11-02 et en sort
+   * avec la derniere tache du jalon qui consomme ces dependances (M11-07, ou M11-08 si elle est
+   * retenue).
+   */
+  static final Set<String> PENDING_MODULES = Set.of("agenda");
 
   /**
    * Cible jamais tenue pour inutilisee : le module ouvert {@code shared}. Pour vocabulary,
@@ -152,7 +162,9 @@ class ModularityTests {
 
   @Test
   void everyAllowedDependencyIsUsed() {
-    assertThat(unusedDeclaredDependencies(modules, RESERVED_MODULES, OPEN_TARGETS))
+    Set<String> ignored = new HashSet<>(RESERVED_MODULES);
+    ignored.addAll(PENDING_MODULES);
+    assertThat(unusedDeclaredDependencies(modules, ignored, OPEN_TARGETS))
         .as("dependances declarees dans package-info.java mais inutilisees")
         .isEmpty();
   }

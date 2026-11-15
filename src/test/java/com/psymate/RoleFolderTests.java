@@ -41,6 +41,7 @@ class RoleFolderTests {
    */
   static final Set<String> ROLE_FOLDER_MODULES =
       Set.of(
+          "agenda",
           "directory",
           "linking",
           "identity.verification",

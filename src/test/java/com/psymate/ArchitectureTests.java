@@ -392,7 +392,7 @@ class ArchitectureTests {
 
   /** Modules et sous-domaines JPA (G Q32) : le SQL natif y passe par des fragments (G Q38). */
   static final List<String> JPA_PACKAGES =
-      List.of("patients", "vocabulary", "directory", "identity", "clinical.export");
+      List.of("patients", "vocabulary", "directory", "identity", "clinical.export", "agenda");
 
   /** Modules et sous-domaines {@code JdbcClient} (G Q32) : aucune API JPA. */
   static final List<String> JDBC_PACKAGES = List.of("search", "overview", "linking", "clinical");
@@ -667,6 +667,13 @@ class ArchitectureTests {
   @Test
   void identityAdminDoesNotTouchClinicalModules() {
     moduleMustNotDependOn(ROOT, "identity.admin", CLINICAL_MODULES).check(PRODUCTION);
+  }
+
+  /** G Q50 : l'agenda est une donnee patient ; ni directory ni identity.admin n'y touchent. */
+  @Test
+  void directoryAndIdentityAdminDoNotTouchAgenda() {
+    moduleMustNotDependOn(ROOT, "directory", "agenda").check(PRODUCTION);
+    moduleMustNotDependOn(ROOT, "identity.admin", "agenda").check(PRODUCTION);
   }
 
   @Test

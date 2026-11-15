@@ -447,3 +447,20 @@ export_job:
   - expires_at
   - purged_at
   - error
+# V12 appointment (M11-02, I2)
+appointment:
+  - id
+  - tenant_id
+  - practitioner_id
+  - patient_id
+  - series_id
+  - starts_at
+  - ends_at
+  - modality
+  - status
+  - planning_note
+  - cancel_reason
+  - cancelled_at
+  - session_entry_id
+  - created_at
+  - updated_at

@@ -18,6 +18,7 @@ top to bottom direction
 System_Boundary("App_boundary", "App", $tags="") {
   Container_Boundary("App.App_boundary", "App", $tags="") {
     Component(App.App.Agenda, "Agenda", $techn="Module", $descr="", $tags="", $link="")
+    Component(App.App.Events, "Events", $techn="Module", $descr="", $tags="", $link="")
     Component(App.App.Identity, "Identity", $techn="Module", $descr="", $tags="", $link="")
     Component(App.App.Patients, "Patients", $techn="Module", $descr="", $tags="", $link="")
     Component(App.App.Shared, "Shared", $techn="Module", $descr="", $tags="", $link="")
@@ -25,10 +26,13 @@ System_Boundary("App_boundary", "App", $tags="") {
 
 }
 
+Rel(App.App.Agenda, App.App.Events, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Agenda, App.App.Identity, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Agenda, App.App.Patients, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Agenda, App.App.Shared, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Identity, App.App.Events, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Identity, App.App.Shared, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Patients, App.App.Events, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Patients, App.App.Identity, "depends on", $techn="", $tags="", $link="")
 Rel(App.App.Patients, App.App.Shared, "depends on", $techn="", $tags="", $link="")
 

@@ -113,7 +113,7 @@ public class AgendaQueryService {
     OffsetDateTime dayEnd = day.plusDays(1).atStartOfDay(tz).toOffsetDateTime();
 
     List<Appointment> conflicts =
-        appointments.findOverlapping(practitionerId, utc(from), utc(to), ACTIVE, exclude);
+        appointments.findActiveOverlaps(practitionerId, utc(from), utc(to), exclude);
     Appointment previous =
         appointments
             .findEndingBefore(practitionerId, dayStart, utc(from), ACTIVE, exclude, Limit.of(1))

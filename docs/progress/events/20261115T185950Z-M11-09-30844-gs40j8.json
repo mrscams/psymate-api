@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-15T18:59:50.252Z",
+  "task": "M11-09",
+  "agent": "seed-perf",
+  "status": "done",
+  "summary": "Seed small et medium : agenda par l API, 8 semaines (4 passees, 4 a venir), 11 a 16 rdv par semaine dont 1 annule et 1 a confirmer, 70/20/10, 3 series, idempotent ; AgendaScenarioTest et SeedAgendaIT (profil perf)",
+  "notes": "Pas de latence A6 mesuree (tache de seed seulement). SeedAgendaIT environ 60 s. Seed small sur base vierge : Claire 110 rdv, Karim 107, 14 actifs semaine courante",
+  "pr": "https://github.com/mrscams/psymate-api/pull/93",
+  "branch": "worktree-agent-a8e5193141a41d5f4",
+  "checkout": "agent-a8e5193141a41d5f4"
+}

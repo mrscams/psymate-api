@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-15T16:02:01.530Z",
+  "task": "M11-06",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Lectures de l'agenda : GET /api/agenda (fenêtre = 62 jours, busy vide), freebusy (conflits, previous, next, tz), GET /api/patients/{id}/appointments (actifs + defaults) ; AgendaQueryIT 20 cas ; contrat 0.12.0",
+  "notes": "DTO partagés identiques à M11-05 (987e2b2) ; la seconde PR fusionnée relance make contract et ne garde qu'une méthode de chevauchement (findOverlapping / findActiveOverlaps). Revue : 0 bloquant au second passage.",
+  "next": "Fusion de M11-05 et M11-06 par l'orchestrateur, puis M11-07",
+  "pr": "https://github.com/mrscams/psymate-api/pull/90",
+  "branch": "claude/m11-06-agenda-reads-023874",
+  "checkout": "m11-06-agenda-reads-023874"
+}

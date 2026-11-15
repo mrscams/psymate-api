@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-15T15:05:57.820Z",
+  "task": "M11-02",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Module agenda cree : V12__agenda.sql (copie de I2), entite Appointment, AppointmentRepository, AppointmentException, AgendaExceptionHandler et AgendaMessages, gardes enregistrees, AgendaPersistenceIT (9 cas) ; verify vert (455 unitaires, 1074 IT)",
+  "notes": "Aucun endpoint, aucune dependance Maven, contrat inchange. Exception temporaire ModularityTests.PENDING_MODULES (autorise sous-ensemble de utilise) a retirer avec M11-07 ou M11-08. Handler limite par package (basePackageClasses) : M11-05 et M11-06 n'y touchent pas. Branche rebasee sur main apres #86 #87 #88.",
+  "next": "Revue reviewer puis fusion ; M11-05 et M11-06 peuvent demarrer (vague M11-B)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/89",
+  "branch": "claude/m11-02-agenda-module-fd8ec1",
+  "checkout": "m11-02-agenda-module-fd8ec1"
+}

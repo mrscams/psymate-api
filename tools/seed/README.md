@@ -1,6 +1,6 @@
 # tools/seed : données fictives et tests de charge (M7-01)
 
-Générateur de patients fictifs pour PsyMate (C3, E5.5, G Q22). Il n'écrit **jamais** en SQL : tout passe par l'API REST d'une instance locale, donc par les mêmes règles que l'application (séance obligatoire, versions, matrice des liens E5.3, `author_type = 'practitioner'`).
+Générateur de patients fictifs et de leur agenda pour PsyMate (C3, E5.5, G Q22, M11-09). Il n'écrit **jamais** en SQL : tout passe par l'API REST d'une instance locale, donc par les mêmes règles que l'application (séance obligatoire, versions, matrice des liens E5.3, `author_type = 'practitioner'`).
 
 Projet Maven autonome (`com.psymate.tools:psymate-seed`), **sans aucune dépendance d'exécution** : JDK 21 seul, JSON maison (`Json`), `java.net.http` pour les appels.
 
@@ -65,6 +65,23 @@ Mesure de `medium` (8 workers, API locale, poste de développement) : environ 50
 - `DemoStory` (G Q22) : récit écrit à la main de Camille R. : surmenage au travail, arrêt, sertraline 50 puis 100 mg, reprise à mi-temps, tensions de couple, deuil d'une grand-mère raconté sept mois après (précision « mois »), réflexion sur le travail. Deux situations restent actives, trois entrées sont privées. **À relire par le propriétaire du projet** avant d'être utilisé pour l'onboarding.
 
 Le plan est produit par un générateur pur et déterministe (`Scenario`, sans HTTP) puis vérifié (`Scenario.validate` : séance pour toute entrée, matrice, doublons, précisions, visibilités) **avant** la première écriture.
+
+## Agenda de démonstration (M11-09, tailles `small` et `medium`)
+
+Après les patients, le seed pose l'agenda de chaque praticien du plan (`AgendaScenario`, générateur pur et déterministe, puis `AgendaSeeder`), **par l'API** comme le reste : `POST /api/appointments` (avec `recurrence` pour une série) puis `POST /api/appointments/{id}/cancel`. C'est donc l'application qui pose `tenant_id`, `practitioner_id`, `series_id` et `cancelled_at` (contrainte `ck_appointment_cancel`) et qui refuse un patient archivé (`PATIENT_ARCHIVED`).
+
+- Patients : ceux du praticien encore actifs dont le nom commence par `SEED · ` ou `DEMO · ` (le patient DEMO reçoit donc des rendez-vous s'il a été créé avant).
+- 8 semaines du lundi au dimanche, à Paris : 4 passées et 4 à venir ; la semaine courante compte parmi les semaines à venir du lundi au mercredi (4 semaines avant elle, 3 après), parmi les passées du jeudi au dimanche (3 avant, 4 après). Tous les rendez-vous tiennent dans [maintenant − 5 semaines, maintenant + 5 semaines].
+- 11 à 16 rendez-vous par semaine dont **un annulé** (10 à 15 actifs) ; la semaine courante en compte 15, soit **14 actifs** comme la maquette (fiche 15) ; **un « à confirmer »** (`tentative`) par semaine.
+- Du lundi au samedi, heures pleines de 8 h à 18 h (9 h à 12 h le samedi, au moins un rendez-vous le samedi), fin au plus tard à 19 h, sans chevauchement ; 50 ou 60 min au cabinet, 45 min en visio, 30 min au téléphone.
+- 70 % cabinet, 20 % visio, 10 % téléphone sur l'ensemble des occurrences.
+- Trois séries hebdomadaires (6, 4 et 4 occurrences, même `seriesId`), une note de planification sur environ un rendez-vous sur huit.
+- Les rendez-vous passés restent `planned` (ou `tentative`) : aucune séance n'y est rattachée.
+- Avec `small`, Claire n'a que 2 patients : ils reviennent plusieurs fois par semaine ; `medium` donne un agenda plus réaliste.
+
+Idempotence : si la fenêtre des 8 semaines contient déjà un rendez-vous (annulé compris) d'un patient du seed, l'agenda du praticien n'est pas réécrit (« déjà présent »). Un `make seed` lancé une semaine plus tard ne complète donc pas la nouvelle semaine : `make db-reset` puis `make seed` repart d'un agenda centré sur aujourd'hui. Si une erreur interrompt l'écriture de l'agenda (réponse inattendue de l'API), les rendez-vous déjà créés restent et l'agenda est partiel ; une relance le voit « déjà présent » et ne le complète pas : `make db-reset` puis `make seed`.
+
+`SeedAgendaPerfIT` (profil `perf`, comme les autres tests qui importent `com.psymate.seed`) exécute le seed `small` par MockMvc sur deux praticiens neufs et vérifie les critères de M11-09 : `make perf`, ou seul `./mvnw -B -Pperf verify -Dit.test=SeedAgendaPerfIT`. `AgendaScenarioTest` (tests unitaires de l'outil, lancés par la CI) vérifie le plan sans réseau.
 
 ## Idempotence
 

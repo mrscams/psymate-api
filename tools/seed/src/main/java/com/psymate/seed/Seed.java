@@ -6,11 +6,13 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Point d'entrée du seed : {@code java -cp tools/seed/target/classes com.psymate.seed.Seed --size
@@ -94,6 +96,10 @@ public final class Seed {
         summary.patches(),
         pretty(summary.elapsed()));
 
+    if (!"demo".equals(size)) {
+      seedAgenda(plan, runner, seed, out);
+    }
+
     Map<String, ApiClient> toCheck = new LinkedHashMap<>();
     for (Map.Entry<String, Practitioner> e : summary.patientOwners().entrySet()) {
       toCheck.put(e.getKey(), runner.mainClient(e.getValue()));
@@ -101,6 +107,29 @@ public final class Seed {
     Verifier.Report report = Verifier.verify(toCheck);
     out.println(report.describe());
     return report.ok() ? 0 : 1;
+  }
+
+  // ---- agenda (M11-09)
+
+  /** Rendez-vous de démonstration de chaque praticien du plan, par l'API (AgendaSeeder). */
+  private static void seedAgenda(Plan plan, Runner runner, long seed, PrintStream out) {
+    Set<Practitioner> owners = new TreeSet<>();
+    plan.patients().forEach(p -> owners.add(p.practitioner()));
+    LocalDate today = LocalDate.now(AgendaScenario.ZONE);
+    for (Practitioner who : owners) {
+      ApiClient api = runner.mainClient(who);
+      AgendaSeeder.Result result =
+          AgendaSeeder.seed(
+              (method, path, body) -> "GET".equals(method) ? api.get(path) : api.post(path, body),
+              today,
+              agendaSeed(seed, who));
+      out.println("Agenda de " + Accounts.of(who).firstName() + " : " + result.describe() + ".");
+    }
+  }
+
+  /** Graine de l'agenda d'un praticien : dérivée de la graine du seed. */
+  public static long agendaSeed(long seed, Practitioner who) {
+    return seed * 31 + who.ordinal() + 1;
   }
 
   // ---- garde-fous

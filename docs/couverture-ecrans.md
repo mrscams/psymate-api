@@ -28,7 +28,7 @@
 | 26 | Mot de passe oublié | `26-mot-de-passe-oublie.md` | html + png | M0-07 |
 | 27 | Compte suspendu / refusé | `27-compte-suspendu.md` | html + png | M1-15 (état), M7-07 (recours) |
 
-Hors V1, fiches conservées mais rien à implémenter : 15 Agenda, 15b Nouveau rendez-vous (G Q25), 23 Signalements (V1.1, G Q26).
+15 Agenda et 15b Nouveau rendez-vous : API en jalon **M11** (module `agenda`, G Q50–Q59, `docs/I-plan-agenda-api.md`, décidé le 15 novembre 2026), écran web dans un jalon ultérieur, synchronisation Google hors V1 (M12). Hors V1, fiche conservée mais rien à implémenter : 23 Signalements (V1.1, G Q26).
 
 ## 2. Ce qui manque
 

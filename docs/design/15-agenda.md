@@ -1,6 +1,6 @@
 # Écran 15 · Agenda (synchronisé avec Google Agenda)
 
-> **Hors V1 (décision G Q25, 29 octobre 2026)** : conservé pour plus tard, aucune tâche ni module `scheduling` dans le plan C ni dans l'orchestration D. Le DDL des tables est gardé en E6.2. Rien de cette fiche n'est à implémenter en V1.
+> **API en M11 (module `agenda`, `docs/I-plan-agenda-api.md`) ; web et Google : jalons ultérieurs.** Décision G Q50–Q59 du 15 novembre 2026, qui révise G Q25 du 29 octobre 2026 (« hors V1 »). Le reste de cette fiche est conservé tel quel : son ancien nom de module `scheduling` se lit `agenda`, et tout ce qui concerne Google Agenda (OAuth, agenda secondaire, blocs « Occupé », `practitioner_integration`, préférence `calendar.googleDetail`) est hors V1, jalon M12 ; la table `appointment` sans colonnes Google est en E3.14, le DDL Google en E6.2.
 
 > Spécification pour agents. Maquette : `15-agenda.html` / `.png`. Palette : Nordique. Module backend `scheduling` (à ajouter au document A le jour où l'agenda sera repris) ; front `features/agenda`. À placer après la V1.
 

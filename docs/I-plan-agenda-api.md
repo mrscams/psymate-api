@@ -55,15 +55,16 @@ CREATE INDEX ix_appointment_series ON appointment(series_id) WHERE series_id IS 
 
 Propriétaire : module `agenda` (`TableOwnershipTests.TABLE_OWNERS += appointment → agenda`). `session_entry_id` référence `entry` par clé étrangère SQL mais **jamais** par association JPA (UUID nu, règle ArchUnit). E4 : `V12__agenda.sql` · M11-02 (agenda) · vague M11-A · « E3.14 `appointment` » · dépend de V01, V05.
 
-## I3. Contrat d'API (version `0.12.x`, tag unique `contract-v0.12.1` posé par M11-09)
+## I3. Contrat d'API (version `0.12.x`, tag unique `contract-v0.12.1` posé par M11-09 ; `0.13.0` avec les rendez-vous invités, M11-10, I8)
 
 Toutes les routes exigent une session praticien. Erreurs RFC 9457, `errors[{field, code, message}]`, codes repris des autres modules (`REQUIRED`, `INVALID_FORMAT`, `INVALID_VALUE`, `OUT_OF_RANGE`, `UNKNOWN_FIELD`) plus ceux de l'agenda (`PATIENT_ARCHIVED`, `TOO_MANY_OCCURRENCES`, `WINDOW_TOO_LARGE`, `APPOINTMENT_NOT_FOUND`, `APPOINTMENT_NOT_ACTIVE`, `SERIES_NOT_FOUND`). Dates UTC ISO 8601 ; le web convertit dans le fuseau du praticien.
 
 | Route | Tâche | Rôle | Réponse |
 | --- | --- | --- | --- |
-| `POST /api/appointments` | M11-05 (une occurrence), M11-07 (`recurrence`) | Créer depuis un créneau. Corps `{ patientId, startsAt, durationMin (5–600), modality, planningNote? (≤ 2 000), tentative? (défaut false), recurrence?: { everyWeeks: 1, 2 ou 4, count? (≤ 26) ou until? } }` ; exactement un de `count` / `until` si `recurrence` est présent. | `201`, `Location: /api/appointments/{id}` (première occurrence), corps `{ appointments: [AppointmentDto…], conflicts: [ConflictDto…] }` |
+| `POST /api/appointments` | M11-05 (une occurrence), M11-07 (`recurrence`) | Créer depuis un créneau. Corps `{ patientId, startsAt, durationMin (5–600), modality, planningNote? (≤ 2 000), tentative? (défaut false), recurrence?: { everyWeeks: 1, 2 ou 4, count? (≤ 26) ou until? } }` ; exactement un de `count` / `until` si `recurrence` est présent. M11-10 : `patientId` facultatif, nouveau `guest?: { firstName? (≤ 100), lastName (≤ 100), phone? (≤ 30) }`, exactement un des deux (aucun → `422 REQUIRED` sur `patientId` ; les deux → `422 INVALID_VALUE` sur `guest`). | `201`, `Location: /api/appointments/{id}` (première occurrence), corps `{ appointments: [AppointmentDto…], conflicts: [ConflictDto…] }` |
 | `GET /api/appointments/{id}` | M11-05 | Détail du panneau droit. | `AppointmentDto` |
-| `PATCH /api/appointments/{id}` | M11-05 | Déplacer, changer la durée, la modalité ou la note (fusion partielle, `null` efface la note). Refusé si `cancelled` ou `done` (`409 APPOINTMENT_NOT_ACTIVE`). | `{ appointment, conflicts }` |
+| `PATCH /api/appointments/{id}` | M11-05 | Déplacer, changer la durée, la modalité ou la note (fusion partielle, `null` efface la note). Refusé si `cancelled` ou `done` (`409 APPOINTMENT_NOT_ACTIVE`). M11-10 : `guest?` corrige l'identité d'un invité (`lastName` remplacé, `firstName` / `phone` absents gardés, vides effacés) ; `422 INVALID_VALUE` sur `guest` si le rendez-vous vise un patient ou si l'invité est purgé. | `{ appointment, conflicts }` |
+| `POST /api/appointments/{id}/attach-patient` | M11-10 | Corps `{ patientId, includeSameGuest?: false }`. Rattache un rendez-vous invité à un patient du praticien non archivé (403 / 404 / `422 PATIENT_ARCHIVED` comme la création) ; `409 APPOINTMENT_NOT_ACTIVE` s'il vise déjà un patient ou si l'invité est purgé. Avec `includeSameGuest`, tous les rendez-vous invités non purgés du praticien de même identité (casse et espaces ignorés). Événement `AppointmentPatientAttached` par rendez-vous. | `{ appointments }` (`AttachedAppointmentsDto`) |
 | `POST /api/appointments/{id}/cancel` | M11-05 | Corps `{ reason? }`. Idempotent sur un rendez-vous déjà annulé (`200`). Refusé si `done`. | `AppointmentDto` |
 | `POST /api/appointments/{id}/confirm` | M11-05 | `tentative → planned` ; `409` sinon. | `AppointmentDto` |
 | `POST /api/appointments/series/{seriesId}/cancel` | M11-07 | Annule toutes les occurrences encore actives de la série (`planned`, `tentative`). | `{ appointments }` |
@@ -72,7 +73,7 @@ Toutes les routes exigent une session praticien. Erreurs RFC 9457, `errors[{fiel
 | `GET /api/patients/{id}/appointments?from?&limit=20` | M11-06 | Rendez-vous d'un patient à partir de `from` (défaut : maintenant), actifs seulement, plus les défauts de création. | `{ appointments, defaults: { durationMin, modality, rhythm? } }` |
 | `POST /api/appointments/{id}/start` | M11-08 (conditionnelle) | Crée l'`entry_session` du patient, rattache `session_entry_id`, `status = done`. | `{ appointment, sessionId }` |
 
-`AppointmentDto` : `{ id, patient: { id, displayName, birthDate, archived }, seriesId?, startsAt, endsAt, durationMin, modality, status, planningNote?, cancelReason?, cancelledAt?, sessionEntryId?, createdAt, updatedAt }`. `ConflictDto` : `{ appointmentId, startsAt, endsAt, patientDisplayName }` (M11-07 y ajoute `occurrenceStartsAt`). Un fichier par DTO, MapStruct pour `AppointmentMapper` (entité → DTO) ; la composition patient + rendez-vous est un `AppointmentAssembler` (G Q46).
+`AppointmentDto` : `{ id, patient: { id, displayName, birthDate, archived }, seriesId?, startsAt, endsAt, durationMin, modality, status, planningNote?, cancelReason?, cancelledAt?, sessionEntryId?, createdAt, updatedAt }`. `ConflictDto` : `{ appointmentId, startsAt, endsAt, patientDisplayName }` (M11-07 y ajoute `occurrenceStartsAt`). M11-10 : `AppointmentDto.patient` devient nullable et `AppointmentDto.guest` (`GuestDto { firstName, lastName, phone, purgedAt }`, nullable) apparaît ; pour un invité, `ConflictDto.patientDisplayName` vaut « Prénom Nom », ou « Invité purgé » après la purge. Un fichier par DTO, MapStruct pour `AppointmentMapper` (entité → DTO) ; la composition patient + rendez-vous est un `AppointmentAssembler` (G Q46).
 
 ## I4. Tâches, couloirs et parallélisme
 
@@ -87,6 +88,7 @@ Toutes les routes exigent une session praticien. Erreurs RFC 9457, `errors[{fiel
 | M11-07 | Séries : `recurrence`, `series_id`, annulation de série | agenda | M11-05, M11-06 | — |
 | M11-08 | *(conditionnelle)* Rattacher une séance : `SessionFacade` dans `clinical.api`, puis `POST /{id}/start` | clinical (api) puis agenda | M11-05 ; décision web sur le bouton du panneau | — |
 | M11-09 | Seed `make seed` (rendez-vous sur 8 semaines), contrat tagué, suivi | racine (`tools/seed`) | M11-07 | — |
+| M11-10 | Rendez-vous invité (G Q60) : `V13__agenda_guest.sql`, `guest` à la création et au PATCH, `attach-patient`, purge à 6 mois, contrat `0.13.0` (I8) | agenda (+ docs) | M11-09 | — |
 
 **Vagues.** M11-A : 01, 02, 03, 04 (quatre terminaux). M11-B : 05 et 06 dès que 02 (et 03 pour 06) sont fusionnées. M11-C : 07. M11-D : 09, et 08 si retenue (son couloir `clinical` n'entre en conflit avec rien d'autre de M11, mais il tourne seul dans `clinical`).
 
@@ -388,3 +390,49 @@ Lance le sous-agent reviewer sur cette branche pour la tâche <ID>. En plus de s
 - Jalon M12 Google : OAuth, agenda secondaire, `events.watch`, freebusy, préférence `calendar.googleDetail` (valeurs à réconcilier entre les fiches 15 et 15b : `initials | first_name | busy_only` ou `initials | none | full`), `practitioner_integration`, colonnes `google_*` et `source` sur `appointment`, validation OAuth par Google, question HDS.
 - Flux iCal secret en lecture (`GET /api/me/calendar.ics?token=`) : dépendance Maven (`biweekly` ou `ical4j`), à décider avec M12 ou avant.
 - Vue Mois : le contrat couvre une fenêtre de 62 jours, suffisante pour une grille mensuelle avec débords ; aucune agrégation côté API prévue.
+
+## I8. M11-10 Rendez-vous invité (ajouté le 15 novembre 2026, G Q60)
+
+**Décision (G Q60, révise Q58).** Un rendez-vous peut viser soit un patient du praticien, soit un **invité** : une personne décrite seulement par nom, prénom et téléphone, sans fiche patient. L'invité ne vit que dans ses lignes `appointment` : aucune ligne `patient`, aucune table de contacts, il n'apparaît ni dans la liste des patients, ni dans la recherche, ni dans la vue d'ensemble. Ses données ont les mêmes règles d'accès que celles d'un patient (le praticien propriétaire seul ; 404 pour les autres). Il est **purgé** automatiquement : 6 mois après la fin du rendez-vous (ou après son annulation), ses colonnes `guest_*` passent à `NULL` et `guest_purged_at` est renseigné ; le rendez-vous reste. C'est la seule « suppression » de l'agenda (E9 : mise à `NULL` de colonnes, jamais de `DELETE`). Le jour venu, le praticien crée la fiche patient puis **rattache** le rendez-vous (et, s'il le veut, tous les rendez-vous du même invité) à ce patient.
+
+**Modèle** (`V13__agenda_guest.sql`, E3.14, E4 ; V12 reste telle quelle) :
+
+```sql
+ALTER TABLE appointment ALTER COLUMN patient_id DROP NOT NULL;
+ALTER TABLE appointment
+  ADD COLUMN guest_first_name text,
+  ADD COLUMN guest_last_name  text,
+  ADD COLUMN guest_phone      text,
+  ADD COLUMN guest_purged_at  timestamptz,
+  ADD CONSTRAINT ck_appointment_subject CHECK (
+    (patient_id IS NOT NULL AND guest_first_name IS NULL AND guest_last_name IS NULL AND guest_phone IS NULL AND guest_purged_at IS NULL)
+    OR (patient_id IS NULL AND (guest_last_name IS NOT NULL OR guest_purged_at IS NOT NULL))
+  );
+CREATE INDEX ix_appointment_guest_purge ON appointment(ends_at) WHERE patient_id IS NULL AND guest_purged_at IS NULL;
+```
+
+Entité `Appointment` : `guestFirstName`, `guestLastName`, `guestPhone`, `guestPurgedAt` ; `patientId` nullable (UUID nus, aucune association JPA).
+
+**Contrat (`0.13.0`).**
+- `CreateAppointmentRequest` : `patientId` facultatif ; `guest { firstName? (≤ 100), lastName (requis, ≤ 100), phone? (≤ 30 ; chiffres, espaces, `+`, `.`, `-`, parenthèses, au moins un chiffre, sinon `INVALID_FORMAT` ; chaîne vide = aucun) }` (`GuestRequest`). Exactement un de `patientId` / `guest` : aucun → `422 REQUIRED` sur `patientId` ; les deux → `422 INVALID_VALUE` sur `guest`. Les séries recopient les colonnes `guest_*` sur chaque occurrence.
+- `AppointmentDto` : `patient` nullable ; `guest { firstName, lastName, phone, purgedAt }` nullable (`GuestDto`) ; après purge, `firstName`, `lastName`, `phone` null et `purgedAt` renseigné. `ConflictDto.patientDisplayName` (donc `FreeBusyDto.conflicts`) : « Prénom Nom » pour un invité (le nom seul sans prénom), « Invité purgé » après purge.
+- `PATCH /api/appointments/{id}` : `guest` facultatif ; `lastName` requis et remplacé, `firstName` / `phone` absents ou null gardés, chaîne vide effacée ; `422 INVALID_VALUE` sur `guest` si le rendez-vous vise un patient ou si l'invité est purgé.
+- `POST /api/appointments/{id}/attach-patient { patientId, includeSameGuest?: false }` : garde de propriété, patient non archivé (mêmes erreurs que la création) ; `409 APPOINTMENT_NOT_ACTIVE` si le rendez-vous vise déjà un patient ou si l'invité est purgé ; le rendez-vous reçoit `patient_id`, ses colonnes `guest_*` passent à `NULL` ; avec `includeSameGuest = true`, tous les autres rendez-vous invités non purgés du praticien de mêmes nom, prénom et téléphone (casse et espaces ignorés), quel que soit leur statut, sont rattachés aussi. Réponse `AttachedAppointmentsDto { appointments }`. Événement `AppointmentPatientAttached` (payload Q59, `patientId` = le patient rattaché), un par rendez-vous.
+- `GET /api/agenda`, `GET /api/agenda/freebusy` : forme inchangée, les rendez-vous invités y figurent. `GET /api/patients/{id}/appointments` : inchangé, jamais d'invité.
+- `RecurrenceRequest.count` porte `maximum = 26` dans le schéma (sans `@Max`, pour garder `TOO_MANY_OCCURRENCES`). `everyWeeks` ne reçoit pas d'`enum` : springdoc émet `allowableValues = {"1","2","4"}` en chaînes (`'1'`) sur un champ `integer`, schéma qu'aucune valeur entière ne satisfait ; les valeurs admises restent dans la description.
+
+**Purge.** `service/GuestPurgeJob`, quotidienne (planificateur privé comme les autres purges, cron `app.agenda.guest-purge.cron`, défaut `0 30 3 * * *` UTC ; rétention `app.agenda.guest-purge.retention`, défaut `P180D`) : un seul `UPDATE` JPQL sur les rendez-vous `patient_id IS NULL AND guest_purged_at IS NULL` dont `ends_at` ou `cancelled_at` est antérieur à `now - retention` ; journalise le nombre de lignes, jamais les noms ; aucun événement ; `run()` appelable par les tests.
+
+**Critères d'acceptation** (`AppointmentGuestIT`, `GuestPurgeJobIT`, `GuestRulesTest`) :
+- POST avec `guest { lastName: "Benali", firstName: "Sara", phone: "+33 6 12 34 56 78" }` sans `patientId` → 201, `patient_id` NULL et `guest_*` renseignées, `patient` null et `guest` rempli, `AppointmentPlanned` ;
+- sans `patientId` ni `guest` → 422 REQUIRED sur `patientId` ; les deux → 422 INVALID_VALUE sur `guest` ; `guest` sans `lastName` → 422 REQUIRED sur `guest.lastName` ; `phone` "abc" → 422 INVALID_FORMAT sur `guest.phone` ;
+- série invitée (everyWeeks 1, count 3) → 3 lignes invitées, même `series_id`, mêmes `guest_*` ;
+- `GET /api/agenda` renvoie le rendez-vous invité avec `guest` ; freebusy en conflit → `patientDisplayName = "Sara Benali"` ; `GET /api/patients/{id}/appointments` ne renvoie jamais d'invité ;
+- PATCH `{ guest: { lastName: "Ben Ali" } }` corrige le nom ; PATCH `guest` sur un rendez-vous patient → 422 INVALID_VALUE ;
+- attach-patient → 200, `patient_id` renseigné, `guest_*` NULL, `AppointmentPatientAttached` ; `includeSameGuest` rattache les rendez-vous du même invité (casse et espaces différents) et pas ceux d'un autre invité ; déjà patient → 409 ; patient d'un autre praticien → 403 ; patient archivé → 422 PATIENT_ARCHIVED ;
+- rendez-vous d'un autre praticien : 404 pour attach, PATCH, GET ;
+- purge : invité terminé il y a 7 mois → `guest_*` NULL, `guest_purged_at` posé, ligne conservée, `guest.purgedAt` dans le DTO ; terminé il y a 5 mois → intact ; rendez-vous patient de 7 mois → intact ; annulé il y a 7 mois → purgé ; attach / PATCH `guest` sur un invité purgé → 409 / 422 ;
+- aucune ligne `appointment` supprimée ; `TableOwnershipTests`, `ArchitectureTests`, `FlywayMigrationIT` (V13) verts ;
+- contrat regénéré, `0.13.0`, `ContractIT`, `AppointmentIT`, `AgendaQueryIT`, `AppointmentSeriesIT` verts.
+
+**Interdits.** Toute dépendance Maven ; toute colonne ou table hors V13 ; tout `DELETE` sur `appointment` ; toute lecture hors `appointment` ; tout import hors `identity.api`, `patients.api`, `clinical.api`, `events.api`, `shared`.

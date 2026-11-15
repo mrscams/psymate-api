@@ -12,16 +12,28 @@ import java.util.UUID;
 
 /**
  * Création d'un rendez-vous depuis un créneau, ou d'une série avec {@code recurrence} (fiche 15b,
- * I3, G Q55). {@code tz} ne sert qu'au calcul des occurrences d'une série.
+ * I3, G Q55). {@code tz} ne sert qu'au calcul des occurrences d'une série. Le rendez-vous vise
+ * exactement un de {@code patientId} et {@code guest} (G Q60, vérifié par le contrôleur).
  */
 @Schema(
     description =
-        "Création d'un rendez-vous, ou d'une série si recurrence est présent. status,"
+        "Création d'un rendez-vous, ou d'une série si recurrence est présent. Exactement un de"
+            + " patientId et guest : aucun, 422 REQUIRED sur patientId ; les deux, 422"
+            + " INVALID_VALUE sur guest. status,"
             + " practitionerId, tenantId, sessionEntryId, authorType et submissionId sont refusés"
             + " (UNKNOWN_FIELD).")
 public record CreateAppointmentRequest(
-    @Schema(description = "Patient du praticien, non archivé. Obligatoire.") @NotNull
+    @Schema(
+            description =
+                "Patient du praticien, non archivé. Obligatoire sauf pour un rendez-vous invité"
+                    + " (guest).")
         UUID patientId,
+    @Schema(
+            description =
+                "Invité : personne qui n'a pas encore de fiche patient (G Q60). Exclusif de"
+                    + " patientId ; recopié sur chaque occurrence d'une série.")
+        @Valid
+        GuestRequest guest,
     @Schema(
             description = "Début du rendez-vous, UTC ISO 8601. Obligatoire.",
             example = "2026-11-16T09:00:00Z")

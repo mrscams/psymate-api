@@ -3,6 +3,7 @@ package com.psymate.agenda.service;
 import com.psymate.agenda.api.AppointmentCancelled;
 import com.psymate.agenda.api.AppointmentConfirmed;
 import com.psymate.agenda.api.AppointmentEvent;
+import com.psymate.agenda.api.AppointmentPatientAttached;
 import com.psymate.agenda.api.AppointmentPlanned;
 import com.psymate.agenda.api.AppointmentRescheduled;
 import com.psymate.agenda.dto.AppointmentAssembler;
@@ -10,8 +11,10 @@ import com.psymate.agenda.dto.AppointmentCreatedDto;
 import com.psymate.agenda.dto.AppointmentDto;
 import com.psymate.agenda.dto.AppointmentSeriesDto;
 import com.psymate.agenda.dto.AppointmentUpdatedDto;
+import com.psymate.agenda.dto.AttachedAppointmentsDto;
 import com.psymate.agenda.dto.ConflictDto;
 import com.psymate.agenda.dto.CreateAppointmentRequest;
+import com.psymate.agenda.dto.GuestRequest;
 import com.psymate.agenda.dto.RecurrenceRequest;
 import com.psymate.agenda.dto.UpdateAppointmentRequest;
 import com.psymate.agenda.model.Appointment;
@@ -33,6 +36,7 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -125,16 +129,15 @@ public class AppointmentService {
   @Transactional
   public AppointmentCreatedDto create(CreateAppointmentRequest request, ZoneId zone) {
     CurrentPractitioner me = me();
-    guard.requireOwned(request.patientId());
     // Une seule lecture des patients du praticien par requête : archivé, DTO et conflits.
-    Map<UUID, PatientRef> refs = assembler.patientsOf(me.id());
-    PatientRef patient = refs.get(request.patientId());
-    if (patient == null) {
-      // Impossible après la garde, sauf course avec un transfert : on échoue franchement.
-      throw PatientAccessException.notFound();
-    }
-    if (patient.archived()) {
-      throw AppointmentException.patientArchived();
+    Map<UUID, PatientRef> refs;
+    Appointment.Guest guest = null;
+    if (request.guest() != null) {
+      // Invité (G Q60) : aucune fiche patient, donc ni garde ni contrôle d'archivage.
+      guest = guestOf(request.guest());
+      refs = assembler.patientsOf(me.id());
+    } else {
+      refs = requireAttachable(request.patientId(), me);
     }
     RecurrenceRequest recurrence = request.recurrence();
     Instant first = utc(request.startsAt()).toInstant();
@@ -151,18 +154,31 @@ public class AppointmentService {
     for (Instant start : starts) {
       OffsetDateTime startsAt = utc(start);
       Appointment appointment =
-          new Appointment(
-              UUID.randomUUID(),
-              me.tenantId(),
-              me.id(),
-              request.patientId(),
-              seriesId,
-              startsAt,
-              endsAt(startsAt, request.durationMin()),
-              AppointmentModality.valueOf(request.modality()),
-              Boolean.TRUE.equals(request.tentative()),
-              request.planningNote(),
-              createdAt);
+          guest == null
+              ? new Appointment(
+                  UUID.randomUUID(),
+                  me.tenantId(),
+                  me.id(),
+                  request.patientId(),
+                  seriesId,
+                  startsAt,
+                  endsAt(startsAt, request.durationMin()),
+                  AppointmentModality.valueOf(request.modality()),
+                  Boolean.TRUE.equals(request.tentative()),
+                  request.planningNote(),
+                  createdAt)
+              : Appointment.forGuest(
+                  UUID.randomUUID(),
+                  me.tenantId(),
+                  me.id(),
+                  guest,
+                  seriesId,
+                  startsAt,
+                  endsAt(startsAt, request.durationMin()),
+                  AppointmentModality.valueOf(request.modality()),
+                  Boolean.TRUE.equals(request.tentative()),
+                  request.planningNote(),
+                  createdAt);
       // Lu avant toute insertion : les occurrences d'une série, à une semaine au moins d'écart et
       // de 600 minutes au plus, ne se chevauchent jamais entre elles.
       conflicts.addAll(assembler.conflicts(overlapsOf(appointment), refs, start));
@@ -236,6 +252,15 @@ public class AppointmentService {
         && !Objects.equals(request.getPlanningNote(), appointment.getPlanningNote())) {
       appointment.changePlanningNote(request.getPlanningNote(), at);
     }
+    if (request.getGuest() != null) {
+      if (!appointment.isGuest() || appointment.isGuestPurged()) {
+        throw AppointmentException.guestNotEditable();
+      }
+      Appointment.Guest guest = merged(currentGuest(appointment), request.getGuest());
+      if (!guest.equals(currentGuest(appointment))) {
+        appointment.correctGuest(guest, at);
+      }
+    }
     if (rescheduled) {
       events.publish(event(AppointmentRescheduled::new, appointment));
     }
@@ -267,6 +292,110 @@ public class AppointmentService {
     appointment.confirm(now());
     events.publish(event(AppointmentConfirmed::new, appointment));
     return assembler.toDto(appointment);
+  }
+
+  /**
+   * Rattache un rendez-vous invité à un patient du praticien (G Q60) : garde de propriété (403 /
+   * 404 des patients), patient non archivé (422 PATIENT_ARCHIVED), 409 APPOINTMENT_NOT_ACTIVE si le
+   * rendez-vous vise déjà un patient ou si l'invité est purgé. Avec {@code includeSameGuest}, les
+   * autres rendez-vous invités non purgés du praticien de même identité ({@link #sameGuest}) sont
+   * rattachés aussi. Un {@code AppointmentPatientAttached} par rendez-vous rattaché.
+   */
+  @Transactional
+  public AttachedAppointmentsDto attachPatient(UUID id, UUID patientId, boolean includeSameGuest) {
+    CurrentPractitioner me = me();
+    Appointment appointment = owned(id, me);
+    if (!appointment.isGuest() || appointment.isGuestPurged()) {
+      throw AppointmentException.notActive();
+    }
+    Map<UUID, PatientRef> refs = requireAttachable(patientId, me);
+    List<Appointment> attached = new ArrayList<>();
+    if (includeSameGuest) {
+      for (Appointment other :
+          appointments
+              .findByPractitionerIdAndPatientIdIsNullAndGuestPurgedAtIsNullOrderByStartsAtAscIdAsc(
+                  me.id())) {
+        if (other.equals(appointment) || sameGuest(other, appointment)) {
+          attached.add(other);
+        }
+      }
+    } else {
+      attached.add(appointment);
+    }
+    OffsetDateTime at = now();
+    for (Appointment a : attached) {
+      a.attachPatient(patientId, at);
+      events.publish(event(AppointmentPatientAttached::new, a));
+    }
+    return new AttachedAppointmentsDto(
+        attached.stream().map(a -> assembler.toDto(a, refs)).toList());
+  }
+
+  /**
+   * Patient du praticien (garde, 403 / 404 des patients) et non archivé (422 PATIENT_ARCHIVED) ;
+   * renvoie la liste des patients du praticien, lue une fois pour la requête.
+   */
+  private Map<UUID, PatientRef> requireAttachable(UUID patientId, CurrentPractitioner me) {
+    guard.requireOwned(patientId);
+    Map<UUID, PatientRef> refs = assembler.patientsOf(me.id());
+    PatientRef patient = refs.get(patientId);
+    if (patient == null) {
+      // Impossible après la garde, sauf course avec un transfert : on échoue franchement.
+      throw PatientAccessException.notFound();
+    }
+    if (patient.archived()) {
+      throw AppointmentException.patientArchived();
+    }
+    return refs;
+  }
+
+  // ---- invités (G Q60)
+
+  /** Identité reçue, espaces de bord retirés ; prénom ou téléphone vide → null. */
+  static Appointment.Guest guestOf(GuestRequest request) {
+    return new Appointment.Guest(
+        blankToNull(request.firstName()), request.lastName().strip(), blankToNull(request.phone()));
+  }
+
+  /**
+   * Correction (PATCH) : nom remplacé ; prénom et téléphone absents (null) gardés, vides effacés.
+   */
+  static Appointment.Guest merged(Appointment.Guest current, GuestRequest request) {
+    return new Appointment.Guest(
+        request.firstName() == null ? current.firstName() : blankToNull(request.firstName()),
+        request.lastName().strip(),
+        request.phone() == null ? current.phone() : blankToNull(request.phone()));
+  }
+
+  private static Appointment.Guest currentGuest(Appointment a) {
+    return new Appointment.Guest(a.getGuestFirstName(), a.getGuestLastName(), a.getGuestPhone());
+  }
+
+  private static String blankToNull(String value) {
+    return value == null || value.isBlank() ? null : value.strip();
+  }
+
+  /**
+   * Même invité : nom, prénom et téléphone égaux sans tenir compte de la casse ni des espaces («
+   * Sara Benali » = « sara benali » ; « +33 6 12 34 56 78 » = « +33612345678 »).
+   */
+  static boolean sameGuest(Appointment a, Appointment b) {
+    return normalized(a.getGuestFirstName()).equals(normalized(b.getGuestFirstName()))
+        && normalized(a.getGuestLastName()).equals(normalized(b.getGuestLastName()))
+        && normalized(a.getGuestPhone()).equals(normalized(b.getGuestPhone()));
+  }
+
+  /** Minuscules, sans aucun espace ; null → chaîne vide. */
+  static String normalized(String value) {
+    if (value == null) {
+      return "";
+    }
+    StringBuilder sb = new StringBuilder(value.length());
+    value
+        .codePoints()
+        .filter(c -> !Character.isWhitespace(c) && !Character.isSpaceChar(c))
+        .forEach(sb::appendCodePoint);
+    return sb.toString().toLowerCase(Locale.ROOT);
   }
 
   // ---- événements (G Q59)

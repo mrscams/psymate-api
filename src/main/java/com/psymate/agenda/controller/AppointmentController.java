@@ -4,6 +4,8 @@ import com.psymate.agenda.dto.AppointmentCreatedDto;
 import com.psymate.agenda.dto.AppointmentDto;
 import com.psymate.agenda.dto.AppointmentSeriesDto;
 import com.psymate.agenda.dto.AppointmentUpdatedDto;
+import com.psymate.agenda.dto.AttachPatientRequest;
+import com.psymate.agenda.dto.AttachedAppointmentsDto;
 import com.psymate.agenda.dto.CancelAppointmentRequest;
 import com.psymate.agenda.dto.CreateAppointmentRequest;
 import com.psymate.agenda.dto.RecurrenceRequest;
@@ -88,6 +90,12 @@ class AppointmentController {
         problems.add(new FieldProblem("tz", "INVALID_VALUE"));
       }
     }
+    // Exactement un sujet : un patient ou un invité (G Q60).
+    if (request.patientId() == null && request.guest() == null) {
+      problems.add(new FieldProblem("patientId", "REQUIRED"));
+    } else if (request.patientId() != null && request.guest() != null) {
+      problems.add(new FieldProblem("guest", "INVALID_VALUE"));
+    }
     RecurrenceRequest recurrence = request.recurrence();
     if (recurrence != null) {
       if (!RecurrenceCalculator.EVERY_WEEKS.contains(recurrence.everyWeeks())) {
@@ -123,7 +131,10 @@ class AppointmentController {
       description =
           """
           Session praticien, propriétaire du patient. Le praticien et le cabinet viennent de la \
-          session. La fin vaut startsAt + durationMin. Statut planned, ou tentative si \
+          session. Le rendez-vous vise exactement un de patientId (patient du praticien, non \
+          archivé) et guest (invité, G Q60 : personne sans fiche patient, décrite par nom, \
+          prénom et téléphone, purgée 6 mois après la fin ou l'annulation du rendez-vous ; elle \
+          n'apparaît ni dans les patients, ni dans la recherche). La fin vaut startsAt + durationMin. Statut planned, ou tentative si \
           tentative = true (« À confirmer »). Les rendez-vous actifs du praticien qui chevauchent \
           le créneau sont renvoyés dans conflicts sans empêcher la création ; un rendez-vous \
           annulé ne compte pas. Avec recurrence (G Q55), une ligne par occurrence est créée dans \
@@ -169,8 +180,13 @@ class AppointmentController {
         description =
             "PATIENT_ARCHIVED (errors[0].field = patientId) : patient archivé ;"
                 + " TOO_MANY_OCCURRENCES (errors[0].field = recurrence) : plus de 26 occurrences,"
-                + " rien n'est créé ; VALIDATION_FAILED avec errors[] : patientId, startsAt,"
-                + " durationMin, modality ou recurrence.everyWeeks REQUIRED ; durationMin"
+                + " rien n'est créé ; VALIDATION_FAILED avec errors[] : patientId REQUIRED (ni"
+                + " patientId ni guest) ; guest INVALID_VALUE (patientId et guest ensemble) ;"
+                + " guest.lastName REQUIRED ; guest.firstName, guest.lastName OUT_OF_RANGE (plus"
+                + " de 100 caractères) ; guest.phone OUT_OF_RANGE (plus de 30 caractères) ou"
+                + " INVALID_FORMAT (autre chose que chiffres, espaces, +, point, tiret,"
+                + " parenthèses) ; startsAt, durationMin, modality ou recurrence.everyWeeks"
+                + " REQUIRED ; durationMin"
                 + " OUT_OF_RANGE (hors 5 à 600) ; modality INVALID_VALUE (hors in_person, video,"
                 + " phone) ; planningNote OUT_OF_RANGE (plus de 2 000 caractères) ;"
                 + " recurrence.everyWeeks INVALID_VALUE (hors 1, 2, 4) ; recurrence.count"
@@ -222,7 +238,10 @@ class AppointmentController {
           """
           Session praticien. Fusion partielle : startsAt déplace le rendez-vous en gardant sa \
           durée, durationMin la change en gardant le début, modality et planningNote se \
-          remplacent ; un champ absent reste inchangé, planningNote à null efface la note. Refusé \
+          remplacent ; un champ absent reste inchangé, planningNote à null efface la note. guest \
+          corrige l'identité d'un rendez-vous invité (G Q60) : lastName obligatoire et remplacé, \
+          firstName et phone absents restent inchangés, une chaîne vide les efface ; 422 INVALID_VALUE sur guest si le \
+          rendez-vous vise un patient ou si l'invité est purgé. Refusé \
           si le rendez-vous est annulé ou terminé (409). Les chevauchements du nouveau créneau \
           sont renvoyés dans conflicts sans empêcher la modification. patientId, tentative \
           (passer par /confirm), recurrence, status, practitionerId, tenantId, sessionEntryId, \
@@ -249,8 +268,10 @@ class AppointmentController {
         responseCode = "422",
         description =
             "VALIDATION_FAILED avec errors[] : durationMin OUT_OF_RANGE (hors 5 à 600) ; modality"
-                + " INVALID_VALUE ; planningNote OUT_OF_RANGE (plus de 2 000 caractères) ;"
-                + " INVALID_FORMAT (date illisible) ; UNKNOWN_FIELD (champ refusé).",
+                + " INVALID_VALUE ; planningNote OUT_OF_RANGE (plus de 2 000 caractères) ; guest"
+                + " INVALID_VALUE (rendez-vous patient ou invité purgé) ; guest.lastName REQUIRED ;"
+                + " guest.phone INVALID_FORMAT ; guest.* OUT_OF_RANGE ; INVALID_FORMAT (date"
+                + " illisible) ; UNKNOWN_FIELD (champ refusé).",
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class)))
   })
@@ -335,6 +356,63 @@ class AppointmentController {
       @Parameter(description = "Identifiant du rendez-vous.", example = ID_EXAMPLE) @PathVariable
           UUID id) {
     return appointments.confirm(id);
+  }
+
+  @PostMapping("/api/appointments/{id}/attach-patient")
+  @Operation(
+      summary = "Rattache un rendez-vous invité à un patient",
+      description =
+          """
+          Session praticien, propriétaire du patient. Le jour où l'invité (personne sans fiche, \
+          G Q60) devient patient, le praticien crée sa fiche puis y rattache le rendez-vous : \
+          patient renseigné, nom, prénom et téléphone de l'invité effacés du rendez-vous. Avec \
+          includeSameGuest = true, tous les autres rendez-vous invités non purgés du praticien \
+          ayant les mêmes nom, prénom et téléphone (casse et espaces ignorés) sont rattachés \
+          aussi, quel que soit leur statut. Le patient doit être au praticien et non archivé. \
+          Refusé si le rendez-vous vise déjà un patient ou si l'invité est purgé (409). Répond \
+          les rendez-vous rattachés, triés par début.\
+          """)
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Rendez-vous rattachés."),
+    @ApiResponse(
+        responseCode = "400",
+        description = MALFORMED,
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "PATIENT_FORBIDDEN : patient d'un autre praticien.",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description =
+            "APPOINTMENT_NOT_FOUND : rendez-vous inexistant ou d'un autre praticien ;"
+                + " PATIENT_NOT_FOUND : patient inexistant.",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "409",
+        description =
+            "APPOINTMENT_NOT_ACTIVE : le rendez-vous vise déjà un patient, ou l'invité est purgé.",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "422",
+        description =
+            "PATIENT_ARCHIVED (errors[0].field = patientId) : patient archivé ;"
+                + " VALIDATION_FAILED avec errors[] : patientId REQUIRED ; INVALID_FORMAT (UUID"
+                + " illisible) ; UNKNOWN_FIELD (champ refusé).",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class)))
+  })
+  AttachedAppointmentsDto attachPatient(
+      @Parameter(description = "Identifiant du rendez-vous invité.", example = ID_EXAMPLE)
+          @PathVariable
+          UUID id,
+      @Valid @RequestBody AttachPatientRequest request) {
+    return appointments.attachPatient(
+        id, request.patientId(), Boolean.TRUE.equals(request.includeSameGuest()));
   }
 
   @PostMapping("/api/appointments/series/{seriesId}/cancel")

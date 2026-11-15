@@ -17,7 +17,12 @@ public record ConflictDto(
     @Schema(description = "Identifiant du rendez-vous chevauché.") UUID appointmentId,
     @Schema(description = "Début du rendez-vous chevauché, UTC ISO 8601.") Instant startsAt,
     @Schema(description = "Fin du rendez-vous chevauché, UTC ISO 8601.") Instant endsAt,
-    @Schema(description = "Nom affiché du patient du rendez-vous chevauché.", example = "Théo B.")
+    @Schema(
+            description =
+                "Nom affiché du patient du rendez-vous chevauché ; pour un invité (G Q60),"
+                    + " « Prénom Nom » (le nom seul sans prénom), ou « Invité purgé » après la"
+                    + " purge.",
+            example = "Théo B.")
         String patientDisplayName,
     @Schema(
             description =

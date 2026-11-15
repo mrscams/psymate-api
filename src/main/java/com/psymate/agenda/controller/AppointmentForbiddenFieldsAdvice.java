@@ -1,5 +1,6 @@
 package com.psymate.agenda.controller;
 
+import com.psymate.agenda.dto.AttachPatientRequest;
 import com.psymate.agenda.dto.CancelAppointmentRequest;
 import com.psymate.agenda.dto.CreateAppointmentRequest;
 import com.psymate.agenda.dto.UpdateAppointmentRequest;
@@ -68,6 +69,7 @@ class AppointmentForbiddenFieldsAdvice extends RequestBodyAdviceAdapter {
     Class<?> type = parameter.getParameterType();
     return type == CreateAppointmentRequest.class
         || type == UpdateAppointmentRequest.class
+        || type == AttachPatientRequest.class
         || type == CancelAppointmentRequest.class;
   }
 

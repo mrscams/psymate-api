@@ -40,6 +40,9 @@ import tools.jackson.databind.exc.MismatchedInputException;
 @RestControllerAdvice(basePackageClasses = AgendaExceptionHandler.class)
 class AgendaExceptionHandler {
 
+  /** Code d'une contrainte qui le porte dans son message ({@code GuestRequest.phone}). */
+  static final String INVALID_FORMAT = "INVALID_FORMAT";
+
   private final AgendaMessages messages;
 
   AgendaExceptionHandler(AgendaMessages messages) {
@@ -87,6 +90,10 @@ class AgendaExceptionHandler {
   @ExceptionHandler(AppointmentException.class)
   ProblemDetail domain(AppointmentException ex, HttpServletRequest request) {
     Locale locale = messages.localeOf(request);
+    if (ex.field() != null && !ex.code().equals(ex.fieldCode())) {
+      // Validation métier (G Q60) : même forme que les erreurs Jakarta.
+      return validation(List.of(new FieldProblem(ex.field(), ex.fieldCode())), locale);
+    }
     String detail = messages.domain(ex.code(), ex.detail(), locale);
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.status(), detail);
     pd.setTitle(ex.title());
@@ -103,7 +110,12 @@ class AgendaExceptionHandler {
     Locale locale = messages.localeOf(request);
     List<FieldProblem> problems = new ArrayList<>();
     for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
-      problems.add(new FieldProblem(fe.getField(), codeOf(String.valueOf(fe.getCode()))));
+      // Une contrainte peut porter son code dans son message (téléphone d'un invité : G Q60).
+      String code =
+          INVALID_FORMAT.equals(fe.getDefaultMessage())
+              ? INVALID_FORMAT
+              : codeOf(String.valueOf(fe.getCode()));
+      problems.add(new FieldProblem(fe.getField(), code));
     }
     return validation(problems, locale);
   }

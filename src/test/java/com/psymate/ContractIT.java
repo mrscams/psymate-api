@@ -77,8 +77,8 @@ class ContractIT {
     assertThat(info.get("version")).isEqualTo(contractVersion);
     // Plan des tags D6-A4 : v0.11.0 = sessions actives (M10-06) ; 0.11.1 = preferences agenda.*
     // (M11-04) ; 0.12.0 = rendez-vous et lectures de l'agenda (M11-05, M11-06) ; 0.12.1 = séries
-    // de rendez-vous (M11-07).
-    assertThat(contractVersion).isEqualTo("0.12.1");
+    // de rendez-vous (M11-07) ; 0.13.0 = rendez-vous invité et rattachement (M11-10).
+    assertThat(contractVersion).isEqualTo("0.13.0");
     assertThat(info.get("title")).isEqualTo("PsyMate API");
   }
 

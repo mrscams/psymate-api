@@ -8,7 +8,10 @@ import java.util.List;
 @Schema(
     description =
         "Ce qui entoure un créneau avant de le créer ou d'y déplacer un rendez-vous : conflits,"
-            + " rendez-vous précédent et suivant du même jour.")
+            + " rendez-vous précédent et suivant du même jour. Les rendez-vous invités (G Q60)"
+            + " comptent comme les autres : leur patientDisplayName vaut « Prénom Nom », ou"
+            + " « Invité purgé » après la purge, et previous / next portent guest au lieu de"
+            + " patient.")
 public record FreeBusyDto(
     @ArraySchema(
             arraySchema =

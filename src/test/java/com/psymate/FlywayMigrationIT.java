@@ -106,7 +106,8 @@ class FlywayMigrationIT {
             "ix_export_job_purge",
             "ix_appointment_practitioner_time",
             "ix_appointment_patient",
-            "ix_appointment_series");
+            "ix_appointment_series",
+            "ix_appointment_guest_purge");
   }
 
   @Test
@@ -392,5 +393,43 @@ class FlywayMigrationIT {
                     "select indexdef from pg_indexes where indexname = 'ix_appointment_series'",
                     String.class))
         .contains("WHERE (series_id IS NOT NULL)");
+  }
+
+  /**
+   * V13 (M11-10, G Q60) : patient_id devient facultatif, colonnes guest_*, contrainte
+   * ck_appointment_subject (patient ou invite, jamais les deux) et index partiel de la purge.
+   */
+  @Test
+  void v13AddsGuestColumnsSubjectCheckAndPurgeIndex() {
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select version from flyway_schema_history where success order by"
+                        + " installed_rank",
+                    String.class))
+        .contains("13");
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select is_nullable from information_schema.columns where table_schema ="
+                        + " 'public' and table_name = 'appointment' and column_name ="
+                        + " 'patient_id'",
+                    String.class))
+        .isEqualTo("YES");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select conname from pg_constraint c join pg_class t on t.oid = c.conrelid"
+                        + " where t.relname = 'appointment' and c.contype = 'c'",
+                    String.class))
+        .contains("ck_appointment_order", "ck_appointment_cancel", "ck_appointment_subject");
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select indexdef from pg_indexes where indexname ="
+                        + " 'ix_appointment_guest_purge'",
+                    String.class))
+        .contains("(patient_id IS NULL)")
+        .contains("(guest_purged_at IS NULL)");
   }
 }

@@ -1,6 +1,7 @@
 package com.psymate.agenda.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -15,7 +16,8 @@ import java.time.Instant;
 @Schema(
     description =
         "Modification partielle : un champ absent reste inchangé ; planningNote à null efface la"
-            + " note. patientId, tentative, recurrence, status, practitionerId, tenantId,"
+            + " note ; guest remplace l'identité d'un invité. patientId (passer par"
+            + " /attach-patient), tentative, recurrence, status, practitionerId, tenantId,"
             + " sessionEntryId, authorType et submissionId sont refusés (UNKNOWN_FIELD).")
 public final class UpdateAppointmentRequest {
 
@@ -48,6 +50,15 @@ public final class UpdateAppointmentRequest {
   private String planningNote;
 
   private boolean planningNotePresent;
+
+  @Schema(
+      description =
+          "Correction de l'identité de l'invité (G Q60) : lastName obligatoire et remplacé ;"
+              + " firstName et phone absents ou null restent inchangés, une chaîne vide les"
+              + " efface. 422 INVALID_VALUE si le rendez-vous vise un patient ou si"
+              + " l'invité est purgé.")
+  @Valid
+  private GuestRequest guest;
 
   public UpdateAppointmentRequest() {}
 
@@ -83,6 +94,14 @@ public final class UpdateAppointmentRequest {
   public void setPlanningNote(String planningNote) {
     this.planningNote = planningNote;
     this.planningNotePresent = true;
+  }
+
+  public GuestRequest getGuest() {
+    return guest;
+  }
+
+  public void setGuest(GuestRequest guest) {
+    this.guest = guest;
   }
 
   /** La clé planningNote figurait dans le corps (valeur éventuellement null). */

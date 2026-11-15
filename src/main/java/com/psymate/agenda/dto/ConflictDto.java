@@ -6,7 +6,8 @@ import java.util.UUID;
 
 /**
  * Rendez-vous actif du même praticien qui chevauche le créneau demandé (G Q54) : signalé, jamais
- * bloquant.
+ * bloquant. {@code occurrenceStartsAt} (M11-07) dit quel créneau demandé est chevauché : utile pour
+ * une série (« L'occurrence du 5 décembre chevauche… »), égal au début du créneau sinon.
  */
 @Schema(
     description =
@@ -17,4 +18,10 @@ public record ConflictDto(
     @Schema(description = "Début du rendez-vous chevauché, UTC ISO 8601.") Instant startsAt,
     @Schema(description = "Fin du rendez-vous chevauché, UTC ISO 8601.") Instant endsAt,
     @Schema(description = "Nom affiché du patient du rendez-vous chevauché.", example = "Théo B.")
-        String patientDisplayName) {}
+        String patientDisplayName,
+    @Schema(
+            description =
+                "Début, UTC ISO 8601, du créneau demandé que ce rendez-vous chevauche :"
+                    + " l'occurrence concernée pour une série, sinon le début du rendez-vous créé"
+                    + " ou déplacé, ou from pour freebusy.")
+        Instant occurrenceStartsAt) {}

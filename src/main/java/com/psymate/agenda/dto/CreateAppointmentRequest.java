@@ -1,6 +1,7 @@
 package com.psymate.agenda.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -9,11 +10,14 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Création d'un rendez-vous depuis un créneau (fiche 15b, I3). */
+/**
+ * Création d'un rendez-vous depuis un créneau, ou d'une série avec {@code recurrence} (fiche 15b,
+ * I3, G Q55). {@code tz} ne sert qu'au calcul des occurrences d'une série.
+ */
 @Schema(
     description =
-        "Création d'un rendez-vous. recurrence (répétition, à venir), status, practitionerId,"
-            + " tenantId, sessionEntryId, authorType et submissionId sont refusés"
+        "Création d'un rendez-vous, ou d'une série si recurrence est présent. status,"
+            + " practitionerId, tenantId, sessionEntryId, authorType et submissionId sont refusés"
             + " (UNKNOWN_FIELD).")
 public record CreateAppointmentRequest(
     @Schema(description = "Patient du praticien, non archivé. Obligatoire.") @NotNull
@@ -44,5 +48,21 @@ public record CreateAppointmentRequest(
             maxLength = 2000)
         @Size(max = 2000)
         String planningNote,
-    @Schema(description = "true pour « À confirmer » (statut tentative). Défaut : false.")
-        Boolean tentative) {}
+    @Schema(
+            description =
+                "true pour « À confirmer » (statut tentative, appliqué à toutes les occurrences)."
+                    + " Défaut : false.")
+        Boolean tentative,
+    @Schema(
+            description =
+                "Répétition (G Q55) : une ligne par occurrence, même seriesId, même statut, même"
+                    + " note. Absente : un seul rendez-vous.")
+        @Valid
+        RecurrenceRequest recurrence,
+    @Schema(
+            description =
+                "Fuseau IANA dans lequel les occurrences d'une série gardent la même heure locale"
+                    + " et dans lequel until est lu (INVALID_VALUE si inconnu). Défaut :"
+                    + " Europe/Paris.",
+            example = "Europe/Paris")
+        String tz) {}

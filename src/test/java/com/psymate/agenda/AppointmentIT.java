@@ -189,19 +189,16 @@ class AppointmentIT {
   }
 
   @Test
-  void recurrenceIs422UnknownField() throws Exception {
-    post(
-            alice,
-            "/api/appointments",
-            withField(
-                create(theo, MONDAY_NINE, 50, "in_person"),
-                "\"recurrence\":{\"everyWeeks\":1,\"count\":4}"))
+  void recurrenceOnPatchIs422UnknownField() throws Exception {
+    // Acceptée à la création depuis M11-07 (AppointmentSeriesIT) ; jamais sur une modification.
+    String id = createAppointment(alice, theo, MONDAY_NINE, 50);
+    patch(alice, id, "{\"recurrence\":{\"everyWeeks\":1,\"count\":4}}")
         .andExpect(status().isUnprocessableEntity())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
         .andExpect(jsonPath("$.errors[0].field").value("recurrence"))
         .andExpect(jsonPath("$.errors[0].code").value("UNKNOWN_FIELD"))
         .andExpect(jsonPath("$.errors[0].message").isNotEmpty());
-    assertThat(appointmentsOf(alice)).isZero();
+    assertThat(appointmentsOf(alice)).isEqualTo(1);
   }
 
   @Test

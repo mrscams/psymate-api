@@ -47,14 +47,14 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
  * puis vérifie en SQL et par {@code GET /api/agenda} les critères de I5 M11-09.
  *
  * <p>Comme les autres tests qui importent {@code com.psymate.seed}, il n'est compilé que sous le
- * profil Maven {@code perf} ; il se lance seul par {@code ./mvnw -B -Pperf verify
- * -Dit.test=SeedAgendaIT}.
+ * profil Maven {@code perf} ; il tourne avec {@code make perf}, ou seul par {@code ./mvnw -B -Pperf
+ * verify -Dit.test=SeedAgendaPerfIT}.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(SharedPostgres.class)
-class SeedAgendaIT {
+class SeedAgendaPerfIT {
 
   @Autowired MockMvc mvc;
   @Autowired JdbcTemplate jdbc;

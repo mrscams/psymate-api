@@ -79,9 +79,9 @@ Après les patients, le seed pose l'agenda de chaque praticien du plan (`AgendaS
 - Les rendez-vous passés restent `planned` (ou `tentative`) : aucune séance n'y est rattachée.
 - Avec `small`, Claire n'a que 2 patients : ils reviennent plusieurs fois par semaine ; `medium` donne un agenda plus réaliste.
 
-Idempotence : si la fenêtre des 8 semaines contient déjà un rendez-vous (annulé compris) d'un patient du seed, l'agenda du praticien n'est pas réécrit (« déjà présent »). Un `make seed` lancé une semaine plus tard ne complète donc pas la nouvelle semaine : `make db-reset` puis `make seed` repart d'un agenda centré sur aujourd'hui.
+Idempotence : si la fenêtre des 8 semaines contient déjà un rendez-vous (annulé compris) d'un patient du seed, l'agenda du praticien n'est pas réécrit (« déjà présent »). Un `make seed` lancé une semaine plus tard ne complète donc pas la nouvelle semaine : `make db-reset` puis `make seed` repart d'un agenda centré sur aujourd'hui. Si une erreur interrompt l'écriture de l'agenda (réponse inattendue de l'API), les rendez-vous déjà créés restent et l'agenda est partiel ; une relance le voit « déjà présent » et ne le complète pas : `make db-reset` puis `make seed`.
 
-`SeedAgendaIT` (profil `perf`, comme les autres tests qui importent `com.psymate.seed`) exécute le seed `small` par MockMvc sur deux praticiens neufs et vérifie les critères de M11-09 : `./mvnw -B -Pperf verify -Dit.test=SeedAgendaIT`. `AgendaScenarioTest` (tests unitaires de l'outil, lancés par la CI) vérifie le plan sans réseau.
+`SeedAgendaPerfIT` (profil `perf`, comme les autres tests qui importent `com.psymate.seed`) exécute le seed `small` par MockMvc sur deux praticiens neufs et vérifie les critères de M11-09 : `make perf`, ou seul `./mvnw -B -Pperf verify -Dit.test=SeedAgendaPerfIT`. `AgendaScenarioTest` (tests unitaires de l'outil, lancés par la CI) vérifie le plan sans réseau.
 
 ## Idempotence
 

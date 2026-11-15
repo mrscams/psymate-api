@@ -349,7 +349,14 @@ class AppointmentGuestIT {
     post(alice, attach(id), "{}")
         .andExpect(status().isUnprocessableEntity())
         .andExpect(jsonPath("$.errors[0].field").value("patientId"))
-        .andExpect(jsonPath("$.errors[0].code").value("REQUIRED"));
+        .andExpect(jsonPath("$.errors[0].code").value("REQUIRED"))
+        .andExpect(
+            jsonPath("$.errors[0].message").value("Indiquez le patient à rattacher (patientId)."));
+    // La création garde son message : un patient ou un invité.
+    post(alice, "/api/appointments", base(SLOT) + "}")
+        .andExpect(
+            jsonPath("$.errors[0].message")
+                .value("Indiquez un patient (patientId) ou un invité (guest)."));
   }
 
   // ---- portée (G Q58)

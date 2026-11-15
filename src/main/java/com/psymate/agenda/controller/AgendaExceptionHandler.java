@@ -1,5 +1,6 @@
 package com.psymate.agenda.controller;
 
+import com.psymate.agenda.dto.AttachPatientRequest;
 import com.psymate.agenda.model.AppointmentException;
 import com.psymate.shared.problem.AdviceOrder;
 import com.psymate.shared.problem.FieldProblem;
@@ -43,6 +44,9 @@ class AgendaExceptionHandler {
   /** Code d'une contrainte qui le porte dans son message ({@code GuestRequest.phone}). */
   static final String INVALID_FORMAT = "INVALID_FORMAT";
 
+  /** Contexte des messages de {@code POST /api/appointments/{id}/attach-patient}. */
+  static final String ATTACH_SCOPE = "attach";
+
   private final AgendaMessages messages;
 
   AgendaExceptionHandler(AgendaMessages messages) {
@@ -50,13 +54,23 @@ class AgendaExceptionHandler {
   }
 
   private ProblemDetail validation(List<FieldProblem> problems, Locale locale) {
+    return validation(problems, locale, null);
+  }
+
+  /**
+   * {@code scope} (ou null) : contexte d'une requête dont les messages diffèrent de la création,
+   * clé {@code agenda.error.CODE.scope.champ} d'abord (voir {@link AgendaMessages}).
+   */
+  private ProblemDetail validation(List<FieldProblem> problems, Locale locale, String scope) {
     Map<String, FieldProblem> byField = new LinkedHashMap<>();
     problems.forEach(p -> byField.putIfAbsent(p.field(), p));
     List<FieldProblem> errors = new ArrayList<>();
     byField
         .values()
         .forEach(
-            p -> errors.add(new FieldProblem(p.field(), p.code(), messages.message(p, locale))));
+            p ->
+                errors.add(
+                    new FieldProblem(p.field(), p.code(), messages.message(p, locale, scope))));
     ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_CONTENT);
     pd.setTitle(messages.get("agenda.error.validation.title", locale));
     pd.setDetail(messages.get("agenda.error.validation.detail", locale));
@@ -117,7 +131,10 @@ class AgendaExceptionHandler {
               : codeOf(String.valueOf(fe.getCode()));
       problems.add(new FieldProblem(fe.getField(), code));
     }
-    return validation(problems, locale);
+    // Rattachement d'un invité (G Q60) : patientId seul, sans l'alternative « ou un invité ».
+    String scope =
+        ex.getBindingResult().getTarget() instanceof AttachPatientRequest ? ATTACH_SCOPE : null;
+    return validation(problems, locale, scope);
   }
 
   /** Contraintes Jakarta des paramètres de requête (@Validated). */

@@ -3,6 +3,7 @@
       "identity :: api",
       "patients :: api",
       "vocabulary :: api",
+      "agenda :: api",
       "events :: api",
       "shared"
     })

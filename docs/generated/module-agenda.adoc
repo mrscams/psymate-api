@@ -2,6 +2,10 @@
 |===
 |Base package
 |`com.psymate.agenda`
+|Spring components
+|_Services_
+
+* `c.p.a.api.AppointmentExportFacade` (via `c.p.a.service.AppointmentExportFacadeImpl`)
 |Bean references
 |* `c.p.e.api.DomainEventPublisher` (in Events)
 * `c.p.i.api.PractitionerFacade` (in Identity)

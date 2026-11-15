@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-15T22:47:31.749Z",
+  "task": "M11-11",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant(s), 3 a corriger, 5 remarque(s)",
+  "notes": "aucun",
+  "pr": "https://github.com/mrscams/psymate-api/pull/95",
+  "branch": "claude/m11-11-appointments-export",
+  "checkout": "agent-a1fde2859cba46353"
+}

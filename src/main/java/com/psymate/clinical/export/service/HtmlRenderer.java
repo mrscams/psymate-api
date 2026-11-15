@@ -1,8 +1,10 @@
 package com.psymate.clinical.export.service;
 
 import com.psymate.clinical.export.model.ExportDocument;
+import com.psymate.clinical.export.model.ExportDocument.AppointmentBlock;
 import com.psymate.clinical.export.model.ExportDocument.EntryBlock;
 import com.psymate.clinical.export.model.ExportDocument.SessionBlock;
+import java.util.List;
 import org.springframework.stereotype.Component;
 
 /**
@@ -43,6 +45,11 @@ class HtmlRenderer {
       .meta { font-size: 9.5pt; color: #5B6472; margin: 0 0 3pt 0; }
       .body { margin: 3pt 0 3pt 0; padding-left: 8pt; border-left: 2pt solid #C9D1DA; }
       .entry { page-break-inside: avoid; }
+      table.appointments { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin: 4pt 0; }
+      table.appointments th, table.appointments td { text-align: left; vertical-align: top;
+           padding: 2pt 3pt; border-bottom: 0.5pt solid #C9D1DA; }
+      table.appointments th { color: #5B6472; font-weight: bold; }
+      table.appointments tr { page-break-inside: avoid; }
       """;
 
   String render(ExportDocument doc, ExportTexts t) {
@@ -91,6 +98,10 @@ class HtmlRenderer {
         entry(out, e, t);
       }
     }
+    // Rendez-vous du patient (G Q61) après les séances et « Sans séance » ; omis s'il n'y en a pas.
+    if (!doc.appointments().isEmpty()) {
+      appointments(out, doc.appointments(), t);
+    }
     out.append("</body>\n</html>\n");
     return out.toString();
   }
@@ -126,6 +137,24 @@ class HtmlRenderer {
       out.append("</ul>\n");
     }
     out.append("</div>\n");
+  }
+
+  private static void appointments(
+      StringBuilder out, List<AppointmentBlock> blocks, ExportTexts t) {
+    out.append("<h2>").append(esc(t.get("appointments.title"))).append("</h2>\n");
+    out.append("<table class=\"appointments\">\n<thead>\n<tr>");
+    for (String header : AppointmentRows.headers(t, false)) {
+      out.append("<th>").append(esc(header)).append("</th>");
+    }
+    out.append("</tr>\n</thead>\n<tbody>\n");
+    for (AppointmentBlock b : blocks) {
+      out.append("<tr>");
+      for (String cell : AppointmentRows.cells(b, false)) {
+        out.append("<td>").append(esc(cell)).append("</td>");
+      }
+      out.append("</tr>\n");
+    }
+    out.append("</tbody>\n</table>\n");
   }
 
   private static void li(StringBuilder out, String text) {

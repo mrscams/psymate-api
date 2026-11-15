@@ -137,6 +137,26 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
       @Param("statuses") Collection<AppointmentStatus> statuses,
       Limit limit);
 
+  // ---- M11-11 : export (G Q61), lecture seule
+
+  /** Tous les rendez-vous du praticien, tous statuts, invités purgés compris, triés par début. */
+  @Query(
+      """
+      select a from Appointment a
+      where a.practitionerId = :practitionerId
+      order by a.startsAt, a.id
+      """)
+  List<Appointment> findAllForExport(@Param("practitionerId") UUID practitionerId);
+
+  /** Tous les rendez-vous d'un patient, tous statuts, triés par début. */
+  @Query(
+      """
+      select a from Appointment a
+      where a.patientId = :patientId
+      order by a.startsAt, a.id
+      """)
+  List<Appointment> findAllOfPatientForExport(@Param("patientId") UUID patientId);
+
   // ---- M11-10 : invités (G Q60)
 
   /**

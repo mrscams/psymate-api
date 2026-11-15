@@ -53,11 +53,11 @@ class ModularityTests {
   /**
    * Modules en construction dont le {@code package-info.java} declare deja toutes les dependances
    * de leur jalon (G Q50 pour agenda) alors que leurs premieres taches n'en utilisent qu'une
-   * partie. Exception temporaire a « autorise ⊆ utilise » : agenda y entre avec M11-02 et en sort
-   * avec la derniere tache du jalon qui consomme ces dependances (M11-07, ou M11-08 si elle est
-   * retenue).
+   * partie. Exception temporaire a « autorise ⊆ utilise » : agenda y est entre avec M11-02 et en
+   * est sorti avec M11-11 (G Q61 : sa dependance inutilisee {@code clinical :: api} retiree, toutes
+   * les autres utilisees). Vide tant qu'aucun module n'est en construction.
    */
-  static final Set<String> PENDING_MODULES = Set.of("agenda");
+  static final Set<String> PENDING_MODULES = Set.of();
 
   /**
    * Cible jamais tenue pour inutilisee : le module ouvert {@code shared}. Pour vocabulary,

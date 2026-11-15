@@ -14,7 +14,7 @@ Décisions proposées (numéros à poser à la suite de Q49 dans G) :
 
 | # | Question | Proposition |
 | --- | --- | --- |
-| Q50 | Nom du module et place dans l'architecture | Module **`agenda`** (et non `scheduling`), package `com.psymate.agenda`, dépendances autorisées `identity :: api`, `patients :: api`, `clinical :: api`, `events :: api`, `shared`. Structure par rôle dès le premier fichier (G Q33 : `api / controller / dto / service / repository / model / config`), `ROLE_FOLDER_MODULES += agenda`. JPA (module CRUD, G Q32) ; fenêtres et chevauchements en JPQL (aucun SQL natif nécessaire). `directory` et `identity.admin` n'en dépendent pas. Remplace la mention « module scheduling » de A3, A5, A11, CLAUDE.md, F. |
+| Q50 | Nom du module et place dans l'architecture | Module **`agenda`** (et non `scheduling`), package `com.psymate.agenda`, dépendances autorisées `identity :: api`, `patients :: api`, `clinical :: api`, `events :: api`, `shared` (dépendances révisées par G Q61, M11-11 : `clinical :: api` retiré, I9). Structure par rôle dès le premier fichier (G Q33 : `api / controller / dto / service / repository / model / config`), `ROLE_FOLDER_MODULES += agenda`. JPA (module CRUD, G Q32) ; fenêtres et chevauchements en JPQL (aucun SQL natif nécessaire). `directory` et `identity.admin` n'en dépendent pas. Remplace la mention « module scheduling » de A3, A5, A11, CLAUDE.md, F. |
 | Q51 | Agenda local d'abord, Google ensuite | M11 livre un agenda **sans** intégration externe. La migration `V12__agenda.sql` crée `appointment` **sans** les colonnes Google ni `source` ; `practitioner_integration` n'est pas créée. Le jalon Google (M12) ajoutera sa propre migration (`ALTER TABLE appointment ADD …`, `CREATE TABLE practitioner_integration`). E6.2 devient E3.14 « Agenda » avec le DDL de I2 ; le DDL Google reste en E6.2 pour M12. |
 | Q52 | Statuts d'un rendez-vous | `planned` (défaut), `tentative` (case « À confirmer » de la fiche 15b, rendu pointillé dans la fiche 15), `cancelled`, `done`. Le statut `confirmed` de E6.2 disparaît : « confirmer » fait passer `tentative → planned` (`POST /api/appointments/{id}/confirm`). `done` est réservé au rattachement d'une séance (M11-08) ; aucune transition manuelle vers `done` en M11. |
 | Q53 | Aucune suppression physique | Un rendez-vous ne se supprime jamais : annulation = `status = cancelled`, `cancelled_at`, `cancel_reason` facultatif. L'« Annuler » du toast après création d'une série (fiche 15b) est une annulation de série (`POST /api/appointments/series/{seriesId}/cancel`), pas une suppression. `appointment` n'entre pas dans la liste E « Suppressions physiques autorisées ». |
@@ -86,9 +86,10 @@ Toutes les routes exigent une session praticien. Erreurs RFC 9457, `errors[{fiel
 | M11-05 | Cycle de vie d'un rendez-vous : créer, lire, déplacer, annuler, confirmer, événements | agenda (fichiers `Appointment*`) | M11-02 | M11-06 (fichiers disjoints, voir ci-dessous) |
 | M11-06 | Lectures : fenêtre `GET /api/agenda`, `freebusy`, rendez-vous d'un patient | agenda (fichiers `Agenda*`) | M11-02, M11-03 | M11-05 |
 | M11-07 | Séries : `recurrence`, `series_id`, annulation de série | agenda | M11-05, M11-06 | — |
-| M11-08 | *(conditionnelle)* Rattacher une séance : `SessionFacade` dans `clinical.api`, puis `POST /{id}/start` | clinical (api) puis agenda | M11-05 ; décision web sur le bouton du panneau | — |
+| M11-08 | *(conditionnelle)* Rattacher une séance : `SessionFacade` dans `clinical.api`, puis `POST /{id}/start` (**Remplacé par G Q61** : agenda ne dépend plus de clinical ; si M11-08 revient, passer par un événement ou deux appels du web.) | clinical (api) puis agenda | M11-05 ; décision web sur le bouton du panneau | — |
 | M11-09 | Seed `make seed` (rendez-vous sur 8 semaines), contrat tagué, suivi | racine (`tools/seed`) | M11-07 | — |
 | M11-10 | Rendez-vous invité (G Q60) : `V13__agenda_guest.sql`, `guest` à la création et au PATCH, `attach-patient`, purge à 6 mois, contrat `0.13.0` (I8) | agenda (+ docs) | M11-09 | — |
+| M11-11 | Export des rendez-vous (G Q61) : `AppointmentExportFacade` (agenda.api), `rendez-vous.md` dans l'export du compte, section « Rendez-vous » dans l'export d'un dossier ; dépendances `agenda` sans `clinical :: api`, `clinical` + `agenda :: api` (I9) | agenda (api) + clinical.export (+ docs) | M11-10 | — |
 
 **Vagues.** M11-A : 01, 02, 03, 04 (quatre terminaux). M11-B : 05 et 06 dès que 02 (et 03 pour 06) sont fusionnées. M11-C : 07. M11-D : 09, et 08 si retenue (son couloir `clinical` n'entre en conflit avec rien d'autre de M11, mais il tourne seul dans `clinical`).
 
@@ -145,7 +146,7 @@ Contexte : lis CLAUDE.md, docs/I-plan-agenda-api.md (I1 Q50 à Q53, I2 en entier
 
 Objectif :
 - src/main/resources/db/migration/V12__agenda.sql : copie exacte du bloc SQL de I2 (aucune colonne Google, aucune table practitioner_integration).
-- package com.psymate.agenda avec package-info.java : @ApplicationModule(allowedDependencies = {"identity :: api", "patients :: api", "clinical :: api", "events :: api", "shared"}).
+- package com.psymate.agenda avec package-info.java : @ApplicationModule(allowedDependencies = {"identity :: api", "patients :: api", "clinical :: api", "events :: api", "shared"}). (Dépendance clinical :: api révisée par G Q61 : retirée par M11-11.)
 - model/Appointment.java : entité JPA de la table appointment (UUID nus pour tenant_id, practitioner_id, patient_id, series_id, session_entry_id ; aucune association JPA ; enums AppointmentModality {in_person, video, phone} et AppointmentStatus {planned, tentative, cancelled, done} persistés en texte ; updated_at mis à jour par l'entité) ; model/AppointmentException.java (sous-classe de ProblemException du module shared, codes APPOINTMENT_NOT_FOUND 404, APPOINTMENT_NOT_ACTIVE 409, PATIENT_ARCHIVED 422, TOO_MANY_OCCURRENCES 422, WINDOW_TOO_LARGE 422, SERIES_NOT_FOUND 404).
 - repository/AppointmentRepository.java : JpaRepository<Appointment, UUID> avec findByIdAndPractitionerId ; rien de plus (M11-05 et M11-06 ajoutent leurs méthodes).
 - controller/AgendaExceptionHandler.java et controller/AgendaMessages.java sur le modèle de clinical (RFC 9457, errors[] par champ, messages i18n) ; clés dans messages_fr.properties (et messages_en.properties) sous « # agenda (M11-02) ».
@@ -320,6 +321,8 @@ Livrable : PR « M11-07 Séries de rendez-vous », ./mvnw verify vert, make log.
 À ne lancer qu'une fois le bouton du panneau tranché côté web. Si le bouton retenu ouvre simplement le dossier (« Démarrer 360 » = navigation), **cette tâche n'existe pas** et `session_entry_id` reste NULL en V1. Si le bouton doit créer la séance, deux PR dans l'ordre :
 
 ```text
+Remplacé par G Q61 : agenda ne dépend plus de clinical ; si M11-08 revient, passer par un événement ou deux appels du web.
+
 Tâche M11-08a — SessionFacade dans clinical.api (dépôt psymate-api, module clinical, package api et service). Utilise l'agent backend-module-dev.
 
 Contexte : lis CLAUDE.md, docs/I-plan-agenda-api.md I3 (ligne POST /api/appointments/{id}/start), docs/G-decisions.md Q33, Q36, docs/A-architecture.md A4.2 (séances), src/main/java/com/psymate/clinical/controller/SessionController.java et le service de séance qu'il appelle (démarrage : une seule séance ouverte par patient, 409 sinon ; la séance d'accueil ne compte pas), src/main/java/com/psymate/clinical/api/{EntryFacade,SessionView}.java.
@@ -338,6 +341,8 @@ Livrable : PR « M11-08a clinical.api.SessionFacade », ./mvnw verify vert, make
 ```
 
 ```text
+Remplacé par G Q61 : agenda ne dépend plus de clinical ; si M11-08 revient, passer par un événement ou deux appels du web.
+
 Tâche M11-08b — POST /api/appointments/{id}/start (dépôt psymate-api, module agenda). Utilise l'agent backend-module-dev.
 
 Contexte : lis CLAUDE.md, docs/I-plan-agenda-api.md I1 Q52, I3 (ligne start), docs/design/15-agenda.md « Interactions » (« Démarrer la séance → crée l'entry_session, marque le rendez-vous done »), src/main/java/com/psymate/clinical/api/SessionFacade.java (M11-08a), agenda/service/AppointmentService.java.
@@ -436,3 +441,24 @@ Entité `Appointment` : `guestFirstName`, `guestLastName`, `guestPhone`, `guestP
 - contrat regénéré, `0.13.0`, `ContractIT`, `AppointmentIT`, `AgendaQueryIT`, `AppointmentSeriesIT` verts.
 
 **Interdits.** Toute dépendance Maven ; toute colonne ou table hors V13 ; tout `DELETE` sur `appointment` ; toute lecture hors `appointment` ; tout import hors `identity.api`, `patients.api`, `clinical.api`, `events.api`, `shared`.
+
+## I9. M11-11 Export des rendez-vous (ajouté le 15 novembre 2026, G Q61)
+
+**Décision (G Q61, complète Q18, révise les dépendances de Q50).** Les rendez-vous font partie des données exportées. L'export du compte (zip, Q18) contient `rendez-vous.md` ; l'export d'un dossier patient (`GET /api/patients/{id}/export`, Markdown et PDF ; le HTML est l'étape interne du PDF) reçoit une section « Rendez-vous » après les séances et « Sans séance ». Pour éviter un cycle de modules, `agenda` cesse de dépendre de `clinical :: api` (déclarée par Q50, jamais utilisée) et `clinical` gagne `agenda :: api`. La tâche conditionnelle M11-08, si elle revient, passera par un événement ou par deux appels du web.
+
+**Façade (`agenda.api`).** `AppointmentExportFacade` : `List<AppointmentExportView> allOfPractitioner(UUID practitionerId)` et `List<AppointmentExportView> ofPatient(UUID patientId)`, triés par `startsAt` puis `id`, tous statuts. `AppointmentExportView` : `id, patientId (nullable), subjectDisplayName (nom du patient par PatientFacade, « Prénom Nom » de l'invité, le nom seul sans prénom, ou « Invité purgé »), guestPhone (nullable, null si purgé), startsAt, endsAt, durationMin, modality, status (valeurs SQL), seriesId (nullable), planningNote, cancelReason, cancelledAt`. Sans contrôle d'accès : l'appelant, `clinical.export`, agit déjà pour le praticien propriétaire (`ofPatient` après `PatientOwnershipGuard` ou pour un patient de `PatientFacade.ownedBy`). Implémentation `agenda.service.AppointmentExportFacadeImpl` : JPQL de `AppointmentRepository` (`findAllForExport`, `findAllOfPatientForExport`), transaction en lecture seule. Aucun DTO web, aucun endpoint, aucune migration.
+
+**Contenu des exports.**
+- `rendez-vous.md` (zip du compte, juste après `patients.md`) : titre « Vos rendez-vous », date de l'export, « Dates et heures en UTC. », puis un tableau Markdown, une ligne par rendez-vous du praticien (patients et invités, tous statuts, invités purgés compris) : Date, Heures, Durée, Modalité, Statut (libellé : Prévu, À confirmer, Annulé, Réalisé), Personne, Téléphone (de l'invité, vide après la purge), Série (oui / non), Note de planification (telle quelle : ce sont les mots du praticien), Motif d'annulation, Annulé le. Sans rendez-vous : pas de tableau, la ligne « Aucun rendez-vous. ».
+- Dossier patient : section `## Rendez-vous` (Markdown) ou `<h2>Rendez-vous</h2>` + tableau (HTML, donc PDF), mêmes colonnes sans Personne ni Téléphone, après les séances et « Sans séance » ; omise si le patient n'a aucun rendez-vous.
+- Format de `ExportDates` (`dd/MM/yyyy`, `HH:mm`). Dates et heures en UTC : choix de cohérence avec l'export existant (en-tête « Dates et heures en UTC »), retenu par l'orchestrateur et non tranché par l'utilisateur ; le passage en heure locale du praticien, s'il est demandé, concernera tout l'export en une fois. Libellés `clinical.export.appointments.*` (`messages_fr.properties` sous `# export (M11-11)`, `messages_en.properties`). Texte libre échappé (barre verticale, sauts de ligne) : il ne casse pas le tableau.
+
+**Critères d'acceptation** (`AccountExportAppointmentsIT`, `PatientExportAppointmentsIT`, `AppointmentRowsTest`) :
+- un praticien avec un rendez-vous patient, un rendez-vous invité (Sara Benali, +33 6 12 34 56 78), un invité purgé et un rendez-vous annulé → `rendez-vous.md` du zip a quatre lignes, la personne correcte pour chacun (« Invité purgé » et aucun téléphone pour le purgé), le statut annulé avec motif et date ; les rendez-vous d'un second praticien n'y apparaissent pas ;
+- un praticien sans rendez-vous → `rendez-vous.md` présent avec le seul en-tête et la ligne « Aucun rendez-vous. » ;
+- l'export Markdown d'un patient avec deux rendez-vous (dont un annulé) contient la section « Rendez-vous » avec les deux, après les séances ; un patient sans rendez-vous n'a pas la section ; les rendez-vous d'un autre patient du même praticien n'y figurent pas ; HTML et PDF se génèrent (section présente dans l'HTML) ;
+- `ModularityTests` vert avec `agenda` sans `clinical :: api` et `clinical` avec `agenda :: api` ; `grep -rn "com.psymate.clinical" src/main/java/com/psymate/agenda` vide ;
+- `TableOwnershipTests` vert : `clinical.export` ne lit pas `appointment` en SQL ;
+- `ContractIT` vert, contrat inchangé ; tous les tests d'export existants verts.
+
+**Interdits.** Lecture SQL de `appointment` hors du module agenda ; endpoint nouveau ; dépendance Maven ; migration ; suppression ; modification de V12 ou V13 ; export de rendez-vous d'un autre praticien.

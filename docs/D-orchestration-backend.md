@@ -73,10 +73,11 @@ Lecture des colonnes « Dépend de » corrigées par rapport à C2 :
 | M11-05 | Cycle de vie d'un rendez-vous : créer, lire, déplacer, annuler, confirmer, événements | agenda (fichiers `Appointment*`) | M11-02 | M11-07, M11-08b |
 | M11-06 | Lectures : fenêtre `GET /api/agenda`, `freebusy`, rendez-vous d'un patient | agenda (fichiers `Agenda*`) | M11-02, M11-03 | M11-07 |
 | M11-07 | Séries : `recurrence`, `series_id`, annulation de série | agenda | M11-05, M11-06 | M11-09 |
-| M11-08a | *(conditionnelle)* `SessionFacade` dans `clinical.api` | clinical (api) | M11-05 ; décision web sur le bouton du panneau | M11-08b |
+| M11-08a | *(conditionnelle)* `SessionFacade` dans `clinical.api` (**Remplacé par G Q61** : agenda ne dépend plus de clinical ; si M11-08 revient, passer par un événement ou deux appels du web.) | clinical (api) | M11-05 ; décision web sur le bouton du panneau | M11-08b |
 | M11-08b | *(conditionnelle)* `POST /api/appointments/{id}/start` | agenda | M11-08a | M11-09 (tag `contract-v0.12.2`) |
 | M11-09 | Seed `make seed` (rendez-vous sur 8 semaines), tag de contrat, suivi | racine (`tools/seed`) | M11-07 (et M11-08b si retenue) | jalon web « Agenda » (H) |
 | M11-10 | Rendez-vous invité (G Q60) : `V13__agenda_guest.sql`, `guest` à la création et au PATCH, `attach-patient`, purge à 6 mois, contrat `0.13.0` (I8) | agenda (+ docs) | M11-09 | jalon web « Agenda » (carte « Premier contact ») |
+| M11-11 | Export des rendez-vous (G Q61) : `AppointmentExportFacade` dans `agenda.api`, `rendez-vous.md` dans le zip du compte, section « Rendez-vous » de l'export d'un dossier ; `agenda` cesse de dépendre de `clinical`, `clinical` dépend de `agenda :: api` (I9) | agenda (api) + clinical.export (+ docs) | M11-10 | — |
 
 ## D2. Graphe de dépendances
 

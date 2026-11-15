@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-15T14:06:05.865Z",
+  "task": "M11-03",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "PatientFacade.followUp : record FollowUpView (since, rhythm, modality, durationMin) lu dans patient.follow_up ; 13 cas PatientFacadeIT verts",
+  "notes": "Sans fee ni prescriber (Q56) ; durationMin seulement si entier 1-600, chaines vides et since illisible -> null ; aucun endpoint, contrat inchange ; verify vert (421 unitaires, 1059 IT)",
+  "next": "M11-06 (lectures agenda) peut consommer followUp des que la PR est fusionnee",
+  "pr": "https://github.com/mrscams/psymate-api/pull/87",
+  "branch": "claude/m11-03-patient-followup-d360e3",
+  "checkout": "m11-03-patient-followup-d360e3"
+}

@@ -33,11 +33,12 @@ Marquages : **[À valider pilotes]** = contenu clinique livré avec les valeurs 
 | Événements | `events` | `event_publication` | Outbox Spring Modulith |
 | Projections | `search`, `overview` | `patient_overview` (+ colonne `entry.search_vector` et ses triggers) | Lecture rapide |
 | Annuaire | `directory` | `practitioner_profile`, `directory_vocabulary`, `contact_request` | Profil public, liste fermée des spécialités et publics, relais de contact |
+| Agenda (M11, 15 novembre 2026) | `agenda` | `appointment` | Rendez-vous planifiés, séries, annulation par statut (E3.14, V12, G Q50–Q59) |
 | **Réservé V2** | `ai` | `entry_embedding`, `entry_chunk`, `ai_feedback` | Vides en V1 |
 | **Réservé compagnon** | `companion` | `patient_device`, `patient_submission` + colonnes `entry.author_type`, `entry.submission_id` | Vides en V1 |
-| **Conditionnel** | `directory`, `identity.admin` (V1.1, G Q26) ; `scheduling` (hors V1, G Q25) | `directory_profile_version`, `directory_report` ; `appointment`, `practitioner_integration` | DDL prêt, pas de migration en V1 |
+| **Conditionnel** | `directory`, `identity.admin` (V1.1, G Q26) ; synchronisation Google de l'agenda (M12, hors V1, G Q51) | `directory_profile_version`, `directory_report` ; `practitioner_integration` et colonnes `google_event_id`, `google_etag`, `source` d'`appointment` | DDL prêt, pas de migration en V1 |
 
-Trente-neuf tables en V1, dont six réservées et vides (`entry_embedding`, `entry_chunk`, `ai_feedback`, `patient_device`, `patient_submission`, `patient_access`), plus quatre conditionnelles. Le DDL complet a été exécuté sur un PostgreSQL 16 vierge le 27 octobre 2026 (hors extension `vector`, remplacée pour le test) : il s'applique sans erreur, le seed compte 6 types, 29 émotions et 8 types de liens, et les contraintes `ck_entry_session_required`, `ux_link_active`, `ck_link_not_self`, `ck_decision_message` et les deux triggers `search_vector` se comportent comme décrit. Les tables `directory_vocabulary` et `export_job` (ajoutées le 29 octobre) n'ont pas encore été rejouées.
+Quarante tables (trente-neuf au 27 octobre 2026, plus `appointment` ajoutée le 15 novembre 2026 par V12, jalon M11), dont six réservées et vides (`entry_embedding`, `entry_chunk`, `ai_feedback`, `patient_device`, `patient_submission`, `patient_access`), plus trois conditionnelles. Le DDL complet a été exécuté sur un PostgreSQL 16 vierge le 27 octobre 2026 (hors extension `vector`, remplacée pour le test) : il s'applique sans erreur, le seed compte 6 types, 29 émotions et 8 types de liens, et les contraintes `ck_entry_session_required`, `ux_link_active`, `ck_link_not_self`, `ck_decision_message` et les deux triggers `search_vector` se comportent comme décrit. Les tables `directory_vocabulary` et `export_job` (ajoutées le 29 octobre) n'ont pas encore été rejouées.
 
 ### Diagramme entité-relation complet
 
@@ -904,6 +905,36 @@ CREATE VIEW admin_journal_v AS
   FROM verification_decision d;
 ```
 
+### E3.14 Agenda (M11, fiches 15, 15b, G Q50–Q59)
+
+Ajouté le 15 novembre 2026. Module propriétaire : `agenda` (`TableOwnershipTests.TABLE_OWNERS += appointment → agenda`). Migration `V12__agenda.sql` (M11-02), DDL identique octet pour octet au bloc I2 de `docs/I-plan-agenda-api.md`. Statuts `planned` (défaut), `tentative` (case « À confirmer »), `cancelled`, `done` (séance rattachée, M11-08) : G Q52. Annulation par statut, `cancelled_at` et `cancel_reason`, jamais de `DELETE` (G Q53 ; `appointment` n'entre pas dans E9). Les occurrences d'une série partagent `series_id`, aucune règle de récurrence stockée (G Q55). `session_entry_id` référence `entry` par clé étrangère SQL mais **jamais** par association JPA (UUID nu, règle ArchUnit). Aucune colonne Google ni `source` : la synchronisation est le jalon M12 (E6.2, G Q51).
+
+```sql
+-- Agenda (fiches 15, 15b) — rendez-vous planifiés, sans synchronisation externe (G Q51)
+CREATE TABLE appointment (
+  id                uuid PRIMARY KEY,
+  tenant_id         uuid NOT NULL REFERENCES tenant(id),
+  practitioner_id   uuid NOT NULL REFERENCES practitioner(id),
+  patient_id        uuid NOT NULL REFERENCES patient(id),
+  series_id         uuid,                               -- commun aux occurrences d'une répétition (G Q55)
+  starts_at         timestamptz NOT NULL,
+  ends_at           timestamptz NOT NULL,
+  modality          text NOT NULL CHECK (modality IN ('in_person','video','phone')),
+  status            text NOT NULL DEFAULT 'planned' CHECK (status IN ('planned','tentative','cancelled','done')),
+  planning_note     text,                               -- visible seulement ici ; jamais synchronisée (fiche 15)
+  cancel_reason     text,
+  cancelled_at      timestamptz,
+  session_entry_id  uuid REFERENCES entry(id),          -- séance rattachée (M11-08), NULL sinon
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  updated_at        timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT ck_appointment_order CHECK (ends_at > starts_at),
+  CONSTRAINT ck_appointment_cancel CHECK ((status = 'cancelled') = (cancelled_at IS NOT NULL))
+);
+CREATE INDEX ix_appointment_practitioner_time ON appointment(practitioner_id, starts_at);
+CREATE INDEX ix_appointment_patient ON appointment(patient_id, starts_at DESC);
+CREATE INDEX ix_appointment_series ON appointment(series_id) WHERE series_id IS NOT NULL;
+```
+
 ## E4. Découpage en migrations Flyway
 
 ### Règles
@@ -929,14 +960,15 @@ CREATE VIEW admin_journal_v AS
 | `V09__overview.sql` | M4-03 (overview) | V8 | E3.9 `patient_overview` | V05, V07 |
 | `V10__admin_journal.sql` | M1-14b (identity.admin) | V6 | E3.13 vue `admin_journal_v` | V03 |
 | `V11__export_job.sql` | M6-05 (clinical) | V8 | E3.6 `export_job` | V01 |
-| *conditionnelles* | voir E6 | — | `directory_profile_version`, `directory_report` (V1.1, G Q26) ; `appointment`, `practitioner_integration` (hors V1, G Q25) | — |
+| `V12__agenda.sql` | M11-02 (agenda) | M11-A | E3.14 `appointment` | V01, V05 |
+| *conditionnelles* | voir E6 | — | `directory_profile_version`, `directory_report` (V1.1, G Q26) ; `practitioner_integration` et colonnes Google d'`appointment` (M12, hors V1, G Q51) | — |
 
 Ce que ce plan change par rapport à C (reporté en E8) : M0-03 crée `practitioner` **avec** ses colonnes A10.2 (M1-10 ne fait plus d'`ALTER`, il crée les tables de vérification) ; M0-03 ne crée plus `entry_embedding` / `entry_chunk` / `ai_feedback`, impossibles avant `entry` et `link` ; M5-01 reçoit sa propre migration.
 
 ### Vérifications en CI (M0-03, puis chaque migration)
 
 - Flyway applique toutes les migrations sur un PostgreSQL 16 vierge (Testcontainers, image `pgvector/pgvector:pg16`).
-- Un test lit `information_schema` et compare la liste des tables et colonnes à une liste de référence extraite de ce document (fichier `src/test/resources/expected-schema-v01.yaml`, qui couvre malgré son nom tous les objets de V01 à V11, mis à jour par la tâche qui ajoute une table).
+- Un test lit `information_schema` et compare la liste des tables et colonnes à une liste de référence extraite de ce document (fichier `src/test/resources/expected-schema-v01.yaml`, qui couvre malgré son nom tous les objets de V01 à V12, mis à jour par la tâche qui ajoute une table).
 - Un test vérifie que les tables réservées sont vides et que `entry.author_type` ne contient que `'practitioner'` (M7-05, R13).
 - Un test tente un `UPDATE` sur `verification_decision` et `entry_version` avec le rôle `psymate_app` et attend un refus : ces tables reçoivent `REVOKE UPDATE, DELETE ON … FROM psymate_app` dans la migration qui les crée (le rôle applicatif est créé par le script d'init du conteneur Compose / par l'hébergeur, jamais par Flyway ; G Q9).
 
@@ -1084,9 +1116,9 @@ CREATE INDEX ix_directory_report_rate ON directory_report(ip_hash, created_at DE
 
 Conséquence sur les modules : première dépendance de `identity.admin` vers `directory` (lecture et dépublication), à autoriser dans `package-info` le moment venu. En V1, `identity.admin` ne dépend de `directory` que par la façade `DirectoryVocabularyFacade` (M1-14b).
 
-### E6.2 Agenda (fiches 15, 15b) — hors V1 (G Q25)
+### E6.2 Synchronisation Google — M12, hors M11 (G Q51)
 
-**Hors V1 (décision G Q25, 29 octobre 2026)** : conservé pour plus tard, aucune tâche ni module `scheduling`.
+**Hors V1.** Le 29 octobre 2026, G Q25 plaçait tout l'agenda hors V1 ; le 15 novembre 2026, G Q50–Q59 ont fait entrer l'agenda local en M11 (table `appointment`, E3.14, V12). Ne restent ici que les objets de la **synchronisation Google** (fiches 15, 15b), jalon M12 non planifié : la table `practitioner_integration` et les colonnes Google d'`appointment`. M12 les créera par ses propres migrations (`CREATE TABLE practitioner_integration`, `ALTER TABLE appointment ADD …`) ; aucune tâche M11 ne les touche.
 
 ```sql
 CREATE TABLE practitioner_integration (
@@ -1109,27 +1141,10 @@ CREATE TABLE practitioner_integration (
   updated_at          timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE appointment (
-  id                uuid PRIMARY KEY,
-  tenant_id         uuid NOT NULL REFERENCES tenant(id),
-  practitioner_id   uuid NOT NULL REFERENCES practitioner(id),
-  patient_id        uuid NOT NULL REFERENCES patient(id),
-  series_id         uuid,
-  starts_at         timestamptz NOT NULL,
-  ends_at           timestamptz NOT NULL,
-  modality          text NOT NULL CHECK (modality IN ('in_person','video','phone')),
-  status            text NOT NULL DEFAULT 'planned' CHECK (status IN ('planned','confirmed','cancelled','done')),
-  planning_note     text,                              -- jamais synchronisée
-  session_entry_id  uuid REFERENCES entry(id),
-  google_event_id   text,
-  google_etag       text,
-  source            text NOT NULL DEFAULT 'app' CHECK (source IN ('app','google')),
-  created_at        timestamptz NOT NULL DEFAULT now(),
-  updated_at        timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT ck_appointment_order CHECK (ends_at > starts_at)
-);
-CREATE INDEX ix_appointment_practitioner_time ON appointment(practitioner_id, starts_at);
-CREATE INDEX ix_appointment_patient ON appointment(patient_id, starts_at DESC);
+-- Colonnes ajoutées à appointment (E3.14) par le jalon M12, jamais par M11
+ALTER TABLE appointment ADD COLUMN google_event_id text;
+ALTER TABLE appointment ADD COLUMN google_etag text;
+ALTER TABLE appointment ADD COLUMN source text NOT NULL DEFAULT 'app' CHECK (source IN ('app','google'));
 CREATE UNIQUE INDEX ux_appointment_google ON appointment(google_event_id) WHERE google_event_id IS NOT NULL;
 ```
 
@@ -1141,7 +1156,7 @@ CREATE UNIQUE INDEX ux_appointment_google ON appointment(google_event_id) WHERE 
 | O2 | Tags au niveau patient (fiche 16) ? | `patient_tag` · tags d'entrées seulement | **Tranché (G Q7)** : `patient_tag` (M1-01) |
 | O3 | Historique de la fiche patient (fiche 16) ? | `patient_version` · pas d'historique | **Tranché (G Q7)** : `patient_version` et `patient_flag` en table (M1-01) |
 | O4 | Signalements (fiche 23) ? | V1 · V1.1 · hors périmètre | **Tranché (G Q26)** : V1.1 ; DDL en E6.1 |
-| O5 | Agenda (fiches 15, 15b) ? | Jalon M8 · hors V1 | **Tranché (G Q25)** : hors V1, pas de jalon Agenda (ancien M8 ; l'identifiant M8 désigne désormais la migration JPA) ; DDL conservé en E6.2 |
+| O5 | Agenda (fiches 15, 15b) ? | Jalon M8 · hors V1 | **Tranché (G Q25)** le 29 octobre 2026 : hors V1 ; **révisé le 15 novembre 2026 (G Q50–Q59)** : API locale en jalon **M11**, module `agenda`, table `appointment` en E3.14 (`V12__agenda.sql`) ; synchronisation Google en M12, DDL en E6.2 ; l'identifiant M8 désigne la migration JPA |
 | O6 | Famille des cinq émotions cliniques ajoutées ; libellés *pensiveness*, *loathing* | voir E5.2 | **Tranché (G Q10, Q11)** : E5.2 livré tel quel, pas d'atelier préalable ; retours des praticiens plus tard |
 | O7 | Matrice `allowed_source_types` / `allowed_target_types` | voir E5.3 | **Tranché (G Q12)** : E5.3 conservée |
 | O8 | Événements admin pour le journal (fiche 22 : `directory_event`, `system_event`) | tables dédiées · colonnes de `security_event` | **Tranché (G Q29)** : `security_event` seul avec `kind` préfixé et la vue `admin_journal_v` (E3.13, V10, M1-14b) |
@@ -1178,7 +1193,7 @@ Les lignes de ce tableau ont été reportées dans A (A4, A10) et C (M0-03, M1-1
 
 ## E9. Suppressions physiques autorisées (G Q37, 2 novembre 2026)
 
-Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `entry_version`, `link` et les tables de détail courantes s'archivent (`archived_at`, statut `superseded`). Ce tableau est la liste fermée de ce qui peut l'être ; une tâche qui ajoute une suppression physique ajoute sa ligne ici. Le test d'appartenance des tables (C8, M9-02) refuse tout `DELETE` sur une table clinique.
+Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `entry_version`, `link` et les tables de détail courantes s'archivent (`archived_at`, statut `superseded`). Ce tableau est la liste fermée de ce qui peut l'être ; une tâche qui ajoute une suppression physique ajoute sa ligne ici. Le test d'appartenance des tables (C8, M9-02) refuse tout `DELETE` sur une table clinique. `appointment` (E3.14) n'y figure pas : un rendez-vous s'annule par statut (G Q53).
 
 | Table ou fichier | Ce qui est supprimé | Par qui | Raison |
 | --- | --- | --- | --- |

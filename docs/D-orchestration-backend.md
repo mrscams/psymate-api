@@ -62,6 +62,21 @@ Lecture des colonnes « Dépend de » corrigées par rapport à C2 :
 - **M7-01** dépendait de M4-05 et M2-06 (écrans) dans C2 ; côté backend, ce sont les quatre endpoints lourds qui comptent (graphe, timeline, recherche, overview).
 - **M1-14b** (ajoutée le 29 octobre, G) dépend de M5-01 parce qu'elle administre la table `directory_vocabulary` via une façade de `directory.api` ; elle suit M7-08 dans le couloir `identity` parce que les deux touchent `identity.admin`.
 
+### Tâches M11 Agenda (API), ajoutées le 15 novembre 2026 (C11, `docs/I-plan-agenda-api.md` I4)
+
+| ID | Tâche | Couloir (module) | Dépend de | Débloque |
+| --- | --- | --- | --- | --- |
+| M11-01 | Lever G Q25, inscrire Q50–Q59 dans G, A, C, D, E, CLAUDE.md, F ; agents en Opus | docs (+ `.claude/agents`) | — | rien de bloquant : I fait foi en attendant |
+| M11-02 | Module `agenda` : squelette, `V12__agenda.sql`, entité, repository, gardes | agenda | — (I fait foi en attendant M11-01) | M11-05, M11-06 |
+| M11-03 | `PatientFacade.followUp` (durée, modalité, rythme du suivi) | patients (api) | — | M11-06 |
+| M11-04 | Préférences `agenda.*` (G Q57), contrat `0.11.1` | identity (preferences) | — | — (lues par M11-06 à l'exécution, pas à la compilation) |
+| M11-05 | Cycle de vie d'un rendez-vous : créer, lire, déplacer, annuler, confirmer, événements | agenda (fichiers `Appointment*`) | M11-02 | M11-07, M11-08b |
+| M11-06 | Lectures : fenêtre `GET /api/agenda`, `freebusy`, rendez-vous d'un patient | agenda (fichiers `Agenda*`) | M11-02, M11-03 | M11-07 |
+| M11-07 | Séries : `recurrence`, `series_id`, annulation de série | agenda | M11-05, M11-06 | M11-09 |
+| M11-08a | *(conditionnelle)* `SessionFacade` dans `clinical.api` | clinical (api) | M11-05 ; décision web sur le bouton du panneau | M11-08b |
+| M11-08b | *(conditionnelle)* `POST /api/appointments/{id}/start` | agenda | M11-08a | M11-09 (tag `contract-v0.12.2`) |
+| M11-09 | Seed `make seed` (rendez-vous sur 8 semaines), tag de contrat, suivi | racine (`tools/seed`) | M11-07 (et M11-08b si retenue) | jalon web « Agenda » (H) |
+
 ## D2. Graphe de dépendances
 
 ```mermaid
@@ -196,6 +211,10 @@ Ce qui peut démarrer, quand, et avec combien d'agents en parallèle. « ∥ » 
 | **V7** | M1-05 (+ M4-01) | **M2-01** ∥ **M3-01** ∥ **M4-02** ∥ **M7-02** | 4 (`linking`, `clinical`, `search`, `shared`) | M2-02, M2-03, M4-03, M6-05 |
 | **V8** | M2-01, M3-01 | **M2-02** (exclusif : bloque `clinical` et `linking` le temps de sa PR, courte) puis **M2-03** ∥ **M4-03** ∥ **M6-05** | 3 | M4-06, M7-01 |
 | **V9** | M4-03, M2-03, M4-02, M3-01 | **M4-06** ∥ **M7-01** ∥ **M7-06** | 3 | fin du backend V1 ; M4-07 web |
+| **M11-A** (15 novembre 2026) | rien (M10 fusionnée) | **M11-01** ∥ **M11-02** ∥ **M11-03** ∥ **M11-04** | 4 (docs, `agenda`, `patients`, `identity.preferences`) | M11-05 (via M11-02) ; M11-06 (via M11-02 et M11-03) |
+| **M11-B** | M11-02 (et M11-03 pour M11-06) | **M11-05** ∥ **M11-06** (même couloir `agenda`, fichiers disjoints : exception D5) | 2 | M11-07 |
+| **M11-C** | M11-05, M11-06 | **M11-07** | 1 | M11-09 ; M11-08a si retenue |
+| **M11-D** | M11-07 (M11-08a pour M11-08b) | **M11-09** ∥ (**M11-08a** puis **M11-08b**, si le bouton du panneau crée la séance) | 1 à 2 (`racine`, `clinical` puis `agenda`) | tag `contract-v0.12.1` (ou `v0.12.2`) ; jalon web « Agenda » |
 
 **Ce qu'on peut commencer aujourd'hui, sans rien d'autre** : M0-01. Dès qu'il est fusionné : M0-02 et M0-03 en même temps. Dès que ces deux-là sont fusionnés : trois agents sur trois modules (`identity`, `events`, `vocabulary`) qui ne se croiseront jamais.
 
@@ -232,18 +251,21 @@ Un couloir par module ; un seul agent par couloir à la fois ; un worktree par a
 
 | Couloir | Tâches, dans l'ordre | Peut tourner en même temps que | Jamais en même temps que |
 | --- | --- | --- | --- |
-| racine | M0-01 · M0-05 · M0-08 · M7-01 | tout, sauf pendant M0-01 (seul) | — |
-| identity | M0-04 · M1-10 · M1-11 · M1-12 · M1-13 · M1-14 · M7-08 · M1-14b | patients, vocabulary, events, clinical, linking, search, overview, directory | une autre tâche `identity` ; **M5-06** le temps de M1-14 (il lit `PractitionerFacade`, qui change) ; une tâche `directory` le temps de M1-14b (il ajoute une façade dans `directory.api`) |
+| racine | M0-01 · M0-05 · M0-08 · M7-01 · M11-09 | tout, sauf pendant M0-01 (seul) | — |
+| identity | M0-04 · M1-10 · M1-11 · M1-12 · M1-13 · M1-14 · M7-08 · M1-14b · M11-04 (`preferences`) | patients, vocabulary, events, clinical, linking, search, overview, directory | une autre tâche `identity` ; **M5-06** le temps de M1-14 (il lit `PractitionerFacade`, qui change) ; une tâche `directory` le temps de M1-14b (il ajoute une façade dans `directory.api`) |
 | events | M4-01a · M4-01 · M7-05 | tout | M1-03 le temps de M4-01a (M1-03 attend de toute façon) |
 | vocabulary | M1-02 | tout | M1-03 (attend M1-02) |
-| patients | M1-01 | tout | M1-03 (attend M1-01) |
-| clinical | M1-03 · M1-04 · M1-05 · M3-01 · M6-05 | identity, directory, events, search, overview | linking pendant **M2-02** ; une autre tâche `clinical` |
+| patients | M1-01 · M11-03 (`api` seulement) | tout | M1-03 (attend M1-01) |
+| clinical | M1-03 · M1-04 · M1-05 · M3-01 · M6-05 · M11-08a (`api`, si retenue) | identity, directory, events, search, overview, agenda | linking pendant **M2-02** ; une autre tâche `clinical` |
 | linking | M2-01 · M2-03 | clinical (sauf M2-02), search, overview, directory, identity | clinical pendant **M2-02** |
 | clinical + linking | M2-02 | identity, directory, search, overview | **toute** tâche `clinical` ou `linking` : on la lance quand les deux couloirs sont vides, elle est courte |
 | search | M4-02 | tout | — (lit `entry` par SQL et événements, n'écrit dans aucun autre module) |
 | overview | M4-03 · M4-06 | tout | — |
 | directory | M5-01 · M5-02 · M5-03 · M5-06 | tout | `identity` pendant M1-14 (pour M5-06 seulement) et pendant M1-14b |
 | shared | M7-02 | — (il touche `shared`, lu par tous : la CI de toutes les branches ouvertes doit être relancée après fusion) | à lancer quand peu de branches sont ouvertes |
+| agenda (ajouté le 15 novembre 2026, G Q50) | M11-02 · M11-05 ‖ M11-06 · M11-07 · M11-08b (si retenue) | tout : `agenda` ne lit que les `api` d'`identity`, `patients`, `clinical`, `events` et personne ne dépend de lui | une autre tâche `agenda`, **sauf** M11-05 ‖ M11-06 (exception ci-dessous) ; M11-08b le temps de M11-08a (elle attend sa façade) |
+
+**Exception à D5 pour M11-05 ‖ M11-06.** Même couloir, mais fichiers disjoints par construction : M11-02 crée tout ce qui est partagé (entité, repository, `AgendaExceptionHandler`, `AgendaMessages`, `package-info`, enregistrements ArchUnit). M11-05 ne crée que des fichiers préfixés `Appointment` (`AppointmentController`, `AppointmentService`, `CreateAppointmentRequest`, `UpdateAppointmentRequest`, `CancelAppointmentRequest`, `AppointmentDto`, `AppointmentMapper`, `AppointmentAssembler`, `AppointmentCreatedDto`, `AppointmentUpdatedDto`, `ConflictDto`, événements `api/Appointment*`). M11-06 ne crée que `AgendaController`, `AgendaQueryService`, `AgendaWindowDto`, `FreeBusyDto`, `PatientAppointmentsDto`, `AppointmentDefaultsDto`, et des méthodes de lecture ajoutées à `AppointmentRepository` (seul fichier commun : la seconde PR fusionnée rebase). `AppointmentDto`, `AppointmentMapper`, `AppointmentAssembler` et `ConflictDto` appartiennent à M11-05 ; M11-06 les crée **provisoirement identiques** si M11-05 n'est pas encore fusionnée et le signale dans sa PR, la seconde PR fusionnée garde une seule version. `messages_fr.properties` / `messages_en.properties` : chacun ajoute ses clés sous un commentaire `# agenda (M11-0x)`. Contrat : les deux visent `app.contract.version = 0.12.0` ; la seconde fusionnée relance `make contract`.
 
 ### Découper `identity` pour paralléliser M1-11, M1-12, M1-13
 
@@ -275,7 +297,7 @@ Les fiches `docs/design/` livrées le 25 octobre décrivaient des parties backen
 
 | Fiche | Ce qu'elle suppose côté backend | Proposition initiale | Décision (G) |
 | --- | --- | --- | --- |
-| **15 Agenda**, **15b Nouveau rendez-vous** | Un **module `scheduling` entier** : tables `appointment` et `practitioner_integration`, `AppointmentFacade`, événements, endpoints `/api/agenda`, `/api/appointments/*`, OAuth Google, webhook, flux iCal, synchronisation bidirectionnelle | Jalon **M8 Agenda** après M7, ou sortie de la V1 | **Tranché (G Q25) : hors V1.** Aucun jalon M8, aucun module `scheduling`, aucune tâche. Les fiches sont conservées pour plus tard. |
+| **15 Agenda**, **15b Nouveau rendez-vous** | Un **module entier** (ancien nom `scheduling`, 25 octobre 2026 ; `agenda` depuis G Q50) : tables `appointment` et `practitioner_integration`, `AppointmentFacade`, événements, endpoints `/api/agenda`, `/api/appointments/*`, OAuth Google, webhook, flux iCal, synchronisation bidirectionnelle | Jalon **M8 Agenda** après M7, ou sortie de la V1 | **Tranché (G Q25) : hors V1** le 29 octobre 2026 (aucun jalon M8, aucun module, ancien nom `scheduling`). **Révisé le 15 novembre 2026 (G Q50–Q59)** : l'API locale est le jalon **M11**, module **`agenda`**, tâches M11-01 à M11-09 (D1, D3, D5, C11) ; la synchronisation Google (OAuth, webhook, iCal, `practitioner_integration`) reste hors V1, jalon M12. |
 | **23 Admin · Signalements de l'annuaire** | `POST /api/public/directory/{slug}/report`, table `directory_report`, file admin, actions | Deux petites tâches `directory` à ajouter à M5/M7 | **Tranché (G Q26) : V1.1.** DDL prêt en E6.1 ; rien dans les vagues V0–V9. |
 | **21 Admin · Praticiens**, **22 Admin · Journal** | `GET /api/admin/practitioners` avec suspendre / réactiver, journal paginé | Tâche **M1-14b** après M1-14 | **Tranché (G Q27, Q29) : M1-14b créée** (D1, D3 V6, D5, D9), journal = vue `admin_journal_v` sur `security_event`, migration V10. |
 | **17 Émotions personnalisées** (fusion, promotion) | Fusion de deux émotions custom, promotion vers une globale | Fusion en V1, promotion en V2 | **Tranché (G Q8) : fusion en V1 dans M1-02** (`emotion_merge`, undo 30 jours) ; promotion en V2. |
@@ -336,4 +358,4 @@ Pour chaque tâche, l'orchestrateur (toi, ou un agent lead) vérifie :
 | V9 | M7-01 | racine | bloquée par M2-03, M3-01, M4-02, M4-03 | — | — |
 | V9 | M7-06 | — | bloquée par M7-02 | — | — |
 
-Les écarts de D7 sont tous tranchés (G) : M1-14b et l'extension de M6-05 figurent dans ce tableau ; l'agenda est hors V1 ; les signalements sont en V1.1 et s'ajouteront le jour où ils seront planifiés.
+Les écarts de D7 sont tous tranchés (G) : M1-14b et l'extension de M6-05 figurent dans ce tableau ; l'agenda local est le jalon M11 (module `agenda`, lignes M11 de D1) et sa synchronisation Google reste hors V1 ; les signalements sont en V1.1 et s'ajouteront le jour où ils seront planifiés.

@@ -1,6 +1,6 @@
 # Écran 15b · Panneau « Nouveau rendez-vous » (agenda)
 
-> **Hors V1 (décision G Q25, 29 octobre 2026)** : conservé pour plus tard, aucune tâche ni module `scheduling`. Rien de cette fiche n'est à implémenter en V1.
+> **API en M11 (module `agenda`, `docs/I-plan-agenda-api.md`) ; web et Google : jalons ultérieurs.** Décision G Q50–Q59 du 15 novembre 2026, qui révise G Q25 du 29 octobre 2026 (« hors V1 »). Le reste de cette fiche est conservé tel quel : son ancien nom de module `scheduling` se lit `agenda` ; le corps réel de `POST /api/appointments` est celui de I3 (`tentative` au lieu de `toConfirm`, `recurrence.everyWeeks` au lieu de `every`, 26 occurrences au plus) ; tout ce qui concerne Google Agenda est hors V1, jalon M12.
 
 > Spécification pour agents. Maquette : `15b-nouveau-rendez-vous.html` / `.png`. Palette : Nordique. Module `scheduling` (`POST /api/appointments`, `practitioner_integration`), complète `15-agenda.md`.
 

@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-15T14:05:45.583Z",
+  "task": "M11-01",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Q25 levée par G8 (Q50-Q59) ; jalon M11 et module agenda inscrits dans A, C11, D, E3.14, CLAUDE.md, F, fiches 15 et 15b",
+  "notes": "DDL de E3.14 identique à I2 ; E6.2 réduit à la synchronisation Google (M12) ; corps des fiches 15 et 15b inchangé, bandeau seulement",
+  "next": "M11-05 et M11-06 après fusion de M11-02 (et M11-03 pour M11-06)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/86",
+  "branch": "claude/m11-01-agenda-docs-d71ce8",
+  "checkout": "m9-19-cb33b1"
+}

@@ -664,7 +664,7 @@ Praticien : 1 Patients → 2 Vue d'ensemble (simple | complète) → 3 Timeline 
             5 Saisie / éditeur d'entrée · 6 Éditeur de lien (panneaux)
             Mon compte : 10 Profil public · 13 Dossier professionnel · 14 Préférences · 17 Émotions · Sécurité · Données
 Admin : 20 Validation des praticiens · 21 Praticiens · 22 Journal · Vocabulaire de l'annuaire (M1-14b)
-Plus tard : 23 Signalements (V1.1) · 15, 15b Agenda (hors V1)
+Plus tard : 23 Signalements (V1.1) · 15, 15b Agenda (API en M11, écran web dans un jalon ultérieur ; Google hors V1)
 ```
 
 ### Principes retenus pour ces écrans

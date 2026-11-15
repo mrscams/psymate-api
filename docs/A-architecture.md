@@ -183,13 +183,14 @@ Huit contextes bornés en V1 (plus l'IA en V2), chacun un module Spring Modulith
 | Search | Index plein texte, facettes, classement | aucun (projection) | `SearchDocument` | Clinical record, Linking (lecture via événements) |
 | Overview | Projection de la vue d'ensemble, tendances | aucun (projection) | `PatientOverview`, `IntensityPoint` | Clinical record, Linking (événements) |
 | Events | Outbox, publication des événements de domaine | `OutboxEvent` | — | tous (émetteurs) |
+| Agenda (M11, 15 novembre 2026) | Rendez-vous planifiés du praticien avec ses patients, séries hebdomadaires, conflits signalés, annulation sans suppression | `Appointment` | `series_id` (occurrences d'une série), statut `planned / tentative / cancelled / done`, `Conflict` | Identity, Patients, Clinical record (rattachement d'une séance, M11-08), Events |
 | AI (V2) | Suggestions, motifs, questions | `Suggestion` (vue de `Link`) | `Embedding`, `Chunk`, `PatternReport` | Events, Clinical record (lecture), Linking (écriture `proposed`) |
 
 Contexte ajouté le 24 octobre 2026 — **Directory** (module `com.psymate.directory`) : responsable de l'annuaire public et des profils publics. Agrégat `PractitionerProfile` (photo, présentation, spécialités, publics, modalités, langues, localisation, contact, disponibilité, `published`). Dépend de **Identity** (profession, identité du praticien) uniquement ; **ne dépend jamais** de Patients, Clinical record ou Linking, et aucun de ces modules ne dépend de lui. Expose seulement les événements `ProfilePublished` / `ProfileUnpublished` ; aucune façade, car aucun module ne lit l'annuaire (M9-06). Les contrôleurs publics (`/public/…`) sont les seuls accessibles sans session ; ils ne lisent que `practitioner_profile`. Le décompte passe à neuf contextes en V1.
 
 Contexte **réservé** le 25 octobre 2026, non construit en V1 — **Companion** (module `com.psymate.companion`, voir A11) : réception des lots envoyés par l'application mobile du patient et appairage des appareils. Au même titre que `ai`, il n'existe en V1 que par ses colonnes et ses tables vides.
 
-L'agenda synchronisé Google (fiches 15, 15b) est **hors V1** (G Q25) : aucun contexte `scheduling` n'est créé.
+Contexte ajouté le 15 novembre 2026 — **Agenda** (module `com.psymate.agenda`, G Q50–Q59, jalon M11, plan `docs/I-plan-agenda-api.md`) : rendez-vous planifiés d'un praticien avec ses patients (fiches 15, 15b), séries hebdomadaires (pas de 1, 2 ou 4 semaines, 26 occurrences au plus), conflits signalés mais jamais bloquants, annulation par statut (aucune suppression physique, G Q53). Dépend d'**Identity**, **Patients**, **Clinical record** et **Events** par leurs `api` ; n'expose aucune façade en M11 ; publie `AppointmentPlanned`, `AppointmentRescheduled`, `AppointmentCancelled`, `AppointmentConfirmed` sans abonné en V1 (G Q59 : hooks de la synchronisation Google, jalon M12). `directory` et `identity.admin` n'en dépendent pas. La décision Q25 du 29 octobre 2026 (agenda Google hors V1, ancien nom `scheduling` jamais créé) est levée pour l'agenda local seulement : la synchronisation Google reste hors V1. Le décompte passe à dix contextes.
 
 ### Carte des contextes
 
@@ -200,8 +201,12 @@ flowchart LR
   VO[Vocabulary] --> CR
   CR --> LI[Linking]
   VO --> LI
+  ID --> AG[Agenda M11]
+  PA --> AG
+  CR --> AG
   CR -. événements .-> EV[Events outbox]
   LI -. événements .-> EV
+  AG -. événements, sans abonné V1 .-> EV
   EV -. abonnement .-> SE[Search]
   EV -. abonnement .-> OV[Overview]
   EV -. abonnement V2 .-> AI[AI V2]
@@ -289,7 +294,7 @@ classDiagram
 
 ### Correspondance avec les modules Spring Boot
 
-**Décision** : Spring Modulith avec un package racine par contexte (`com.psymate.identity`, `com.psymate.patients`, `com.psymate.clinical`, `com.psymate.vocabulary`, `com.psymate.linking`, `com.psymate.search`, `com.psymate.overview`, `com.psymate.events`, `com.psymate.ai`), organisation par rôle à l'intérieur (`api / controller / dto / service / repository / model / config`, G Q33).
+**Décision** : Spring Modulith avec un package racine par contexte (`com.psymate.identity`, `com.psymate.patients`, `com.psymate.clinical`, `com.psymate.vocabulary`, `com.psymate.linking`, `com.psymate.search`, `com.psymate.overview`, `com.psymate.events`, `com.psymate.directory`, `com.psymate.agenda` (M11, G Q50), `com.psymate.ai`), organisation par rôle à l'intérieur (`api / controller / dto / service / repository / model / config`, G Q33).
 
 | Critère | Spring Modulith | Package par couche classique | Hexagonal strict par module |
 | --- | --- | --- | --- |
@@ -529,6 +534,10 @@ Spécialités et publics (G Q15, 29 octobre 2026) : vocabulaire **fermé**, stoc
 
 Règles : rien de ce qui est dans `practitioner_profile` ne touche un dossier patient ; les moyens de contact ne sont rendus publics que si le praticien a coché l'affichage correspondant ; la photo est servie en taille fixe sans métadonnées. Le libellé affiché de la profession `coach` est « Coach » (ou « Coach mental » si le praticien le précise dans `title_label`), jamais « personal coach ». **Impact V2** : aucun ; l'annuaire est hors du périmètre de l'IA.
 
+### A4.11 Agenda (ajouté le 15 novembre 2026, jalon M11)
+
+Une seule table, `appointment` (E3.14, migration `V12__agenda.sql`), propriété du module `agenda` : une ligne par rendez-vous, les occurrences d'une série partagent un `series_id` sans règle de récurrence stockée (G Q55) ; `status ∈ planned | tentative | cancelled | done` (G Q52), annulation par statut avec `cancelled_at` et `cancel_reason` (G Q53) ; `session_entry_id` référence `entry` par clé étrangère SQL, jamais par association JPA (UUID nu). Accès par JPA et JPQL (G Q50, aucun SQL natif) ; les fenêtres de lecture chevauchent `[from, to[` (`starts_at < to AND ends_at > from`), limitées à 62 jours. Les colonnes de synchronisation Google (`google_event_id`, `google_etag`, `source`) et la table `practitioner_integration` n'existent pas en M11 : elles restent en E6.2 pour le jalon M12 (G Q51). Le contrat (`POST /api/appointments`, `GET /api/agenda`, `GET /api/agenda/freebusy`, `GET /api/patients/{id}/appointments`, annulation, confirmation, séries) est décrit dans `docs/I-plan-agenda-api.md` I3, version `0.12.x`. **Impact V2** : aucun ; les événements Q59 servent le jalon M12, pas l'IA.
+
 ### Diagramme entité-relation
 
 ```mermaid
@@ -620,6 +629,7 @@ Un seul déployable backend, une seule SPA, une seule base : la complexité est 
 | `search` | Index, requêtes, facettes | `events` (écoute), `patients` (garde), `identity`, `clinical` ; lecture SQL des tables de clinical et de vocabulary (`tag`, `emotion`, `entry_type`) (G Q34) | aucun package `api` : endpoint REST seulement |
 | `overview` | Projection vue d'ensemble | `events` (écoute), `patients` (garde), `identity`, `clinical`, `linking` ; lecture SQL des tables de clinical, patients, linking et vocabulary (`emotion`) (G Q34) | aucun package `api` : endpoint REST seulement |
 | `events` | Outbox, republication, abonnés | — | `DomainEvent`, `DomainEventPublisher`, `EventDeduplicator` |
+| `agenda` (M11, G Q50) | Rendez-vous, séries, conflits, annulation, confirmation ; préférences `agenda.*` lues dans `identity` | `identity`, `patients`, `clinical`, `events` (chacun par son `api`), `shared` | aucune façade en M11 ; événements sans abonné en V1, hooks de M12 (G Q59) : `AppointmentPlanned`, `AppointmentRescheduled`, `AppointmentCancelled`, `AppointmentConfirmed` |
 | `ai` (V2) | Suggestions, motifs, questions | `events`, `clinical` (lecture), `linking` (écriture `proposed`), chacun par son `api` | `SuggestionFacade` |
 | `companion` (réservé, A11) | Appairage d'appareils patients, réception des lots | `patients`, `clinical` (dépôt d'entrées `author_type = patient`), `events` ; jamais `identity.admin`, `directory` | `SubmissionReceived`, `SubmissionAttached` |
 | `shared` | Infrastructure web transverse utilisée par au moins deux modules : erreurs RFC 9457 (`ProblemException`), limitation de débit, i18n des messages, adresses IP (`shared.web.IpAddresses`), horodatages UTC à la microseconde (`shared.time.Timestamps`) | — (ne dépend d'aucun module) | outils techniques, aucune table : ni `JdbcClient` ni `EntityManager` (garde ArchUnit sans exception depuis M9-05 ; le journal d'audit est dans `identity.audit`) |
@@ -627,6 +637,8 @@ Un seul déployable backend, une seule SPA, une seule base : la complexité est 
 Règle vérifiée par `ApplicationModules.of(App.class).verify()` dans la CI : toute dépendance hors des `package-info.java` fait échouer le build. Chaque dépendance passe par le package `api` du module cible (`"patients :: api"`, y compris pour `ai` et `companion`) ; `shared` est autorisé partout. Tout type public d'un package `api` est utilisé par un autre module ou porte `@Reserved` (`shared.Reserved`, avec son futur consommateur et sa raison) : garde `ApiUsageTests` (M9-06), dont la liste d'exceptions nomme la tâche qui règle chaque reste. La référence est le `package-info.java` de chaque module ; ce tableau en est l'état au 2 novembre 2026, et il sera généré par `Documenter` (tâche M9-02).
 
 Module ajouté le 24 octobre 2026 — `directory` : annuaire public et profils ; peut dépendre de `identity` et `events` ; expose seulement `ProfilePublished` et `ProfileUnpublished`, publiés sans abonné en V1 et annotés `@Reserved` (G Q40) ; les façades `DirectoryFacade` et `ProfileFacade`, sans consommateur, ont été supprimées par M9-06. Ses contrôleurs sous `/api/public/**` sont exclus de l'authentification dans la configuration Spring Security et soumis à une limitation de débit par adresse (Bucket4j, G Q24).
+
+Module ajouté le 15 novembre 2026 — `agenda` (G Q50, jalon M11, créé par M11-02) : module JPA (G Q32) structuré par rôle dès son premier fichier (G Q33, `ROLE_FOLDER_MODULES += agenda`), propriétaire de la seule table `appointment` (`TableOwnershipTests`). Il lit `PatientFacade` (dont `followUp`, M11-03), `PatientOwnershipGuard`, `CurrentPractitioner`, `PractitionerFacade.preferencesOf` (préférences `agenda.*`, M11-04) et, si M11-08 est retenue, `SessionFacade` de `clinical.api`. Aucun appel externe, aucune colonne ni clé Google : la synchronisation est le jalon M12.
 
 ### C4 niveau 1 : contexte
 
@@ -1314,6 +1326,6 @@ Règles attachées à ces colonnes, valables dès la V1 même si elles ne s'exer
 
 À traiter dans une étude séparée après le backend V1 (G Q16, préparée par le document de passation M7-06) : chiffrement au repos et en transit, gestion des clés, hébergement de données de santé et conformité RGPD (y compris mineurs et consentement des représentants légaux, G Q19), modèle de menaces, choix d'hébergeur et déploiement, sauvegardes et objectifs RPO/RTO, journalisation d'audit réglementaire, fournisseur SMTP pour `noreply@psymate.com` (G Q4), stockage des justificatifs et des exports en bêta (G Q17).
 
-Hors V1 (G Q25) : l'agenda synchronisé Google des fiches 15 et 15b ; aucune étude, aucun module.
+Agenda : l'API locale est le jalon **M11** (module `agenda`, G Q50–Q59, plan `docs/I-plan-agenda-api.md`, A4.11, E3.14) ; l'écran web des fiches 15 et 15b est un jalon web séparé ; la synchronisation Google (OAuth, agenda secondaire, `events.watch`, freebusy, `practitioner_integration`, colonnes `google_*`) reste hors V1, jalon **M12** (G Q51, Q25 révisée).
 
 À traiter dans une étude D, après M4 : le compagnon patient (A11), y compris la comparaison React Native / Capacitor, l'appairage, le bouton « Envoyer », les rappels, les impacts HDS et dispositif médical.

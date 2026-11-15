@@ -13,7 +13,7 @@ Les prompts renvoient aux documents copiés dans `docs/` du dépôt : `docs/A-ar
 | **A**, **B**, **C**, **D**, **E**, **G** | Les documents de référence : A = architecture, B = UX, C = plan, D = orchestration backend, E = modèle de données, G = décisions. « A4.3 » = document A, section 4.3. |
 | **A10** | Section de A ajoutée le 25 octobre : préférences par compte, vérification des praticiens (dossier professionnel), administration. |
 | **A11** | Section de A sur le « compagnon patient » (future app mobile) : rien n'est construit, mais des colonnes et tables vides sont réservées. |
-| **M0 … M7** | Les huit jalons produit du plan C (M8, migration JPA, et M9, restructuration, sont des séries techniques décrites en C8) : M0 socle technique, M1 patients et entrées, M2 liens et graphe, M3 timeline, M4 recherche et vue d'ensemble, M5 annuaire public, M6 capture rapide et finitions, M7 durcissement avant la bêta. |
+| **M0 … M7**, **M10**, **M11** | Les huit jalons produit du plan C, puis M10 (compléments du contrat pour la V1 web, C9) et M11 (agenda côté API, module `agenda`, C11 et `docs/I-plan-agenda-api.md`, 15 novembre 2026) ; M8, migration JPA, et M9, restructuration, sont des séries techniques décrites en C8 : M0 socle technique, M1 patients et entrées, M2 liens et graphe, M3 timeline, M4 recherche et vue d'ensemble, M5 annuaire public, M6 capture rapide et finitions, M7 durcissement avant la bêta. |
 | **M1-03**, **M4-01a**… | Une tâche : jalon, tiret, numéro. La ligne correspondante est dans C2, C6 ou C8 (document C). `M4-01a` est une tâche ajoutée par D (D6-A1). |
 | **V0 … V9** | Les « vagues » de D3 : un groupe de tâches dont toutes les dépendances sont fusionnées, donc lançables ensemble. |
 | **Couloir** | Un module Spring (identity, patients, clinical…). Un seul agent à la fois par couloir. |
@@ -21,7 +21,7 @@ Les prompts renvoient aux documents copiés dans `docs/` du dépôt : `docs/A-ar
 | **F1 … F33** | Exigences fonctionnelles (A2, A10). |
 | **ADR-01 … ADR-13** | Décisions d'architecture consignées (A9, A10, A11). |
 | **Q1 … Q30** | Les questions ouvertes, tranchées dans G. |
-| **V01 … V10** | Migrations Flyway (E4) : les fichiers SQL qui créent la base, dans l'ordre. |
+| **V01 … V12** | Migrations Flyway (E4) : les fichiers SQL qui créent la base, dans l'ordre. |
 | **Spring Modulith** | La bibliothèque qui découpe le monolithe en modules étanches et vérifie les frontières par test. |
 | **Outbox / `event_publication`** | La table où chaque événement métier (« entrée créée », « lien accepté ») est enregistré avant d'être consommé par la recherche, la vue d'ensemble, et plus tard l'IA. |
 | **Worktree** | Une copie de travail séparée du dépôt git, avec sa propre branche. Chaque agent travaille dans la sienne : ils ne se gênent pas. |
@@ -56,7 +56,7 @@ Toutes les questions ouvertes de la version 1.0 sont tranchées. Le détail et l
 | Q22 | Patient DEMO généré par M7-01, relu ensuite. |
 | Q23 | Français d'abord ; structure i18n conservée, fichiers EN peuvent être en retard. |
 | Q24 | Bucket4j, valeurs actuelles. |
-| Q25 | Agenda Google hors V1 ; pas de jalon Agenda (ancien M8 ; M8 désigne désormais la migration JPA, C8). |
+| Q25 | Révisée le 15 novembre 2026 par Q50–Q59 (G8) : agenda local en jalon **M11**, module `agenda` (prompts dans `docs/I-plan-agenda-api.md` I5, pas de lot dans F) ; synchronisation Google hors V1, jalon M12. M8 désigne la migration JPA, C8. |
 | Q26 | Signalements de l'annuaire : V1.1. |
 | Q27, Q28 | **M1-14b** créée (comptes, suspension, journal, recours). |
 | Q29, Q30 | `security_event` + vue `admin_journal_v` ; `clinical_rev` incrémenté par l'application. |
@@ -113,7 +113,7 @@ Pour la base de données, docs/E-modele-donnees.md fait autorité sur A et C. Po
 - make db-reset : recrée la base locale depuis zéro
 
 ## Architecture (règles non négociables)
-- Un module Spring Modulith par contexte : identity, patients, vocabulary, clinical, linking, search, overview, events, directory. Packages réservés et vides : ai, companion.
+- Un module Spring Modulith par contexte : identity, patients, vocabulary, clinical, linking, search, overview, events, directory, agenda (M11, G Q50 ; dépend seulement des `api` d'identity, patients, clinical, events). Packages réservés et vides : ai, companion.
 - Un module ne lit jamais les tables ni les classes internes d'un autre ; il passe par la façade du package `api` ou par un événement.
 - Dépendances autorisées : voir package-info.java de chaque module (ApplicationModules.verify() les vérifie).
 - directory ne dépend que d'identity et events, et ne touche jamais aux données patient. identity.admin ne dépend d'aucun module clinique.
@@ -122,7 +122,7 @@ Pour la base de données, docs/E-modele-donnees.md fait autorité sur A et C. Po
 - Une migration Flyway fusionnée ne se modifie jamais : on en ajoute une. Les numéros sont réservés dans docs/E-modele-donnees.md E4.
 - L'IA V2 n'existe pas en V1 : ne pas écrire de code IA, mais ne pas casser les hooks (outbox, tables vides).
 - Le compagnon patient n'existe pas en V1 (A11) : `entry.author_type` vaut toujours 'practitioner', `entry.submission_id` toujours NULL, `patient_device` et `patient_submission` restent vides, le package `companion` reste vide. Ne jamais les supprimer, ne jamais les remplir, ne jamais exposer `authorType` en écriture.
-- L'agenda Google (fiches 15, 15b) est hors V1 (G, Q25) : aucun module scheduling.
+- L'agenda est le module agenda (G Q50) ; la synchronisation Google est hors V1 (M12) : aucun appel externe, aucune colonne Google. Pour toute tâche M11, docs/I-plan-agenda-api.md fait foi (I2 DDL, I3 contrat, I4 fichiers autorisés).
 
 ## Versions
 Spring Boot 4.1.x, Spring Modulith 2.1.2, Java 21 : ne jamais rétrograder, ne jamais ajouter une dépendance de la ligne Boot 3 / Jackson 2 (`com.fasterxml.jackson.*` est Jackson 2 ; Jackson 3 vit sous `tools.jackson.*`). Les noms de starters sont ceux de la ligne 4 : vérifie dans la documentation officielle, pas de mémoire. Toute version est figée dans pom.xml, jamais une plage.
@@ -331,7 +331,7 @@ claude --worktree M0-02
 ```text
 Tâche M0-02 — Modules Modulith vides et règles de dépendance (dépôt psymate-api, tous les modules, package-info.java seulement). Utilise l'agent backend-module-dev.
 
-Contexte : lis CLAUDE.md, docs/A-architecture.md A3 « Correspondance avec les modules Spring Boot », A5 « Modules et dépendances autorisées » (tableau complet, y compris la ligne directory et la ligne companion), A10.1 (identity.admin ne dépend d'aucun module clinique), A11 « Module, événements et endpoints réservés ». Le module scheduling (agenda) n'existe pas : G Q25.
+Contexte : lis CLAUDE.md, docs/A-architecture.md A3 « Correspondance avec les modules Spring Boot », A5 « Modules et dépendances autorisées » (tableau complet, y compris la ligne directory et la ligne companion), A10.1 (identity.admin ne dépend d'aucun module clinique), A11 « Module, événements et endpoints réservés ». Le module agenda (ancien nom scheduling, hors V1 par G Q25 le 29 octobre 2026) n'existe pas à ce stade : il est créé par M11-02 (G Q50, 15 novembre 2026).
 
 Objectif : les packages com.psymate.identity, com.psymate.patients, com.psymate.vocabulary, com.psymate.clinical, com.psymate.linking, com.psymate.search, com.psymate.overview, com.psymate.events, com.psymate.directory, chacun avec package-info.java et @ApplicationModule(allowedDependencies = …) conformes au tableau A5 ; le package com.psymate.shared (types communs, déclaré comme module partagé ouvert) ; les packages réservés com.psymate.ai et com.psymate.companion avec leur package-info.java et aucune autre classe (companion : allowedDependencies = patients, clinical, events) ; les sous-packages com.psymate.identity.auth, com.psymate.identity.preferences, com.psymate.identity.verification, com.psymate.identity.admin, vides ; ModularityTests (ApplicationModules.of(App.class).verify()) ; ArchitectureTests (ArchUnit) : aucun accès à un repository d'un autre module, directory et identity.admin n'importent rien de patients, clinical, linking, overview, search.
 
@@ -1459,7 +1459,7 @@ Le backend V1 est complet. Les anciennes questions « à trancher » sont closes
 | Liste des comptes, suspension manuelle, journal, recours, vocabulaire de l'annuaire (Q15, Q27, Q28) | Fait | M1-14b, lot 6 |
 | Export du compte refusé (Q18) | Fait | M6-05, lot 8 |
 | Signalements de l'annuaire (Q26) | V1.1 | Deux tâches `directory` à écrire plus tard (DDL E6.1) |
-| Agenda Google (Q25) | Hors V1 | Aucun jalon Agenda (ancien M8) ; fiches 15 et 15b marquées « plus tard » |
+| Agenda (Q25, révisée le 15 novembre 2026 par Q50–Q59) | API en jalon **M11**, Google en M12 | Module `agenda`, tâches M11-01 à M11-09 (C11, D1, D3, D5) ; prompts dans `docs/I-plan-agenda-api.md` I5, aucun lot dans F ; fiches 15 et 15b : écran web dans un jalon web ultérieur, synchronisation Google hors V1 |
 | Étude hébergement HDS / RGPD (Q16, Q17, Q19) | Après le backend V1 | M7-06 prépare la passation |
 
 Le même document pour le frontend `psymate-web` (**document H**) suivra le même plan : préparation, lots alignés sur les tags de contrat (`v0.1.0` → auth, `v0.2.0` → identité étendue, `v0.3.0` → patients et entrées, …), un prompt par écran à partir des fiches `docs/design/`.

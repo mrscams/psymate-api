@@ -106,6 +106,40 @@ class PatientExportAppointmentsIT extends ExportTestSupport {
   void patientWithoutAppointmentsHasNoSection() throws Exception {
     UUID carol = patient(doctor, "Carol Sans", null);
     assertThat(markdown(carol)).doesNotContain("Rendez-vous");
+    String page = html(carol);
+    assertThat(page).doesNotContain("Rendez-vous").doesNotContain("class=\"appointments\"");
+  }
+
+  @Test
+  void planningNoteIsEscapedInHtml() throws Exception {
+    UUID dan = patient(doctor, "Dan Note", null);
+    clock.set(Instant.parse("2026-11-15T08:00:00Z"));
+    post(
+            "/api/appointments",
+            "{\"patientId\":\""
+                + dan
+                + "\",\"startsAt\":\"2026-12-03T09:00:00Z\",\"durationMin\":50,"
+                + "\"modality\":\"video\",\"planningNote\":\"<script>alert(1)</script> & co\"}",
+            as(doctor))
+        .andExpect(status().isCreated());
+    String page = html(dan);
+    assertThat(page).contains("&lt;script&gt;alert(1)&lt;/script&gt; &amp; co");
+    assertThat(page).doesNotContain("<script>");
+  }
+
+  /** HTML interne du dossier (étape du PDF), avec le principal que pose le travail d'export. */
+  private String html(UUID patient) {
+    CurrentPractitioner principal =
+        new CurrentPractitioner(
+            doctor, tenant, emailOf(doctor), "export", "psychologist", "approved");
+    SecurityContextHolder.getContext()
+        .setAuthentication(
+            UsernamePasswordAuthenticationToken.authenticated(principal, null, List.of()));
+    try {
+      return html.render(exports.build(patient, Locale.FRENCH), ExportTexts.of(Locale.FRENCH));
+    } finally {
+      SecurityContextHolder.clearContext();
+    }
   }
 
   @Test

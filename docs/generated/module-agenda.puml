@@ -27,7 +27,7 @@ System_Boundary("App_boundary", "App", $tags="") {
 }
 
 Rel(App.App.Agenda, App.App.Events, "uses", $techn="", $tags="", $link="")
-Rel(App.App.Agenda, App.App.Identity, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Agenda, App.App.Identity, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Agenda, App.App.Patients, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Agenda, App.App.Shared, "depends on", $techn="", $tags="", $link="")
 Rel(App.App.Identity, App.App.Events, "uses", $techn="", $tags="", $link="")

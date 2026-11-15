@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-15T15:54:52.857Z",
+  "task": "M11-06",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "1 bloquant(s), 1 à corriger, 6 remarque(s)",
+  "notes": "AppointmentAssembler n'est plus identique à M11-05 (commit 987e2b2 : conflicts(Collection) remplacé par conflicts(Collection, Map) et toDto(Appointment, Map)) ; I4 exige une copie provisoirement identique et AgendaQueryService.freeBusy appelle la signature retirée : recopier l'assembler de 987e2b2 et lire patientsOf une fois dans freeBusy.",
+  "pr": "90",
+  "branch": "claude/m11-06-agenda-reads-023874",
+  "checkout": "m11-06-agenda-reads-023874"
+}

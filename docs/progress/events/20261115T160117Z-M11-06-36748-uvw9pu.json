@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-15T16:01:17.629Z",
+  "task": "M11-06",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant(s), 0 à corriger, 5 remarque(s)",
+  "notes": "aucun",
+  "branch": "claude/m11-06-agenda-reads-023874",
+  "checkout": "m11-06-agenda-reads-023874"
+}

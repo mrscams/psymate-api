@@ -4,6 +4,7 @@
 |`com.psymate.agenda`
 |Bean references
 |* `c.p.e.api.DomainEventPublisher` (in Events)
+* `c.p.i.api.PractitionerFacade` (in Identity)
 * `c.p.p.api.PatientFacade` (in Patients)
 * `c.p.p.api.PatientOwnershipGuard` (in Patients)
 |===

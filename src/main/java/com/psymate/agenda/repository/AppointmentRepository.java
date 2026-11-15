@@ -1,10 +1,13 @@
 package com.psymate.agenda.repository;
 
 import com.psymate.agenda.model.Appointment;
+import com.psymate.agenda.model.AppointmentStatus;
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -40,4 +43,86 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
       @Param("from") OffsetDateTime from,
       @Param("to") OffsetDateTime to,
       @Param("excludeId") UUID excludeId);
+
+  // ---- lectures de l'agenda (M11-06)
+
+  /**
+   * Rendez-vous du praticien dont le créneau chevauche [from, to[ ({@code startsAt < to AND endsAt
+   * > from}), parmi ces statuts, triés par début (I3, fenêtre de {@code GET /api/agenda}).
+   */
+  @Query(
+      """
+      select a from Appointment a
+      where a.practitionerId = :practitionerId
+        and a.startsAt < :to and a.endsAt > :from
+        and a.status in :statuses
+      order by a.startsAt, a.id
+      """)
+  List<Appointment> findWindow(
+      @Param("practitionerId") UUID practitionerId,
+      @Param("from") OffsetDateTime from,
+      @Param("to") OffsetDateTime to,
+      @Param("statuses") Collection<AppointmentStatus> statuses);
+
+  /**
+   * Rendez-vous du praticien terminés au plus tard à {@code before} et commencés au plus tôt à
+   * {@code since}, du plus tard terminé au plus tôt (freebusy : « précédent » du même jour).
+   */
+  @Query(
+      """
+      select a from Appointment a
+      where a.practitionerId = :practitionerId
+        and a.endsAt <= :before and a.startsAt >= :since
+        and a.status in :statuses
+        and a.id <> :excludeId
+      order by a.endsAt desc, a.startsAt desc, a.id
+      """)
+  List<Appointment> findEndingBefore(
+      @Param("practitionerId") UUID practitionerId,
+      @Param("since") OffsetDateTime since,
+      @Param("before") OffsetDateTime before,
+      @Param("statuses") Collection<AppointmentStatus> statuses,
+      @Param("excludeId") UUID excludeId,
+      Limit limit);
+
+  /**
+   * Rendez-vous du praticien commencés dans [after, until[, du plus tôt au plus tard (freebusy : «
+   * suivant » du même jour).
+   */
+  @Query(
+      """
+      select a from Appointment a
+      where a.practitionerId = :practitionerId
+        and a.startsAt >= :after and a.startsAt < :until
+        and a.status in :statuses
+        and a.id <> :excludeId
+      order by a.startsAt, a.id
+      """)
+  List<Appointment> findStartingAfter(
+      @Param("practitionerId") UUID practitionerId,
+      @Param("after") OffsetDateTime after,
+      @Param("until") OffsetDateTime until,
+      @Param("statuses") Collection<AppointmentStatus> statuses,
+      @Param("excludeId") UUID excludeId,
+      Limit limit);
+
+  /**
+   * Rendez-vous d'un patient chez ce praticien, parmi ces statuts, non terminés à {@code from}
+   * ({@code endsAt > from}), triés par début ({@code GET /api/patients/{id}/appointments}).
+   */
+  @Query(
+      """
+      select a from Appointment a
+      where a.practitionerId = :practitionerId
+        and a.patientId = :patientId
+        and a.endsAt > :from
+        and a.status in :statuses
+      order by a.startsAt, a.id
+      """)
+  List<Appointment> findOfPatient(
+      @Param("practitionerId") UUID practitionerId,
+      @Param("patientId") UUID patientId,
+      @Param("from") OffsetDateTime from,
+      @Param("statuses") Collection<AppointmentStatus> statuses,
+      Limit limit);
 }

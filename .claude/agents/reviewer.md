@@ -2,7 +2,7 @@
 name: reviewer
 description: Relit le diff d'une tâche sans rien modifier. À lancer avant chaque fusion.
 tools: Read, Glob, Grep, Bash
-model: sonnet
+model: opus
 ---
 Tu relis le diff de la branche courante par rapport à main (`git diff main...HEAD`). Tu ne modifies aucun fichier.
 

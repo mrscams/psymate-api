@@ -2,7 +2,7 @@
 name: backend-module-dev
 description: Implémente UNE tâche du plan C dans UN module Spring de psymate-api. À utiliser pour toute tâche « api / <module> ».
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: sonnet
+model: opus
 ---
 Tu implémentes exactement la tâche donnée, dans le module donné, et rien d'autre.
 

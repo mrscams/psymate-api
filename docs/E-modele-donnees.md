@@ -33,7 +33,7 @@ Marquages : **[À valider pilotes]** = contenu clinique livré avec les valeurs 
 | Événements | `events` | `event_publication` | Outbox Spring Modulith |
 | Projections | `search`, `overview` | `patient_overview` (+ colonne `entry.search_vector` et ses triggers) | Lecture rapide |
 | Annuaire | `directory` | `practitioner_profile`, `directory_vocabulary`, `contact_request` | Profil public, liste fermée des spécialités et publics, relais de contact |
-| Agenda (M11, 15 novembre 2026) | `agenda` | `appointment` | Rendez-vous planifiés, séries, annulation par statut (E3.14, V12, G Q50–Q59) |
+| Agenda (M11, 15 novembre 2026) | `agenda` | `appointment` | Rendez-vous planifiés, séries, annulation par statut, rendez-vous invités purgés à 6 mois (E3.14, V12, V13, G Q50–Q60) |
 | **Réservé V2** | `ai` | `entry_embedding`, `entry_chunk`, `ai_feedback` | Vides en V1 |
 | **Réservé compagnon** | `companion` | `patient_device`, `patient_submission` + colonnes `entry.author_type`, `entry.submission_id` | Vides en V1 |
 | **Conditionnel** | `directory`, `identity.admin` (V1.1, G Q26) ; synchronisation Google de l'agenda (M12, hors V1, G Q51) | `directory_profile_version`, `directory_report` ; `practitioner_integration` et colonnes `google_event_id`, `google_etag`, `source` d'`appointment` | DDL prêt, pas de migration en V1 |
@@ -935,6 +935,22 @@ CREATE INDEX ix_appointment_patient ON appointment(patient_id, starts_at DESC);
 CREATE INDEX ix_appointment_series ON appointment(series_id) WHERE series_id IS NOT NULL;
 ```
 
+**Rendez-vous invité (M11-10, G Q60, 15 novembre 2026).** Migration `V13__agenda_guest.sql` (V12 reste telle quelle) : un rendez-vous vise soit un patient (`patient_id`), soit un **invité**, personne sans fiche patient décrite par `guest_first_name`, `guest_last_name` (obligatoire) et `guest_phone`, qui ne vit que dans ces colonnes (aucune ligne `patient`, aucune table de contacts ; ni patients, ni recherche, ni vue d'ensemble). `ck_appointment_subject` impose exactement un des deux. La purge (`GuestPurgeJob`, 6 mois après la fin ou l'annulation) met les trois colonnes à `NULL` et pose `guest_purged_at` (E9) ; le rattachement à une fiche patient pose `patient_id` et efface les colonnes invité. Index partiel de la purge sur `ends_at`.
+
+```sql
+ALTER TABLE appointment ALTER COLUMN patient_id DROP NOT NULL;
+ALTER TABLE appointment
+  ADD COLUMN guest_first_name text,
+  ADD COLUMN guest_last_name  text,
+  ADD COLUMN guest_phone      text,
+  ADD COLUMN guest_purged_at  timestamptz,
+  ADD CONSTRAINT ck_appointment_subject CHECK (
+    (patient_id IS NOT NULL AND guest_first_name IS NULL AND guest_last_name IS NULL AND guest_phone IS NULL AND guest_purged_at IS NULL)
+    OR (patient_id IS NULL AND (guest_last_name IS NOT NULL OR guest_purged_at IS NOT NULL))
+  );
+CREATE INDEX ix_appointment_guest_purge ON appointment(ends_at) WHERE patient_id IS NULL AND guest_purged_at IS NULL;
+```
+
 ## E4. Découpage en migrations Flyway
 
 ### Règles
@@ -961,6 +977,7 @@ CREATE INDEX ix_appointment_series ON appointment(series_id) WHERE series_id IS 
 | `V10__admin_journal.sql` | M1-14b (identity.admin) | V6 | E3.13 vue `admin_journal_v` | V03 |
 | `V11__export_job.sql` | M6-05 (clinical) | V8 | E3.6 `export_job` | V01 |
 | `V12__agenda.sql` | M11-02 (agenda) | M11-A | E3.14 `appointment` | V01, V05 |
+| `V13__agenda_guest.sql` | M11-10 (agenda) | après M11-D | E3.14 rendez-vous invité : `patient_id` facultatif, colonnes `guest_first_name`, `guest_last_name`, `guest_phone`, `guest_purged_at`, `ck_appointment_subject`, `ix_appointment_guest_purge` (G Q60) | V12 |
 | *conditionnelles* | voir E6 | — | `directory_profile_version`, `directory_report` (V1.1, G Q26) ; `practitioner_integration` et colonnes Google d'`appointment` (M12, hors V1, G Q51) | — |
 
 Ce que ce plan change par rapport à C (reporté en E8) : M0-03 crée `practitioner` **avec** ses colonnes A10.2 (M1-10 ne fait plus d'`ALTER`, il crée les tables de vérification) ; M0-03 ne crée plus `entry_embedding` / `entry_chunk` / `ai_feedback`, impossibles avant `entry` et `link` ; M5-01 reçoit sa propre migration.
@@ -1193,7 +1210,7 @@ Les lignes de ce tableau ont été reportées dans A (A4, A10) et C (M0-03, M1-1
 
 ## E9. Suppressions physiques autorisées (G Q37, 2 novembre 2026)
 
-Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `entry_version`, `link` et les tables de détail courantes s'archivent (`archived_at`, statut `superseded`). Ce tableau est la liste fermée de ce qui peut l'être ; une tâche qui ajoute une suppression physique ajoute sa ligne ici. Le test d'appartenance des tables (C8, M9-02) refuse tout `DELETE` sur une table clinique. `appointment` (E3.14) n'y figure pas : un rendez-vous s'annule par statut (G Q53).
+Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `entry_version`, `link` et les tables de détail courantes s'archivent (`archived_at`, statut `superseded`). Ce tableau est la liste fermée de ce qui peut l'être ; une tâche qui ajoute une suppression physique ajoute sa ligne ici. Le test d'appartenance des tables (C8, M9-02) refuse tout `DELETE` sur une table clinique. `appointment` (E3.14) n'y figure pas comme ligne : un rendez-vous s'annule par statut (G Q53) ; seules les colonnes d'identité d'un invité sont purgées (G Q60, dernière ligne du tableau).
 
 | Table ou fichier | Ce qui est supprimé | Par qui | Raison |
 | --- | --- | --- | --- |
@@ -1205,3 +1222,4 @@ Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `ent
 | Fichiers des justificatifs (`verification_document`) | Le **fichier** chiffré, à `purge_after` ou quand le praticien retire la pièce ; **la ligne reste** (`purged_at`, marque de retrait) | identity.verification | Minimisation des pièces d'identité ; la trace reste auditable |
 | Fichiers d'export (`export_job`) | Le **fichier**, à `expires_at` (7 jours) ; **la ligne reste** (`purged_at`) | clinical.export, `ExportPurgeJob` | Le lien expire ; la trace de l'export reste |
 | Photos de profil (`practitioner_profile`) | L'ancien fichier, quand la photo est remplacée ou retirée | directory | Seule la photo courante est publiée |
+| Colonnes invité d'`appointment` (`guest_first_name`, `guest_last_name`, `guest_phone`) | Les **valeurs**, mises à `NULL` (`UPDATE`, jamais de `DELETE`) 6 mois (`app.agenda.guest-purge.retention`, `P180D`) après la fin du rendez-vous invité ou après son annulation ; `guest_purged_at` est posé, **la ligne reste** | agenda, `GuestPurgeJob` (M11-10) | Minimisation : un invité n'a pas de fiche patient (G Q60) ; seul le rendez-vous reste dans l'agenda |

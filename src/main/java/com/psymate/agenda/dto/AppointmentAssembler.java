@@ -20,9 +20,16 @@ import org.springframework.stereotype.Component;
  * <p>La façade n'expose l'indicateur « archivé » que par la liste des patients du praticien : le
  * service la lit une fois par requête ({@link #patientsOf}) et la passe aux surcharges qui la
  * prennent, quel que soit le nombre de rendez-vous à composer.
+ *
+ * <p>Un rendez-vous invité (G Q60) n'a pas de bloc patient : son bloc {@code guest} vient des
+ * colonnes du rendez-vous, et son nom affiché dans un conflit est « Prénom Nom », ou {@link
+ * #PURGED_GUEST} après la purge.
  */
 @Component
 public class AppointmentAssembler {
+
+  /** Nom affiché d'un invité purgé dans un conflit (G Q60). */
+  public static final String PURGED_GUEST = "Invité purgé";
 
   private final PatientFacade patients;
   private final AppointmentMapper mapper;
@@ -48,7 +55,10 @@ public class AppointmentAssembler {
 
   /** Un rendez-vous, avec la liste des patients déjà lue par l'appelant ({@link #patientsOf}). */
   public AppointmentDto toDto(Appointment appointment, Map<UUID, PatientRef> refs) {
-    return mapper.toDto(appointment, patient(appointment.getPatientId(), refs));
+    if (appointment.isGuest()) {
+      return mapper.toDto(appointment, null, guest(appointment));
+    }
+    return mapper.toDto(appointment, patient(appointment.getPatientId(), refs), null);
   }
 
   /** Rendez-vous d'un même praticien : une seule lecture des patients. */
@@ -73,9 +83,33 @@ public class AppointmentAssembler {
                     a.getId(),
                     a.getStartsAt().toInstant(),
                     a.getEndsAt().toInstant(),
-                    patient(a.getPatientId(), refs).displayName(),
+                    displayName(a, refs),
                     occurrenceStartsAt))
         .toList();
+  }
+
+  /** Nom affiché dans un conflit : celui du patient, ou celui de l'invité (G Q60). */
+  private String displayName(Appointment a, Map<UUID, PatientRef> refs) {
+    if (!a.isGuest()) {
+      return patient(a.getPatientId(), refs).displayName();
+    }
+    return guestDisplayName(a.getGuestFirstName(), a.getGuestLastName(), a.isGuestPurged());
+  }
+
+  /** « Prénom Nom », le nom seul sans prénom, « Invité purgé » après la purge. */
+  public static String guestDisplayName(String firstName, String lastName, boolean purged) {
+    if (purged || lastName == null) {
+      return PURGED_GUEST;
+    }
+    return firstName == null || firstName.isBlank() ? lastName : firstName + " " + lastName;
+  }
+
+  private static GuestDto guest(Appointment a) {
+    return new GuestDto(
+        a.getGuestFirstName(),
+        a.getGuestLastName(),
+        a.getGuestPhone(),
+        a.getGuestPurgedAt() == null ? null : a.getGuestPurgedAt().toInstant());
   }
 
   /**

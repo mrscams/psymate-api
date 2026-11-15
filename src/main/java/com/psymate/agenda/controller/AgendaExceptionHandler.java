@@ -1,5 +1,6 @@
 package com.psymate.agenda.controller;
 
+import com.psymate.agenda.dto.AttachPatientRequest;
 import com.psymate.agenda.model.AppointmentException;
 import com.psymate.shared.problem.AdviceOrder;
 import com.psymate.shared.problem.FieldProblem;
@@ -40,6 +41,12 @@ import tools.jackson.databind.exc.MismatchedInputException;
 @RestControllerAdvice(basePackageClasses = AgendaExceptionHandler.class)
 class AgendaExceptionHandler {
 
+  /** Code d'une contrainte qui le porte dans son message ({@code GuestRequest.phone}). */
+  static final String INVALID_FORMAT = "INVALID_FORMAT";
+
+  /** Contexte des messages de {@code POST /api/appointments/{id}/attach-patient}. */
+  static final String ATTACH_SCOPE = "attach";
+
   private final AgendaMessages messages;
 
   AgendaExceptionHandler(AgendaMessages messages) {
@@ -47,13 +54,23 @@ class AgendaExceptionHandler {
   }
 
   private ProblemDetail validation(List<FieldProblem> problems, Locale locale) {
+    return validation(problems, locale, null);
+  }
+
+  /**
+   * {@code scope} (ou null) : contexte d'une requête dont les messages diffèrent de la création,
+   * clé {@code agenda.error.CODE.scope.champ} d'abord (voir {@link AgendaMessages}).
+   */
+  private ProblemDetail validation(List<FieldProblem> problems, Locale locale, String scope) {
     Map<String, FieldProblem> byField = new LinkedHashMap<>();
     problems.forEach(p -> byField.putIfAbsent(p.field(), p));
     List<FieldProblem> errors = new ArrayList<>();
     byField
         .values()
         .forEach(
-            p -> errors.add(new FieldProblem(p.field(), p.code(), messages.message(p, locale))));
+            p ->
+                errors.add(
+                    new FieldProblem(p.field(), p.code(), messages.message(p, locale, scope))));
     ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_CONTENT);
     pd.setTitle(messages.get("agenda.error.validation.title", locale));
     pd.setDetail(messages.get("agenda.error.validation.detail", locale));
@@ -87,6 +104,10 @@ class AgendaExceptionHandler {
   @ExceptionHandler(AppointmentException.class)
   ProblemDetail domain(AppointmentException ex, HttpServletRequest request) {
     Locale locale = messages.localeOf(request);
+    if (ex.field() != null && !ex.code().equals(ex.fieldCode())) {
+      // Validation métier (G Q60) : même forme que les erreurs Jakarta.
+      return validation(List.of(new FieldProblem(ex.field(), ex.fieldCode())), locale);
+    }
     String detail = messages.domain(ex.code(), ex.detail(), locale);
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.status(), detail);
     pd.setTitle(ex.title());
@@ -103,9 +124,17 @@ class AgendaExceptionHandler {
     Locale locale = messages.localeOf(request);
     List<FieldProblem> problems = new ArrayList<>();
     for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
-      problems.add(new FieldProblem(fe.getField(), codeOf(String.valueOf(fe.getCode()))));
+      // Une contrainte peut porter son code dans son message (téléphone d'un invité : G Q60).
+      String code =
+          INVALID_FORMAT.equals(fe.getDefaultMessage())
+              ? INVALID_FORMAT
+              : codeOf(String.valueOf(fe.getCode()));
+      problems.add(new FieldProblem(fe.getField(), code));
     }
-    return validation(problems, locale);
+    // Rattachement d'un invité (G Q60) : patientId seul, sans l'alternative « ou un invité ».
+    String scope =
+        ex.getBindingResult().getTarget() instanceof AttachPatientRequest ? ATTACH_SCOPE : null;
+    return validation(problems, locale, scope);
   }
 
   /** Contraintes Jakarta des paramètres de requête (@Validated). */

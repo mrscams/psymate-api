@@ -31,6 +31,7 @@ public record RecurrenceRequest(
                 "Nombre d'occurrences, premier rendez-vous compris : 1 à 26 (au-delà, 422"
                     + " TOO_MANY_OCCURRENCES). Exclusif de until.",
             minimum = "1",
+            maximum = "26",
             example = "4")
         @Min(1)
         Integer count,

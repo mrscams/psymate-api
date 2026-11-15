@@ -9,8 +9,10 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Accès JPA à {@code appointment} (G Q32 ; fenêtres et chevauchements en JPQL, aucun SQL natif).
@@ -134,4 +136,31 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
       @Param("from") OffsetDateTime from,
       @Param("statuses") Collection<AppointmentStatus> statuses,
       Limit limit);
+
+  // ---- M11-10 : invités (G Q60)
+
+  /**
+   * Rendez-vous invités non purgés du praticien, tous statuts, triés par début : candidats d'un
+   * rattachement « tous les rendez-vous de cette personne » (le service compare les identités).
+   */
+  List<Appointment>
+      findByPractitionerIdAndPatientIdIsNullAndGuestPurgedAtIsNullOrderByStartsAtAscIdAsc(
+          UUID practitionerId);
+
+  /**
+   * Purge des invités (G Q60, E9) : pour chaque rendez-vous invité non purgé terminé avant {@code
+   * cutoff}, ou annulé avant {@code cutoff}, nom, prénom et téléphone passent à NULL et {@code
+   * guest_purged_at} est posé. La ligne reste : aucun DELETE. Renvoie le nombre de lignes purgées.
+   */
+  @Transactional
+  @Modifying
+  @Query(
+      """
+      update Appointment a
+      set a.guestFirstName = null, a.guestLastName = null, a.guestPhone = null,
+          a.guestPurgedAt = :now, a.updatedAt = :now
+      where a.patientId is null and a.guestPurgedAt is null
+        and (a.endsAt < :cutoff or a.cancelledAt < :cutoff)
+      """)
+  int purgeGuests(@Param("cutoff") OffsetDateTime cutoff, @Param("now") OffsetDateTime now);
 }

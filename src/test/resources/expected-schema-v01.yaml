@@ -464,3 +464,7 @@ appointment:
   - session_entry_id
   - created_at
   - updated_at
+  - guest_first_name
+  - guest_last_name
+  - guest_phone
+  - guest_purged_at

@@ -22,6 +22,12 @@ import org.springframework.data.domain.Persistable;
  * cancelled} et {@code cancelled_at} ensemble, comme l'exige {@code ck_appointment_cancel} (G Q53).
  * {@code updated_at} est maintenu par l'entité à chaque modification (E2), {@code created_at} par
  * l'application à la création.
+ *
+ * <p>Un rendez-vous vise soit un patient ({@code patient_id}), soit un invité (G Q60, V13) : une
+ * personne sans fiche patient, décrite par {@code guest_first_name}, {@code guest_last_name} et
+ * {@code guest_phone}, qui ne vit que dans ces colonnes. La purge des invités (6 mois) les met à
+ * NULL et pose {@code guest_purged_at} ; le rattachement à une fiche patient pose {@code
+ * patient_id} et efface les colonnes invité ({@code ck_appointment_subject}).
  */
 @Entity
 @Table(name = "appointment")
@@ -35,7 +41,7 @@ public class Appointment implements Persistable<UUID> {
   @Column(nullable = false, updatable = false)
   private UUID practitionerId;
 
-  @Column(nullable = false, updatable = false)
+  /** Patient visé ; {@code null} pour un rendez-vous invité (G Q60). */
   private UUID patientId;
 
   @Column(updatable = false)
@@ -59,6 +65,12 @@ public class Appointment implements Persistable<UUID> {
   private String cancelReason;
   private OffsetDateTime cancelledAt;
   private UUID sessionEntryId;
+
+  // Invité (G Q60) : null pour un rendez-vous patient, effacés par la purge ou le rattachement.
+  private String guestFirstName;
+  private String guestLastName;
+  private String guestPhone;
+  private OffsetDateTime guestPurgedAt;
 
   @Column(nullable = false, updatable = false)
   private OffsetDateTime createdAt;
@@ -89,7 +101,7 @@ public class Appointment implements Persistable<UUID> {
     this.id = Objects.requireNonNull(id);
     this.tenantId = Objects.requireNonNull(tenantId);
     this.practitionerId = Objects.requireNonNull(practitionerId);
-    this.patientId = Objects.requireNonNull(patientId);
+    this.patientId = patientId;
     this.seriesId = seriesId;
     this.startsAt = Objects.requireNonNull(startsAt);
     this.endsAt = Objects.requireNonNull(endsAt);
@@ -98,6 +110,52 @@ public class Appointment implements Persistable<UUID> {
     this.planningNote = planningNote;
     this.createdAt = Objects.requireNonNull(createdAt);
     this.updatedAt = createdAt;
+  }
+
+  /**
+   * Nouveau rendez-vous invité (G Q60) : aucun patient, nom obligatoire, prénom et téléphone
+   * facultatifs. Mêmes règles de statut et de créneau qu'un rendez-vous patient.
+   */
+  public static Appointment forGuest(
+      UUID id,
+      UUID tenantId,
+      UUID practitionerId,
+      Guest guest,
+      UUID seriesId,
+      OffsetDateTime startsAt,
+      OffsetDateTime endsAt,
+      AppointmentModality modality,
+      boolean tentative,
+      String planningNote,
+      OffsetDateTime createdAt) {
+    Appointment a =
+        new Appointment(
+            id,
+            tenantId,
+            practitionerId,
+            null,
+            seriesId,
+            startsAt,
+            endsAt,
+            modality,
+            tentative,
+            planningNote,
+            createdAt);
+    a.setGuest(Objects.requireNonNull(guest));
+    return a;
+  }
+
+  /** Identité d'un invité : nom obligatoire, prénom et téléphone facultatifs. */
+  public record Guest(String firstName, String lastName, String phone) {
+    public Guest {
+      Objects.requireNonNull(lastName);
+    }
+  }
+
+  private void setGuest(Guest guest) {
+    this.guestFirstName = guest.firstName();
+    this.guestLastName = guest.lastName();
+    this.guestPhone = guest.phone();
   }
 
   // ---- transitions (I3 ; les règles 409 sont celles de l'API)
@@ -160,6 +218,36 @@ public class Appointment implements Persistable<UUID> {
     touch(at);
   }
 
+  /**
+   * Corrige l'identité de l'invité (PATCH, G Q60) ; refusé si le rendez-vous est annulé ou terminé
+   * (409). L'appelant a vérifié que c'est un invité non purgé.
+   */
+  public void correctGuest(Guest guest, OffsetDateTime at) {
+    requireActive();
+    if (!isGuest() || isGuestPurged()) {
+      throw new IllegalStateException("not an editable guest appointment");
+    }
+    setGuest(guest);
+    touch(at);
+  }
+
+  /**
+   * Rattache le rendez-vous invité à la fiche patient créée pour lui (G Q60) : {@code patient_id}
+   * posé, colonnes invité effacées. 409 APPOINTMENT_NOT_ACTIVE s'il vise déjà un patient ou si
+   * l'invité est purgé. Le statut n'entre pas en compte : un rendez-vous annulé se rattache aussi,
+   * pour que l'historique du patient soit complet.
+   */
+  public void attachPatient(UUID patientId, OffsetDateTime at) {
+    if (!isGuest() || isGuestPurged()) {
+      throw AppointmentException.notActive();
+    }
+    this.patientId = Objects.requireNonNull(patientId);
+    this.guestFirstName = null;
+    this.guestLastName = null;
+    this.guestPhone = null;
+    touch(at);
+  }
+
   /** Rattache la séance créée (M11-08) : {@code done}, seule voie vers ce statut. */
   public void attachSession(UUID sessionEntryId, OffsetDateTime at) {
     requireActive();
@@ -185,6 +273,32 @@ public class Appointment implements Persistable<UUID> {
 
   public UUID getPatientId() {
     return patientId;
+  }
+
+  /** Rendez-vous invité (aucun patient), purgé ou non. */
+  public boolean isGuest() {
+    return patientId == null;
+  }
+
+  /** Invité purgé : nom, prénom et téléphone effacés (G Q60). */
+  public boolean isGuestPurged() {
+    return guestPurgedAt != null;
+  }
+
+  public String getGuestFirstName() {
+    return guestFirstName;
+  }
+
+  public String getGuestLastName() {
+    return guestLastName;
+  }
+
+  public String getGuestPhone() {
+    return guestPhone;
+  }
+
+  public OffsetDateTime getGuestPurgedAt() {
+    return guestPurgedAt;
   }
 
   public UUID getSeriesId() {

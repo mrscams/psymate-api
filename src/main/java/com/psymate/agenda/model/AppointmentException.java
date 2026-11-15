@@ -22,20 +22,48 @@ public class AppointmentException extends ProblemException {
   public static final int MAX_WINDOW_DAYS = 62;
 
   private final String field;
+  private final String fieldCode;
 
   private AppointmentException(int status, String code, String field, String detail) {
+    this(status, code, field, code, detail);
+  }
+
+  private AppointmentException(
+      int status, String code, String field, String fieldCode, String detail) {
     super(
         HttpStatusCode.valueOf(status),
         code,
         Problems.titleOf(HttpStatusCode.valueOf(status)),
         detail,
-        field == null ? List.of() : List.of(new FieldProblem(field, code, detail)));
+        field == null ? List.of() : List.of(new FieldProblem(field, fieldCode, detail)));
     this.field = field;
+    this.fieldCode = fieldCode;
   }
 
   /** Champ de {@code errors[]} pour un 422, {@code null} pour les autres statuts. */
   public String field() {
     return field;
+  }
+
+  /**
+   * Code de l'erreur de champ : le code racine, sauf pour une erreur de validation métier
+   * (VALIDATION_FAILED à la racine, INVALID_VALUE sur le champ).
+   */
+  public String fieldCode() {
+    return fieldCode;
+  }
+
+  /**
+   * Le bloc guest d'un PATCH vise un rendez-vous patient, ou un invité purgé (G Q60) : 422
+   * VALIDATION_FAILED, errors[0] = guest INVALID_VALUE.
+   */
+  public static AppointmentException guestNotEditable() {
+    return new AppointmentException(
+        422,
+        "VALIDATION_FAILED",
+        "guest",
+        "INVALID_VALUE",
+        "Ce rendez-vous ne vise pas un invité modifiable.");
   }
 
   public static AppointmentException notFound() {

@@ -254,6 +254,46 @@ class AgendaPersistenceIT {
         .hasMessageContaining("ck_appointment_order");
   }
 
+  /** V13 (M11-10, G Q60) : un patient ou un invité, jamais les deux, jamais aucun. */
+  @Test
+  void ckAppointmentSubjectRequiresExactlyAPatientOrAGuest() {
+    Timestamp from = Timestamp.from(now.plusDays(11).toInstant());
+    Timestamp to = Timestamp.from(now.plusDays(11).plusHours(1).toInstant());
+    String insert =
+        "insert into appointment (id, tenant_id, practitioner_id, patient_id, starts_at, ends_at,"
+            + " modality, guest_last_name, guest_purged_at) values (?, ?, ?, ?, ?, ?, 'video', ?,"
+            + " ?)";
+
+    assertThatThrownBy(
+            () ->
+                jdbc.update(
+                    insert, UUID.randomUUID(), tenant, alice, patient, from, to, "Benali", null))
+        .as("patient et invité")
+        .isInstanceOf(DataIntegrityViolationException.class)
+        .hasMessageContaining("ck_appointment_subject");
+    assertThatThrownBy(
+            () -> jdbc.update(insert, UUID.randomUUID(), tenant, alice, null, from, to, null, null))
+        .as("ni patient ni invité")
+        .isInstanceOf(DataIntegrityViolationException.class)
+        .hasMessageContaining("ck_appointment_subject");
+    assertThat(
+            jdbc.update(insert, UUID.randomUUID(), tenant, alice, null, from, to, "Benali", null))
+        .isEqualTo(1);
+    assertThat(
+            jdbc.update(
+                insert,
+                UUID.randomUUID(),
+                tenant,
+                alice,
+                null,
+                from,
+                to,
+                null,
+                Timestamp.from(now.toInstant())))
+        .as("invité purgé")
+        .isEqualTo(1);
+  }
+
   @Test
   void ckAppointmentCancelTiesTheStatusToTheDate() {
     OffsetDateTime start = now.plusDays(9);

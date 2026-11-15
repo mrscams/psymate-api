@@ -44,6 +44,20 @@ class AgendaMessages {
     return source.getMessage("agenda.error." + code, null, fallback, normalize(locale));
   }
 
+  /**
+   * Message d'une erreur de champ dans un contexte ({@code scope}, ou null) : clé {@code
+   * agenda.error.CODE.scope.champ} d'abord, puis les clés sans contexte.
+   */
+  String message(FieldProblem problem, Locale locale, String scope) {
+    String fallback = message(problem, locale);
+    if (scope == null) {
+      return fallback;
+    }
+    String field = problem.field().replaceAll("\\[\\d+]", "");
+    String key = "agenda.error." + problem.code() + "." + scope + "." + field;
+    return source.getMessage(key, null, fallback, normalize(locale));
+  }
+
   /** Message d'une erreur de champ ; à défaut de clé, le code lui-même. */
   String message(FieldProblem problem, Locale locale) {
     Locale l = normalize(locale);

@@ -8,7 +8,13 @@ import java.util.UUID;
 @Schema(description = "Rendez-vous du praticien. Dates UTC ISO 8601.")
 public record AppointmentDto(
     @Schema(description = "Identifiant du rendez-vous.") UUID id,
-    @Schema(description = "Patient du rendez-vous.") AppointmentPatientDto patient,
+    @Schema(description = "Patient du rendez-vous. Null pour un rendez-vous invité.")
+        AppointmentPatientDto patient,
+    @Schema(
+            description =
+                "Invité du rendez-vous (G Q60) : personne sans fiche patient. Null pour un"
+                    + " rendez-vous patient.")
+        GuestDto guest,
     @Schema(description = "Série de répétition. Null pour un rendez-vous isolé.") UUID seriesId,
     @Schema(description = "Début du rendez-vous, UTC ISO 8601.", example = "2026-11-16T09:00:00Z")
         Instant startsAt,

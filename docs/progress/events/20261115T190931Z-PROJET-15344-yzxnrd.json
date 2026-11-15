@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-15T19:09:31.615Z",
+  "task": "PROJET",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Jalon M11 Agenda (API) fusionne : PR #86 a #93, module agenda, contrat 0.12.1 tague contract-v0.12.1 ; M11-08 non lancee (bouton du panneau a trancher cote web) ; web et Google (M12) a venir",
+  "next": "Jalon web Agenda (fiches 15, 15b) ; etude docs/etudes/etude-sync-agendas-externes.md pour M12",
+  "checkout": "wt-main-log"
+}

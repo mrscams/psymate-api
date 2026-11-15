@@ -360,7 +360,7 @@ Tâche M11-09 — Seed de l'agenda, tag de contrat, suivi (dépôt psymate-api, 
 
 Contexte : lis CLAUDE.md, docs/I-plan-agenda-api.md I2, I3, docs/design/15-agenda.md « Structure de l'écran » (la semaine de la maquette : 14 séances, cabinet / visio / téléphone, un rendez-vous « à confirmer », samedi travaillé), docs/C-plan.md C3 « Données de démonstration », tools/seed/** (comment le seed small / medium pose patients et séances), docs/D-orchestration-backend.md D6-A4 (tag de contrat après fusion d'un lot).
 
-Objectif : le seed small et medium posent des rendez-vous pour chaque praticien de démonstration : 8 semaines autour d'aujourd'hui (4 passées, 4 à venir), 10 à 16 par semaine, répartis lundi–samedi entre 8 h et 19 h (Europe/Paris), 70 % cabinet, 20 % visio, 10 % téléphone, 1 rendez-vous tentative par semaine, 1 annulé par semaine, quelques séries hebdomadaires (series_id commun), aucun rendez-vous pour un patient archivé ; insertion SQL directe dans appointment (comme les autres tables du seed) en respectant ck_appointment_cancel. make db-reset && make seed passe ; make seed est idempotent comme avant.
+Objectif : le seed small et medium posent des rendez-vous pour chaque praticien de démonstration : 8 semaines autour d'aujourd'hui (4 passées, 4 à venir), 10 à 16 par semaine, répartis lundi–samedi entre 8 h et 19 h (Europe/Paris), 70 % cabinet, 20 % visio, 10 % téléphone, 1 rendez-vous tentative par semaine, 1 annulé par semaine, quelques séries hebdomadaires (series_id commun), aucun rendez-vous pour un patient archivé ; creation par l'API (POST /api/appointments, series par recurrence, annulation par /cancel : le seed n'ecrit jamais en SQL, E5.5) ; ck_appointment_cancel est garanti par l'API. make db-reset && make seed passe ; make seed est idempotent comme avant.
 
 Puis, une fois cette PR fusionnée et toutes les PR M11 vertes sur main : git tag contract-v0.12.1 (ou 0.12.2 si M11-08b est fusionnée) sur main et git push --tags ; make log TASK=M11-09 … puis une entrée make log TASK=PROJET STATUS=done SUMMARY="Jalon M11 Agenda (API) fusionné ; web et Google à venir".
 
@@ -368,7 +368,7 @@ Périmètre : tools/seed/**, Makefile si une cible change, docs/progress/events 
 
 Critères d'acceptation : après make seed, SELECT count(*) FROM appointment > 0 pour chaque praticien seedé ; au moins une série de 4 occurrences ; au moins un cancelled avec cancelled_at ; aucun appointment hors [now - 5 semaines, now + 5 semaines] ; GET /api/agenda sur la semaine courante du praticien de démonstration renvoie entre 10 et 16 rendez-vous ; le tag est posé sur le commit de main qui contient la version indiquée dans application.yml.
 
-Tests : SeedAgendaIT (ou extension du test de seed existant) qui exécute le seed small sur une base vierge et vérifie les comptes ci-dessus.
+Tests : SeedAgendaPerfIT (profil perf, lance par make perf) qui exécute le seed small sur une base vierge et vérifie les comptes ci-dessus.
 
 Interdits : modifier le code du module agenda ; dépendance Maven ; données nominatives réelles.
 

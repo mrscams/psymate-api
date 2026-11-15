@@ -42,6 +42,7 @@ public final class UpdateAppointmentRequest {
 
   @Schema(
       description = "Nouvelle note de planification (2 000 caractères au plus) ; null l'efface.",
+      types = {"string", "null"},
       maxLength = 2000)
   @Size(max = 2000)
   private String planningNote;

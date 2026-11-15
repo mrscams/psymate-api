@@ -4853,7 +4853,9 @@ components:
           description: Nouvelle note de planification (2 000 caractères au plus) ; null l'efface.
           maxLength: 2000
           minLength: 0
-          type: string
+          type:
+          - string
+          - 'null'
         startsAt:
           description: Nouveau début, UTC ISO 8601 ; la durée est conservée si elle n'est pas fournie.
           example: 2026-11-16T10:00:00Z

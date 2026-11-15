@@ -18,6 +18,7 @@ import com.psymate.agenda.model.AppointmentStatus;
 import com.psymate.agenda.repository.AppointmentRepository;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
+import com.psymate.patients.api.PatientAccessException;
 import com.psymate.patients.api.PatientOwnershipGuard;
 import com.psymate.patients.api.PatientRef;
 import com.psymate.shared.problem.ProblemException;
@@ -27,6 +28,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -113,8 +115,14 @@ public class AppointmentService {
   public AppointmentCreatedDto create(CreateAppointmentRequest request) {
     CurrentPractitioner me = me();
     guard.requireOwned(request.patientId());
-    PatientRef patient = assembler.patientsOf(me.id()).get(request.patientId());
-    if (patient != null && patient.archived()) {
+    // Une seule lecture des patients du praticien par requête : archivé, DTO et conflits.
+    Map<UUID, PatientRef> refs = assembler.patientsOf(me.id());
+    PatientRef patient = refs.get(request.patientId());
+    if (patient == null) {
+      // Impossible après la garde, sauf course avec un transfert : on échoue franchement.
+      throw PatientAccessException.notFound();
+    }
+    if (patient.archived()) {
       throw AppointmentException.patientArchived();
     }
     OffsetDateTime startsAt = utc(request.startsAt());
@@ -135,7 +143,7 @@ public class AppointmentService {
     appointments.save(appointment);
     events.publish(event(AppointmentPlanned::new, appointment));
     return new AppointmentCreatedDto(
-        List.of(assembler.toDto(appointment)), assembler.conflicts(conflicts));
+        List.of(assembler.toDto(appointment, refs)), assembler.conflicts(conflicts, refs));
   }
 
   /** Détail d'un rendez-vous du praticien courant. */
@@ -179,8 +187,9 @@ public class AppointmentService {
     if (rescheduled) {
       events.publish(event(AppointmentRescheduled::new, appointment));
     }
+    Map<UUID, PatientRef> refs = assembler.patientsOf(appointment.getPractitionerId());
     return new AppointmentUpdatedDto(
-        assembler.toDto(appointment), assembler.conflicts(overlapsOf(appointment)));
+        assembler.toDto(appointment, refs), assembler.conflicts(overlapsOf(appointment), refs));
   }
 
   /**

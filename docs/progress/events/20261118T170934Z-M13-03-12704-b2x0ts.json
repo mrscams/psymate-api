@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-18T17:09:34.506Z",
+  "task": "M13-03",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR #99 fusionnée en squash (605a89f) ; tag contract-v0.14.0 sur ee23e04 ; jalon M13 Profil 360 (API) terminé",
+  "next": "Jalon web : onglet Profil 360 et panneau latéral (J7)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/99",
+  "branch": "suivi-m13-03-fusionnee",
+  "checkout": "psymate-api"
+}

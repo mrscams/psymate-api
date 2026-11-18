@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-18T15:04:59.566Z",
+  "task": "M13-02",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Profil 360 dans patients : V14 patient_profile_item, quatre routes /profile-items, contrat 0.14.0 ; verify vert (503 unitaires, 1210 IT)",
+  "notes": "Revue J6 : bloquant (verify) levé, test xmin ajouté ; non bloquants en suivi (message PATIENT_ARCHIVED en dur, ordre du tag Profil 360, UNKNOWN_FIELD avant la garde)",
+  "next": "M13-03 seed et tag contract-v0.14.0 après fusion",
+  "pr": "https://github.com/mrscams/psymate-api/pull/98",
+  "branch": "claude/m13-02-profil-360-patients-218ed9",
+  "checkout": "m9-19-cb33b1"
+}

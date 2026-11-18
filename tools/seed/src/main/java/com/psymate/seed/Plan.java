@@ -24,6 +24,8 @@ public record Plan(List<PatientPlan> patients) {
    * @param birthDate AAAA-MM-JJ, toujours renseignée (la phase de vie « enfance » en dépend)
    * @param tags libellés de tags du patient, créés avant lui
    * @param steps étapes dans l'ordre d'exécution
+   * @param profile informations du Profil 360 (M13), écrites après le dossier, dans cet ordre ;
+   *     vide pour un onglet sans information
    */
   public record PatientPlan(
       String displayName,
@@ -33,7 +35,54 @@ public record Plan(List<PatientPlan> patients) {
       String pronoun,
       List<String> tags,
       Practitioner practitioner,
-      List<Step> steps) {}
+      List<Step> steps,
+      List<ProfileItem> profile) {
+
+    /** Le même patient avec ce Profil 360. */
+    public PatientPlan withProfile(List<ProfileItem> items) {
+      return new PatientPlan(
+          displayName,
+          firstName,
+          lastName,
+          birthDate,
+          pronoun,
+          tags,
+          practitioner,
+          steps,
+          List.copyOf(items));
+    }
+  }
+
+  /**
+   * Une information du Profil 360 (J3) : {@code POST /api/patients/{id}/profile-items}. Ce n'est
+   * pas une entrée : elle n'appartient à aucune séance (G Q63). La période ({@code periodLabel},
+   * {@code periodYear}) n'est admise que dans {@code history} (G Q66).
+   *
+   * @param category {@code history}, {@code family}, {@code health} ou {@code values_goals}
+   * @param detail seconde ligne facultative, peut être nulle
+   * @param periodLabel libellé libre (« Enfance », « Vers 2005 »), peut être nul
+   * @param periodYear année de tri du fil chronologique, peut être nulle
+   */
+  public record ProfileItem(
+      String category, String title, String detail, String periodLabel, Integer periodYear) {
+
+    /** Corps JSON exact de la création : les champs nuls sont omis. */
+    public Map<String, Object> body() {
+      Map<String, Object> body = new java.util.LinkedHashMap<>();
+      body.put("category", category);
+      body.put("title", title);
+      if (detail != null) {
+        body.put("detail", detail);
+      }
+      if (periodLabel != null) {
+        body.put("periodLabel", periodLabel);
+      }
+      if (periodYear != null) {
+        body.put("periodYear", periodYear);
+      }
+      return body;
+    }
+  }
 
   /** Une étape du dossier. */
   public sealed interface Step {}

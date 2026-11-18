@@ -87,13 +87,14 @@ public final class Seed {
     Runner.Summary summary = runner.run(plan);
     out.printf(
         Locale.FRENCH,
-        "Résumé : %d patients créés, %d déjà présents, %d séances, %d entrées, %d liens, %d corrections, en %s.%n",
+        "Résumé : %d patients créés, %d déjà présents, %d séances, %d entrées, %d liens, %d corrections, %d informations de profil, en %s.%n",
         summary.created(),
         summary.alreadyPresent(),
         summary.sessions(),
         summary.entries(),
         summary.links(),
         summary.patches(),
+        summary.profileItems(),
         pretty(summary.elapsed()));
 
     if (!"demo".equals(size)) {

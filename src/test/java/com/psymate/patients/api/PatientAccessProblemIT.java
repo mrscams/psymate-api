@@ -58,10 +58,18 @@ class PatientAccessProblemIT {
         colleague);
   }
 
-  /** patients, clinical (web et export), linking, search, overview. */
+  /** patients (fiche et Profil 360), clinical (web et export), linking, search, overview. */
   @ParameterizedTest
   @ValueSource(
-      strings = {"", "/timeline", "/export?format=md", "/graph", "/search?q=test", "/overview"})
+      strings = {
+        "",
+        "/timeline",
+        "/export?format=md",
+        "/graph",
+        "/search?q=test",
+        "/overview",
+        "/profile-items"
+      })
   void anotherPractitionersPatientIs403PatientForbidden(String suffix) throws Exception {
     for (MockHttpServletRequestBuilder request : variants(colleaguePatient, suffix)) {
       mvc.perform(request.with(auth()))
@@ -82,7 +90,15 @@ class PatientAccessProblemIT {
 
   @ParameterizedTest
   @ValueSource(
-      strings = {"", "/timeline", "/export?format=md", "/graph", "/search?q=test", "/overview"})
+      strings = {
+        "",
+        "/timeline",
+        "/export?format=md",
+        "/graph",
+        "/search?q=test",
+        "/overview",
+        "/profile-items"
+      })
   void anUnknownPatientIs404PatientNotFound(String suffix) throws Exception {
     UUID unknown = UUID.randomUUID();
     for (MockHttpServletRequestBuilder request : variants(unknown, suffix)) {

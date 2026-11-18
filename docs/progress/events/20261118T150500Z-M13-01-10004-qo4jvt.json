@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-18T15:05:00.124Z",
+  "task": "M13-01",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR #97 fusionnée en squash (2132e5b) ; elle portait aussi le plan J",
+  "pr": "https://github.com/mrscams/psymate-api/pull/97",
+  "branch": "claude/m13-02-profil-360-patients-218ed9",
+  "checkout": "m9-19-cb33b1"
+}

@@ -73,6 +73,7 @@ class TableOwnershipTests {
           Map.entry("patient_flag", "patients"),
           Map.entry("patient_tag", "patients"),
           Map.entry("patient_access", "patients"),
+          Map.entry("patient_profile_item", "patients"),
           Map.entry("entry_type", "vocabulary"),
           Map.entry("emotion", "vocabulary"),
           Map.entry("emotion_merge", "vocabulary"),

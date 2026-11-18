@@ -106,6 +106,19 @@ patient_flag:
   - set_at
   - cleared_by
   - cleared_at
+patient_profile_item:
+  - id
+  - tenant_id
+  - patient_id
+  - category
+  - title
+  - detail
+  - period_label
+  - period_year
+  - created_by
+  - archived_at
+  - created_at
+  - updated_at
 patient_submission:
   - id
   - tenant_id

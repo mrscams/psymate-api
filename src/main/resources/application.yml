@@ -67,7 +67,12 @@ app:
     email: ${APP_SUPPORT_EMAIL:support@example.test}
   contract:
     # Version du contrat OpenAPI publie ; a bumper avant de poser un tag contract-vX.Y.Z.
-    version: 0.13.0
+    version: 0.14.0
+  # Profil 360 (M13-02, G Q70) : plafond d informations actives par patient ; au-dela, la creation
+  # repond 422 PROFILE_ITEM_LIMIT_REACHED. Abaisse seulement par les tests.
+  patients:
+    profile:
+      max-active-items: 500
   # Agenda (M11-10, G Q60) : purge quotidienne des rendez-vous invites. Nom, prenom et telephone de
   # l invite passent a NULL (guest_purged_at pose, le rendez-vous reste) une fois le rendez-vous
   # termine, ou annule, depuis plus de retention (duree ISO 8601). Cron Spring evalue en UTC.

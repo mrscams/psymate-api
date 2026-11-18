@@ -19,9 +19,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.MismatchedInputException;
 
-/** Erreurs RFC 9457 limitées au contrôleur du module patients. */
+/**
+ * Erreurs RFC 9457 limitées aux contrôleurs du module patients (fiche et Profil 360 : codes
+ * PROFILE_ITEM_NOT_FOUND, PROFILE_ITEM_ARCHIVED et PROFILE_ITEM_LIMIT_REACHED compris).
+ */
 @Order(AdviceOrder.MODULE)
-@RestControllerAdvice(assignableTypes = PatientController.class)
+@RestControllerAdvice(assignableTypes = {PatientController.class, PatientProfileController.class})
 class PatientExceptionHandler {
 
   @ExceptionHandler(PatientException.class)

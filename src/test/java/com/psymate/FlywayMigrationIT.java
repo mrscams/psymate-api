@@ -107,7 +107,8 @@ class FlywayMigrationIT {
             "ix_appointment_practitioner_time",
             "ix_appointment_patient",
             "ix_appointment_series",
-            "ix_appointment_guest_purge");
+            "ix_appointment_guest_purge",
+            "ix_patient_profile_item_patient");
   }
 
   @Test
@@ -431,5 +432,43 @@ class FlywayMigrationIT {
                     String.class))
         .contains("(patient_id IS NULL)")
         .contains("(guest_purged_at IS NULL)");
+  }
+
+  /**
+   * V14 (M13-02, G Q62 a Q70) : patient_profile_item, sa contrainte de periode nommee, ses cles
+   * etrangeres vers tenant, patient et practitioner, et l'index partiel des informations actives.
+   */
+  @Test
+  void v14AddsPatientProfileItemWithPeriodCheckAndActiveIndex() {
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select version from flyway_schema_history where success order by"
+                        + " installed_rank",
+                    String.class))
+        .contains("14");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select conname from pg_constraint c join pg_class t on t.oid = c.conrelid"
+                        + " where t.relname = 'patient_profile_item' and c.contype = 'c'",
+                    String.class))
+        .contains("ck_patient_profile_item_period");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select ft.relname from pg_constraint c join pg_class t on t.oid = c.conrelid"
+                        + " join pg_class ft on ft.oid = c.confrelid"
+                        + " where t.relname = 'patient_profile_item' and c.contype = 'f'",
+                    String.class))
+        .containsExactlyInAnyOrder("tenant", "patient", "practitioner");
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select indexdef from pg_indexes where indexname ="
+                        + " 'ix_patient_profile_item_patient'",
+                    String.class))
+        .contains("(patient_id)")
+        .contains("(archived_at IS NULL)");
   }
 }

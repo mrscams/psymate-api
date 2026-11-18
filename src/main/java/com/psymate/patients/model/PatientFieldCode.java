@@ -6,12 +6,14 @@ package com.psymate.patients.model;
  * identity) : REQUIRED (obligatoire manquant ou vide), TOO_LONG (trop long), INVALID_VALUE (hors
  * liste admise), INVALID_DATE (date hors bornes), INVALID_FORMAT (valeur illisible : date, curseur,
  * objet attendu), UNKNOWN_FIELD (clé non modifiable ou inconnue). TAG_IS_EMOTION et TAG_UNKNOWN
- * sont les codes métier de tag, repris tels quels dans errors[0] comme à la racine.
+ * sont les codes métier de tag, repris tels quels dans errors[0] comme à la racine. OUT_OF_RANGE
+ * (longueur ou borne dépassée) est le code du Profil 360 (J3), comme dans l'agenda.
  */
 public final class PatientFieldCode {
 
   public static final String REQUIRED = "REQUIRED";
   public static final String TOO_LONG = "TOO_LONG";
+  public static final String OUT_OF_RANGE = "OUT_OF_RANGE";
   public static final String INVALID_VALUE = "INVALID_VALUE";
   public static final String INVALID_DATE = "INVALID_DATE";
   public static final String INVALID_FORMAT = "INVALID_FORMAT";

@@ -13,7 +13,7 @@ Les prompts renvoient aux documents copiés dans `docs/` du dépôt : `docs/A-ar
 | **A**, **B**, **C**, **D**, **E**, **G** | Les documents de référence : A = architecture, B = UX, C = plan, D = orchestration backend, E = modèle de données, G = décisions. « A4.3 » = document A, section 4.3. |
 | **A10** | Section de A ajoutée le 25 octobre : préférences par compte, vérification des praticiens (dossier professionnel), administration. |
 | **A11** | Section de A sur le « compagnon patient » (future app mobile) : rien n'est construit, mais des colonnes et tables vides sont réservées. |
-| **M0 … M7**, **M10**, **M11** | Les huit jalons produit du plan C, puis M10 (compléments du contrat pour la V1 web, C9) et M11 (agenda côté API, module `agenda`, C11 et `docs/I-plan-agenda-api.md`, 15 novembre 2026) ; M8, migration JPA, et M9, restructuration, sont des séries techniques décrites en C8 : M0 socle technique, M1 patients et entrées, M2 liens et graphe, M3 timeline, M4 recherche et vue d'ensemble, M5 annuaire public, M6 capture rapide et finitions, M7 durcissement avant la bêta. |
+| **M0 … M7**, **M10**, **M11**, **M13** | Les huit jalons produit du plan C, puis M10 (compléments du contrat pour la V1 web, C9), M11 (agenda côté API, module `agenda`, C11 et `docs/I-plan-agenda-api.md`, 15 novembre 2026) et M13 (Profil 360 côté API, dans le module `patients`, C12 et `docs/J-plan-profil-360-api.md`, 18 novembre 2026) ; M8, migration JPA, et M9, restructuration, sont des séries techniques décrites en C8 : M0 socle technique, M1 patients et entrées, M2 liens et graphe, M3 timeline, M4 recherche et vue d'ensemble, M5 annuaire public, M6 capture rapide et finitions, M7 durcissement avant la bêta. |
 | **M1-03**, **M4-01a**… | Une tâche : jalon, tiret, numéro. La ligne correspondante est dans C2, C6 ou C8 (document C). `M4-01a` est une tâche ajoutée par D (D6-A1). |
 | **V0 … V9** | Les « vagues » de D3 : un groupe de tâches dont toutes les dépendances sont fusionnées, donc lançables ensemble. |
 | **Couloir** | Un module Spring (identity, patients, clinical…). Un seul agent à la fois par couloir. |
@@ -123,6 +123,7 @@ Pour la base de données, docs/E-modele-donnees.md fait autorité sur A et C. Po
 - L'IA V2 n'existe pas en V1 : ne pas écrire de code IA, mais ne pas casser les hooks (outbox, tables vides).
 - Le compagnon patient n'existe pas en V1 (A11) : `entry.author_type` vaut toujours 'practitioner', `entry.submission_id` toujours NULL, `patient_device` et `patient_submission` restent vides, le package `companion` reste vide. Ne jamais les supprimer, ne jamais les remplir, ne jamais exposer `authorType` en écriture.
 - L'agenda est le module agenda (G Q50) ; la synchronisation Google est hors V1 (M12) : aucun appel externe, aucune colonne Google. Pour toute tâche M11, docs/I-plan-agenda-api.md fait foi (I2 DDL, I3 contrat, I4 fichiers autorisés).
+- Le Profil 360 vit dans le module patients (G Q62) : une information de profil n'est pas une entrée, n'appartient à aucune séance et se modifie sur place (G Q63, Q67). Pour toute tâche M13, docs/J-plan-profil-360-api.md fait foi (J2 DDL, J3 contrat).
 
 ## Versions
 Spring Boot 4.1.x, Spring Modulith 2.1.2, Java 21 : ne jamais rétrograder, ne jamais ajouter une dépendance de la ligne Boot 3 / Jackson 2 (`com.fasterxml.jackson.*` est Jackson 2 ; Jackson 3 vit sous `tools.jackson.*`). Les noms de starters sont ceux de la ligne 4 : vérifie dans la documentation officielle, pas de mémoire. Toute version est figée dans pom.xml, jamais une plage.
@@ -1460,6 +1461,7 @@ Le backend V1 est complet. Les anciennes questions « à trancher » sont closes
 | Export du compte refusé (Q18) | Fait | M6-05, lot 8 |
 | Signalements de l'annuaire (Q26) | V1.1 | Deux tâches `directory` à écrire plus tard (DDL E6.1) |
 | Agenda (Q25, révisée le 15 novembre 2026 par Q50–Q59) | API en jalon **M11**, Google en M12 | Module `agenda`, tâches M11-01 à M11-09 (C11, D1, D3, D5) ; prompts dans `docs/I-plan-agenda-api.md` I5, aucun lot dans F ; fiches 15 et 15b : écran web dans un jalon web ultérieur, synchronisation Google hors V1 |
+| Profil 360 (Q62–Q70, 18 novembre 2026, G9) | API en jalon **M13**, dans le module `patients` | Tâches M13-01 à M13-03 (C12, D1, D3, D5) ; prompts dans `docs/J-plan-profil-360-api.md` J5, aucun lot dans F ; onglet web « Profil 360 » dans un jalon web ultérieur |
 | Étude hébergement HDS / RGPD (Q16, Q17, Q19) | Après le backend V1 | M7-06 prépare la passation |
 
 Le même document pour le frontend `psymate-web` (**document H**) suivra le même plan : préparation, lots alignés sur les tags de contrat (`v0.1.0` → auth, `v0.2.0` → identité étendue, `v0.3.0` → patients et entrées, …), un prompt par écran à partir des fiches `docs/design/`.

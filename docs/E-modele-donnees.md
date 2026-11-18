@@ -26,7 +26,7 @@ Marquages : **[À valider pilotes]** = contenu clinique livré avec les valeurs 
 | --- | --- | --- | --- |
 | Identité | `identity` | `tenant`, `practitioner`, `auth_token`, `totp_recovery_code`, `spring_session`, `spring_session_attributes`, `security_event` | Comptes, sessions, sécurité |
 | Vérification et admin | `identity.verification`, `identity.admin` | `verification_document`, `verification_decision`, `document_access_log`, `practitioner_appeal`, vue `admin_journal_v` | Dossier professionnel, décisions, recours, journal |
-| Patients | `patients` | `patient`, `patient_version`, `patient_flag`, `patient_tag`, `patient_access` | Dossier administratif du patient |
+| Patients | `patients` | `patient`, `patient_version`, `patient_flag`, `patient_tag`, `patient_access`, `patient_profile_item` | Dossier administratif du patient ; Profil 360 (M13, 18 novembre 2026, E3.4, V14, G Q62–Q70) |
 | Vocabulaires | `vocabulary` | `entry_type`, `emotion`, `emotion_merge`, `link_type`, `tag` | Référentiels globaux et par praticien |
 | Dossier clinique | `clinical` | `entry`, `entry_version`, `entry_feeling`, `entry_medication`, `entry_session`, `entry_tag`, `export_job` | Le cœur : entrées, versions, détails ; export du compte |
 | Liens | `linking` | `link` | Arêtes typées entre entrées |
@@ -38,7 +38,7 @@ Marquages : **[À valider pilotes]** = contenu clinique livré avec les valeurs 
 | **Réservé compagnon** | `companion` | `patient_device`, `patient_submission` + colonnes `entry.author_type`, `entry.submission_id` | Vides en V1 |
 | **Conditionnel** | `directory`, `identity.admin` (V1.1, G Q26) ; synchronisation Google de l'agenda (M12, hors V1, G Q51) | `directory_profile_version`, `directory_report` ; `practitioner_integration` et colonnes `google_event_id`, `google_etag`, `source` d'`appointment` | DDL prêt, pas de migration en V1 |
 
-Quarante tables (trente-neuf au 27 octobre 2026, plus `appointment` ajoutée le 15 novembre 2026 par V12, jalon M11), dont six réservées et vides (`entry_embedding`, `entry_chunk`, `ai_feedback`, `patient_device`, `patient_submission`, `patient_access`), plus trois conditionnelles. Le DDL complet a été exécuté sur un PostgreSQL 16 vierge le 27 octobre 2026 (hors extension `vector`, remplacée pour le test) : il s'applique sans erreur, le seed compte 6 types, 29 émotions et 8 types de liens, et les contraintes `ck_entry_session_required`, `ux_link_active`, `ck_link_not_self`, `ck_decision_message` et les deux triggers `search_vector` se comportent comme décrit. Les tables `directory_vocabulary` et `export_job` (ajoutées le 29 octobre) n'ont pas encore été rejouées.
+Quarante et une tables (trente-neuf au 27 octobre 2026, plus `appointment` ajoutée le 15 novembre 2026 par V12, jalon M11, et `patient_profile_item` ajoutée le 18 novembre 2026 par V14, jalon M13), dont six réservées et vides (`entry_embedding`, `entry_chunk`, `ai_feedback`, `patient_device`, `patient_submission`, `patient_access`), plus trois conditionnelles. Le DDL complet a été exécuté sur un PostgreSQL 16 vierge le 27 octobre 2026 (hors extension `vector`, remplacée pour le test) : il s'applique sans erreur, le seed compte 6 types, 29 émotions et 8 types de liens, et les contraintes `ck_entry_session_required`, `ux_link_active`, `ck_link_not_self`, `ck_decision_message` et les deux triggers `search_vector` se comportent comme décrit. Les tables `directory_vocabulary` et `export_job` (ajoutées le 29 octobre) n'ont pas encore été rejouées.
 
 ### Diagramme entité-relation complet
 
@@ -64,6 +64,7 @@ erDiagram
   PATIENT ||--o{ PATIENT_TAG : etiquete
   TAG ||--o{ PATIENT_TAG : utilise
   PATIENT ||--o{ PATIENT_ACCESS : partage_v2
+  PATIENT ||--o{ PATIENT_PROFILE_ITEM : decrit
   PATIENT ||--o| PATIENT_OVERVIEW : projete
 
   PATIENT ||--o{ ENTRY : contient
@@ -401,6 +402,30 @@ CREATE TABLE patient_access (
   revoked_at       timestamptz
 );
 CREATE UNIQUE INDEX ux_patient_access_active ON patient_access(patient_id, practitioner_id) WHERE revoked_at IS NULL;
+```
+
+#### Profil 360 (M13, G Q62–Q70)
+
+Migration `V14__patient_profile.sql` (M13-02), DDL identique au bloc SQL de `docs/J-plan-profil-360-api.md` J2. Propriétaire : module `patients` (`TableOwnershipTests`). L'appartenance au praticien se lit par le patient (`patient.owner_id`) : pas de colonne `practitioner_id` dupliquée. Les longueurs (`title` 1 à 200, `detail` 2 000, `period_label` 60) sont validées par l'API, pas par le SQL. Pas de table de versions : une information se modifie sur place (G Q67) ; pas de suppression physique : `archived_at` (G Q68, hors E9).
+
+```sql
+-- Profil 360 (M13) : informations durables sur la personne, hors séance (G Q62 à Q70)
+CREATE TABLE patient_profile_item (
+  id            uuid PRIMARY KEY,
+  tenant_id     uuid NOT NULL REFERENCES tenant(id),
+  patient_id    uuid NOT NULL REFERENCES patient(id),
+  category      text NOT NULL CHECK (category IN ('history','family','health','values_goals')),
+  title         text NOT NULL,                         -- l'information elle-même
+  detail        text,                                  -- seconde ligne facultative (précision, citation)
+  period_label  text,                                  -- 'history' seulement : affiché tel quel, jamais interprété (G Q66)
+  period_year   smallint CHECK (period_year BETWEEN 1900 AND 2100),  -- 'history' seulement : tri du fil chronologique
+  created_by    uuid NOT NULL REFERENCES practitioner(id),
+  archived_at   timestamptz,                           -- retrait de la vue, jamais de DELETE SQL (G Q68)
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  updated_at    timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT ck_patient_profile_item_period CHECK (category = 'history' OR (period_label IS NULL AND period_year IS NULL))
+);
+CREATE INDEX ix_patient_profile_item_patient ON patient_profile_item(patient_id) WHERE archived_at IS NULL;
 ```
 
 `patient_tag` est créée avec les vocabulaires (E3.5), parce qu'elle référence `tag`. Mineurs (G Q19) : `birth_date` est purement informative en V1, aucune règle de consentement n'est portée par le schéma.
@@ -978,6 +1003,7 @@ CREATE INDEX ix_appointment_guest_purge ON appointment(ends_at) WHERE patient_id
 | `V11__export_job.sql` | M6-05 (clinical) | V8 | E3.6 `export_job` | V01 |
 | `V12__agenda.sql` | M11-02 (agenda) | M11-A | E3.14 `appointment` | V01, V05 |
 | `V13__agenda_guest.sql` | M11-10 (agenda) | après M11-D | E3.14 rendez-vous invité : `patient_id` facultatif, colonnes `guest_first_name`, `guest_last_name`, `guest_phone`, `guest_purged_at`, `ck_appointment_subject`, `ix_appointment_guest_purge` (G Q60) | V12 |
+| `V14__patient_profile.sql` | M13-02 (patients) | M13-A | E3.4 `patient_profile_item` | V01 |
 | *conditionnelles* | voir E6 | — | `directory_profile_version`, `directory_report` (V1.1, G Q26) ; `practitioner_integration` et colonnes Google d'`appointment` (M12, hors V1, G Q51) | — |
 
 Ce que ce plan change par rapport à C (reporté en E8) : M0-03 crée `practitioner` **avec** ses colonnes A10.2 (M1-10 ne fait plus d'`ALTER`, il crée les tables de vérification) ; M0-03 ne crée plus `entry_embedding` / `entry_chunk` / `ai_feedback`, impossibles avant `entry` et `link` ; M5-01 reçoit sa propre migration.

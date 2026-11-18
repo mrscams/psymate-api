@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-18T14:14:55.258Z",
+  "task": "M13-01",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Profil 360 inscrit dans G (G9, Q62 à Q70), C1 et C12, D1, D3, D5, E1, E3.4 (DDL de J2 identique), E4, A, CLAUDE.md, F et backend-module-dev ; la PR embarque aussi le plan J (6d84f46)",
+  "notes": "Documentation seulement, aucun test ; verify non lancé en local, la CI de la PR fait foi. Q67 sans la phrase de date redondante ; décompte des tables et diagramme de E1 mis à jour.",
+  "next": "M13-03 après la fusion de M13-02",
+  "pr": "https://github.com/mrscams/psymate-api/pull/97",
+  "branch": "claude/m13-01-profil-360-docs-b20776",
+  "checkout": "m11-05-appointment-lifecycle-1a81e8"
+}

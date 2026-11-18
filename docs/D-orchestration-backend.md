@@ -79,6 +79,16 @@ Lecture des colonnes « Dépend de » corrigées par rapport à C2 :
 | M11-10 | Rendez-vous invité (G Q60) : `V13__agenda_guest.sql`, `guest` à la création et au PATCH, `attach-patient`, purge à 6 mois, contrat `0.13.0` (I8) | agenda (+ docs) | M11-09 | jalon web « Agenda » (carte « Premier contact ») |
 | M11-11 | Export des rendez-vous (G Q61) : `AppointmentExportFacade` dans `agenda.api`, `rendez-vous.md` dans le zip du compte, section « Rendez-vous » de l'export d'un dossier ; `agenda` cesse de dépendre de `clinical`, `clinical` dépend de `agenda :: api` (I9) | agenda (api) + clinical.export (+ docs) | M11-10 | — |
 
+### Tâches M13 Profil 360 (API), ajoutées le 18 novembre 2026 (C12, `docs/J-plan-profil-360-api.md` J4)
+
+Le Profil 360 vit dans le module `patients` (G Q62) : aucun module ni couloir n'est ajouté.
+
+| ID | Tâche | Couloir (module) | Dépend de | Débloque |
+| --- | --- | --- | --- | --- |
+| M13-01 | Inscrire Q62–Q70 et le jalon M13 dans G, C, D, E, CLAUDE.md, F | docs (+ `.claude/agents`) | — | rien de bloquant : J fait foi en attendant |
+| M13-02 | Profil 360 dans `patients` : `V14__patient_profile.sql`, entité, les quatre routes, contrat `0.14.0` | patients | — (J fait foi en attendant M13-01) | M13-03 |
+| M13-03 | Seed du profil, tag `contract-v0.14.0`, suivi | racine (`tools/seed`) | M13-02 | jalon web « Profil 360 » |
+
 ## D2. Graphe de dépendances
 
 ```mermaid
@@ -217,6 +227,8 @@ Ce qui peut démarrer, quand, et avec combien d'agents en parallèle. « ∥ » 
 | **M11-B** | M11-02 (et M11-03 pour M11-06) | **M11-05** ∥ **M11-06** (même couloir `agenda`, fichiers disjoints : exception D5) | 2 | M11-07 |
 | **M11-C** | M11-05, M11-06 | **M11-07** | 1 | M11-09 ; M11-08a si retenue |
 | **M11-D** | M11-07 (M11-08a pour M11-08b) | **M11-09** ∥ (**M11-08a** puis **M11-08b**, si le bouton du panneau crée la séance) | 1 à 2 (`racine`, `clinical` puis `agenda`) | tag `contract-v0.12.1` (ou `v0.12.2`) ; jalon web « Agenda » |
+| **M13-A** (18 novembre 2026) | rien (M11 fusionnée) | **M13-01** ∥ **M13-02** | 2 (docs, `patients`) | M13-03 (via M13-02) |
+| **M13-B** | M13-02 | **M13-03** | 1 (`racine`) | tag `contract-v0.14.0` ; jalon web « Profil 360 » |
 
 **Ce qu'on peut commencer aujourd'hui, sans rien d'autre** : M0-01. Dès qu'il est fusionné : M0-02 et M0-03 en même temps. Dès que ces deux-là sont fusionnés : trois agents sur trois modules (`identity`, `events`, `vocabulary`) qui ne se croiseront jamais.
 
@@ -253,11 +265,11 @@ Un couloir par module ; un seul agent par couloir à la fois ; un worktree par a
 
 | Couloir | Tâches, dans l'ordre | Peut tourner en même temps que | Jamais en même temps que |
 | --- | --- | --- | --- |
-| racine | M0-01 · M0-05 · M0-08 · M7-01 · M11-09 | tout, sauf pendant M0-01 (seul) | — |
+| racine | M0-01 · M0-05 · M0-08 · M7-01 · M11-09 · M13-03 | tout, sauf pendant M0-01 (seul) | — |
 | identity | M0-04 · M1-10 · M1-11 · M1-12 · M1-13 · M1-14 · M7-08 · M1-14b · M11-04 (`preferences`) | patients, vocabulary, events, clinical, linking, search, overview, directory | une autre tâche `identity` ; **M5-06** le temps de M1-14 (il lit `PractitionerFacade`, qui change) ; une tâche `directory` le temps de M1-14b (il ajoute une façade dans `directory.api`) |
 | events | M4-01a · M4-01 · M7-05 | tout | M1-03 le temps de M4-01a (M1-03 attend de toute façon) |
 | vocabulary | M1-02 | tout | M1-03 (attend M1-02) |
-| patients | M1-01 · M11-03 (`api` seulement) | tout | M1-03 (attend M1-01) |
+| patients | M1-01 · M11-03 (`api` seulement) · M13-02 (Profil 360, fichiers `PatientProfile*`, G Q62 ; aucun couloir ajouté) | tout | M1-03 (attend M1-01) |
 | clinical | M1-03 · M1-04 · M1-05 · M3-01 · M6-05 · M11-08a (`api`, si retenue) | identity, directory, events, search, overview, agenda | linking pendant **M2-02** ; une autre tâche `clinical` |
 | linking | M2-01 · M2-03 | clinical (sauf M2-02), search, overview, directory, identity | clinical pendant **M2-02** |
 | clinical + linking | M2-02 | identity, directory, search, overview | **toute** tâche `clinical` ou `linking` : on la lance quand les deux couloirs sont vides, elle est courte |

@@ -176,7 +176,7 @@ Huit contextes bornés en V1 (plus l'IA en V2), chacun un module Spring Modulith
 | Contexte | Responsabilité | Agrégat racine | Entités / objets-valeur | Dépend de |
 | --- | --- | --- | --- | --- |
 | Identity | Comptes praticiens, tenants, authentification | `Practitioner` | `Tenant`, `Credential` | — |
-| Patients | Profil, contexte, archivage, propriété | `Patient` | `PatientProfile`, `PatientFlag`, `PatientAccess` (V2) | Identity |
+| Patients | Profil, contexte, archivage, propriété ; Profil 360 (M13, G Q62) | `Patient` | `PatientProfile`, `PatientFlag`, `PatientAccess` (V2), `PatientProfileItem` (Profil 360) | Identity |
 | Clinical record | Entrées de tous types, versions, brouillons, tags, séances | `Entry` | `EntryVersion`, `FeelingDetail`, `MedicationDetail`, `SessionDetail`, `TimeSpan`, `Tag` | Patients, Vocabulary |
 | Vocabulary | Émotions contrôlées, types de liens, tags praticien | `Emotion`, `LinkType`, `Tag` | `EmotionFamily` | Identity |
 | Linking | Liens entre entrées, cycle de vie, provenance | `Link` | `LinkEvidence`, `LinkDecision` | Clinical record, Vocabulary |
@@ -191,6 +191,8 @@ Contexte ajouté le 24 octobre 2026 — **Directory** (module `com.psymate.direc
 Contexte **réservé** le 25 octobre 2026, non construit en V1 — **Companion** (module `com.psymate.companion`, voir A11) : réception des lots envoyés par l'application mobile du patient et appairage des appareils. Au même titre que `ai`, il n'existe en V1 que par ses colonnes et ses tables vides.
 
 Contexte ajouté le 15 novembre 2026 — **Agenda** (module `com.psymate.agenda`, G Q50–Q59, jalon M11, plan `docs/I-plan-agenda-api.md`) : rendez-vous planifiés d'un praticien avec ses patients (fiches 15, 15b), séries hebdomadaires (pas de 1, 2 ou 4 semaines, 26 occurrences au plus), conflits signalés mais jamais bloquants, annulation par statut (aucune suppression physique, G Q53). Dépend d'**Identity**, **Patients** et **Events** par leurs `api` (**Clinical record** retiré par G Q61, M11-11) ; expose `AppointmentExportFacade`, lue par l'export de **Clinical record** (G Q61) ; publie `AppointmentPlanned`, `AppointmentRescheduled`, `AppointmentCancelled`, `AppointmentConfirmed` sans abonné en V1 (G Q59 : hooks de la synchronisation Google, jalon M12). `directory` et `identity.admin` n'en dépendent pas. La décision Q25 du 29 octobre 2026 (agenda Google hors V1, ancien nom `scheduling` jamais créé) est levée pour l'agenda local seulement : la synchronisation Google reste hors V1. Le décompte passe à dix contextes.
+
+Précision du 18 novembre 2026 — **Profil 360** dans **Patients** (module `com.psymate.patients`, G Q62–Q70, jalon M13, plan `docs/J-plan-profil-360-api.md`) : le quatrième onglet du dossier patient décrit la personne elle-même, indépendamment des séances, en informations rangées dans quatre rubriques fermées (`history`, `family`, `health`, `values_goals`, G Q64). Une table de détail du module `patients`, `patient_profile_item` (E3.4, V14), et quatre routes imbriquées sous le patient (`/api/patients/{id}/profile-items`, contrat en J3). Une information de profil n'est pas une entrée : elle n'appartient à aucune séance et ne crée ni `entry` ni `link` (G Q63) ; elle se modifie sur place, sans version (G Q67), et s'archive sans suppression physique (G Q68). Aucune dépendance, façade ni événement n'est ajouté à `patients`, et aucun contexte n'est créé : le décompte reste à dix contextes.
 
 ### Carte des contextes
 
@@ -622,7 +624,7 @@ Un seul déployable backend, une seule SPA, une seule base : la complexité est 
 | Module | Responsabilité | Peut dépendre de | Expose |
 | --- | --- | --- | --- |
 | `identity` | Comptes, tenants, sessions, mots de passe, vérification, administration | `events` | `CurrentPractitioner`, `PractitionerFacade`, `EncryptedStorageFacade`, `SuspendedAccountAuthenticator`, `PractitionerRejected`, `PractitionerSuspended` ; sans abonné en V1, annotés `@Reserved` (G Q40) : `PractitionerRegistered`, `PractitionerApproved`, `PreferencesChanged`, `VerificationSubmitted` |
-| `patients` | Profils, propriété, archivage | `identity`, `vocabulary`, `events` | `PatientFacade`, `PatientOwnershipGuard`, `PatientRef`, `PatientCreated`, `PatientUpdated` ; sans abonné en V1 (G Q40) : `PatientArchived` |
+| `patients` | Profils, propriété, archivage ; Profil 360 (`patient_profile_item`, M13, G Q62, contrat en `docs/J-plan-profil-360-api.md` J3) | `identity`, `vocabulary`, `events` | `PatientFacade`, `PatientOwnershipGuard`, `PatientRef`, `PatientCreated`, `PatientUpdated` ; sans abonné en V1 (G Q40) : `PatientArchived` |
 | `vocabulary` | Émotions, types de liens, tags | `identity`, `events` | `EmotionCatalog`, `LinkTypeCatalog`, `TagFacade` et leurs vues ; fusions (G Q42) : `EmotionsMerged`, `EmotionMergeReverted`, `TagsMerged`, `MergeFacade` (état des fusions pour les abonnés), `EmotionUsagePort` (implémenté par clinical) |
 | `clinical` | Entrées, versions, séances, brouillons, export | `identity`, `patients`, `vocabulary`, `events`, `agenda` (`AppointmentExportFacade`, export des rendez-vous, G Q61) | `EntryFacade` (lecture des entrées pour linking, et `adjustLinkCount`), `EntryLinksPort`, `EntryLinksReadPort`, `EntrySummary`, `EntryCreated`, `EntryCorrected`, `EntryArchived`, `EntriesRelabeled` (réétiquette après une fusion du vocabulaire, G Q42) |
 | `linking` | Liens, cycle de vie, graphe | `clinical`, `vocabulary`, `events`, `identity`, `patients` | `LinkAccepted` ; `LinkRejected` (`@Reserved`, V2). Le graphe n'est pas exposé : `GraphQueryService` reste interne (G Q39) |
@@ -712,6 +714,7 @@ Endpoints principaux :
 | --- | --- | --- |
 | POST | `/api/auth/signup`, `/api/auth/login`, `/api/auth/logout` | identité |
 | GET/POST | `/api/patients` ; GET/PATCH/DELETE `/api/patients/{id}` | profil, archivage (DELETE = archive) |
+| GET/POST | `/api/patients/{id}/profile-items` ; PATCH/DELETE `/api/patients/{id}/profile-items/{itemId}` | Profil 360 (M13, G Q62–Q70, contrat en J3) ; modification sur place, DELETE = archive |
 | GET | `/api/patients/{id}/overview` | projection |
 | GET | `/api/patients/{id}/timeline?from&to&types&emotions&tags&cursor&limit` | fenêtre temporelle |
 | GET | `/api/patients/{id}/graph?root&depth&linkTypes` | voisinage |

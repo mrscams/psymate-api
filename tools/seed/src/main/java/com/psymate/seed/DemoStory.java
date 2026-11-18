@@ -3,6 +3,7 @@ package com.psymate.seed;
 import com.psymate.seed.Plan.LinkPlan;
 import com.psymate.seed.Plan.PatientPlan;
 import com.psymate.seed.Plan.Practitioner;
+import com.psymate.seed.Plan.ProfileItem;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -970,6 +971,141 @@ final class DemoStory {
         "elle",
         List.of("couple", "deuil", "famille", "sommeil", "travail"),
         Practitioner.CLAIRE,
-        s.b.steps());
+        s.b.steps(),
+        profile(s.t0));
+  }
+
+  // ---- Profil 360 (M13-03)
+
+  /** Année de la séance numéro {@code n} (1 à 20), sans le report du week-end. */
+  private static int yearOfSession(Instant t0, int n) {
+    return t0.atZone(ZoneOffset.UTC).toLocalDate().plusDays(DAY[n - 1]).getYear();
+  }
+
+  private static ProfileItem history(String title, String detail, String label, Integer year) {
+    return new ProfileItem("history", title, detail, label, year);
+  }
+
+  private static ProfileItem item(String category, String title, String detail) {
+    return new ProfileItem(category, title, detail, null, null);
+  }
+
+  /**
+   * Le Profil 360 de Camille, écrit à la main et cohérent avec le récit des séances : onze
+   * informations d'histoire (deux avec un libellé sans année, une sans période), six proches,
+   * quatre informations de santé, quatre valeurs et projets. Les années récentes suivent les
+   * séances (arrêt à la séance 6, reprise à la séance 11, décès raconté à la séance 14 sept mois
+   * après) ; l'ordre d'écriture n'est pas l'ordre de lecture, que l'API trie (J3).
+   */
+  static List<ProfileItem> profile(Instant t0) {
+    int agencyYear = t0.atZone(ZoneOffset.UTC).getYear() - 6;
+    int leaveYear = yearOfSession(t0, 6);
+    int returnYear = yearOfSession(t0, 11);
+    int deathYear =
+        t0.atZone(ZoneOffset.UTC).toLocalDate().plusDays(DAY[13]).minusMonths(7).getYear();
+    return List.of(
+        history(
+            "Grandit dans une petite ville de la Sarthe, cadette de deux sœurs",
+            "Parents commerçants, très pris par le magasin.",
+            "Petite enfance",
+            null),
+        history(
+            "Étés à la campagne chez Mamie Jeanne",
+            "Le jardin, les confitures, les soirées sur le perron.",
+            "Enfance",
+            null),
+        history("Rencontre de Sophie à l'école primaire", "Amie d'enfance.", "Vers 1996", 1996),
+        history(
+            "Baccalauréat, puis études de communication à Nantes",
+            "Premier départ de la maison familiale.",
+            "2007 – 2012",
+            2007),
+        history("Premier stage en agence de communication", null, "2011", 2011),
+        history(
+            "Rencontre avec Mathieu",
+            "Par des amis communs, à Nantes.",
+            "Vers " + (agencyYear - 5),
+            agencyYear - 5),
+        history(
+            "Entrée à l'agence comme chargée de projet",
+            "Trois clients en parallèle, des journées de dix heures.",
+            Integer.toString(agencyYear),
+            agencyYear),
+        // le décès précède l'arrêt de quelques jours : même année, l'ordre d'écriture départage
+        history(
+            "Décès de Mamie Jeanne",
+            "N'a pas pu être présente les derniers jours ; un deuil resté longtemps à distance.",
+            Integer.toString(deathYear),
+            deathYear),
+        history(
+            "Épuisement professionnel et arrêt de travail",
+            "Arrêt de six semaines, renouvelé ; sertraline prescrite par son médecin traitant.",
+            Integer.toString(leaveYear),
+            leaveYear),
+        history(
+            "Reprise du travail à mi-temps thérapeutique",
+            "Aménagement : un seul client, pas de mails après 18 heures.",
+            Integer.toString(returnYear),
+            returnYear),
+        history(
+            "A toujours été « la fiable » de la famille",
+            "Un rôle tenu depuis l'adolescence, qu'elle commence à questionner.",
+            null,
+            null),
+        item(
+            "family",
+            "Mathieu, son compagnon",
+            "Tensions pendant l'arrêt autour des tâches ménagères, apaisées depuis : il fait"
+                + " désormais les courses du samedi."),
+        item(
+            "family",
+            "Élise, sa sœur aînée",
+            "Une ressource : week-ends chez elle, parties de cartes avec ses deux neveux."),
+        item(
+            "family",
+            "Sa mère",
+            "Proche, appel chaque semaine ; elles ont pu parler ensemble du deuil."),
+        item(
+            "family",
+            "Mamie Jeanne, grand-mère maternelle, décédée",
+            "Figure centrale de l'enfance ; lettre d'adieu lue à l'anniversaire du décès."),
+        item(
+            "family", "Sophie, amie d'enfance", "Brouillées depuis une dispute à un anniversaire."),
+        item(
+            "family",
+            "Amies de l'agence",
+            "Première soirée ensemble depuis des mois au moment de la reprise."),
+        item(
+            "health",
+            "Épuisement professionnel",
+            "Arrêt de travail puis reprise à mi-temps thérapeutique ; aucun signe de rechute."),
+        item(
+            "health",
+            "Sertraline 100 mg, prescrite par le Dr Lambert",
+            "Démarrée à 50 mg, doublée après plusieurs mois ; bonne tolérance."),
+        item(
+            "health",
+            "Troubles du sommeil, résolus",
+            "Réveils vers quatre heures pendant plus d'un an ; nuits de huit heures retrouvées."),
+        item(
+            "health",
+            "Cohérence cardiaque matin et soir",
+            "Exercice appris en séance, repris dans les moments de tension."),
+        item(
+            "values_goals",
+            "Un travail où elle compte pour des gens, sans pression permanente",
+            null),
+        item(
+            "values_goals",
+            "Bilan de compétences et formation en ergonomie",
+            "Peut-être un changement de métier d'ici deux ans."),
+        item(
+            "values_goals",
+            "Tenir la limite des 18 heures",
+            "Aucun mail professionnel le soir ni le week-end."),
+        item(
+            "values_goals",
+            "Garder du temps pour sa famille",
+            "Ce que Mamie Jeanne lui a transmis."));
   }
 }

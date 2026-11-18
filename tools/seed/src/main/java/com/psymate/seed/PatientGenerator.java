@@ -157,7 +157,8 @@ final class PatientGenerator {
         cfg.pronoun(),
         cfg.tags(),
         cfg.practitioner(),
-        b.steps());
+        b.steps(),
+        List.of());
   }
 
   // ---- calendrier

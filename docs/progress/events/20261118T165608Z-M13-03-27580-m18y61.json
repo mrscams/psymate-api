@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-18T16:56:08.195Z",
+  "task": "M13-03",
+  "agent": "seed-perf",
+  "status": "done",
+  "summary": "Seed du Profil 360 par POST /profile-items (small, medium, demo), tag contract-v0.14.0 posé sur ee23e04 ; jalon M13 terminé côté API",
+  "notes": "Base vierge : small 49 informations sur 5 patients (2 min 00 s), demo Camille R. 25 informations (11 history dont 3 sans année, 6 family, 4 health, 4 values_goals), lectures triées selon J3, contrôle final OK ; ScenarioTest 21 verts ; perf test-compile vert ; ./mvnw verify complet laissé à la CI (aucun fichier de src). CI main ee23e04 : job unit rouge sur téléchargement de Maven, contract vert.",
+  "next": "Fusion de la PR 99 ; relancer le job unit de main ; jalon web Profil 360",
+  "pr": "https://github.com/mrscams/psymate-api/pull/99",
+  "branch": "claude/m13-03-profil-360-seed-fec576",
+  "checkout": "m11-05-appointment-lifecycle-1a81e8"
+}

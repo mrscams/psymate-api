@@ -6,6 +6,7 @@ import com.psymate.seed.Plan.CreateEntry;
 import com.psymate.seed.Plan.LinkPlan;
 import com.psymate.seed.Plan.PatchEntry;
 import com.psymate.seed.Plan.PatientPlan;
+import com.psymate.seed.Plan.ProfileItem;
 import com.psymate.seed.Plan.StartSession;
 import com.psymate.seed.Plan.Step;
 import java.util.ArrayList;
@@ -39,7 +40,8 @@ public final class StepExecutor {
       int entries,
       int links,
       int patches,
-      Map<String, String> ids) {}
+      Map<String, String> ids,
+      int profileItems) {}
 
   /** Dossier écrit en partie : le patient existe déjà avec cet identifiant. */
   public static final class IncompleteException extends SeedException {
@@ -142,7 +144,13 @@ public final class StepExecutor {
         }
       }
     }
-    return new Result(patientId, sessions, entries, links, patches, Map.copyOf(ids));
+    // Profil 360 (M13-03) : après le dossier, une information par POST, jamais par SQL
+    String profilePath = "/api/patients/" + patientId + "/profile-items";
+    for (ProfileItem item : plan.profile()) {
+      expect(transport, "POST", profilePath, item.body(), 201);
+    }
+    return new Result(
+        patientId, sessions, entries, links, patches, Map.copyOf(ids), plan.profile().size());
   }
 
   /**

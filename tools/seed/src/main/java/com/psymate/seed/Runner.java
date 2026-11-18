@@ -37,6 +37,7 @@ public final class Runner {
       int entries,
       int links,
       int patches,
+      int profileItems,
       Duration elapsed,
       Map<String, Practitioner> patientOwners) {}
 
@@ -95,6 +96,7 @@ public final class Runner {
     AtomicInteger entries = new AtomicInteger();
     AtomicInteger links = new AtomicInteger();
     AtomicInteger patches = new AtomicInteger();
+    AtomicInteger profileItems = new AtomicInteger();
     AtomicInteger done = new AtomicInteger();
     AtomicLong progressMark = new AtomicLong();
     Map<String, Practitioner> created = new ConcurrentHashMap<>();
@@ -130,18 +132,20 @@ public final class Runner {
                   sessions.addAndGet(r.sessions());
                   links.addAndGet(r.links());
                   patches.addAndGet(r.patches());
+                  profileItems.addAndGet(r.profileItems());
                   created.put(r.patientId(), p.practitioner());
                   int n = done.incrementAndGet();
                   if (n % 10 == 0 || n == todo.size() || todo.size() <= 10) {
                     out.printf(
                         Locale.FRENCH,
-                        "[%d/%d] %s : %d entrées, %d séances, %d liens (%.1f s)%n",
+                        "[%d/%d] %s : %d entrées, %d séances, %d liens, %d informations de profil (%.1f s)%n",
                         n,
                         todo.size(),
                         p.displayName(),
                         r.entries(),
                         r.sessions(),
                         r.links(),
+                        r.profileItems(),
                         (System.nanoTime() - t0) / 1e9);
                   }
                 } catch (IncompleteException e) {
@@ -183,6 +187,7 @@ public final class Runner {
         entries.get(),
         links.get(),
         patches.get(),
+        profileItems.get(),
         Duration.ofNanos(System.nanoTime() - start),
         patientOwners);
   }

@@ -1,6 +1,6 @@
 # tools/seed : données fictives et tests de charge (M7-01)
 
-Générateur de patients fictifs et de leur agenda pour PsyMate (C3, E5.5, G Q22, M11-09). Il n'écrit **jamais** en SQL : tout passe par l'API REST d'une instance locale, donc par les mêmes règles que l'application (séance obligatoire, versions, matrice des liens E5.3, `author_type = 'practitioner'`).
+Générateur de patients fictifs, de leur agenda et de leur Profil 360 pour PsyMate (C3, E5.5, G Q22, M11-09, M13-03). Il n'écrit **jamais** en SQL : tout passe par l'API REST d'une instance locale, donc par les mêmes règles que l'application (séance obligatoire, versions, matrice des liens E5.3, `author_type = 'practitioner'`).
 
 Projet Maven autonome (`com.psymate.tools:psymate-seed`), **sans aucune dépendance d'exécution** : JDK 21 seul, JSON maison (`Json`), `java.net.http` pour les appels.
 
@@ -45,7 +45,7 @@ Mot de passe unique des deux comptes : `Donnees-Fictives-2026` (valeur de dével
 
 | Taille | Contenu | Durée indicative |
 | --- | --- | --- |
-| `demo` | 1 patient `DEMO · Camille R.` (Claire), 18 mois, **exactement 20 séances**, 88 entrées écrites à la main (`DemoStory`) | environ 5 s |
+| `demo` | 1 patient `DEMO · Camille R.` (Claire), 18 mois, **exactement 20 séances**, 88 entrées et 25 informations de profil écrites à la main (`DemoStory`) | environ 16 s |
 | `small` | 5 patients ordinaires (2 chez Claire, 3 chez Karim), 180 à 220 entrées chacun sur 1 à 4 ans | environ 20 s |
 | `medium` | **100 patients ordinaires** (environ 200 entrées) **+ 5 dossiers lourds** (2 000 entrées, environ 1 500 liens, 10 ans) | environ 9 min d'écriture (voir ci-dessous) |
 
@@ -83,6 +83,15 @@ Idempotence : si la fenêtre des 8 semaines contient déjà un rendez-vous (annu
 
 `SeedAgendaPerfIT` (profil `perf`, comme les autres tests qui importent `com.psymate.seed`) exécute le seed `small` par MockMvc sur deux praticiens neufs et vérifie les critères de M11-09 : `make perf`, ou seul `./mvnw -B -Pperf verify -Dit.test=SeedAgendaPerfIT`. `AgendaScenarioTest` (tests unitaires de l'outil, lancés par la CI) vérifie le plan sans réseau.
 
+## Profil 360 (M13-03, toutes tailles)
+
+Chaque patient du plan porte son Profil 360 (`PatientPlan.profile`, J3) : des informations durables sur la personne, hors séance, écrites **par l'API** après son dossier, une par `POST /api/patients/{id}/profile-items` (jamais par SQL). Une information n'est pas une entrée : elle n'appartient à aucune séance (G Q63).
+
+- `small`, `medium` (`ProfileGenerator`, générateur pur et déterministe, tirage séparé de celui du dossier) : 0 à 25 informations par patient, environ **un patient sur cinq sans aucune information** (état vide de l'onglet ; sur les 5 patients de `small` le hasard peut n'en donner aucun, le test vérifie le ratio sur les 105 patients de `medium`), réparties sur les quatre rubriques (`history` environ 40 %, `family` 25 %, `health` 17 %, `values_goals` 18 %), sans doublon dans un profil. Dans `history`, environ la moitié des informations ont une année et un libellé (« 2009 », « Vers 2012 », « 2004 – 2007 »), trois sur dix un libellé sans année (« Enfance », « Adolescence »), deux sur dix aucune période ; les années tombent entre la naissance du patient et aujourd'hui.
+- `demo` : le profil de Camille R. est écrit à la main (`DemoStory.profile`) et suit le récit des séances : 11 informations d'histoire (dont « Petite enfance » et « Enfance » sans année, et une sans période), 6 proches (Mathieu, Élise, sa mère, Mamie Jeanne, Sophie, ses amies de l'agence), 4 informations de santé, 4 valeurs et projets. Les années récentes suivent les séances (décès, arrêt de travail, reprise).
+- `Scenario.validate` vérifie le profil avant toute écriture : rubrique connue, titre de 1 à 200 caractères, détail de 2 000 au plus, période seulement dans `history` (libellé de 60 au plus, année de 1900 à 2100), plafond de 500 informations (G Q70).
+- Un patient déjà présent est ignoré en entier : son profil n'est ni complété ni dupliqué.
+
 ## Idempotence
 
 Avant d'écrire, le seed liste les patients du praticien (toutes les pages). Un patient du plan dont le `displayName` existe déjà est **ignoré** (compté « déjà présent »). Relancer `make seed` ne duplique donc rien ; seul un plan plus grand ajoute les patients manquants. Si l'écriture d'un patient échoue en route, son dossier partiel est archivé (suppression logique) pour qu'une relance le recrée proprement.
@@ -98,7 +107,7 @@ Codes de sortie : `0` tout est écrit et le contrôle final passe ; `1` erreur d
 
 ## Contrôle final
 
-Lecture seule, par l'API : pour chaque patient du plan (créé ou déjà présent), pagination de la timeline (200 par page, `includePrivate=true`) et vérification que `authorType` vaut `practitioner` partout et que toute entrée autre qu'une séance porte un `sessionId`. Affiche par exemple : `Contrôle : 1252 entrées, author_type = practitioner partout, session_id présent partout : OK`.
+Lecture seule, par l'API : pour chaque patient du plan (créé ou déjà présent), pagination de la timeline (200 par page, `includePrivate=true`) et vérification que `authorType` vaut `practitioner` partout et que toute entrée autre qu'une séance porte un `sessionId` ; puis lecture du Profil 360 (`GET /api/patients/{id}/profile-items`) et vérification du tri de J3 (rubriques dans l'ordre `history`, `family`, `health`, `values_goals` ; dans `history`, `periodYear` croissant, absents en dernier, puis `createdAt` ; ailleurs `createdAt`) et de la période réservée à `history`. Affiche par exemple : `Contrôle : 1253 entrées, author_type = practitioner partout, session_id présent partout ; 49 informations de profil, triées, période seulement dans history : OK`.
 
 ## Limites
 

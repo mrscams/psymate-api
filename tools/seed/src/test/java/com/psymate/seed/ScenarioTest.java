@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.psymate.seed.Plan.CreateEntry;
 import com.psymate.seed.Plan.PatientPlan;
+import com.psymate.seed.Plan.ProfileItem;
 import com.psymate.seed.Plan.StartSession;
 import com.psymate.seed.Plan.Step;
 import java.io.ByteArrayOutputStream;
@@ -13,10 +14,12 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -83,6 +86,120 @@ class ScenarioTest {
     assertTrue(stats.maxDegree() >= 80, "une situation pivot : " + stats.maxDegree());
     double imprecise = (double) stats.imprecise() / stats.entries();
     assertTrue(imprecise >= 0.08 && imprecise <= 0.14, "10 % de dates imprécises : " + imprecise);
+  }
+
+  // ---- Profil 360 (M13-03)
+
+  @Test
+  void demoPatientHasAHandwrittenProfileInTheFourCategories() {
+    PatientPlan demo = Scenario.demo(TODAY).patients().get(0);
+    Map<String, Long> byCategory =
+        demo.profile().stream()
+            .collect(Collectors.groupingBy(ProfileItem::category, Collectors.counting()));
+    long history = byCategory.getOrDefault("history", 0L);
+    long family = byCategory.getOrDefault("family", 0L);
+    assertTrue(history >= 9 && history <= 12, "une dizaine d'informations d'histoire : " + history);
+    assertTrue(family >= 5 && family <= 6, "cinq ou six proches : " + family);
+    assertEquals(4L, byCategory.get("health"));
+    assertEquals(4L, byCategory.get("values_goals"));
+    assertTrue(
+        demo.profile().stream()
+            .anyMatch(i -> "history".equals(i.category()) && i.periodYear() == null),
+        "au moins une information d'histoire sans année");
+    assertTrue(
+        demo.profile().stream().anyMatch(i -> i.periodLabel() != null && i.periodYear() == null),
+        "un libellé sans année (« Enfance »)");
+    for (ProfileItem i : demo.profile()) {
+      if (i.periodYear() != null) {
+        assertTrue(i.periodYear() >= 1989 && i.periodYear() <= 2026, "année plausible : " + i);
+      }
+    }
+    assertEquals(List.of(), Scenario.validate(new Plan(List.of(demo))));
+  }
+
+  @Test
+  void ordinaryProfilesMixCategoriesPeriodsAndEmptyTabs() {
+    Plan plan = Scenario.medium(Scenario.DEFAULT_SEED, TODAY);
+    assertEquals(List.of(), Scenario.validate(plan));
+    Set<String> categories = new HashSet<>();
+    int empty = 0;
+    int withYear = 0;
+    int labelOnly = 0;
+    int noPeriod = 0;
+    for (PatientPlan p : plan.patients()) {
+      int size = p.profile().size();
+      assertTrue(size <= 25, p.displayName() + " : " + size + " informations, 25 au plus");
+      if (size == 0) {
+        empty++;
+      }
+      int birthYear = Integer.parseInt(p.birthDate().substring(0, 4));
+      Set<String> titles = new HashSet<>();
+      for (ProfileItem i : p.profile()) {
+        categories.add(i.category());
+        assertTrue(titles.add(i.title()), p.displayName() + " : information en double " + i);
+        if (!"history".equals(i.category())) {
+          assertTrue(i.periodLabel() == null && i.periodYear() == null, "période hors history");
+        } else if (i.periodYear() != null) {
+          withYear++;
+          assertTrue(i.periodLabel() != null, "une année s'affiche avec un libellé : " + i);
+          assertTrue(
+              i.periodYear() >= birthYear && i.periodYear() <= 2026,
+              p.displayName() + " né en " + birthYear + " : " + i);
+        } else if (i.periodLabel() != null) {
+          labelOnly++;
+        } else {
+          noPeriod++;
+        }
+      }
+    }
+    double emptyRatio = (double) empty / plan.patients().size();
+    assertTrue(
+        emptyRatio >= 0.1 && emptyRatio <= 0.3, "un patient sur cinq sans profil : " + emptyRatio);
+    assertEquals(Set.copyOf(Scenario.PROFILE_CATEGORIES), categories);
+    assertTrue(
+        withYear > 0 && labelOnly > 0 && noPeriod > 0, withYear + "/" + labelOnly + "/" + noPeriod);
+    Scenario.Stats stats = Scenario.stats(plan);
+    assertEquals(empty, stats.emptyProfiles());
+    assertTrue(stats.profileItems() > 0);
+    // même graine, même profil
+    assertEquals(plan, Scenario.medium(Scenario.DEFAULT_SEED, TODAY));
+  }
+
+  @Test
+  void smallPlanHasProfiles() {
+    Plan plan = Scenario.small(Scenario.DEFAULT_SEED, TODAY);
+    assertTrue(
+        plan.patients().stream().anyMatch(p -> !p.profile().isEmpty()),
+        "au moins un patient du seed small a un profil à lire");
+  }
+
+  @Test
+  void validateRejectsProfilesTheApiWouldRefuse() {
+    PatientPlan base = Scenario.small(Scenario.DEFAULT_SEED, TODAY).patients().get(0);
+    List<ProfileItem> bad =
+        List.of(
+            new ProfileItem("family", "Sœur", null, "Enfance", null),
+            new ProfileItem("health", "Asthme", null, null, 2001),
+            new ProfileItem("history", " ", null, null, null),
+            new ProfileItem("history", "x".repeat(201), null, null, null),
+            new ProfileItem("history", "Souvenir", "d".repeat(2001), "p".repeat(61), 1899),
+            new ProfileItem("resources", "Inconnue", null, null, null));
+    List<String> problems = Scenario.validate(new Plan(List.of(base.withProfile(bad))));
+    assertEquals(8, problems.size(), String.join(" | ", problems));
+    List<ProfileItem> tooMany =
+        Collections.nCopies(501, new ProfileItem("family", "Ami", null, null, null));
+    assertEquals(
+        1, Scenario.validate(new Plan(List.of(base.withProfile(tooMany)))).size(), "plafond 500");
+  }
+
+  @Test
+  void profileBodyOmitsNullFields() {
+    assertEquals(
+        Map.of("category", "family", "title", "Sœur"),
+        new ProfileItem("family", "Sœur", null, null, null).body());
+    assertEquals(
+        Map.of("category", "history", "title", "Bac", "periodLabel", "2007", "periodYear", 2007),
+        new ProfileItem("history", "Bac", null, "2007", 2007).body());
   }
 
   @Test

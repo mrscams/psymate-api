@@ -6,6 +6,7 @@ import com.psymate.seed.Plan.LinkPlan;
 import com.psymate.seed.Plan.PatchEntry;
 import com.psymate.seed.Plan.PatientPlan;
 import com.psymate.seed.Plan.Practitioner;
+import com.psymate.seed.Plan.ProfileItem;
 import com.psymate.seed.Plan.StartSession;
 import com.psymate.seed.Plan.Step;
 import java.time.Instant;
@@ -135,8 +136,10 @@ public final class Scenario {
     int years = 1 + rnd.nextInt(4);
     int entries = 180 + rnd.nextInt(41);
     boolean medicated = rnd.nextDouble() < (who == Practitioner.KARIM ? 0.85 : 0.1);
-    return build(
-        rnd, names, who, entries, (int) Math.round(entries * 0.75), years, medicated, 3, today);
+    PatientPlan plan =
+        build(
+            rnd, names, who, entries, (int) Math.round(entries * 0.75), years, medicated, 3, today);
+    return withProfile(plan, seed, index, today);
   }
 
   private static PatientPlan heavyPatient(
@@ -149,7 +152,19 @@ public final class Scenario {
       Instant today) {
     Random rnd = new Random(mix(seed, index));
     boolean medicated = who == Practitioner.KARIM || rnd.nextBoolean();
-    return build(rnd, names, who, entries, links, 10, medicated, 4, today);
+    PatientPlan plan = build(rnd, names, who, entries, links, 10, medicated, 4, today);
+    return withProfile(plan, seed, index, today);
+  }
+
+  /** Sel du tirage du Profil 360 : le dossier (séances, entrées) ne change pas d'un octet. */
+  private static final long PROFILE_SALT = 0x50524F46494C45L;
+
+  /** Ajoute le Profil 360 généré (M13-03), tiré par un générateur propre au patient. */
+  private static PatientPlan withProfile(PatientPlan plan, long seed, int index, Instant today) {
+    Random rnd = new Random(mix(seed, index) ^ PROFILE_SALT);
+    int birthYear = LocalDate.parse(plan.birthDate()).getYear();
+    int currentYear = today.atZone(ZoneOffset.UTC).getYear();
+    return plan.withProfile(ProfileGenerator.generate(rnd, birthYear, currentYear));
   }
 
   private static PatientPlan build(
@@ -228,10 +243,12 @@ public final class Scenario {
       int imprecise,
       int privateEntries,
       int patches,
-      int maxDegree) {
+      int maxDegree,
+      int profileItems,
+      int emptyProfiles) {
 
     public String describe() {
-      return "%d patient(s), %d séances, %d entrées %s, %d liens (pivot max : %d), %d dates imprécises (%.1f %%), %d entrées privées (%.1f %%), %d corrections"
+      return "%d patient(s), %d séances, %d entrées %s, %d liens (pivot max : %d), %d dates imprécises (%.1f %%), %d entrées privées (%.1f %%), %d corrections, %d informations de profil (%d patient(s) sans profil)"
           .formatted(
               patients,
               sessions,
@@ -243,7 +260,9 @@ public final class Scenario {
               entries == 0 ? 0.0 : 100.0 * imprecise / entries,
               privateEntries,
               entries == 0 ? 0.0 : 100.0 * privateEntries / entries,
-              patches);
+              patches,
+              profileItems,
+              emptyProfiles);
     }
   }
 
@@ -255,11 +274,17 @@ public final class Scenario {
     int privates = 0;
     int patches = 0;
     int maxDegree = 0;
+    int profileItems = 0;
+    int emptyProfiles = 0;
     Map<String, Integer> byType = new LinkedHashMap<>();
     for (String t : List.of("note", "event", "situation", "feeling", "medication")) {
       byType.put(t, 0);
     }
     for (PatientPlan p : plan.patients()) {
+      profileItems += p.profile().size();
+      if (p.profile().isEmpty()) {
+        emptyProfiles++;
+      }
       Map<String, Integer> degree = new HashMap<>();
       for (Step step : p.steps()) {
         switch (step) {
@@ -296,7 +321,9 @@ public final class Scenario {
         imprecise,
         privates,
         patches,
-        maxDegree);
+        maxDegree,
+        profileItems,
+        emptyProfiles);
   }
 
   @SuppressWarnings("unchecked")
@@ -502,8 +529,56 @@ public final class Scenario {
       if (!openSessions.isEmpty()) {
         problems.add(who + " : séance restée ouverte");
       }
+      checkProfile(who, p.profile(), problems);
     }
     return problems;
+  }
+
+  /** Rubriques du Profil 360 (G Q64). */
+  static final List<String> PROFILE_CATEGORIES =
+      List.of("history", "family", "health", "values_goals");
+
+  /** Plafond d'informations actives par patient (G Q70). */
+  static final int PROFILE_LIMIT = 500;
+
+  /**
+   * Règles de J3 vérifiées avant toute écriture : rubrique connue, titre de 1 à 200 caractères
+   * après retrait des espaces de bord, détail de 2 000 au plus, période seulement dans {@code
+   * history} (libellé de 60 au plus, année de 1900 à 2100), plafond de 500 informations.
+   */
+  private static void checkProfile(String who, List<ProfileItem> profile, List<String> problems) {
+    if (profile == null) {
+      problems.add(who + " : profil absent (liste vide attendue)");
+      return;
+    }
+    if (profile.size() > PROFILE_LIMIT) {
+      problems.add(
+          who + " : " + profile.size() + " informations de profil, plafond " + PROFILE_LIMIT);
+    }
+    for (int i = 0; i < profile.size(); i++) {
+      ProfileItem item = profile.get(i);
+      String ref = who + " : information de profil " + (i + 1);
+      if (!PROFILE_CATEGORIES.contains(item.category())) {
+        problems.add(ref + " : rubrique inconnue " + item.category());
+      }
+      String title = item.title() == null ? "" : item.title().strip();
+      if (title.isEmpty() || title.length() > 200) {
+        problems.add(ref + " : titre vide ou de plus de 200 caractères");
+      }
+      if (item.detail() != null && item.detail().strip().length() > 2000) {
+        problems.add(ref + " : détail de plus de 2 000 caractères");
+      }
+      boolean history = "history".equals(item.category());
+      if (!history && (item.periodLabel() != null || item.periodYear() != null)) {
+        problems.add(ref + " : période hors de la rubrique history");
+      }
+      if (item.periodLabel() != null && item.periodLabel().strip().length() > 60) {
+        problems.add(ref + " : libellé de période de plus de 60 caractères");
+      }
+      if (item.periodYear() != null && (item.periodYear() < 1900 || item.periodYear() > 2100)) {
+        problems.add(ref + " : année de période hors de 1900..2100 " + item.periodYear());
+      }
+    }
   }
 
   @SuppressWarnings("unchecked")

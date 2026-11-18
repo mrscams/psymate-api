@@ -357,10 +357,13 @@ class PatientProfileControllerIT {
                 + "\",\"periodYear\":1998}")
         .andExpect(status().isUnprocessableContent())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
-        .andExpect(jsonPath("$.errors[*].field").value(List.of("title", "detail", "periodYear")))
+        .andExpect(
+            jsonPath("$.errors[*].field")
+                .value(org.hamcrest.Matchers.contains("title", "detail", "periodYear")))
         .andExpect(
             jsonPath("$.errors[*].code")
-                .value(List.of("REQUIRED", "OUT_OF_RANGE", "INVALID_VALUE")));
+                .value(
+                    org.hamcrest.Matchers.contains("REQUIRED", "OUT_OF_RANGE", "INVALID_VALUE")));
   }
 
   @Test
@@ -644,9 +647,11 @@ class PatientProfileControllerIT {
     assertThat(patientRow(patient)).isEqualTo(patientBefore);
   }
 
+  // xmin change à chaque UPDATE (même sans valeur modifiée), pas sous un simple verrou de ligne.
   private Map<String, Object> patientRow(UUID patient) {
     return jdbc.queryForMap(
-        "select current_version, clinical_rev, updated_at, archived_at from patient where id = ?",
+        "select xmin::text as row_xmin, current_version, clinical_rev, updated_at, archived_at"
+            + " from patient where id = ?",
         patient);
   }
 }

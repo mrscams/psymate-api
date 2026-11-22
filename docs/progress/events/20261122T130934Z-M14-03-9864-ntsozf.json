@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-22T13:09:34.289Z",
+  "task": "M14-03",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR #102 fusionnée en squash (43a40c8) : PublishedProfileFacade dans directory.api",
+  "pr": "https://github.com/mrscams/psymate-api/pull/102",
+  "branch": "suivi-m14-a-fusionnee",
+  "checkout": "suivi-m14-a"
+}

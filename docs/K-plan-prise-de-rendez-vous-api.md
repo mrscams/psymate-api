@@ -75,7 +75,7 @@ Décisions de l'API, inscrites dans le G de psymate-api (G10) par M14-01. Celles
 
 ### K3.4 Cas limites
 
-- **Deux personnes, même créneau.** Aucune ne retient le créneau avant de vérifier son e-mail. La première qui vérifie l'obtient ; la seconde lit « Ce créneau vient d'être pris » et choisit un autre créneau.
+- **Deux personnes, même créneau.** Aucune ne retient le créneau avant de vérifier son e-mail. La première qui vérifie l'obtient ; la seconde lit « Ce créneau n'est plus disponible. » et choisit un autre créneau.
 - **Le praticien pose un rendez-vous sur un créneau demandé mais pas encore vérifié.** Même issue : `409 SLOT_TAKEN` à la vérification.
 - **Le praticien désactive la fonction ou dépublie son profil.** Les pages publiques répondent `404`. Les rendez-vous déjà créés restent, et le lien de gestion continue de fonctionner.
 - **Le praticien change de mode.** Le mode appliqué est celui lu à la vérification. Les demandes déjà en attente restent en attente.
@@ -154,12 +154,12 @@ E9 reçoit deux lignes : `booking_request` (la ligne, 24 h après la création s
 | --- | --- | --- | --- |
 | `GET /api/public/booking/practitioners/{slug}` | M14-05 | Dit si la prise de rendez-vous est offerte et avec quels réglages. | `PublicBookingDto { slug, displayName, confirmation, slotDurationMin, modalities, timezone, minNoticeHours, horizonDays }` ; `404 BOOKING_NOT_AVAILABLE` |
 | `GET /api/public/booking/practitioners/{slug}/slots?from&to` | M14-05 | Créneaux offerts. `from` et `to` sont des dates `AAAA-MM-JJ` dans le fuseau du praticien, `to` inclus, 31 jours au plus (`422 WINDOW_TOO_LARGE`). | `PublicSlotsDto { timezone, slots: [{ startsAt, endsAt }] }`, instants UTC triés ; `404 BOOKING_NOT_AVAILABLE` |
-| `POST /api/public/booking/practitioners/{slug}/requests` | M14-06 | Corps `CreateBookingRequest { startsAt, modality, firstName, lastName, email, phone?, locale?, consent, website, formShownAt }`. | `202` sans corps ; `404 BOOKING_NOT_AVAILABLE` ; `409 SLOT_NOT_AVAILABLE` ; `422` par champ ; `429 RATE_LIMITED` |
-| `POST /api/public/booking/requests/verify` | M14-06 | Corps `{ token }`. Crée le rendez-vous invité. Idempotent tant que le jeton est valable. | `200 PublicAppointmentDto` avec `manageToken` ; `404 BOOKING_TOKEN_INVALID` ; `410 BOOKING_TOKEN_EXPIRED` ; `409 SLOT_TAKEN` ; `409 BOOKING_ALREADY_ACTIVE` ; `404 BOOKING_NOT_AVAILABLE` |
+| `POST /api/public/booking/practitioners/{slug}/requests` | M14-06 | Corps `CreateBookingRequest { startsAt, modality, firstName, lastName, email, phone?, locale?, consent, website, formShownAt }`. `formShownAt` jusqu'à 5 minutes dans le futur est accepté (horloge du client en avance) ; au-delà, ou moins de 3 s avant l'envoi, la demande est ignorée en silence sous le `202`. | `202` sans corps ; `404 BOOKING_NOT_AVAILABLE` ; `409 SLOT_NOT_AVAILABLE` ; `422` par champ ; `429 RATE_LIMITED` |
+| `POST /api/public/booking/requests/verify` | M14-06 | Corps `{ token }`. Crée le rendez-vous invité. Idempotent : une demande déjà vérifiée rend `200` avec l'état courant de son rendez-vous (sans `manageToken`), même après l'échéance du lien ; `410` ne vise qu'une demande jamais vérifiée. `409 SLOT_TAKEN` aussi si la modalité de la demande n'est plus offerte. | `200 PublicAppointmentDto` avec `manageToken` ; `404 BOOKING_TOKEN_INVALID` ; `410 BOOKING_TOKEN_EXPIRED` ; `409 SLOT_TAKEN` ; `409 BOOKING_ALREADY_ACTIVE` ; `404 BOOKING_NOT_AVAILABLE` |
 | `POST /api/public/booking/manage` | M14-06 | Corps `{ token }`. État du rendez-vous. | `200 PublicAppointmentDto` ; `404 BOOKING_TOKEN_INVALID` |
 | `POST /api/public/booking/manage/cancel` | M14-06 | Corps `{ token }`. Annule ; idempotent sur un rendez-vous déjà annulé. | `200 PublicAppointmentDto` ; `404 BOOKING_TOKEN_INVALID` ; `409 APPOINTMENT_NOT_ACTIVE` si le rendez-vous est passé |
 
-`PublicAppointmentDto` : `{ status: pending | confirmed | cancelled | past, cancelledBy?: visitor | practitioner | expired, startsAt, endsAt, durationMin, modality, practitioner: { slug, displayName }, canCancel, manageToken? }`. Il ne porte ni le nom, ni l'e-mail, ni le téléphone du demandeur, ni aucune note.
+`PublicAppointmentDto` : `{ status: pending | confirmed | cancelled | past, cancelledBy?: visitor | practitioner | expired, startsAt, endsAt, durationMin, modality, practitioner: { slug, displayName }, canCancel, manageToken? }`. Il ne porte ni le nom, ni l'e-mail, ni le téléphone du demandeur, ni aucune note. `cancelledBy` et `manageToken` sont toujours présents et valent `null` quand ils ne s'appliquent pas (plutôt qu'absents) ; `practitioner.slug` et `practitioner.displayName` valent `null` quand la fiche n'est plus publiée ou le praticien plus approuvé.
 
 ### K5.2 Routes du praticien (session)
 
@@ -436,9 +436,10 @@ Objectif :
   - cancel d'un tentative par le praticien : « Votre demande n'a pas pu être acceptée », sans motif ;
   - cancel d'un planned par le praticien : « Votre rendez-vous est annulé », sans motif ;
   - PATCH qui change startsAt ou la durée : « Votre rendez-vous est déplacé », ancienne et nouvelle date ;
+  - PATCH qui ne change que la modalité : « Votre rendez-vous est modifié », nouvelle modalité, date, nouveau lien de gestion (sauf rendez-vous déjà commencé) ; si le même PATCH change aussi la date ou la durée, un seul e-mail, celui du déplacement, qui cite aussi la modalité (précisé le 22 novembre 2026, G Q81) ;
   - PATCH qui ne change que la note ou l'identité de l'invité : aucun e-mail.
   Objets neutres (Q81), lien de gestion rappelé quand le rendez-vous reste actif, langue = booking_request.locale. Le cancel_reason du praticien n'est jamais transmis.
-- Le lien de gestion ne peut pas être reconstruit (seule son empreinte est stockée) : chaque e-mail de suivi émet un nouveau jeton de gestion et remplace manage_token_hash. Le lien le plus récent est le seul valable ; les gabarits le disent en une phrase.
+- Le lien de gestion ne peut pas être reconstruit (seule son empreinte est stockée) : chaque e-mail de suivi qui porte un lien émet un nouveau jeton de gestion et remplace manage_token_hash. Le lien le plus récent est le seul valable ; les gabarits le disent en une phrase. Les e-mails sans lien (refus, annulation, expiration, ou déplacement et modification d'un rendez-vous déjà commencé) laissent le dernier lien valable, pour que le demandeur puisse encore lire l'état de sa demande (précisé le 22 novembre 2026, G Q80).
 - BookingExpiryJob (cron app.booking.expiry.cron, défaut toutes les 15 min ; app.booking.pending-ttl, défaut PT72H) : annule les rendez-vous origin = online, status = tentative, dont la vérification date de plus de pending-ttl ou dont starts_at est passé ; cancel_reason = libellé i18n « Demande expirée », booking_request.closed_by = expired, événement AppointmentCancelled, e-mail « Votre demande a expiré » au demandeur. run() appelable par les tests ; idempotent.
 - BookingPurgeJob (cron app.booking.purge.cron, défaut 0 45 3 * * * UTC) : supprime les lignes booking_request non vérifiées créées depuis plus de app.booking.unverified-retention (PT24H), et les lignes vérifiées dont le rendez-vous est terminé ou annulé depuis plus de app.booking.closed-retention (P30D). Journalise des nombres, jamais d'identité.
 - E9 est déjà à jour (M14-01) : le code doit lui correspondre exactement.

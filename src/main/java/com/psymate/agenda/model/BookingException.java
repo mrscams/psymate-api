@@ -92,9 +92,12 @@ public class BookingException extends ProblemException {
     return new BookingException(410, "BOOKING_TOKEN_EXPIRED", null, null, "Ce lien a expiré.");
   }
 
-  /** Le créneau n'est plus offert au moment de la vérification (G Q77). */
+  /**
+   * Le créneau, ou sa modalité, n'est plus offert au moment de la vérification (G Q77). Message
+   * neutre : il ne dit pas pourquoi.
+   */
   public static BookingException slotTaken() {
-    return new BookingException(409, "SLOT_TAKEN", null, null, "Ce créneau vient d'être pris.");
+    return new BookingException(409, "SLOT_TAKEN", null, null, "Ce créneau n'est plus disponible.");
   }
 
   /**

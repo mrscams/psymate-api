@@ -96,8 +96,10 @@ public record CreateBookingRequest(
     @Schema(
             description =
                 "Instant d'affichage du formulaire, ISO 8601 UTC. Obligatoire. Une demande"
-                    + " envoyée moins de 3 secondes après cet instant, ou dans le futur, est"
-                    + " ignorée en silence (202 sans ligne ni e-mail).",
+                    + " envoyée moins de 3 secondes après cet instant, ou dont l'instant est plus"
+                    + " de 5 minutes dans le futur, est ignorée en silence (202 sans ligne ni"
+                    + " e-mail). Jusqu'à 5 minutes dans le futur (horloge du client en avance),"
+                    + " la demande est acceptée.",
             format = "date-time",
             example = "2026-12-01T14:30:00Z")
         @NotNull

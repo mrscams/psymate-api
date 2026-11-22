@@ -255,8 +255,8 @@ class PublicBookingController {
           quelle que soit l'adresse saisie (G Q78) : la demande est enregistrée et un lien de \
           vérification, valable 30 minutes, part par e-mail après la réponse ; ou bien elle est \
           ignorée en silence, sans trace ni e-mail (pot de miel rempli, formulaire envoyé moins de \
-          3 secondes après son affichage ou dans le futur, déjà 3 demandes dans l'heure pour \
-          cette adresse). Rien n'est réservé et le praticien n'est pas prévenu avant la \
+          3 secondes après son affichage, ou affiché plus de 5 minutes dans le futur, déjà 3 \
+          demandes dans l'heure pour cette adresse). Rien n'est réservé et le praticien n'est pas prévenu avant la \
           vérification ; une demande jamais vérifiée est effacée après 24 heures. Un échec \
           d'envoi de l'e-mail ne change pas la réponse.""")
   @ApiResponses({
@@ -393,7 +393,8 @@ class PublicBookingController {
     @ApiResponse(
         responseCode = "409",
         description =
-            "SLOT_TAKEN : le créneau n'est plus offert (pris entre-temps, ou plus proposé)."
+            "SLOT_TAKEN : le créneau n'est plus offert (pris entre-temps, plus proposé, ou"
+                + " modalité plus offerte)."
                 + " BOOKING_ALREADY_ACTIVE : cette adresse a déjà un rendez-vous en ligne actif et"
                 + " à venir avec ce praticien. Rien n'est créé.",
         content =
@@ -406,7 +407,7 @@ class PublicBookingController {
                       value =
                           """
                           {"type":"about:blank","title":"Conflict","status":409,\
-                          "detail":"Ce créneau vient d'être pris.",\
+                          "detail":"Ce créneau n'est plus disponible.",\
                           "instance":"/api/public/booking","code":"SLOT_TAKEN"}"""),
                   @ExampleObject(
                       name = "BOOKING_ALREADY_ACTIVE",

@@ -90,6 +90,18 @@ app:
   booking:
     hash-secret: ${APP_BOOKING_HASH_SECRET:exemple-non-secret-booking-hash-dev-et-tests}
     verify-ttl: PT30M
+    # M14-07 (G Q82) : une demande en attente (mode manual) est annulee d office pending-ttl apres
+    # la verification, ou au debut du creneau si c est plus tot ; tache toutes les 15 minutes.
+    pending-ttl: PT72H
+    expiry:
+      cron: "0 */15 * * * *"
+    # M14-07 (E9, G Q82 a et f) : purge quotidienne des lignes booking_request jamais verifiees
+    # (unverified-retention apres la creation) et de celles dont le rendez-vous est termine ou
+    # annule (closed-retention apres la fin ou l annulation). Cron Spring evalue en UTC.
+    unverified-retention: PT24H
+    closed-retention: P30D
+    purge:
+      cron: "0 45 3 * * *"
   # Limitation de debit (G Q24, Bucket4j, shared.ratelimit). Une regle = un motif de chemin (decode),
   # des methodes optionnelles (toutes si absent), la cle de comptage (ip : IPv6 regroupee en /64 ;
   # session : id de session HTTP, les requetes sans session ne sont pas comptees), un nombre de
@@ -183,6 +195,11 @@ app:
   events:
     # Le rejeu automatique au demarrage ne touche jamais aux lignes que les tests comptent.
     republish-older-than: 1h
+  booking:
+    expiry:
+      # Desactivee : chaque contexte de test la lancerait toutes les 15 minutes sur la base
+      # partagee ; les tests appellent BookingExpiryJob.run() eux-memes (M14-07).
+      cron: "-"
   mail:
     from: test@gmail.com
   directory:

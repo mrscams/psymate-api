@@ -66,6 +66,7 @@ public class AppointmentService {
   private final AppointmentAssembler assembler;
   private final PatientOwnershipGuard guard;
   private final DomainEventPublisher events;
+  private final BookingNotifier notifier;
   private final Clock clock;
 
   public AppointmentService(
@@ -74,12 +75,14 @@ public class AppointmentService {
       AppointmentAssembler assembler,
       PatientOwnershipGuard guard,
       DomainEventPublisher events,
+      BookingNotifier notifier,
       Clock clock) {
     this.appointments = appointments;
     this.bookingRequests = bookingRequests;
     this.assembler = assembler;
     this.guard = guard;
     this.events = events;
+    this.notifier = notifier;
     this.clock = clock;
   }
 
@@ -118,6 +121,29 @@ public class AppointmentService {
     return appointments
         .findByIdAndPractitionerId(id, me.id())
         .orElseThrow(AppointmentException::notFound);
+  }
+
+  /**
+   * Rendez-vous du praticien à modifier (confirmer, annuler, PATCH, rattacher). Pour un rendez-vous
+   * pris en ligne, prend d'abord le verrou consultatif du praticien (celui de la vérification, de
+   * l'annulation par le demandeur et de l'expiration, M14-07) puis charge le rendez-vous : chargé
+   * après le verrou, il voit ce que la transaction concurrente a validé (l'entité n'a pas de
+   * {@code @Version} et réécrit toute la ligne). L'origine, lue avant sans charger l'entité, ne
+   * change jamais. {@code alsoLock} : verrou pris même si ce rendez-vous n'est pas en ligne.
+   */
+  private Appointment ownedForUpdate(UUID id, CurrentPractitioner me, boolean alsoLock) {
+    if (alsoLock
+        || appointments
+            .findOriginByIdAndPractitionerId(id, me.id())
+            .filter(origin -> origin == AppointmentOrigin.ONLINE)
+            .isPresent()) {
+      bookingRequests.lockPractitioner(me.id());
+    }
+    return owned(id, me);
+  }
+
+  private Appointment ownedForUpdate(UUID id, CurrentPractitioner me) {
+    return ownedForUpdate(id, me, false);
   }
 
   private List<Appointment> overlapsOf(Appointment a) {
@@ -229,14 +255,22 @@ public class AppointmentService {
   /**
    * Fusion partielle : début (la durée est gardée), durée (le début est gardé), modalité, note
    * ({@code null} explicite l'efface). 409 si le rendez-vous est annulé ou terminé, même pour un
-   * corps vide. {@code AppointmentRescheduled} seulement si le créneau change.
+   * corps vide. {@code AppointmentRescheduled} seulement si le créneau change. Pour un rendez-vous
+   * pris en ligne (M14-07), le demandeur reçoit un seul e-mail : « déplacé » si le début ou la
+   * durée change (il cite aussi une nouvelle modalité), « modifié » si seule la modalité change ;
+   * rien pour un changement de note ou d'identité seul.
    */
   @Transactional
   public AppointmentUpdatedDto update(UUID id, UpdateAppointmentRequest request) {
-    Appointment appointment = owned(id, me());
+    Appointment appointment = ownedForUpdate(id, me());
     if (!appointment.getStatus().isActive()) {
       throw AppointmentException.notActive();
     }
+    BookingMailer.Change previous =
+        new BookingMailer.Change(
+            appointment.getStartsAt().toInstant(),
+            appointment.getDurationMin(),
+            appointment.getModality());
     OffsetDateTime at = now();
     OffsetDateTime startsAt =
         request.getStartsAt() == null ? appointment.getStartsAt() : utc(request.getStartsAt());
@@ -270,6 +304,8 @@ public class AppointmentService {
     if (rescheduled) {
       events.publish(event(AppointmentRescheduled::new, appointment));
     }
+    // Après la correction d'identité éventuelle : l'e-mail part à l'adresse à jour.
+    notifier.changed(appointment, previous);
     Map<UUID, PatientRef> refs = assembler.patientsOf(appointment.getPractitionerId());
     return new AppointmentUpdatedDto(
         assembler.toDto(appointment, refs),
@@ -279,31 +315,37 @@ public class AppointmentService {
   /**
    * Annule : idempotent (un second appel renvoie le rendez-vous inchangé, sans événement), 409 si
    * {@code done}. Aucune suppression (G Q53). Un rendez-vous pris en ligne clôt sa demande ({@code
-   * booking_request.closed_by = practitioner}, M14-06).
+   * booking_request.closed_by = practitioner}, M14-06) et prévient le demandeur (M14-07) : refus
+   * s'il était en attente, annulation sinon, jamais le motif.
    */
   @Transactional
   public AppointmentDto cancel(UUID id, String reason) {
-    Appointment appointment = owned(id, me());
-    boolean wasCancelled = appointment.getStatus() == AppointmentStatus.cancelled;
+    Appointment appointment = ownedForUpdate(id, me());
+    AppointmentStatus before = appointment.getStatus();
     appointment.cancel(reason, now());
-    if (!wasCancelled) {
+    if (before != AppointmentStatus.cancelled) {
       if (appointment.getOrigin() == AppointmentOrigin.ONLINE) {
         // Demande en ligne refusée ou annulée par le praticien (K3.3, M14-06).
         bookingRequests
             .findByAppointmentId(appointment.getId())
             .ifPresent(r -> r.close(BookingRequest.CLOSED_BY_PRACTITIONER));
+        notifier.cancelledByPractitioner(appointment, before == AppointmentStatus.tentative);
       }
       events.publish(event(AppointmentCancelled::new, appointment));
     }
     return assembler.toDto(appointment);
   }
 
-  /** Confirme : {@code tentative → planned} ; 409 APPOINTMENT_NOT_ACTIVE pour tout autre statut. */
+  /**
+   * Confirme : {@code tentative → planned} ; 409 APPOINTMENT_NOT_ACTIVE pour tout autre statut. Une
+   * demande en ligne confirmée prévient le demandeur, avec un nouveau lien de gestion (M14-07).
+   */
   @Transactional
   public AppointmentDto confirm(UUID id) {
-    Appointment appointment = owned(id, me());
+    Appointment appointment = ownedForUpdate(id, me());
     appointment.confirm(now());
     events.publish(event(AppointmentConfirmed::new, appointment));
+    notifier.confirmed(appointment);
     return assembler.toDto(appointment);
   }
 
@@ -317,7 +359,10 @@ public class AppointmentService {
   @Transactional
   public AttachedAppointmentsDto attachPatient(UUID id, UUID patientId, boolean includeSameGuest) {
     CurrentPractitioner me = me();
-    Appointment appointment = owned(id, me);
+    // Une expiration ou une annulation par le demandeur concurrente réécrirait la ligne entière et
+    // déferait le rattachement : verrou du praticien si ce rendez-vous est pris en ligne, et
+    // toujours avec « même invité », dont les cibles ne sont connues qu'après chargement (M14-07).
+    Appointment appointment = ownedForUpdate(id, me, includeSameGuest);
     if (!appointment.isGuest() || appointment.isGuestPurged()) {
       throw AppointmentException.notActive();
     }

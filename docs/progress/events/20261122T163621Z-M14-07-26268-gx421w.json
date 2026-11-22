@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-22T16:36:21.546Z",
+  "task": "M14-07",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "E-mails de suivi au demandeur (confirmé, refus, annulé, déplacé, modifié) avec lien de gestion renouvelé, BookingExpiryJob et BookingPurgeJob selon E9, verrou par praticien sur confirm/cancel/PATCH/attach-patient, décisions de l'orchestratrice (SLOT_TAKEN neutre, tolérance d'horloge 5 min, K5.1, G Q80/Q81 précisées)",
+  "next": "M14-08",
+  "pr": "https://github.com/mrscams/psymate-api/pull/108",
+  "branch": "claude/m14-07-suivi",
+  "checkout": "m14-05-creneaux-publics-c5ceb0"
+}

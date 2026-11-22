@@ -1115,7 +1115,7 @@ components:
           minLength: 0
           type: string
         formShownAt:
-          description: Instant d'affichage du formulaire, ISO 8601 UTC. Obligatoire. Une demande envoyée moins de 3 secondes après cet instant, ou dans le futur, est ignorée en silence (202 sans ligne ni e-mail).
+          description: Instant d'affichage du formulaire, ISO 8601 UTC. Obligatoire. Une demande envoyée moins de 3 secondes après cet instant, ou dont l'instant est plus de 5 minutes dans le futur, est ignorée en silence (202 sans ligne ni e-mail). Jusqu'à 5 minutes dans le futur (horloge du client en avance), la demande est acceptée.
           example: 2026-12-01T14:30:00Z
           format: date-time
           type: string
@@ -12513,7 +12513,7 @@ paths:
       - Prise de rendez-vous en ligne
   /api/public/booking/practitioners/{slug}/requests:
     post:
-      description: 'Public, sans session ni cookie ; 5 demandes par heure et par IP (429 RATE_LIMITED avec Retry-After), en plus de 60 requêtes par minute et par IP ; Cache-Control: no-store. Vérifications dans cet ordre : forme du corps (422 par champ) ; 404 BOOKING_NOT_AVAILABLE si la prise de rendez-vous n''est pas offerte ; 409 SLOT_NOT_AVAILABLE si startsAt n''est pas exactement le début d''un créneau offert (même calcul que GET …/slots) ou si la modalité n''est pas offerte. Sinon 202 sans corps, quelle que soit l''adresse saisie (G Q78) : la demande est enregistrée et un lien de vérification, valable 30 minutes, part par e-mail après la réponse ; ou bien elle est ignorée en silence, sans trace ni e-mail (pot de miel rempli, formulaire envoyé moins de 3 secondes après son affichage ou dans le futur, déjà 3 demandes dans l''heure pour cette adresse). Rien n''est réservé et le praticien n''est pas prévenu avant la vérification ; une demande jamais vérifiée est effacée après 24 heures. Un échec d''envoi de l''e-mail ne change pas la réponse.'
+      description: 'Public, sans session ni cookie ; 5 demandes par heure et par IP (429 RATE_LIMITED avec Retry-After), en plus de 60 requêtes par minute et par IP ; Cache-Control: no-store. Vérifications dans cet ordre : forme du corps (422 par champ) ; 404 BOOKING_NOT_AVAILABLE si la prise de rendez-vous n''est pas offerte ; 409 SLOT_NOT_AVAILABLE si startsAt n''est pas exactement le début d''un créneau offert (même calcul que GET …/slots) ou si la modalité n''est pas offerte. Sinon 202 sans corps, quelle que soit l''adresse saisie (G Q78) : la demande est enregistrée et un lien de vérification, valable 30 minutes, part par e-mail après la réponse ; ou bien elle est ignorée en silence, sans trace ni e-mail (pot de miel rempli, formulaire envoyé moins de 3 secondes après son affichage, ou affiché plus de 5 minutes dans le futur, déjà 3 demandes dans l''heure pour cette adresse). Rien n''est réservé et le praticien n''est pas prévenu avant la vérification ; une demande jamais vérifiée est effacée après 24 heures. Un échec d''envoi de l''e-mail ne change pas la réponse.'
       operationId: createBookingRequest
       parameters:
       - description: Adresse publique (slug) du praticien.
@@ -12768,14 +12768,14 @@ paths:
                   description: SLOT_TAKEN
                   value:
                     code: SLOT_TAKEN
-                    detail: Ce créneau vient d'être pris.
+                    detail: Ce créneau n'est plus disponible.
                     instance: /api/public/booking
                     status: 409
                     title: Conflict
                     type: about:blank
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'SLOT_TAKEN : le créneau n''est plus offert (pris entre-temps, ou plus proposé). BOOKING_ALREADY_ACTIVE : cette adresse a déjà un rendez-vous en ligne actif et à venir avec ce praticien. Rien n''est créé.'
+          description: 'SLOT_TAKEN : le créneau n''est plus offert (pris entre-temps, plus proposé, ou modalité plus offerte). BOOKING_ALREADY_ACTIVE : cette adresse a déjà un rendez-vous en ligne actif et à venir avec ce praticien. Rien n''est créé.'
         '410':
           content:
             application/problem+json:

@@ -4,10 +4,12 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 
 import com.psymate.agenda.api.AppointmentCancelled;
 import com.psymate.agenda.api.AppointmentPlanned;
+import com.psymate.agenda.service.BookingMailer;
 import com.psymate.identity.api.CurrentPractitioner;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -21,6 +23,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
@@ -337,5 +341,60 @@ final class PublicBookingFixtures {
             .with(as(p))
             .contentType(MediaType.APPLICATION_JSON)
             .content(body.getBytes(StandardCharsets.UTF_8)));
+  }
+
+  ResultActions practitionerPatch(Practitioner p, String url, String body) throws Exception {
+    return mvc.perform(
+        MockMvcRequestBuilders.patch(url)
+            .with(as(p))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body.getBytes(StandardCharsets.UTF_8)));
+  }
+
+  // ---- M14-07 : suivi
+
+  private static final Pattern MANAGE_LINK = Pattern.compile("/rendez-vous/gerer/([A-Za-z0-9_-]+)");
+
+  /** Jeton du lien de gestion cité dans le texte d'un e-mail ; null s'il n'y en a pas. */
+  static String manageTokenIn(String mailText) {
+    Matcher m = MANAGE_LINK.matcher(mailText);
+    return m.find() ? m.group(1) : null;
+  }
+
+  /** Rendez-vous d'un lien de gestion en cours. */
+  UUID appointmentOf(String manageToken) throws Exception {
+    return jdbc.queryForObject(
+        "select appointment_id from booking_request where manage_token_hash = ?",
+        UUID.class,
+        sha256(manageToken));
+  }
+
+  /** Statut et clôture d'un rendez-vous en ligne et de sa demande. */
+  Map<String, Object> state(UUID appointmentId) {
+    return jdbc.queryForMap(
+        "select a.status, a.cancel_reason, a.cancelled_at, b.closed_by, b.manage_token_hash"
+            + " from appointment a left join booking_request b on b.appointment_id = a.id"
+            + " where a.id = ?",
+        appointmentId);
+  }
+
+  /**
+   * Écoule ce qui précède un comptage d'e-mails (M14-07) : publications de ce rendez-vous pour
+   * l'abonné de test terminées (30 s au plus, sans échec), puis file d'envoi des e-mails vide.
+   */
+  void settle(UUID appointmentId, BookingMailer mailer) throws Exception {
+    long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+    while (System.nanoTime() < deadline
+        && jdbc.queryForObject(
+                "select count(*) from event_publication where completion_date is null"
+                    + " and listener_id like '%BookingEventsListener%'"
+                    + " and serialized_event::text like ?",
+                Integer.class, "%" + appointmentId + "%")
+            > 0) {
+      Thread.sleep(50);
+    }
+    if (!mailer.awaitIdle(Duration.ofSeconds(30))) {
+      throw new IllegalStateException("booking mail queue still busy after 30 s");
+    }
   }
 }

@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-22T13:09:33.005Z",
+  "task": "M14-01",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR #101 fusionnée en squash (5c5dfe2) : décisions Q71 à Q82 et plan K côté API",
+  "pr": "https://github.com/mrscams/psymate-api/pull/101",
+  "branch": "suivi-m14-a-fusionnee",
+  "checkout": "suivi-m14-a"
+}

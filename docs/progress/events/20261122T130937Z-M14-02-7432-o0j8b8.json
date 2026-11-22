@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-22T13:09:37.351Z",
+  "task": "M14-02",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR #104 fusionnée en squash (6c86605) : préférences booking.* ; vague M14-A terminée",
+  "next": "Vague M14-B : M14-05 créneaux publics",
+  "pr": "https://github.com/mrscams/psymate-api/pull/104",
+  "branch": "suivi-m14-a-fusionnee",
+  "checkout": "suivi-m14-a"
+}

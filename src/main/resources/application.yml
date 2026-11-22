@@ -67,7 +67,7 @@ app:
     email: ${APP_SUPPORT_EMAIL:support@example.test}
   contract:
     # Version du contrat OpenAPI publie ; a bumper avant de poser un tag contract-vX.Y.Z.
-    version: 0.14.0
+    version: 0.15.0
   # Profil 360 (M13-02, G Q70) : plafond d informations actives par patient ; au-dela, la creation
   # repond 422 PROFILE_ITEM_LIMIT_REACHED. Abaisse seulement par les tests.
   patients:
@@ -80,6 +80,9 @@ app:
     guest-purge:
       cron: "0 30 3 * * *"
       retention: P180D
+      # M14-04 (G Q82 c) : un rendez-vous en ligne annule (refus, expiration, annulation) est
+      # purge plus tot, ce delai apres son annulation (cancelled_at).
+      online-cancelled-retention: P30D
   # Limitation de debit (G Q24, Bucket4j, shared.ratelimit). Une regle = un motif de chemin (decode),
   # des methodes optionnelles (toutes si absent), la cle de comptage (ip : IPv6 regroupee en /64 ;
   # session : id de session HTTP, les requetes sans session ne sont pas comptees), un nombre de

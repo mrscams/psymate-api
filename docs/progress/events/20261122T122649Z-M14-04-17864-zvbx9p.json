@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-22T12:26:49.295Z",
+  "task": "M14-04",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Agenda : migration V15, origin (practitioner/online), guest.email, GET /api/agenda/requests, purge 30 j des rendez-vous en ligne annulés, entité BookingRequest ; verify vert, contrat 0.15.0",
+  "notes": "Contrat 0.15.0 aussi posé par M14-02 : la seconde PR fusionnée intègre main et relance make contract. M14-01 (E4 V15, G Q71-Q82) à fusionner avant ou avec.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/103",
+  "branch": "claude/m14-04-agenda-origine-demandes-471959",
+  "checkout": "m14-04-agenda-origine-demandes-471959"
+}

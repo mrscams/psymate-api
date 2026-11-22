@@ -351,24 +351,33 @@ public class AppointmentService {
 
   // ---- invités (G Q60)
 
-  /** Identité reçue, espaces de bord retirés ; prénom ou téléphone vide → null. */
+  /**
+   * Identité reçue, espaces de bord retirés ; prénom, téléphone ou e-mail vide → null. Une série
+   * recopie cette identité, e-mail compris, sur chaque occurrence.
+   */
   static Appointment.Guest guestOf(GuestRequest request) {
     return new Appointment.Guest(
-        blankToNull(request.firstName()), request.lastName().strip(), blankToNull(request.phone()));
+        blankToNull(request.firstName()),
+        request.lastName().strip(),
+        blankToNull(request.phone()),
+        blankToNull(request.email()));
   }
 
   /**
-   * Correction (PATCH) : nom remplacé ; prénom et téléphone absents (null) gardés, vides effacés.
+   * Correction (PATCH) : nom remplacé ; prénom, téléphone et e-mail absents (null) gardés, vides
+   * effacés.
    */
   static Appointment.Guest merged(Appointment.Guest current, GuestRequest request) {
     return new Appointment.Guest(
         request.firstName() == null ? current.firstName() : blankToNull(request.firstName()),
         request.lastName().strip(),
-        request.phone() == null ? current.phone() : blankToNull(request.phone()));
+        request.phone() == null ? current.phone() : blankToNull(request.phone()),
+        request.email() == null ? current.email() : blankToNull(request.email()));
   }
 
   private static Appointment.Guest currentGuest(Appointment a) {
-    return new Appointment.Guest(a.getGuestFirstName(), a.getGuestLastName(), a.getGuestPhone());
+    return new Appointment.Guest(
+        a.getGuestFirstName(), a.getGuestLastName(), a.getGuestPhone(), a.getGuestEmail());
   }
 
   private static String blankToNull(String value) {

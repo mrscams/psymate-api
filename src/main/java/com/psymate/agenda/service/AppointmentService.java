@@ -360,12 +360,9 @@ public class AppointmentService {
   public AttachedAppointmentsDto attachPatient(UUID id, UUID patientId, boolean includeSameGuest) {
     CurrentPractitioner me = me();
     // Une expiration ou une annulation par le demandeur concurrente réécrirait la ligne entière et
-    // déferait le rattachement : verrou du praticien si ce rendez-vous, ou l'un de ceux que
-    // « même invité » peut entraîner, est pris en ligne (M14-07), avant tout chargement.
-    boolean onlineAmongTargets =
-        includeSameGuest
-            && appointments.hasUnpurgedGuestOfOrigin(me.id(), AppointmentOrigin.ONLINE);
-    Appointment appointment = ownedForUpdate(id, me, onlineAmongTargets);
+    // déferait le rattachement : verrou du praticien si ce rendez-vous est pris en ligne, et
+    // toujours avec « même invité », dont les cibles ne sont connues qu'après chargement (M14-07).
+    Appointment appointment = ownedForUpdate(id, me, includeSameGuest);
     if (!appointment.isGuest() || appointment.isGuestPurged()) {
       throw AppointmentException.notActive();
     }

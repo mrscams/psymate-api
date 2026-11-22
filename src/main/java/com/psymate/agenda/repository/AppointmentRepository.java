@@ -36,21 +36,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
   Optional<AppointmentOrigin> findOriginByIdAndPractitionerId(
       @Param("id") UUID id, @Param("practitionerId") UUID practitionerId);
 
-  /**
-   * Le praticien a au moins un rendez-vous invité non purgé de cette origine, sans charger d'entité
-   * : un rattachement « tous les rendez-vous de cette personne » peut en toucher un pris en ligne,
-   * et doit alors prendre le verrou avant de les charger.
-   */
-  @Query(
-      """
-      select count(a) > 0 from Appointment a
-      where a.practitionerId = :practitionerId
-        and a.patientId is null and a.guestPurgedAt is null
-        and a.origin = :origin
-      """)
-  boolean hasUnpurgedGuestOfOrigin(
-      @Param("practitionerId") UUID practitionerId, @Param("origin") AppointmentOrigin origin);
-
   /** Praticien d'un rendez-vous, sans charger l'entité (même usage). */
   @Query("select a.practitionerId from Appointment a where a.id = :id")
   Optional<UUID> findPractitionerIdById(@Param("id") UUID id);

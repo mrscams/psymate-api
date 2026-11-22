@@ -158,6 +158,7 @@ class BookingNotificationsIT {
     f.practitionerPost(p, url(id, "confirm"), "{}").andExpect(status().isOk());
     f.practitionerPatch(p, url(id, null), "{\"startsAt\":\"" + slot(4, "11:00") + "\"}")
         .andExpect(status().isOk());
+    f.practitionerPatch(p, url(id, null), "{\"modality\":\"video\"}").andExpect(status().isOk());
     f.practitionerPost(p, url(id, "cancel"), "{}").andExpect(status().isOk());
     f.settle(id, mailer);
 

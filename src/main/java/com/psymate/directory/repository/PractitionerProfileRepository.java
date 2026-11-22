@@ -17,6 +17,9 @@ public interface PractitionerProfileRepository extends JpaRepository<Practitione
   /** Praticien visé par une fiche publiée et adresse de contact de sa fiche (peut être nulle). */
   record Recipient(UUID practitionerId, String contactEmail) {}
 
+  /** Identité publique minimale d'une fiche publiée (façade {@code PublishedProfileFacade}). */
+  record PublishedSummary(UUID practitionerId, String slug, String displayName) {}
+
   boolean existsBySlug(String slug);
 
   /**
@@ -52,4 +55,18 @@ public interface PractitionerProfileRepository extends JpaRepository<Practitione
           + "p.practitionerId, p.contactEmail) from PractitionerProfile p"
           + " where p.slug = :slug and p.published = true")
   Optional<Recipient> findPublishedRecipient(@Param("slug") String slug);
+
+  /** Fiche publiée par slug ; un slug inconnu ou une fiche non publiée donne un résultat vide. */
+  @Query(
+      "select new com.psymate.directory.repository.PractitionerProfileRepository$PublishedSummary("
+          + "p.practitionerId, p.slug, p.displayName) from PractitionerProfile p"
+          + " where p.slug = :slug and p.published = true")
+  Optional<PublishedSummary> findPublishedSummaryBySlug(@Param("slug") String slug);
+
+  /** Fiche publiée d'un praticien ; vide s'il n'a pas de fiche ou si elle n'est pas publiée. */
+  @Query(
+      "select new com.psymate.directory.repository.PractitionerProfileRepository$PublishedSummary("
+          + "p.practitionerId, p.slug, p.displayName) from PractitionerProfile p"
+          + " where p.practitionerId = :id and p.published = true")
+  Optional<PublishedSummary> findPublishedSummaryByPractitioner(@Param("id") UUID practitionerId);
 }

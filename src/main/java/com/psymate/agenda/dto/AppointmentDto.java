@@ -31,6 +31,14 @@ public record AppointmentDto(
                     + " (séance rattachée).",
             allowableValues = {"planned", "tentative", "cancelled", "done"})
         String status,
+    @Schema(
+            description =
+                "Origine (G Q74) : practitioner (posé par le praticien, seule valeur d'un"
+                    + " rendez-vous créé par POST /api/appointments) ou online (demande en ligne"
+                    + " d'un visiteur). Fixée par le serveur, jamais modifiable.",
+            allowableValues = {"practitioner", "online"},
+            example = "practitioner")
+        String origin,
     @Schema(description = "Note de planification, visible seulement dans l'agenda. Null si aucune.")
         String planningNote,
     @Schema(description = "Motif d'annulation. Null si aucun.") String cancelReason,

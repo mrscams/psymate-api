@@ -36,9 +36,11 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 /**
  * Purge des invités (M11-10, G Q60, E9) sur une vraie base : 6 mois après la fin, ou l'annulation,
- * d'un rendez-vous invité, nom, prénom et téléphone passent à NULL et guest_purged_at est posé ; la
- * ligne reste. Les rendez-vous sont créés par l'API, puis vieillis en SQL (le test ne peut pas
- * attendre six mois).
+ * d'un rendez-vous invité, nom, prénom, téléphone et e-mail passent à NULL et guest_purged_at est
+ * posé ; la ligne reste. M14-04 (G Q82 c) : un rendez-vous en ligne annulé est purgé 30 jours après
+ * son annulation. Les rendez-vous sont créés par l'API, puis vieillis (et passés à l'origine
+ * online) en SQL : le test ne peut pas attendre six mois, et aucune route ne crée encore de
+ * rendez-vous en ligne (M14-06).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -47,7 +49,8 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 class GuestPurgeJobIT {
 
   private static final String SARA =
-      "{\"lastName\":\"Benali\",\"firstName\":\"Sara\",\"phone\":\"+33 6 12 34 56 78\"}";
+      "{\"lastName\":\"Benali\",\"firstName\":\"Sara\",\"phone\":\"+33 6 12 34 56 78\","
+          + "\"email\":\"sara@example.test\"}";
 
   @Autowired private MockMvc mvc;
   @Autowired private JdbcTemplate jdbc;
@@ -100,6 +103,7 @@ class GuestPurgeJobIT {
     assertThat(row.get("guest_first_name")).isNull();
     assertThat(row.get("guest_last_name")).isNull();
     assertThat(row.get("guest_phone")).isNull();
+    assertThat(row.get("guest_email")).isNull();
     assertThat(row.get("guest_purged_at")).isNotNull();
     assertThat(row.get("patient_id")).isNull();
     assertThat(count()).isEqualTo(before);
@@ -110,7 +114,8 @@ class GuestPurgeJobIT {
         .andExpect(jsonPath("$.guest.purgedAt").isNotEmpty())
         .andExpect(jsonPath("$.guest.firstName").value(nullValue()))
         .andExpect(jsonPath("$.guest.lastName").value(nullValue()))
-        .andExpect(jsonPath("$.guest.phone").value(nullValue()));
+        .andExpect(jsonPath("$.guest.phone").value(nullValue()))
+        .andExpect(jsonPath("$.guest.email").value(nullValue()));
   }
 
   @Test
@@ -151,6 +156,71 @@ class GuestPurgeJobIT {
     assertThat(row.get("status")).isEqualTo("cancelled");
   }
 
+  // ---- M14-04 : rendez-vous en ligne (G Q82 c et d)
+
+  @Test
+  void defaultOnlineCancelledRetentionIsThirtyDays() {
+    assertThat(job.onlineCancelledRetention()).isEqualTo(Duration.ofDays(30));
+  }
+
+  @Test
+  void onlineCancelledThirtyOneDaysAgoIsPurgedEmailIncluded() throws Exception {
+    String id = cancelledDaysAgo(online(createGuest(inThirtyDays())), 31);
+
+    job.run();
+
+    Map<String, Object> row = row(id);
+    assertThat(row.get("guest_first_name")).isNull();
+    assertThat(row.get("guest_last_name")).isNull();
+    assertThat(row.get("guest_phone")).isNull();
+    assertThat(row.get("guest_email")).isNull();
+    assertThat(row.get("guest_purged_at")).isNotNull();
+    assertThat(row.get("status")).isEqualTo("cancelled");
+    assertThat(row.get("origin")).isEqualTo("online");
+  }
+
+  @Test
+  void onlineCancelledTwentyNineDaysAgoIsUntouched() throws Exception {
+    String id = cancelledDaysAgo(online(createGuest(inThirtyDays())), 29);
+
+    job.run();
+
+    assertIntact(row(id));
+  }
+
+  @Test
+  void onlineHeldFiveMonthsAgoIsUntouched() throws Exception {
+    String id = online(createGuest(daysAgo(152)));
+
+    job.run();
+
+    assertIntact(row(id));
+  }
+
+  @Test
+  void onlineHeldSevenMonthsAgoIsPurged() throws Exception {
+    String id = online(createGuest(daysAgo(213)));
+
+    job.run();
+
+    Map<String, Object> row = row(id);
+    assertThat(row.get("guest_last_name")).isNull();
+    assertThat(row.get("guest_email")).isNull();
+    assertThat(row.get("guest_purged_at")).isNotNull();
+  }
+
+  @Test
+  void practitionerCancelledThirtyOneDaysAgoIsUntouched() throws Exception {
+    String id = cancelledDaysAgo(createGuest(inThirtyDays()), 31);
+
+    job.run();
+
+    Map<String, Object> row = row(id);
+    assertThat(row.get("origin")).isEqualTo("practitioner");
+    assertThat(row.get("status")).isEqualTo("cancelled");
+    assertIntact(row);
+  }
+
   @Test
   void attachOrPatchGuestOnPurgedGuestIsRefused() throws Exception {
     String id = createGuest(daysAgo(213));
@@ -187,6 +257,35 @@ class GuestPurgeJobIT {
 
   private static Instant daysAgo(int days) {
     return Instant.now().minus(days, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+  }
+
+  private static Instant inThirtyDays() {
+    return Instant.now().plus(30, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+  }
+
+  /** Passe le rendez-vous à l'origine online (ce que fera M14-06) et renvoie son identifiant. */
+  private String online(String id) {
+    jdbc.update("update appointment set origin = 'online' where id = ?", UUID.fromString(id));
+    return id;
+  }
+
+  /** Annule par l'API, puis recule l'annulation de {@code days} jours. */
+  private String cancelledDaysAgo(String id, int days) throws Exception {
+    post("/api/appointments/" + id + "/cancel", "{}").andExpect(status().isOk());
+    jdbc.update(
+        "update appointment set cancelled_at = now() - make_interval(days => ?) where id = ?",
+        days,
+        UUID.fromString(id));
+    return id;
+  }
+
+  /** Invité non purgé : identité complète, e-mail compris. */
+  private static void assertIntact(Map<String, Object> row) {
+    assertThat(row.get("guest_first_name")).isEqualTo("Sara");
+    assertThat(row.get("guest_last_name")).isEqualTo("Benali");
+    assertThat(row.get("guest_phone")).isEqualTo("+33 6 12 34 56 78");
+    assertThat(row.get("guest_email")).isEqualTo("sara@example.test");
+    assertThat(row.get("guest_purged_at")).isNull();
   }
 
   private static String body(Instant startsAt) {
@@ -235,8 +334,8 @@ class GuestPurgeJobIT {
 
   private Map<String, Object> row(String id) {
     return jdbc.queryForMap(
-        "select patient_id, status, guest_first_name, guest_last_name, guest_phone,"
-            + " guest_purged_at from appointment where id = ?",
+        "select patient_id, status, origin, guest_first_name, guest_last_name, guest_phone,"
+            + " guest_email, guest_purged_at from appointment where id = ?",
         UUID.fromString(id));
   }
 

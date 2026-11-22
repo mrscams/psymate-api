@@ -3,10 +3,12 @@ package com.psymate.agenda.service;
 import com.psymate.agenda.dto.AgendaWindowDto;
 import com.psymate.agenda.dto.AppointmentAssembler;
 import com.psymate.agenda.dto.AppointmentDefaultsDto;
+import com.psymate.agenda.dto.BookingRequestsDto;
 import com.psymate.agenda.dto.FreeBusyDto;
 import com.psymate.agenda.dto.PatientAppointmentsDto;
 import com.psymate.agenda.model.Appointment;
 import com.psymate.agenda.model.AppointmentModality;
+import com.psymate.agenda.model.AppointmentOrigin;
 import com.psymate.agenda.model.AppointmentStatus;
 import com.psymate.agenda.repository.AppointmentRepository;
 import com.psymate.identity.api.CurrentPractitioner;
@@ -33,11 +35,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Lectures de l'agenda (M11-06, I3) : fenêtre de la grille, voisinage d'un créneau (freebusy) et
- * rendez-vous d'un patient avec ses défauts de création (G Q56). Lecture seule : aucune écriture,
- * aucune table hors {@code appointment} (les patients et les préférences passent par les façades
- * {@code api}). Toujours bornée au praticien courant (G Q58). Les bornes sont validées par le
- * contrôleur.
+ * Lectures de l'agenda (M11-06, I3) : fenêtre de la grille, voisinage d'un créneau (freebusy),
+ * rendez-vous d'un patient avec ses défauts de création (G Q56) et demandes en ligne en attente
+ * (M14-04, G Q74). Lecture seule : aucune écriture, aucune table hors {@code appointment} (les
+ * patients et les préférences passent par les façades {@code api}). Toujours bornée au praticien
+ * courant (G Q58). Les bornes sont validées par le contrôleur.
  */
 @Service
 @Transactional(readOnly = true)
@@ -47,6 +49,9 @@ public class AgendaQueryService {
   static final String DEFAULT_DURATION_PREFERENCE = "sessions.defaultDurationMin";
 
   static final int FALLBACK_DURATION_MIN = 60;
+
+  /** Plafond de la liste des demandes en ligne en attente (K5.2). */
+  static final int MAX_REQUESTS = 100;
 
   /** Statuts actifs : ceux qui comptent dans les chevauchements (G Q54). */
   static final Set<AppointmentStatus> ACTIVE =
@@ -147,6 +152,24 @@ public class AgendaQueryService {
     return new PatientAppointmentsDto(
         assembler.toDtos(found),
         defaults(practitionerId, patients.followUp(patientId).orElse(null)));
+  }
+
+  /**
+   * Demandes en ligne en attente (G Q74, M14-04) : rendez-vous du praticien courant d'origine
+   * {@code online} au statut {@code tentative} qui commencent au plus tôt maintenant, triés par
+   * début puis identifiant, au plus {@link #MAX_REQUESTS}. Une demande passée reste dans la grille
+   * mais sort de cette liste.
+   */
+  public BookingRequestsDto pendingRequests() {
+    UUID practitionerId = me();
+    List<Appointment> found =
+        appointments.findPending(
+            practitionerId,
+            AppointmentStatus.tentative,
+            AppointmentOrigin.ONLINE,
+            utc(clock.instant()),
+            Limit.of(MAX_REQUESTS));
+    return new BookingRequestsDto(assembler.toDtos(found));
   }
 
   /**

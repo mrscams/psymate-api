@@ -31,21 +31,30 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * Refuse, avant la désérialisation, les clés de premier niveau que le client n'a pas le droit
  * d'envoyer à {@link AppointmentController} (422 VALIDATION_FAILED, code de champ UNKNOWN_FIELD) :
- * ce que le serveur fixe seul (status, practitionerId, tenantId, sessionEntryId, et authorType,
- * submissionId comme dans clinical, A11) et, sur un PATCH, ce qui ne se modifie pas (patientId ;
- * tentative, qui passe par /confirm ; recurrence, acceptée à la création seulement depuis M11-07).
- * Les autres clés inconnues restent ignorées (défaut Boot). Sur le modèle de {@code
- * clinical.controller.ForbiddenFieldsAdvice} : corps lu en octets, inspecté en arbre (Jackson 3),
- * puis rejoué tel quel au convertisseur.
+ * ce que le serveur fixe seul (status, practitionerId, tenantId, sessionEntryId, origin depuis
+ * M14-04, et authorType, submissionId comme dans clinical, A11) et, sur un PATCH, ce qui ne se
+ * modifie pas (patientId ; tentative, qui passe par /confirm ; recurrence, acceptée à la création
+ * seulement depuis M11-07). Les autres clés inconnues restent ignorées (défaut Boot). Sur le modèle
+ * de {@code clinical.controller.ForbiddenFieldsAdvice} : corps lu en octets, inspecté en arbre
+ * (Jackson 3), puis rejoué tel quel au convertisseur.
  */
 @Order(AdviceOrder.MODULE)
 @RestControllerAdvice(assignableTypes = AppointmentController.class)
 class AppointmentForbiddenFieldsAdvice extends RequestBodyAdviceAdapter {
 
-  /** Champs fixés par le serveur, refusés dans tout corps d'écriture. */
+  /**
+   * Champs fixés par le serveur, refusés dans tout corps d'écriture. {@code origin} (G Q74) : un
+   * rendez-vous créé par le praticien est toujours {@code practitioner}.
+   */
   static final List<String> SERVER_FIELDS =
       List.of(
-          "authorType", "submissionId", "status", "practitionerId", "tenantId", "sessionEntryId");
+          "authorType",
+          "submissionId",
+          "status",
+          "practitionerId",
+          "tenantId",
+          "sessionEntryId",
+          "origin");
 
   /**
    * Refusés à la modification en plus : une occurrence se déplace seule, la répétition ne se change

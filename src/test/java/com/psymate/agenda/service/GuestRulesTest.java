@@ -25,7 +25,7 @@ class GuestRulesTest {
         UUID.randomUUID(),
         UUID.randomUUID(),
         UUID.randomUUID(),
-        new Appointment.Guest(first, last, phone),
+        new Appointment.Guest(first, last, phone, null),
         null,
         NINE,
         NINE.plusMinutes(50),
@@ -37,19 +37,19 @@ class GuestRulesTest {
 
   @Test
   void guestOfStripsAndTurnsBlankOptionalFieldsIntoNull() {
-    Appointment.Guest g = AppointmentService.guestOf(new GuestRequest("  ", " Benali ", ""));
-    assertThat(g).isEqualTo(new Appointment.Guest(null, "Benali", null));
-    assertThat(AppointmentService.guestOf(new GuestRequest(" Sara", "Benali", " 06 12 ")))
-        .isEqualTo(new Appointment.Guest("Sara", "Benali", "06 12"));
+    Appointment.Guest g = AppointmentService.guestOf(new GuestRequest("  ", " Benali ", "", null));
+    assertThat(g).isEqualTo(new Appointment.Guest(null, "Benali", null, null));
+    assertThat(AppointmentService.guestOf(new GuestRequest(" Sara", "Benali", " 06 12 ", null)))
+        .isEqualTo(new Appointment.Guest("Sara", "Benali", "06 12", null));
   }
 
   @Test
   void mergedKeepsAbsentFirstNameAndPhoneAndErasesEmptyOnes() {
-    Appointment.Guest current = new Appointment.Guest("Sara", "Benali", "06");
-    assertThat(AppointmentService.merged(current, new GuestRequest(null, " Ben Ali ", null)))
-        .isEqualTo(new Appointment.Guest("Sara", "Ben Ali", "06"));
-    assertThat(AppointmentService.merged(current, new GuestRequest("", "Benali", " ")))
-        .isEqualTo(new Appointment.Guest(null, "Benali", null));
+    Appointment.Guest current = new Appointment.Guest("Sara", "Benali", "06", null);
+    assertThat(AppointmentService.merged(current, new GuestRequest(null, " Ben Ali ", null, null)))
+        .isEqualTo(new Appointment.Guest("Sara", "Ben Ali", "06", null));
+    assertThat(AppointmentService.merged(current, new GuestRequest("", "Benali", " ", null)))
+        .isEqualTo(new Appointment.Guest(null, "Benali", null, null));
   }
 
   @Test

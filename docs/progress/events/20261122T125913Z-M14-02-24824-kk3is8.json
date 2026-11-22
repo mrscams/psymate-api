@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-22T12:59:13.168Z",
+  "task": "M14-02",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Huit préférences booking.* (défauts, validation par clé, plages triées), contrat 0.15.0 regénéré après M14-04 ; verify vert (1286 IT)",
+  "notes": "Non-entier = INVALID_VALUE (convention integralInRange) ; fuseau = ZoneId.getAvailableZoneIds (UTC accepté, décalages refusés) ; 24:00 refusé (fin max 23:55) ; reviewer : 0 bloquant, 2 à corriger traités",
+  "next": "M14-05 (créneaux publics) peut lire les clés via une façade identity",
+  "pr": "https://github.com/mrscams/psymate-api/pull/104",
+  "branch": "claude/m14-02-preferences-booking-b9b6d3",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

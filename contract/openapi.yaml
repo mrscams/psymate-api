@@ -854,6 +854,27 @@ components:
             $ref: '#/components/schemas/AppointmentDto'
           type: array
       type: object
+    BookingWindow:
+      description: 'Plage hebdomadaire de prise de rendez-vous en ligne : exactement les trois champs day, start et end (champ manquant ou inconnu : 422 INVALID_VALUE sur booking.windows). end est strictement après start.'
+      properties:
+        day:
+          description: 'Jour de la semaine : entier de 1 (lundi) à 7 (dimanche).'
+          example: 1
+          format: int32
+          maximum: 7
+          minimum: 1
+          type: integer
+        end:
+          description: Fin de la plage, exclue, au format HH:mm (00:00 à 23:55), minutes multiples de 5, strictement après start.
+          example: 720
+          pattern: ^([01][0-9]|2[0-3]):[0-5][05]$
+          type: string
+        start:
+          description: Début de la plage, heure locale du fuseau booking.timezone, au format HH:mm (00:00 à 23:55), minutes multiples de 5.
+          example: 09:00
+          pattern: ^([01][0-9]|2[0-3]):[0-5][05]$
+          type: string
+      type: object
     CancelAppointmentRequest:
       description: Annulation d'un rendez-vous. Le corps est facultatif.
       properties:
@@ -3680,7 +3701,7 @@ components:
           type: string
       type: object
     Preferences:
-      description: 'Préférences à plat du compte : 13 clés connues, aux noms pointés (par exemple "overview.view"), sans objet imbriqué. En lecture, les 13 clés sont toujours présentes (valeur enregistrée, sinon défaut selon la profession). En PATCH, toutes les clés sont optionnelles : null remet la clé à son défaut, une clé inconnue est ignorée. Les bornes de la journée de l''agenda doivent rester cohérentes : agenda.dayEndHour strictement supérieur à agenda.dayStartHour, sinon 422 OUT_OF_RANGE sur agenda.dayEndHour.'
+      description: 'Préférences à plat du compte : 21 clés connues, aux noms pointés (par exemple "overview.view"), jamais imbriquées les unes dans les autres (seule la valeur de booking.windows est une liste d''objets). En lecture, les 21 clés sont toujours présentes (valeur enregistrée, sinon défaut selon la profession). En PATCH, toutes les clés sont optionnelles : null remet la clé à son défaut, une clé inconnue est ignorée. Les bornes de la journée de l''agenda doivent rester cohérentes : agenda.dayEndHour strictement supérieur à agenda.dayStartHour, sinon 422 OUT_OF_RANGE sur agenda.dayEndHour. Aucune règle croisée entre les clés booking.*.'
       properties:
         agenda.dayEndHour:
           description: 'Dernière heure affichée dans la grille de l''agenda (entier de 1 à 24), strictement supérieure à agenda.dayStartHour après fusion. Hors bornes ou non supérieure au début : 422 OUT_OF_RANGE. Défaut : 19.'
@@ -3717,6 +3738,67 @@ components:
           items:
             format: int32
             type: integer
+          type: array
+        booking.confirmation:
+          description: 'Confirmation des demandes de rendez-vous en ligne : manual = le praticien accepte chaque demande, auto = rendez-vous confirmé dès que le demandeur a vérifié son e-mail. Autre valeur : 422 INVALID_VALUE. Défaut : manual.'
+          enum:
+          - manual
+          - auto
+          example: manual
+          type: string
+        booking.enabled:
+          description: 'true si le praticien propose la prise de rendez-vous en ligne sur sa fiche publique. Elle n''est réellement offerte que s''il existe au moins une plage (booking.windows) et si le profil est publié et le praticien approuvé ; true sans plage est accepté. Autre type qu''un booléen : 422 INVALID_VALUE. Défaut : false.'
+          example: false
+          type: boolean
+        booking.horizonDays:
+          description: 'Horizon, en jours, au-delà duquel aucun créneau n''est proposé : entier de 7 à 90. Hors bornes : 422 OUT_OF_RANGE ; non entier : 422 INVALID_VALUE. Défaut : 28.'
+          example: 28
+          format: int32
+          maximum: 90
+          minimum: 7
+          type: integer
+        booking.minNoticeHours:
+          description: 'Délai minimal, en heures, entre la demande et le début du créneau : entier de 1 à 168. Hors bornes : 422 OUT_OF_RANGE ; non entier : 422 INVALID_VALUE. Défaut : 24.'
+          example: 24
+          format: int32
+          maximum: 168
+          minimum: 1
+          type: integer
+        booking.modalities:
+          description: 'Modalités proposées en ligne : liste non vide, sans doublon, parmi in_person (au cabinet), video (visio) et phone (téléphone), dans l''ordre enregistré. Liste vide, doublon, autre valeur ou autre type : 422 INVALID_VALUE. Défaut : ["in_person"].'
+          example:
+          - in_person
+          items:
+            enum:
+            - in_person
+            - video
+            - phone
+            type: string
+          maxItems: 3
+          minItems: 1
+          type: array
+          uniqueItems: true
+        booking.slotDurationMin:
+          description: 'Durée d''un créneau proposé en ligne, en minutes : entier de 15 à 180, multiple de 5. Hors bornes ou non multiple de 5 : 422 OUT_OF_RANGE ; non entier : 422 INVALID_VALUE. Défaut : 60.'
+          example: 60
+          format: int32
+          maximum: 180
+          minimum: 15
+          multipleOf: 5.0
+          type: integer
+        booking.timezone:
+          description: 'Fuseau horaire des plages : identifiant de la base IANA (tz) connu de java.time (par exemple Europe/Paris, America/Montreal). Décalage (+02:00, UTC+1), nom incomplet (Paris) ou autre type : 422 INVALID_VALUE. Défaut : Europe/Paris.'
+          example: Europe/Paris
+          type: string
+        booking.windows:
+          description: 'Plages hebdomadaires ouvertes à la prise de rendez-vous en ligne, 21 au plus, renvoyées triées par jour puis par début. Deux plages du même jour ne se chevauchent pas (09:00–12:00 puis 12:00–14:00 sont contiguës, donc admises). Plus de 21 plages : 422 OUT_OF_RANGE ; plage mal formée, champ manquant ou inconnu, chevauchement ou autre type : 422 INVALID_VALUE. Liste vide admise. Défaut : [].'
+          example:
+          - day: 1
+            end: 720
+            start: 09:00
+          items:
+            $ref: '#/components/schemas/BookingWindow'
+          maxItems: 21
           type: array
         entries.defaultVisibility:
           description: 'Visibilité proposée par défaut pour une nouvelle entrée : clinical = clinique, private = privée. Défaut : clinical.'
@@ -8989,7 +9071,7 @@ paths:
       - Export de compte
   /api/me/preferences:
     get:
-      description: 'Session praticien. Renvoie toujours les 13 clés : la valeur enregistrée si elle est valide, sinon le défaut calculé selon la profession (coach : vocabulary.subjectLabel = client et entryTypes.medicationVisible = false ; psychiatre : entryTypes.medicationVisible = true). Les clés inconnues stockées ne sont pas renvoyées.'
+      description: 'Session praticien. Renvoie toujours les 21 clés : la valeur enregistrée si elle est valide, sinon le défaut calculé selon la profession (coach : vocabulary.subjectLabel = client et entryTypes.medicationVisible = false ; psychiatre : entryTypes.medicationVisible = true). Les clés inconnues stockées ne sont pas renvoyées.'
       operationId: getPreferences
       responses:
         '200':
@@ -8997,7 +9079,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Preferences'
-          description: Les 13 préférences effectives du compte.
+          description: Les 21 préférences effectives du compte.
         '401':
           content:
             application/problem+json:
@@ -9026,7 +9108,7 @@ paths:
       tags:
       - Préférences
     patch:
-      description: 'Session praticien. Corps JSON plat (application/json ou application/merge-patch+json) avec seulement les clés à changer : les autres sont conservées. null remet la clé à son défaut ; une clé inconnue est ignorée sans erreur. Une seule valeur hors domaine rejette toute la requête (422, errors[].field = clé fautive) et rien n''est appliqué. Renvoie les 13 préférences effectives après fusion ; un PATCH qui ne change rien est un succès.'
+      description: 'Session praticien. Corps JSON plat (application/json ou application/merge-patch+json) avec seulement les clés à changer : les autres sont conservées. null remet la clé à son défaut ; une clé inconnue est ignorée sans erreur. Une seule valeur hors domaine rejette toute la requête (422, errors[].field = clé fautive) et rien n''est appliqué. Renvoie les 21 préférences effectives après fusion ; un PATCH qui ne change rien est un succès.'
       operationId: updatePreferences
       requestBody:
         content:
@@ -9044,7 +9126,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Preferences'
-          description: Les 13 préférences effectives après fusion.
+          description: Les 21 préférences effectives après fusion.
         '401':
           content:
             application/problem+json:
@@ -9062,7 +9144,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED avec errors[] {field, code, message} : code INVALID_VALUE, field = la clé fautive (par exemple overview.window) ; valeurs admises dans message ; rien n''est appliqué.'
+          description: 'VALIDATION_FAILED avec errors[] {field, code, message} : field = la clé fautive (par exemple overview.window ou booking.windows), code INVALID_VALUE (valeur hors domaine ou mal formée) ou OUT_OF_RANGE (nombre hors bornes, par exemple booking.slotDurationMin, ou plus de 21 plages dans booking.windows) ; valeurs admises dans message ; rien n''est appliqué, même pour les clés valides du même PATCH.'
         '429':
           content:
             application/problem+json:
@@ -12772,7 +12854,7 @@ tags:
   name: Authentification
 - description: Activation, désactivation et codes de secours de la double authentification TOTP du praticien connecté.
   name: Double authentification
-- description: 'Préférences d''affichage et de saisie du praticien connecté, mémorisées par compte : treize clés plates (affichage, saisie, agenda), modifiées par merge-patch (RFC 7396).'
+- description: 'Préférences d''affichage et de saisie du praticien connecté, mémorisées par compte : vingt et une clés plates (affichage, saisie, agenda, prise de rendez-vous en ligne), modifiées par merge-patch (RFC 7396).'
   name: Préférences
 - description: 'Dossier professionnel du praticien connecté : justificatifs, informations professionnelles, soumission du dossier à l''examen de l''administration.'
   name: Vérification du praticien

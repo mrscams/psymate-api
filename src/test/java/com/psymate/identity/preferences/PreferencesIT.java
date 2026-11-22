@@ -112,11 +112,11 @@ class PreferencesIT {
   }
 
   @Test
-  void freshAccountReadsAllThirteenDefaults() throws Exception {
+  void freshAccountReadsAllTwentyOneDefaults() throws Exception {
     UUID id = insertPractitioner("psychologist", "{}");
     getPrefs(id, "psychologist")
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(13))
+        .andExpect(jsonPath("$.length()").value(21))
         .andExpect(jsonPath("$['overview.view']").value("simple"))
         .andExpect(jsonPath("$['overview.window']").value("90d"))
         .andExpect(jsonPath("$['timeline.groupBy']").value("session"))
@@ -183,7 +183,7 @@ class PreferencesIT {
     patchJson(id, "psychologist", "{\"foo\":1}")
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.foo").doesNotExist())
-        .andExpect(jsonPath("$.length()").value(13));
+        .andExpect(jsonPath("$.length()").value(21));
     assertThat(stored(id)).isEqualTo("{}");
   }
 
@@ -249,7 +249,7 @@ class PreferencesIT {
         .containsEntry("agenda.dayEndHour", 19)
         .containsEntry("agenda.workingDays", List.of(1, 2, 3, 4, 5, 6))
         .containsEntry("agenda.defaultView", "week")
-        .hasSize(13);
+        .hasSize(21);
     assertThat(facade.preferencesOf(UUID.randomUUID())).isEmpty();
   }
 
@@ -360,7 +360,7 @@ class PreferencesIT {
         .containsEntry("agenda.dayEndHour", 18)
         .containsEntry("agenda.workingDays", List.of(2, 4))
         .containsEntry("agenda.defaultView", "day")
-        .hasSize(13);
+        .hasSize(21);
   }
 
   @Test

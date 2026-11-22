@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-22T17:22:30.485Z",
+  "task": "M14-08",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR #109 fusionnée en squash (3a54119) ; tag contract-v0.15.0 sur 3a54119 ; jalon M14 Prise de rendez-vous en ligne (API) terminé",
+  "next": "Jalon web : prise de rendez-vous en ligne, M14-09 à M14-15 (psymate-web)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/109",
+  "branch": "suivi-m14-08-fusionnee",
+  "checkout": "m14-05-creneaux-publics-c5ceb0"
+}

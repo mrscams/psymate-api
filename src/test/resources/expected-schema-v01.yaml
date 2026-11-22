@@ -481,3 +481,25 @@ appointment:
   - guest_last_name
   - guest_phone
   - guest_purged_at
+  - guest_email
+  - origin
+booking_request:
+  - id
+  - tenant_id
+  - practitioner_id
+  - starts_at
+  - ends_at
+  - modality
+  - first_name
+  - last_name
+  - email
+  - phone
+  - locale
+  - email_hash
+  - verify_token_hash
+  - verify_expires_at
+  - verified_at
+  - manage_token_hash
+  - appointment_id
+  - closed_by
+  - created_at

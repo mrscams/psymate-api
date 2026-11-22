@@ -80,6 +80,9 @@ app:
     guest-purge:
       cron: "0 30 3 * * *"
       retention: P180D
+      # M14-04 (G Q82 c) : un rendez-vous en ligne annule (refus, expiration, annulation) est
+      # purge plus tot, ce delai apres son annulation (cancelled_at).
+      online-cancelled-retention: P30D
   # Limitation de debit (G Q24, Bucket4j, shared.ratelimit). Une regle = un motif de chemin (decode),
   # des methodes optionnelles (toutes si absent), la cle de comptage (ip : IPv6 regroupee en /64 ;
   # session : id de session HTTP, les requetes sans session ne sont pas comptees), un nombre de

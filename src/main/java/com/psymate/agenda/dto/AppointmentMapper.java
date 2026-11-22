@@ -1,6 +1,7 @@
 package com.psymate.agenda.dto;
 
 import com.psymate.agenda.model.Appointment;
+import com.psymate.agenda.model.AppointmentOrigin;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import org.mapstruct.Mapper;
@@ -22,5 +23,12 @@ public interface AppointmentMapper {
   /** Instants exposés en UTC (convention REST du projet). */
   default Instant instant(OffsetDateTime t) {
     return t == null ? null : t.toInstant();
+  }
+
+  /**
+   * Origine exposée avec sa valeur SQL ({@code practitioner}, {@code online}), pas son nom Java.
+   */
+  default String origin(AppointmentOrigin origin) {
+    return origin == null ? null : origin.value();
   }
 }

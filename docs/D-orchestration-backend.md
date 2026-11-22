@@ -89,6 +89,21 @@ Le Profil 360 vit dans le module `patients` (G Q62) : aucun module ni couloir n'
 | M13-02 | Profil 360 dans `patients` : `V14__patient_profile.sql`, entité, les quatre routes, contrat `0.14.0` | patients | — (J fait foi en attendant M13-01) | M13-03 |
 | M13-03 | Seed du profil, tag `contract-v0.14.0`, suivi | racine (`tools/seed`) | M13-02 | jalon web « Profil 360 » |
 
+### Tâches M14 Prise de rendez-vous en ligne (API), ajoutées le 22 novembre 2026 (C13, `docs/K-plan-prise-de-rendez-vous-api.md` K6)
+
+La prise de rendez-vous en ligne vit dans le module `agenda` (G Q71) : aucun module ni couloir n'est ajouté. `agenda` gagne la dépendance `directory :: api` (`PublishedProfileFacade`) ; `directory` ne dépend pas d'`agenda`.
+
+| ID | Tâche | Couloir (module) | Dépend de | Débloque |
+| --- | --- | --- | --- | --- |
+| M14-01 | Décisions Q71 à Q82 et documentation ; copie du plan côté API (G, A, C, D, E, CLAUDE.md, F) | docs (+ `.claude/agents`) | — | rien de bloquant : K fait foi en attendant |
+| M14-02 | Préférences `booking.*` (Q75) | identity (preferences) | — | M14-05 |
+| M14-03 | `PublishedProfileFacade` : slug → praticien publié et approuvé | directory (api) | — | M14-05 |
+| M14-04 | `V15`, `origin`, `guest.email`, `GET /api/agenda/requests`, entité `BookingRequest` | agenda | — | M14-05 |
+| M14-05 | Créneaux publics : réglages et créneaux offerts | agenda (+ une règle dans la chaîne publique) | M14-02, M14-03, M14-04 | M14-06 |
+| M14-06 | Demande, vérification de l'e-mail, rendez-vous, lien de gestion, annulation par le demandeur | agenda | M14-05 | M14-07 |
+| M14-07 | E-mails de suivi, expiration, purges | agenda | M14-06 | M14-08 |
+| M14-08 | Seed, tag `contract-v0.15.0`, suivi | racine (`tools/seed`) | M14-07 | tag `contract-v0.15.0` ; tâches web M14-10 à M14-15 |
+
 ## D2. Graphe de dépendances
 
 ```mermaid
@@ -229,6 +244,11 @@ Ce qui peut démarrer, quand, et avec combien d'agents en parallèle. « ∥ » 
 | **M11-D** | M11-07 (M11-08a pour M11-08b) | **M11-09** ∥ (**M11-08a** puis **M11-08b**, si le bouton du panneau crée la séance) | 1 à 2 (`racine`, `clinical` puis `agenda`) | tag `contract-v0.12.1` (ou `v0.12.2`) ; jalon web « Agenda » |
 | **M13-A** (18 novembre 2026) | rien (M11 fusionnée) | **M13-01** ∥ **M13-02** | 2 (docs, `patients`) | M13-03 (via M13-02) |
 | **M13-B** | M13-02 | **M13-03** | 1 (`racine`) | tag `contract-v0.14.0` ; jalon web « Profil 360 » |
+| **M14-A** (22 novembre 2026) | rien (M13 fusionnée) | **M14-01** ∥ **M14-02** ∥ **M14-03** ∥ **M14-04** | 4 (docs, `identity.preferences`, `directory.api`, `agenda` : couloirs disjoints) | M14-05 (via M14-02, M14-03 et M14-04) |
+| **M14-B** | M14-02, M14-03, M14-04 | **M14-05** | 1 (`agenda`, plus une ligne de `directory.config`) | M14-06 |
+| **M14-C** | M14-05 | **M14-06** | 1 (`agenda`) | M14-07 |
+| **M14-D** | M14-06 | **M14-07** | 1 (`agenda`) | M14-08 |
+| **M14-E** | M14-07 | **M14-08** | 1 (`racine`) | tag `contract-v0.15.0` ; tâches web M14-10 à M14-15 |
 
 **Ce qu'on peut commencer aujourd'hui, sans rien d'autre** : M0-01. Dès qu'il est fusionné : M0-02 et M0-03 en même temps. Dès que ces deux-là sont fusionnés : trois agents sur trois modules (`identity`, `events`, `vocabulary`) qui ne se croiseront jamais.
 
@@ -265,8 +285,8 @@ Un couloir par module ; un seul agent par couloir à la fois ; un worktree par a
 
 | Couloir | Tâches, dans l'ordre | Peut tourner en même temps que | Jamais en même temps que |
 | --- | --- | --- | --- |
-| racine | M0-01 · M0-05 · M0-08 · M7-01 · M11-09 · M13-03 | tout, sauf pendant M0-01 (seul) | — |
-| identity | M0-04 · M1-10 · M1-11 · M1-12 · M1-13 · M1-14 · M7-08 · M1-14b · M11-04 (`preferences`) | patients, vocabulary, events, clinical, linking, search, overview, directory | une autre tâche `identity` ; **M5-06** le temps de M1-14 (il lit `PractitionerFacade`, qui change) ; une tâche `directory` le temps de M1-14b (il ajoute une façade dans `directory.api`) |
+| racine | M0-01 · M0-05 · M0-08 · M7-01 · M11-09 · M13-03 · M14-08 | tout, sauf pendant M0-01 (seul) | — |
+| identity | M0-04 · M1-10 · M1-11 · M1-12 · M1-13 · M1-14 · M7-08 · M1-14b · M11-04 (`preferences`) · M14-02 (`preferences`) | patients, vocabulary, events, clinical, linking, search, overview, directory | une autre tâche `identity` ; **M5-06** le temps de M1-14 (il lit `PractitionerFacade`, qui change) ; une tâche `directory` le temps de M1-14b (il ajoute une façade dans `directory.api`) |
 | events | M4-01a · M4-01 · M7-05 | tout | M1-03 le temps de M4-01a (M1-03 attend de toute façon) |
 | vocabulary | M1-02 | tout | M1-03 (attend M1-02) |
 | patients | M1-01 · M11-03 (`api` seulement) · M13-02 (Profil 360, fichiers `PatientProfile*`, G Q62 ; aucun couloir ajouté) | tout | M1-03 (attend M1-01) |
@@ -275,9 +295,9 @@ Un couloir par module ; un seul agent par couloir à la fois ; un worktree par a
 | clinical + linking | M2-02 | identity, directory, search, overview | **toute** tâche `clinical` ou `linking` : on la lance quand les deux couloirs sont vides, elle est courte |
 | search | M4-02 | tout | — (lit `entry` par SQL et événements, n'écrit dans aucun autre module) |
 | overview | M4-03 · M4-06 | tout | — |
-| directory | M5-01 · M5-02 · M5-03 · M5-06 | tout | `identity` pendant M1-14 (pour M5-06 seulement) et pendant M1-14b |
+| directory | M5-01 · M5-02 · M5-03 · M5-06 · M14-03 (`api` seulement, `PublishedProfileFacade`) | tout | `identity` pendant M1-14 (pour M5-06 seulement) et pendant M1-14b ; une tâche qui touche `directory/config/PublicSecurityConfig.java` pendant M14-05 (elle y ajoute la règle `public-booking`) |
 | shared | M7-02 | — (il touche `shared`, lu par tous : la CI de toutes les branches ouvertes doit être relancée après fusion) | à lancer quand peu de branches sont ouvertes |
-| agenda (ajouté le 15 novembre 2026, G Q50) | M11-02 · M11-05 ‖ M11-06 · M11-07 · M11-08b (si retenue) | tout : `agenda` ne lit que les `api` d'`identity`, `patients`, `clinical`, `events` et personne ne dépend de lui | une autre tâche `agenda`, **sauf** M11-05 ‖ M11-06 (exception ci-dessous) ; M11-08b le temps de M11-08a (elle attend sa façade) |
+| agenda (ajouté le 15 novembre 2026, G Q50) | M11-02 · M11-05 ‖ M11-06 · M11-07 · M11-08b (si retenue) · M14-04 · M14-05 · M14-06 · M14-07 (prise de rendez-vous en ligne, G Q71 ; aucun couloir ajouté) | tout : `agenda` ne lit que les `api` d'`identity`, `patients`, `events` et, depuis M14, `directory` (`PublishedProfileFacade`, G Q71) ; `directory` ne dépend pas d'`agenda` | une autre tâche `agenda`, **sauf** M11-05 ‖ M11-06 (exception ci-dessous) ; M11-08b le temps de M11-08a (elle attend sa façade) |
 
 **Exception à D5 pour M11-05 ‖ M11-06.** Même couloir, mais fichiers disjoints par construction : M11-02 crée tout ce qui est partagé (entité, repository, `AgendaExceptionHandler`, `AgendaMessages`, `package-info`, enregistrements ArchUnit). M11-05 ne crée que des fichiers préfixés `Appointment` (`AppointmentController`, `AppointmentService`, `CreateAppointmentRequest`, `UpdateAppointmentRequest`, `CancelAppointmentRequest`, `AppointmentDto`, `AppointmentMapper`, `AppointmentAssembler`, `AppointmentCreatedDto`, `AppointmentUpdatedDto`, `ConflictDto`, événements `api/Appointment*`). M11-06 ne crée que `AgendaController`, `AgendaQueryService`, `AgendaWindowDto`, `FreeBusyDto`, `PatientAppointmentsDto`, `AppointmentDefaultsDto`, et des méthodes de lecture ajoutées à `AppointmentRepository` (seul fichier commun : la seconde PR fusionnée rebase). `AppointmentDto`, `AppointmentMapper`, `AppointmentAssembler` et `ConflictDto` appartiennent à M11-05 ; M11-06 les crée **provisoirement identiques** si M11-05 n'est pas encore fusionnée et le signale dans sa PR, la seconde PR fusionnée garde une seule version. `messages_fr.properties` / `messages_en.properties` : chacun ajoute ses clés sous un commentaire `# agenda (M11-0x)`. Contrat : les deux visent `app.contract.version = 0.12.0` ; la seconde fusionnée relance `make contract`.
 

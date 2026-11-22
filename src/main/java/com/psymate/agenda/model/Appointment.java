@@ -1,6 +1,7 @@
 package com.psymate.agenda.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -28,6 +29,11 @@ import org.springframework.data.domain.Persistable;
  * {@code guest_phone}, qui ne vit que dans ces colonnes. La purge des invités (6 mois) les met à
  * NULL et pose {@code guest_purged_at} ; le rattachement à une fiche patient pose {@code
  * patient_id} et efface les colonnes invité ({@code ck_appointment_subject}).
+ *
+ * <p>V15 (M14-04, G Q74, Q82) : l'invité peut aussi avoir un e-mail ({@code guest_email}, purgé et
+ * effacé comme les autres colonnes invité), et chaque rendez-vous porte son origine ({@code
+ * origin}) : {@code practitioner} pour tout rendez-vous créé par le praticien, {@code online} pour
+ * une demande en ligne. L'origine ne change jamais après la création.
  */
 @Entity
 @Table(name = "appointment")
@@ -70,7 +76,13 @@ public class Appointment implements Persistable<UUID> {
   private String guestFirstName;
   private String guestLastName;
   private String guestPhone;
+  private String guestEmail;
   private OffsetDateTime guestPurgedAt;
+
+  /** Origine (V15, G Q74) : {@code practitioner} sauf demande en ligne. */
+  @Convert(converter = AppointmentOriginConverter.class)
+  @Column(nullable = false, updatable = false)
+  private AppointmentOrigin origin = AppointmentOrigin.PRACTITIONER;
 
   @Column(nullable = false, updatable = false)
   private OffsetDateTime createdAt;
@@ -113,8 +125,8 @@ public class Appointment implements Persistable<UUID> {
   }
 
   /**
-   * Nouveau rendez-vous invité (G Q60) : aucun patient, nom obligatoire, prénom et téléphone
-   * facultatifs. Mêmes règles de statut et de créneau qu'un rendez-vous patient.
+   * Nouveau rendez-vous invité (G Q60) : aucun patient, nom obligatoire, prénom, téléphone et
+   * e-mail facultatifs. Mêmes règles de statut et de créneau qu'un rendez-vous patient.
    */
   public static Appointment forGuest(
       UUID id,
@@ -145,8 +157,8 @@ public class Appointment implements Persistable<UUID> {
     return a;
   }
 
-  /** Identité d'un invité : nom obligatoire, prénom et téléphone facultatifs. */
-  public record Guest(String firstName, String lastName, String phone) {
+  /** Identité d'un invité : nom obligatoire, prénom, téléphone et e-mail (V15) facultatifs. */
+  public record Guest(String firstName, String lastName, String phone, String email) {
     public Guest {
       Objects.requireNonNull(lastName);
     }
@@ -156,6 +168,7 @@ public class Appointment implements Persistable<UUID> {
     this.guestFirstName = guest.firstName();
     this.guestLastName = guest.lastName();
     this.guestPhone = guest.phone();
+    this.guestEmail = guest.email();
   }
 
   // ---- transitions (I3 ; les règles 409 sont celles de l'API)
@@ -233,9 +246,9 @@ public class Appointment implements Persistable<UUID> {
 
   /**
    * Rattache le rendez-vous invité à la fiche patient créée pour lui (G Q60) : {@code patient_id}
-   * posé, colonnes invité effacées. 409 APPOINTMENT_NOT_ACTIVE s'il vise déjà un patient ou si
-   * l'invité est purgé. Le statut n'entre pas en compte : un rendez-vous annulé se rattache aussi,
-   * pour que l'historique du patient soit complet.
+   * posé, colonnes invité effacées, e-mail compris (G Q82 e). 409 APPOINTMENT_NOT_ACTIVE s'il vise
+   * déjà un patient ou si l'invité est purgé. Le statut n'entre pas en compte : un rendez-vous
+   * annulé se rattache aussi, pour que l'historique du patient soit complet.
    */
   public void attachPatient(UUID patientId, OffsetDateTime at) {
     if (!isGuest() || isGuestPurged()) {
@@ -245,6 +258,7 @@ public class Appointment implements Persistable<UUID> {
     this.guestFirstName = null;
     this.guestLastName = null;
     this.guestPhone = null;
+    this.guestEmail = null;
     touch(at);
   }
 
@@ -280,7 +294,7 @@ public class Appointment implements Persistable<UUID> {
     return patientId == null;
   }
 
-  /** Invité purgé : nom, prénom et téléphone effacés (G Q60). */
+  /** Invité purgé : nom, prénom, téléphone et e-mail effacés (G Q60, Q82). */
   public boolean isGuestPurged() {
     return guestPurgedAt != null;
   }
@@ -295,6 +309,16 @@ public class Appointment implements Persistable<UUID> {
 
   public String getGuestPhone() {
     return guestPhone;
+  }
+
+  /** E-mail de l'invité (V15) ; null si inconnu, purgé ou rattaché. */
+  public String getGuestEmail() {
+    return guestEmail;
+  }
+
+  /** Origine du rendez-vous (V15, G Q74). */
+  public AppointmentOrigin getOrigin() {
+    return origin;
   }
 
   public OffsetDateTime getGuestPurgedAt() {

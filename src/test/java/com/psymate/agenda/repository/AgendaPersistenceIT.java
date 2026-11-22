@@ -6,7 +6,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.psymate.agenda.model.Appointment;
 import com.psymate.agenda.model.AppointmentException;
 import com.psymate.agenda.model.AppointmentModality;
+import com.psymate.agenda.model.AppointmentOrigin;
 import com.psymate.agenda.model.AppointmentStatus;
+import com.psymate.agenda.model.BookingRequest;
 import com.psymate.testsupport.SharedPostgres;
 import java.sql.Timestamp;
 import java.time.OffsetDateTime;
@@ -39,6 +41,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 class AgendaPersistenceIT {
 
   @Autowired private AppointmentRepository appointments;
+  @Autowired private BookingRequestRepository bookingRequests;
   @Autowired private JdbcTemplate jdbc;
   @Autowired private TransactionTemplate tx;
 
@@ -378,5 +381,71 @@ class AgendaPersistenceIT {
         .as("confirmed a disparu (G Q52)")
         .isInstanceOf(DataIntegrityViolationException.class)
         .hasMessageContaining("status");
+  }
+
+  // ---- V15 (M14-04, G Q74, Q82)
+
+  @Test
+  void originIsPractitionerByDefaultStoredAsTextAndReadBack() {
+    Appointment saved = appointments.save(planned(now.plusDays(12), 50, false));
+
+    assertThat(row(saved.getId()).get("origin")).isEqualTo("practitioner");
+    jdbc.update("update appointment set origin = 'online' where id = ?", saved.getId());
+    assertThat(appointments.findById(saved.getId()).orElseThrow().getOrigin())
+        .isEqualTo(AppointmentOrigin.ONLINE);
+    assertThatThrownBy(
+            () ->
+                jdbc.update("update appointment set origin = 'google' where id = ?", saved.getId()))
+        .isInstanceOf(DataIntegrityViolationException.class)
+        .hasMessageContaining("origin");
+  }
+
+  @Test
+  void ckAppointmentSubjectRefusesAGuestEmailOnAPatientAppointment() {
+    Appointment saved = appointments.save(planned(now.plusDays(13), 50, false));
+    assertThatThrownBy(
+            () ->
+                jdbc.update(
+                    "update appointment set guest_email = 'sara@example.test' where id = ?",
+                    saved.getId()))
+        .isInstanceOf(DataIntegrityViolationException.class)
+        .hasMessageContaining("ck_appointment_subject");
+  }
+
+  @Test
+  void bookingRequestRoundTripsWithBareUuidsAndTextEnums() {
+    UUID id = UUID.randomUUID();
+    OffsetDateTime start = now.plusDays(14);
+    bookingRequests.save(
+        new BookingRequest(
+            id,
+            tenant,
+            alice,
+            start,
+            start.plusMinutes(60),
+            AppointmentModality.video,
+            "Sara",
+            "Benali",
+            "sara@example.test",
+            null,
+            "fr",
+            "email-hash",
+            "verify-" + id,
+            now.plusMinutes(30),
+            now));
+
+    Map<String, Object> row = jdbc.queryForMap("select * from booking_request where id = ?", id);
+    assertThat(row.get("modality")).isEqualTo("video");
+    assertThat(row.get("locale")).isEqualTo("fr");
+    assertThat(row.get("email")).isEqualTo("sara@example.test");
+    assertThat(row.get("verified_at")).isNull();
+    assertThat(row.get("appointment_id")).isNull();
+    assertThat(row.get("closed_by")).isNull();
+
+    BookingRequest read = bookingRequests.findById(id).orElseThrow();
+    assertThat(read.getPractitionerId()).isEqualTo(alice);
+    assertThat(read.getModality()).isEqualTo(AppointmentModality.video);
+    assertThat(read.getVerifyExpiresAt().toInstant()).isEqualTo(now.plusMinutes(30).toInstant());
+    assertThat(read.getCreatedAt().toInstant()).isEqualTo(now.toInstant());
   }
 }

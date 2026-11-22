@@ -109,6 +109,7 @@ public class AppointmentAssembler {
         a.getGuestFirstName(),
         a.getGuestLastName(),
         a.getGuestPhone(),
+        a.getGuestEmail(),
         a.getGuestPurgedAt() == null ? null : a.getGuestPurgedAt().toInstant());
   }
 

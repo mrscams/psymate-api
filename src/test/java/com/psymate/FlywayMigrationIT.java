@@ -108,7 +108,11 @@ class FlywayMigrationIT {
             "ix_appointment_patient",
             "ix_appointment_series",
             "ix_appointment_guest_purge",
-            "ix_patient_profile_item_patient");
+            "ix_patient_profile_item_patient",
+            "ix_appointment_online_pending",
+            "ix_booking_request_email",
+            "ix_booking_request_created",
+            "ix_booking_request_appointment");
   }
 
   @Test
@@ -470,5 +474,64 @@ class FlywayMigrationIT {
                     String.class))
         .contains("(patient_id)")
         .contains("(archived_at IS NULL)");
+  }
+
+  /**
+   * V15 (M14-04, G Q71 a Q82) : appointment gagne guest_email et origin (defaut practitioner),
+   * ck_appointment_subject est recree avec guest_email, index partiel des demandes en ligne en
+   * attente ; table booking_request avec ses trois contraintes nommees, ses cles etrangeres vers
+   * tenant, practitioner et appointment, et ses index.
+   */
+  @Test
+  void v15AddsOriginGuestEmailAndBookingRequest() {
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select version from flyway_schema_history where success order by"
+                        + " installed_rank",
+                    String.class))
+        .contains("15");
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select column_default from information_schema.columns where table_schema ="
+                        + " 'public' and table_name = 'appointment' and column_name = 'origin'",
+                    String.class))
+        .contains("practitioner");
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select pg_get_constraintdef(c.oid) from pg_constraint c join pg_class t"
+                        + " on t.oid = c.conrelid where t.relname = 'appointment'"
+                        + " and c.conname = 'ck_appointment_subject'",
+                    String.class))
+        .contains("guest_email IS NULL");
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select indexdef from pg_indexes where indexname ="
+                        + " 'ix_appointment_online_pending'",
+                    String.class))
+        .contains("(practitioner_id, starts_at)")
+        .contains("'online'")
+        .contains("'tentative'");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select conname from pg_constraint c join pg_class t on t.oid = c.conrelid"
+                        + " where t.relname = 'booking_request' and c.contype = 'c'",
+                    String.class))
+        .contains(
+            "ck_booking_request_order",
+            "ck_booking_request_verified",
+            "ck_booking_request_identity");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select ft.relname from pg_constraint c join pg_class t on t.oid = c.conrelid"
+                        + " join pg_class ft on ft.oid = c.confrelid"
+                        + " where t.relname = 'booking_request' and c.contype = 'f'",
+                    String.class))
+        .containsExactlyInAnyOrder("tenant", "practitioner", "appointment");
   }
 }

@@ -1,6 +1,7 @@
 package com.psymate.agenda.controller;
 
 import com.psymate.agenda.dto.AgendaWindowDto;
+import com.psymate.agenda.dto.BookingRequestsDto;
 import com.psymate.agenda.dto.FreeBusyDto;
 import com.psymate.agenda.dto.PatientAppointmentsDto;
 import com.psymate.agenda.model.AppointmentException;
@@ -32,9 +33,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Lectures de l'agenda (M11-06, I3) : fenêtre de la grille et de la liste, voisinage d'un créneau
- * (freebusy), rendez-vous d'un patient avec ses défauts de création. Les bornes sont validées ici
- * (422 VALIDATION_FAILED avec errors[] par paramètre, 422 WINDOW_TOO_LARGE au-delà de 62 jours) ;
- * les lectures sont celles d'{@link AgendaQueryService}.
+ * (freebusy), rendez-vous d'un patient avec ses défauts de création, demandes en ligne en attente
+ * (M14-04). Les bornes sont validées ici (422 VALIDATION_FAILED avec errors[] par paramètre, 422
+ * WINDOW_TOO_LARGE au-delà de 62 jours) ; les lectures sont celles d'{@link AgendaQueryService}.
  */
 @Tag(
     name = "Agenda",
@@ -210,6 +211,23 @@ class AgendaController {
     }
     requireWindow(from, to, problems, request);
     return agenda.freeBusy(from, to, excludeAppointmentId, zone);
+  }
+
+  @GetMapping("/api/agenda/requests")
+  @Operation(
+      summary = "Liste les demandes de rendez-vous en ligne en attente",
+      description =
+          """
+          Session praticien. Demandes en ligne qui attendent une réponse (G Q74) : rendez-vous \
+          du praticien courant d'origine online au statut tentative qui commencent au plus tôt \
+          maintenant, triés par début puis identifiant, 100 au plus. Un rendez-vous à confirmer \
+          posé par le praticien (origin practitioner), une demande déjà confirmée (planned), \
+          annulée ou passée n'y figurent pas. Le praticien confirme une demande par \
+          POST /api/appointments/{id}/confirm et la refuse par POST /api/appointments/{id}/cancel.\
+          """)
+  @ApiResponses({@ApiResponse(responseCode = "200", description = "Demandes en attente, à venir.")})
+  BookingRequestsDto pendingRequests() {
+    return agenda.pendingRequests();
   }
 
   @GetMapping("/api/patients/{id}/appointments")

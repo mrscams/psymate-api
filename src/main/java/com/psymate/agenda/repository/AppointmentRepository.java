@@ -1,6 +1,7 @@
 package com.psymate.agenda.repository;
 
 import com.psymate.agenda.model.Appointment;
+import com.psymate.agenda.model.AppointmentOrigin;
 import com.psymate.agenda.model.AppointmentStatus;
 import java.time.OffsetDateTime;
 import java.util.Collection;
@@ -168,8 +169,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
           UUID practitionerId);
 
   /**
-   * Purge des invités (G Q60, E9) : pour chaque rendez-vous invité non purgé terminé avant {@code
-   * cutoff}, ou annulé avant {@code cutoff}, nom, prénom et téléphone passent à NULL et {@code
+   * Purge des invités (G Q60, Q82, E9) : pour chaque rendez-vous invité non purgé terminé avant
+   * {@code cutoff}, ou annulé avant {@code cutoff}, ou d'origine {@code online} annulé avant {@code
+   * onlineCancelledCutoff} (Q82 c), nom, prénom, téléphone et e-mail passent à NULL et {@code
    * guest_purged_at} est posé. La ligne reste : aucun DELETE. Renvoie le nombre de lignes purgées.
    */
   @Transactional
@@ -178,9 +180,39 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
       """
       update Appointment a
       set a.guestFirstName = null, a.guestLastName = null, a.guestPhone = null,
-          a.guestPurgedAt = :now, a.updatedAt = :now
+          a.guestEmail = null, a.guestPurgedAt = :now, a.updatedAt = :now
       where a.patientId is null and a.guestPurgedAt is null
-        and (a.endsAt < :cutoff or a.cancelledAt < :cutoff)
+        and (a.endsAt < :cutoff or a.cancelledAt < :cutoff
+             or (a.origin = :online
+                 and a.status = com.psymate.agenda.model.AppointmentStatus.cancelled
+                 and a.cancelledAt < :onlineCancelledCutoff))
       """)
-  int purgeGuests(@Param("cutoff") OffsetDateTime cutoff, @Param("now") OffsetDateTime now);
+  int purgeGuests(
+      @Param("cutoff") OffsetDateTime cutoff,
+      @Param("onlineCancelledCutoff") OffsetDateTime onlineCancelledCutoff,
+      @Param("online") AppointmentOrigin online,
+      @Param("now") OffsetDateTime now);
+
+  // ---- M14-04 : demandes en ligne en attente (G Q74)
+
+  /**
+   * Rendez-vous du praticien d'une origine et d'un statut donnés qui commencent au plus tôt à
+   * {@code from}, triés par début puis identifiant ({@code GET /api/agenda/requests} : {@code
+   * online}, {@code tentative}, à venir).
+   */
+  @Query(
+      """
+      select a from Appointment a
+      where a.practitionerId = :practitionerId
+        and a.status = :status
+        and a.origin = :origin
+        and a.startsAt >= :from
+      order by a.startsAt, a.id
+      """)
+  List<Appointment> findPending(
+      @Param("practitionerId") UUID practitionerId,
+      @Param("status") AppointmentStatus status,
+      @Param("origin") AppointmentOrigin origin,
+      @Param("from") OffsetDateTime from,
+      Limit limit);
 }

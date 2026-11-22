@@ -2,6 +2,10 @@
 |===
 |Base package
 |`com.psymate.directory`
+|Spring components
+|_Services_
+
+* `c.p.d.api.PublishedProfileFacade` (via `c.p.d.service.PublishedProfileFacadeImpl`)
 |Bean references
 |* `c.p.e.api.DomainEventPublisher` (in Events)
 * `c.p.i.api.PractitionerFacade` (in Identity)

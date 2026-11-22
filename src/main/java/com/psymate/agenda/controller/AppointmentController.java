@@ -133,7 +133,7 @@ class AppointmentController {
           Session praticien, propriétaire du patient. Le praticien et le cabinet viennent de la \
           session. Le rendez-vous vise exactement un de patientId (patient du praticien, non \
           archivé) et guest (invité, G Q60 : personne sans fiche patient, décrite par nom, \
-          prénom et téléphone, purgée 6 mois après la fin ou l'annulation du rendez-vous ; elle \
+          prénom, téléphone et e-mail, purgée 6 mois après la fin ou l'annulation du rendez-vous ; elle \
           n'apparaît ni dans les patients, ni dans la recherche). La fin vaut startsAt + durationMin. Statut planned, ou tentative si \
           tentative = true (« À confirmer »). Les rendez-vous actifs du praticien qui chevauchent \
           le créneau sont renvoyés dans conflicts sans empêcher la création ; un rendez-vous \
@@ -143,9 +143,9 @@ class AppointmentController {
           Europe/Paris), count fois ou jusqu'à until inclus ; au-delà de 26 occurrences, rien \
           n'est créé (422 TOO_MANY_OCCURRENCES). conflicts agrège alors les chevauchements de \
           chaque occurrence, occurrenceStartsAt indiquant laquelle. Chaque occurrence se déplace \
-          et s'annule ensuite seule ; aucune règle de répétition n'est stockée. status, \
-          practitionerId, tenantId, sessionEntryId, authorType et submissionId sont refusés \
-          (UNKNOWN_FIELD).\
+          et s'annule ensuite seule ; aucune règle de répétition n'est stockée. L'origine du \
+          rendez-vous créé est toujours practitioner. status, origin, practitionerId, tenantId, \
+          sessionEntryId, authorType et submissionId sont refusés (UNKNOWN_FIELD).\
           """)
   @ApiResponses({
     @ApiResponse(
@@ -185,7 +185,9 @@ class AppointmentController {
                 + " guest.lastName REQUIRED ; guest.firstName, guest.lastName OUT_OF_RANGE (plus"
                 + " de 100 caractères) ; guest.phone OUT_OF_RANGE (plus de 30 caractères) ou"
                 + " INVALID_FORMAT (autre chose que chiffres, espaces, +, point, tiret,"
-                + " parenthèses) ; startsAt, durationMin, modality ou recurrence.everyWeeks"
+                + " parenthèses) ; guest.email OUT_OF_RANGE (plus de 320 caractères) ou"
+                + " INVALID_FORMAT (pas une adresse e-mail) ; startsAt, durationMin, modality ou"
+                + " recurrence.everyWeeks"
                 + " REQUIRED ; durationMin"
                 + " OUT_OF_RANGE (hors 5 à 600) ; modality INVALID_VALUE (hors in_person, video,"
                 + " phone) ; planningNote OUT_OF_RANGE (plus de 2 000 caractères) ;"
@@ -240,12 +242,12 @@ class AppointmentController {
           durée, durationMin la change en gardant le début, modality et planningNote se \
           remplacent ; un champ absent reste inchangé, planningNote à null efface la note. guest \
           corrige l'identité d'un rendez-vous invité (G Q60) : lastName obligatoire et remplacé, \
-          firstName et phone absents restent inchangés, une chaîne vide les efface ; 422 INVALID_VALUE sur guest si le \
+          firstName, phone et email absents restent inchangés, une chaîne vide les efface ; 422 INVALID_VALUE sur guest si le \
           rendez-vous vise un patient ou si l'invité est purgé. Refusé \
           si le rendez-vous est annulé ou terminé (409). Les chevauchements du nouveau créneau \
           sont renvoyés dans conflicts sans empêcher la modification. patientId, tentative \
-          (passer par /confirm), recurrence, status, practitionerId, tenantId, sessionEntryId, \
-          authorType et submissionId sont refusés (UNKNOWN_FIELD).\
+          (passer par /confirm), recurrence, status, origin, practitionerId, tenantId, \
+          sessionEntryId, authorType et submissionId sont refusés (UNKNOWN_FIELD).\
           """)
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Rendez-vous modifié et chevauchements."),
@@ -270,7 +272,8 @@ class AppointmentController {
             "VALIDATION_FAILED avec errors[] : durationMin OUT_OF_RANGE (hors 5 à 600) ; modality"
                 + " INVALID_VALUE ; planningNote OUT_OF_RANGE (plus de 2 000 caractères) ; guest"
                 + " INVALID_VALUE (rendez-vous patient ou invité purgé) ; guest.lastName REQUIRED ;"
-                + " guest.phone INVALID_FORMAT ; guest.* OUT_OF_RANGE ; INVALID_FORMAT (date"
+                + " guest.phone, guest.email INVALID_FORMAT ; guest.* OUT_OF_RANGE ;"
+                + " INVALID_FORMAT (date"
                 + " illisible) ; UNKNOWN_FIELD (champ refusé).",
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class)))

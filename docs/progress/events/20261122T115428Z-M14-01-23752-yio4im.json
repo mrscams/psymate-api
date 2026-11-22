@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-22T11:54:28.534Z",
+  "task": "M14-01",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Décisions Q71 à Q82 (G10) et documentation du jalon M14 : plan K côté API, A, C13, D, E (DDL de K4 identique octet pour octet, V15, E9), CLAUDE.md, F, backend-module-dev",
+  "pr": "https://github.com/mrscams/psymate-api/pull/101",
+  "branch": "claude/m14-01-prise-rdv-decisions-docs-676ac2",
+  "checkout": "m14-01-prise-rdv-decisions-docs-676ac2"
+}

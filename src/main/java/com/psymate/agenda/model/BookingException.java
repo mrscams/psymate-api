@@ -72,6 +72,54 @@ public class BookingException extends ProblemException {
         "La fenêtre demandée dépasse " + MAX_WINDOW_DAYS + " jours.");
   }
 
+  /**
+   * Création d'une demande (M14-06) : {@code startsAt} n'est pas le début d'un créneau offert, ou
+   * la modalité n'est pas offerte. 409 : l'information est déjà publique (G Q78).
+   */
+  public static BookingException slotNotAvailable() {
+    return new BookingException(
+        409, "SLOT_NOT_AVAILABLE", null, null, "Ce créneau n'est pas proposé à la réservation.");
+  }
+
+  /** Jeton de vérification ou de gestion inconnu (M14-06, G Q80). */
+  public static BookingException tokenInvalid() {
+    return new BookingException(
+        404, "BOOKING_TOKEN_INVALID", null, null, "Ce lien n'est pas valable.");
+  }
+
+  /** Jeton de vérification expiré, demande jamais vérifiée (G Q73). */
+  public static BookingException tokenExpired() {
+    return new BookingException(410, "BOOKING_TOKEN_EXPIRED", null, null, "Ce lien a expiré.");
+  }
+
+  /** Le créneau n'est plus offert au moment de la vérification (G Q77). */
+  public static BookingException slotTaken() {
+    return new BookingException(409, "SLOT_TAKEN", null, null, "Ce créneau vient d'être pris.");
+  }
+
+  /**
+   * Un rendez-vous en ligne actif et à venir existe déjà chez ce praticien pour cette adresse (G
+   * Q79) ; seul le détenteur de la boîte, qui suit le lien, le voit.
+   */
+  public static BookingException alreadyActive() {
+    return new BookingException(
+        409,
+        "BOOKING_ALREADY_ACTIVE",
+        null,
+        null,
+        "Vous avez déjà un rendez-vous à venir avec ce praticien.");
+  }
+
+  /** Annulation par le demandeur d'un rendez-vous commencé ou terminé (M14-06). */
+  public static BookingException appointmentNotActive() {
+    return new BookingException(
+        409,
+        "APPOINTMENT_NOT_ACTIVE",
+        null,
+        null,
+        "Ce rendez-vous a commencé ou est terminé : il ne peut plus être annulé.");
+  }
+
   /** to avant from : 422 VALIDATION_FAILED, errors[0] = to INVALID_VALUE. */
   public static BookingException toBeforeFrom() {
     return new BookingException(

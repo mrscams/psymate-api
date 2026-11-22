@@ -3,6 +3,7 @@ package com.psymate.agenda.service;
 import com.psymate.directory.api.PublishedProfileFacade;
 import com.psymate.directory.api.PublishedProfileView;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,6 +27,17 @@ public class BookingAvailability {
   public Optional<Offer> offer(String slug) {
     return profiles
         .bySlug(slug)
+        .map(profile -> new Offer(profile, settings.read(profile.practitionerId())))
+        .filter(Offer::offered);
+  }
+
+  /**
+   * Même règle, par identifiant du praticien (vérification d'une demande, M14-06) : la fonction
+   * peut avoir été désactivée, ou la fiche dépubliée, depuis la demande.
+   */
+  public Optional<Offer> offer(UUID practitionerId) {
+    return profiles
+        .byPractitioner(practitionerId)
         .map(profile -> new Offer(profile, settings.read(profile.practitionerId())))
         .filter(Offer::offered);
   }

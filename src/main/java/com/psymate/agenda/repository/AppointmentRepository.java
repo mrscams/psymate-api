@@ -24,6 +24,22 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
   /** Le rendez-vous d'un autre praticien est introuvable, jamais interdit (G Q58). */
   Optional<Appointment> findByIdAndPractitionerId(UUID id, UUID practitionerId);
 
+  // ---- M14-07 : lectures sans entité, avant le verrou du praticien
+
+  /**
+   * Origine d'un rendez-vous du praticien, sans charger l'entité : lue avant de prendre le verrou
+   * de la prise de rendez-vous en ligne, le rendez-vous lui-même est chargé après (l'origine ne
+   * change jamais).
+   */
+  @Query(
+      "select a.origin from Appointment a where a.id = :id and a.practitionerId = :practitionerId")
+  Optional<AppointmentOrigin> findOriginByIdAndPractitionerId(
+      @Param("id") UUID id, @Param("practitionerId") UUID practitionerId);
+
+  /** Praticien d'un rendez-vous, sans charger l'entité (même usage). */
+  @Query("select a.practitionerId from Appointment a where a.id = :id")
+  Optional<UUID> findPractitionerIdById(@Param("id") UUID id);
+
   // ---- M11-05 : chevauchements (G Q54)
 
   /**

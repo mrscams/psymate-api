@@ -111,7 +111,9 @@ class TableOwnershipTests {
           "contact_request",
           "spring_session",
           "spring_session_attributes",
-          "event_publication");
+          "event_publication",
+          // M14-07 : demandes de rendez-vous en ligne, BookingPurgeJob (G Q82 a et f).
+          "booking_request");
 
   /**
    * Acces encore tolere a une table d'un autre module (lecture et ecriture), par module. Cette

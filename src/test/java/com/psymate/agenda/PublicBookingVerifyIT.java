@@ -360,6 +360,23 @@ class PublicBookingVerifyIT {
     assertThat(f.appointmentsOf(p.id())).isEqualTo(1);
   }
 
+  @Test
+  void modalityNoLongerOfferedAtVerificationIs409SlotTakenAndCreatesNothing() throws Exception {
+    Practitioner p = f.practitioner("manual");
+    // La demande posée par la fixture est en visioconférence ; le praticien la retire ensuite.
+    String token = f.pendingRequest(p, slot(6, "10:00"), applicantEmail());
+    f.setPreference(p.id(), "booking.modalities", List.of("in_person"));
+
+    f.verify(token)
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("SLOT_TAKEN"))
+        .andExpect(jsonPath("$.detail").value("Ce créneau n'est plus disponible."));
+    assertThat(f.appointmentsOf(p.id())).isZero();
+    Map<String, Object> left = f.requestRow(token);
+    assertThat(left.get("verified_at")).isNull();
+    assertThat(left.get("manage_token_hash")).isNull();
+  }
+
   // ---- un seul rendez-vous en ligne actif et à venir par adresse et par praticien (Q79)
 
   @Test

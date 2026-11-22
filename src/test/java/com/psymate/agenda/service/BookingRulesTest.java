@@ -80,15 +80,26 @@ class BookingRulesTest {
   // ---- anti-spam et plafond
 
   @Test
-  void honeypotTooFastFutureOrMissingFormTimeLooksLikeSpam() {
+  void honeypotTooFastOrMissingFormTimeLooksLikeSpam() {
     assertThat(BookingRules.looksLikeSpam("", NOW.minusSeconds(30), NOW)).isFalse();
     assertThat(BookingRules.looksLikeSpam(null, NOW.minusSeconds(3), NOW)).isFalse();
     assertThat(BookingRules.looksLikeSpam("x", NOW.minusSeconds(30), NOW)).isTrue();
     assertThat(BookingRules.looksLikeSpam("  ", NOW.minusSeconds(30), NOW)).isFalse();
     assertThat(BookingRules.looksLikeSpam(null, NOW.minusSeconds(1), NOW)).isTrue();
     assertThat(BookingRules.looksLikeSpam(null, NOW.minusMillis(2999), NOW)).isTrue();
-    assertThat(BookingRules.looksLikeSpam(null, NOW.plusSeconds(5), NOW)).isTrue();
     assertThat(BookingRules.looksLikeSpam(null, null, NOW)).isTrue();
+  }
+
+  @Test
+  void formShownUpToFiveMinutesInTheFutureIsAcceptedBeyondIsSpam() {
+    assertThat(BookingRules.MAX_CLIENT_CLOCK_AHEAD).hasMinutes(5);
+    assertThat(BookingRules.looksLikeSpam(null, NOW.plusSeconds(5), NOW)).isFalse();
+    assertThat(BookingRules.looksLikeSpam(null, NOW.plusSeconds(4 * 60), NOW)).isFalse();
+    assertThat(BookingRules.looksLikeSpam(null, NOW.plusSeconds(5 * 60), NOW)).isFalse();
+    assertThat(BookingRules.looksLikeSpam(null, NOW.plusSeconds(5 * 60 + 1), NOW)).isTrue();
+    assertThat(BookingRules.looksLikeSpam(null, NOW.plusSeconds(6 * 60), NOW)).isTrue();
+    // Le pot de miel l'emporte toujours.
+    assertThat(BookingRules.looksLikeSpam("x", NOW.plusSeconds(60), NOW)).isTrue();
   }
 
   @Test

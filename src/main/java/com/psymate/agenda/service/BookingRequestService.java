@@ -250,10 +250,12 @@ public class BookingRequestService {
       throw BookingException.alreadyActive();
     }
     Instant startsAt = request.getStartsAt().toInstant();
+    // Une modalité retirée des réglages depuis la demande rend le créneau indisponible (M14-07).
     boolean stillOffered =
-        offeredSlot(practitionerId, settings, startsAt, now)
-            .filter(slot -> slot.endsAt().equals(request.getEndsAt().toInstant()))
-            .isPresent();
+        settings.modalities().contains(request.getModality())
+            && offeredSlot(practitionerId, settings, startsAt, now)
+                .filter(slot -> slot.endsAt().equals(request.getEndsAt().toInstant()))
+                .isPresent();
     if (!stillOffered) {
       throw BookingException.slotTaken();
     }

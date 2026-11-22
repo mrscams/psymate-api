@@ -26,6 +26,13 @@ public final class BookingRules {
    */
   static final Duration MIN_FILL_TIME = Duration.ofSeconds(3);
 
+  /**
+   * Avance tolérée de l'horloge du client sur celle du serveur : un {@code formShownAt} jusqu'à 5
+   * minutes dans le futur est accepté (horloge du visiteur en avance) ; au-delà, la demande est
+   * ignorée en silence.
+   */
+  static final Duration MAX_CLIENT_CLOCK_AHEAD = Duration.ofMinutes(5);
+
   /** E-mails de vérification par adresse et par heure (G Q79). */
   static final int MAX_REQUESTS_PER_EMAIL_PER_HOUR = 3;
 
@@ -96,14 +103,21 @@ public final class BookingRules {
 
   // ---- anti-spam (G Q78 : ignoré en silence, sous le 202)
 
-  /** Pot de miel rempli, ou formulaire envoyé en moins de 3 s, ou affiché dans le futur. */
+  /**
+   * Pot de miel rempli, formulaire affiché plus de 5 minutes dans le futur ({@link
+   * #MAX_CLIENT_CLOCK_AHEAD}), ou envoyé en moins de 3 s. Un instant d'affichage dans le futur,
+   * dans la tolérance, vient d'une horloge du client en avance : le délai de remplissage ne se
+   * mesure pas, la demande est acceptée.
+   */
   static boolean looksLikeSpam(String honeypot, Instant formShownAt, Instant now) {
     if (honeypot != null && !honeypot.isBlank()) {
       return true;
     }
-    return formShownAt == null
-        || formShownAt.isAfter(now)
-        || Duration.between(formShownAt, now).compareTo(MIN_FILL_TIME) < 0;
+    if (formShownAt == null || formShownAt.isAfter(now.plus(MAX_CLIENT_CLOCK_AHEAD))) {
+      return true;
+    }
+    return !formShownAt.isAfter(now)
+        && Duration.between(formShownAt, now).compareTo(MIN_FILL_TIME) < 0;
   }
 
   /** Plafond d'adresse atteint : déjà 3 demandes dans l'heure pour cette empreinte (G Q79). */

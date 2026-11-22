@@ -23,8 +23,9 @@ import org.springframework.data.domain.Persistable;
  * téléphone). À la vérification, l'identité passe dans les colonnes {@code guest_*} du rendez-vous
  * créé et est effacée ici ({@code ck_booking_request_identity}) : il ne reste que des empreintes
  * ({@code email_hash}) et des jetons hachés. {@code verified_at} et {@code appointment_id} sont
- * posés ensemble ({@code ck_booking_request_verified}). Les transitions (vérification, clôture) et
- * les purges arrivent avec M14-06 ({@link #verify}, {@link #close}) et M14-07.
+ * posés ensemble ({@code ck_booking_request_verified}). Transitions : vérification et clôture
+ * (M14-06, {@link #verify}, {@link #close}), nouveau lien de gestion (M14-07, {@link
+ * #replaceManageToken}). Purges : {@code BookingPurgeJob} (M14-07, E9).
  */
 @Entity
 @Table(name = "booking_request")
@@ -150,6 +151,18 @@ public class BookingRequest implements Persistable<UUID> {
     this.lastName = null;
     this.email = null;
     this.phone = null;
+  }
+
+  /**
+   * Nouveau lien de gestion (G Q80, M14-07) : seule l'empreinte est gardée, si bien que chaque
+   * e-mail de suivi qui rappelle le lien en émet un nouveau ; l'ancien cesse d'être valable.
+   * Seulement après la vérification.
+   */
+  public void replaceManageToken(String manageTokenHash) {
+    if (verifiedAt == null) {
+      throw new IllegalStateException("booking request not verified");
+    }
+    this.manageTokenHash = Objects.requireNonNull(manageTokenHash);
   }
 
   /** Qui a clos la demande ; la première clôture est gardée. */

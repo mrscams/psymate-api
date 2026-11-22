@@ -152,7 +152,7 @@ class PublicBookingRequestIT {
   // ---- ignorées en silence (Q78)
 
   @Test
-  void honeypotTooFastOrFutureFormIsAcceptedWithoutRowNorEmail() throws Exception {
+  void honeypotTooFastOrFarFutureFormIsAcceptedWithoutRowNorEmail() throws Exception {
     Practitioner p = f.practitioner("manual");
     String email = applicantEmail();
     Instant startsAt = slot(3, "09:00");
@@ -161,13 +161,42 @@ class PublicBookingRequestIT {
     honeypot.put("website", "https://spam.example.test");
     Map<String, Object> tooFast = request(startsAt, email);
     tooFast.put("formShownAt", Instant.now().minusSeconds(1).toString());
+    // Au-delà de la tolérance de 5 minutes sur l'horloge du client : ignorée en silence.
     Map<String, Object> future = request(startsAt, email);
-    future.put("formShownAt", Instant.now().plusSeconds(60).toString());
+    future.put("formShownAt", Instant.now().plus(6, ChronoUnit.MINUTES).toString());
 
     for (Map<String, Object> body : List.of(honeypot, tooFast, future)) {
       MvcResult r = f.postRequest(p.slug(), body).andExpect(status().isAccepted()).andReturn();
       assertThat(body(r)).isEmpty();
     }
+    assertThat(f.requestsOf(p.id())).isZero();
+    assertThat(mails.countAllAfterQuiet(email)).isZero();
+  }
+
+  @Test
+  void formShownFourMinutesInTheFutureIsAcceptedWithRowAndEmail() throws Exception {
+    Practitioner p = f.practitioner("manual");
+    String email = applicantEmail();
+    Map<String, Object> body = request(slot(3, "11:00"), email);
+    // Horloge du client en avance de 4 minutes : dans la tolérance de 5 minutes.
+    body.put("formShownAt", Instant.now().plus(4, ChronoUnit.MINUTES).toString());
+
+    f.postRequest(p.slug(), body).andExpect(status().isAccepted());
+
+    assertThat(f.requestsOf(p.id())).isEqualTo(1);
+    assertThat(mails.awaitText(email, VERIFY_SUBJECT)).isNotNull();
+  }
+
+  @Test
+  void formShownSixMinutesInTheFutureIsIgnored() throws Exception {
+    Practitioner p = f.practitioner("manual");
+    String email = applicantEmail();
+    Map<String, Object> body = request(slot(3, "11:00"), email);
+    body.put("formShownAt", Instant.now().plus(6, ChronoUnit.MINUTES).toString());
+
+    MvcResult r = f.postRequest(p.slug(), body).andExpect(status().isAccepted()).andReturn();
+
+    assertThat(body(r)).isEmpty();
     assertThat(f.requestsOf(p.id())).isZero();
     assertThat(mails.countAllAfterQuiet(email)).isZero();
   }

@@ -86,7 +86,8 @@ class PublicBookingManageIT {
   void manageShowsPendingThenConfirmedThenCancelledByThePractitioner() throws Exception {
     Practitioner p = f.practitioner("manual");
     Instant startsAt = slot(3, "09:00");
-    String token = f.verifiedRequest(p, startsAt, applicantEmail());
+    String applicant = applicantEmail();
+    String token = f.verifiedRequest(p, startsAt, applicant);
     UUID appointment = appointmentOf(token);
 
     MvcResult pending =
@@ -120,6 +121,11 @@ class PublicBookingManageIT {
 
     f.practitionerPost(p, "/api/appointments/" + appointment + "/confirm", "{}")
         .andExpect(status().isOk());
+    // M14-07 : l'e-mail de confirmation porte un nouveau lien de gestion, qui remplace l'ancien.
+    f.manage(token).andExpect(status().isNotFound());
+    token =
+        PublicBookingFixtures.manageTokenIn(
+            mails.awaitText(applicant, "Votre rendez-vous est confirmé"));
     f.manage(token)
         .andExpect(jsonPath("$.status").value("confirmed"))
         .andExpect(jsonPath("$.canCancel").value(true));

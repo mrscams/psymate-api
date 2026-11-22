@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-22T16:53:47.298Z",
+  "task": "M14-07",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR #108 fusionnée en squash (96ba416)",
+  "pr": "https://github.com/mrscams/psymate-api/pull/108",
+  "branch": "claude/m14-08-seed",
+  "checkout": "m14-05-creneaux-publics-c5ceb0"
+}

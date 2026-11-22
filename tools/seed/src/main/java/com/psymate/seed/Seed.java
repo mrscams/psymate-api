@@ -62,6 +62,13 @@ public final class Seed {
     if (size == null || !Set.of("small", "medium", "demo").contains(size)) {
       throw new Refused("Option --size obligatoire : small, medium ou demo.\n" + usage());
     }
+    String pgContainer = options.get("pg-container");
+    if (pgContainer != null && !LocalApproval.validContainer(pgContainer)) {
+      throw new Refused(
+          "--pg-container : nom de conteneur invalide (« "
+              + pgContainer
+              + " ») ; attendu [A-Za-z0-9][A-Za-z0-9_.-]*.");
+    }
     guard(api, mailpit);
 
     Plan plan =
@@ -97,8 +104,13 @@ public final class Seed {
         summary.profileItems(),
         pretty(summary.elapsed()));
 
+    BookingSeeder.Result booking = null;
     if (!"demo".equals(size)) {
       seedAgenda(plan, runner, seed, out);
+      booking =
+          new BookingSeeder(api, mailpit, new LocalApproval(pgContainer))
+              .seed(runner.mainClient(Practitioner.CLAIRE), runner.mainClient(Practitioner.KARIM));
+      out.println(booking.describe());
     }
 
     Map<String, ApiClient> toCheck = new LinkedHashMap<>();
@@ -107,7 +119,7 @@ public final class Seed {
     }
     Verifier.Report report = Verifier.verify(toCheck);
     out.println(report.describe());
-    return report.ok() ? 0 : 1;
+    return report.ok() && (booking == null || booking.ok()) ? 0 : 1;
   }
 
   // ---- agenda (M11-09)
@@ -203,7 +215,7 @@ public final class Seed {
         throw new Refused("Option inconnue ou sans valeur : " + a + "\n" + usage());
       }
       String key = a.substring(2);
-      if (!Set.of("size", "api", "mailpit", "workers", "seed").contains(key)) {
+      if (!Set.of("size", "api", "mailpit", "workers", "seed", "pg-container").contains(key)) {
         throw new Refused("Option inconnue : " + a + "\n" + usage());
       }
       options.put(key, args[++i]);
@@ -223,7 +235,7 @@ public final class Seed {
     return """
         Usage : java -cp tools/seed/target/classes com.psymate.seed.Seed --size small|medium|demo
                 [--api http://localhost:8080] [--mailpit http://localhost:8025]
-                [--workers N] [--seed 20261101]""";
+                [--workers N] [--seed 20261101] [--pg-container NOM]""";
   }
 
   private static String pretty(Duration d) {

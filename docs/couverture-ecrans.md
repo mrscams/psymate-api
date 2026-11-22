@@ -28,6 +28,8 @@
 | 26 | Mot de passe oublié | `26-mot-de-passe-oublie.md` | html + png | M0-07 |
 | 27 | Compte suspendu / refusé | `27-compte-suspendu.md` | html + png | M1-15 (état), M7-07 (recours) |
 
+Prise de rendez-vous en ligne : API en jalon **M14** (module `agenda`, G Q71–Q82, `docs/K-plan-prise-de-rendez-vous-api.md`, contrat `0.15.0`), écrans web et fiches dans les tâches web M14-09 à M14-15 ; détail au §5.
+
 15 Agenda et 15b Nouveau rendez-vous : API en jalon **M11** (module `agenda`, G Q50–Q59, `docs/I-plan-agenda-api.md`, décidé le 15 novembre 2026), écran web dans un jalon ultérieur, synchronisation Google hors V1 (M12). Hors V1, fiche conservée mais rien à implémenter : 23 Signalements (V1.1, G Q26).
 
 ## 2. Ce qui manque
@@ -79,3 +81,20 @@ Les sept écrans manquants ont maintenant leur **fiche `.md` et leur maquette `.
 | Module `patients` : `errors[]` sans `code` de champ (seulement `field`, `message`) | Les messages 422 viennent du serveur tels quels | Harmoniser avec les autres modules (`FieldProblem` avec `code`) |
 
 Les trois maquettes de `UI/` (Timeline, Patient en séance, Annuaire) ne sont pas copiées dans `design/` : ce sont des exports de canevas (`Main.dc.html` + scripts de l'outil de maquettage), pas des `.html` statiques autonomes comme les autres fiches. Il faut en tirer un `.html` autonome et un `.png` au moment d'écrire la fiche. Aucun de ces fichiers n'est du code du projet : `psymate-web` est en Angular.
+
+## 5. Prise de rendez-vous en ligne (M14, 22 novembre 2026)
+
+API livrée par M14-02 à M14-07 dans le module `agenda` (contrat `0.15.0`, K5) ; les écrans sont ceux du parcours K3, sans fiche dans `design/` à ce jour : fiches et maquettes viennent des tâches web M14-09 à M14-15 (document K de `psymate-web`). Le seed (`make seed SIZE=small`, M14-08) donne de quoi afficher chaque écran sur une base neuve : Claire (`claire.seed@example.test`, slug `claire-martin`) en mode `manual` avec deux demandes en attente et un rendez-vous en ligne confirmé, Karim (`karim.seed@example.test`, slug `karim-haddad`) en mode `auto` sans demande.
+
+| Écran (route web, K3) | Fiche existante à compléter | Routes d'API (K5) | Données du seed |
+| --- | --- | --- | --- |
+| Fiche publique, bouton « Prendre rendez-vous » (`/praticiens/:slug`) | `09-fiche-publique-praticien.md` | `GET /api/public/booking/practitioners/{slug}` (`200` ou `404 BOOKING_NOT_AVAILABLE`) | `claire-martin` et `karim-haddad` offerts ; tout autre slug `404` |
+| Choix du créneau et coordonnées (`/praticiens/:slug/rendez-vous`) | aucune (nouvelle fiche) | `GET …/practitioners/{slug}/slots?from&to`, `POST …/practitioners/{slug}/requests` (`202`, `409 SLOT_NOT_AVAILABLE`, `422`, `429`) | Claire : créneaux de 60 min, lundi à vendredi, 28 jours ; Karim : 45 min, mardi et jeudi |
+| « Consultez votre boîte mail » | aucune (état de l'écran précédent) | réponse `202` sans corps | e-mails de vérification dans Mailpit |
+| Lien de vérification (`/rendez-vous/confirmer/:token`) | aucune (nouvelle fiche) | `POST /api/public/booking/requests/verify` (`200`, `404 BOOKING_TOKEN_INVALID`, `410 BOOKING_TOKEN_EXPIRED`, `409 SLOT_TAKEN`, `409 BOOKING_ALREADY_ACTIVE`) | les trois liens du seed, déjà suivis (un second clic rend l'état courant) |
+| Gestion par le demandeur (`/rendez-vous/gerer/:token`) | aucune (nouvelle fiche) | `POST /api/public/booking/manage`, `POST /api/public/booking/manage/cancel` | liens de gestion dans les e-mails des demandeurs (Mailpit) |
+| Préférences, section « Prise de rendez-vous en ligne » | `14-preferences-praticien.md` | `GET`, `PATCH /api/me/preferences` (huit clés `booking.*`) | Claire et Karim réglés ; un compte neuf a `booking.enabled = false` |
+| Agenda : demandes en ligne, compteur « Demandes », Confirmer / Refuser | `15-agenda.md` | `GET /api/agenda/requests`, `POST /api/appointments/{id}/confirm`, `POST /api/appointments/{id}/cancel` ; `AppointmentDto.origin`, `guest.email` | Claire : 2 demandes `tentative` d'origine `online` dans les sept jours, 1 rendez-vous en ligne `planned` |
+| Rattacher l'invité à un patient | `15b-nouveau-rendez-vous.md` (détail du rendez-vous) | `POST /api/appointments/{id}/attach-patient` (existant) | les trois rendez-vous en ligne de Claire |
+
+En mode `manual`, une demande sans réponse est annulée d'office 72 h après sa vérification ou au début du créneau si c'est plus tôt (G Q82) : pour retrouver les deux demandes en attente, `make db-reset` puis `make seed`.

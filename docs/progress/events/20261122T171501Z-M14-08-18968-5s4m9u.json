@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-22T17:15:01.399Z",
+  "task": "M14-08",
+  "agent": "seed-perf",
+  "status": "done",
+  "summary": "Seed de la prise de rendez-vous en ligne : claire-martin (manual, 2 demandes en attente, 1 rendez-vous en ligne confirmé) et karim-haddad (auto), parcours public complet, idempotent par demandeur ; approbation des comptes seed en SQL ; contrat 0.15.0 sans diff, tag à poser sur le commit de fusion",
+  "notes": "Approbation des praticiens du seed en SQL (LocalApproval) : écart à la règle du seed, à valider par l'utilisateur",
+  "next": "Tag contract-v0.15.0 puis suivi de fin de jalon",
+  "pr": "https://github.com/mrscams/psymate-api/pull/109",
+  "branch": "claude/m14-08-seed",
+  "checkout": "m14-05-creneaux-publics-c5ceb0"
+}

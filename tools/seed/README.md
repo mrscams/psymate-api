@@ -1,6 +1,6 @@
 # tools/seed : données fictives et tests de charge (M7-01)
 
-Générateur de patients fictifs, de leur agenda et de leur Profil 360 pour PsyMate (C3, E5.5, G Q22, M11-09, M13-03). Il n'écrit **jamais** en SQL : tout passe par l'API REST d'une instance locale, donc par les mêmes règles que l'application (séance obligatoire, versions, matrice des liens E5.3, `author_type = 'practitioner'`).
+Générateur de patients fictifs, de leur agenda, de leur Profil 360 et de la prise de rendez-vous en ligne pour PsyMate (C3, E5.5, G Q22, M11-09, M13-03, M14-08). Il n'écrit **jamais** de donnée en SQL : tout passe par l'API REST d'une instance locale, donc par les mêmes règles que l'application (séance obligatoire, versions, matrice des liens E5.3, `author_type = 'practitioner'`). Une seule exception, l'approbation des deux comptes du seed (voir « Prise de rendez-vous en ligne »).
 
 Projet Maven autonome (`com.psymate.tools:psymate-seed`), **sans aucune dépendance d'exécution** : JDK 21 seul, JSON maison (`Json`), `java.net.http` pour les appels.
 
@@ -24,10 +24,11 @@ make perf               # tests de charge : ./mvnw -B -Pperf verify, rapport dan
 
 ```bash
 java -cp tools/seed/target/classes com.psymate.seed.Seed --size small|medium|demo \
-     [--api http://localhost:8080] [--mailpit http://localhost:8025] [--workers N] [--seed 20261101]
+     [--api http://localhost:8080] [--mailpit http://localhost:8025] [--workers N] [--seed 20261101]      [--pg-container NOM]
 ```
 
 - `--workers` : nombre de workers parallèles (défaut : le plus petit de 8 et du nombre de patients à créer). Chaque worker a ses propres sessions HTTP et donc sa propre enveloppe de limitation de débit (600 requêtes par minute et par session, G Q24) ; un `429` est rejoué après `Retry-After`.
+- `--pg-container` : conteneur Postgres où approuver les comptes du seed (défaut : celui du service `postgres` de `docker compose`, fichier `docker-compose.yml` cherché depuis le dossier courant en remontant). Inutile si les comptes sont déjà approuvés.
 - `--seed` : graine du générateur (défaut `20261101`). Même graine, même jour : même jeu de données. Les dates sont relatives à aujourd'hui (minuit UTC), toutes les séances générées sont passées.
 
 Sous Windows sans shell POSIX, `make` ne sait pas lancer `./mvnw` : exécuter les deux commandes ci-dessus à la main (ou depuis Git Bash).
@@ -92,6 +93,26 @@ Chaque patient du plan porte son Profil 360 (`PatientPlan.profile`, J3) : des in
 - `Scenario.validate` vérifie le profil avant toute écriture : rubrique connue, titre de 1 à 200 caractères, détail de 2 000 au plus, période seulement dans `history` (libellé de 60 au plus, année de 1900 à 2100), plafond de 500 informations (G Q70).
 - Un patient déjà présent est ignoré en entier : son profil n'est ni complété ni dupliqué.
 
+## Prise de rendez-vous en ligne (M14-08, tailles `small` et `medium`)
+
+Après l'agenda, le seed ouvre la prise de rendez-vous en ligne (document K, G Q71 à Q82) des deux praticiens (`BookingScenario`, pur et déterministe, puis `BookingSeeder`) :
+
+| Praticien | Fiche publique | Réglages `booking.*` | Demandes |
+| --- | --- | --- | --- |
+| Claire Martin (démonstration) | `/praticiens/claire-martin`, Lyon, publiée | `manual` ; lundi à vendredi 09:00–12:00 et 14:00–18:00 ; créneaux de 60 min ; délai 24 h ; horizon 28 jours ; `in_person`, `video` ; `Europe/Paris` | 2 en attente (`tentative`, `origin = online`), 1 confirmée (`planned`), toutes dans les sept jours à venir |
+| Karim Haddad (second praticien) | `/praticiens/karim-haddad`, Villeurbanne, publiée | `auto` ; mardi 14:00–17:00 et jeudi 09:00–12:00 ; créneaux de 45 min ; délai 24 h ; horizon 28 jours ; `video`, `phone` | aucune |
+
+Les slugs sont ceux que l'API génère depuis le nom du compte (`claire-martin`, `karim-haddad` sur une base neuve ; le seed lit et affiche le slug réel).
+
+1. **Approbation, seule écriture SQL** (`LocalApproval`). Une fiche ne se publie, et la prise de rendez-vous n'est offerte, que pour un praticien approuvé. Dans l'application, seule la décision d'un administrateur approuve un compte (`POST /api/admin/verifications/{id}/decision`), et un administrateur n'existe qu'après `make admin` (une seconde application Spring Boot, mot de passe à usage unique affiché une fois), un changement de mot de passe et une double authentification TOTP, sur un dossier de justificatifs déposé par le praticien : rien de cela n'est à la portée d'un client de l'API. Si `GET /api/auth/session` ne dit pas `approved`, le seed lance donc `docker exec -i <conteneur> psql … -c "UPDATE practitioner SET verification_status = 'approved', verified_at = now() …"` sur les seuls comptes `claire.seed@example.test` et `karim.seed@example.test` encore en `docs_pending`, `under_review` ou `needs_more`, puis relit la session. Aucune autre ligne n'est écrite en SQL.
+2. **Fiche d'annuaire** : `PUT /api/me/profile` (ville, contact affiché en `example.test`, téléphone de la plage réservée à la fiction `06 39 98`) puis `POST /api/me/profile/publish`, si elle n'est pas déjà publiée.
+3. **Réglages** : `PATCH /api/me/preferences` avec les huit clés `booking.*`, si `booking.enabled` n'est pas déjà vrai.
+4. **Demandes de Claire, par le parcours public complet**, comme un visiteur : `GET /api/public/booking/practitioners/claire-martin/slots`, choix de trois créneaux sur trois jours distincts (le créneau du milieu de chaque jour), `POST …/requests` (prénom, nom, adresse `*.rdv@example.test`, téléphone fictif ou aucun, consentement, formulaire affiché 30 s plus tôt), lien de vérification lu dans Mailpit (comme la confirmation des comptes et comme les IT), `POST /api/public/booking/requests/verify`. Chaque demande a donc sa ligne `booking_request` vérifiée, et l'API pose elle-même `origin = online`, `guest_email` et le statut `tentative` (mode `manual`). La troisième est confirmée par Claire (`POST /api/appointments/{id}/confirm`). Le demandeur et Claire reçoivent les e-mails de K dans Mailpit.
+
+Idempotence : si Claire a déjà un rendez-vous `origin = online` (annulé compris) entre 31 jours avant et 31 jours après aujourd'hui, aucune demande n'est écrite (« déjà présents »). Les trois demandes coûtent 3 des 5 créations par heure et par IP (G Q79) : sur une même API locale, un second `make db-reset` puis `make seed` dans l'heure peut recevoir un `429` ; le seed s'arrête alors avec un message (relancer une heure plus tard, ou redémarrer l'API). En mode `manual`, une demande sans réponse est annulée d'office 72 h après sa vérification ou au début du créneau (G Q82) : quelques jours plus tard, `GET /api/agenda/requests` n'en montre plus, et `make db-reset` puis `make seed` les recrée.
+
+Contrôle final (lecture) : `GET /api/public/booking/practitioners/{slug}` répond `200` pour les deux praticiens, chacun a des créneaux sur 28 jours, et, si les demandes viennent d'être écrites, `GET /api/agenda/requests` de Claire en renvoie exactement deux et Claire a un rendez-vous en ligne confirmé. Exemple : `Prise de rendez-vous en ligne : Claire /claire-martin (manual, 98 créneaux sur 28 jours, 2 demandes en attente, 1 rendez-vous en ligne confirmé), Karim /karim-haddad (auto, 24 créneaux) ; fiches publiques 200 et 200 : OK`. `BookingScenarioTest` vérifie sans réseau les réglages, les données fictives, le choix des créneaux et la requête d'approbation.
+
 ## Idempotence
 
 Avant d'écrire, le seed liste les patients du praticien (toutes les pages). Un patient du plan dont le `displayName` existe déjà est **ignoré** (compté « déjà présent »). Relancer `make seed` ne duplique donc rien ; seul un plan plus grand ajoute les patients manquants. Si l'écriture d'un patient échoue en route, son dossier partiel est archivé (suppression logique) pour qu'une relance le recrée proprement.
@@ -116,6 +137,7 @@ Lecture seule, par l'API : pour chaque patient du plan (créé ou déjà présen
 - Les corrections (PATCH) créent des versions, sauf dans la fenêtre de grâce de 1 h 15 : comme le seed écrit vite, la plupart des corrections de situations et de médicaments modifient l'entrée en place.
 - Les tags du praticien (`travail`, `couple`, `famille`...) sont créés au besoin ; un tag déjà présent est réutilisé.
 - Le seed ne supprime rien : `make db-reset` repart d'une base vide.
+- Le seed n'écrit qu'une chose en SQL : l'approbation de ses deux comptes (voir « Prise de rendez-vous en ligne ») ; il lui faut donc `docker` et le conteneur Postgres local.
 - L'idempotence se fait sur le nom d'affichage : deux graines différentes (ou deux tailles) peuvent produire le même `SEED · Prénom I.` ; ce patient est alors considéré comme déjà présent et n'est pas recréé.
 
 ## Tests de charge (`make perf`)

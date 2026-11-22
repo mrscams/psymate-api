@@ -57,12 +57,23 @@ public final class ApiClient {
 
   private final String base;
   private final HttpClient http;
+  private final int maxRetries;
 
   // pot de cookies maison : la session est posée avec l attribut Secure, que java.net.CookieManager
   // refuse de renvoyer en http (l API locale n a pas de TLS)
   private final Map<String, String> cookies = new java.util.concurrent.ConcurrentHashMap<>();
 
   public ApiClient(String baseUrl) {
+    this(baseUrl, MAX_RETRIES);
+  }
+
+  /**
+   * Client qui rejoue un 429 au plus {@code maxRetries} fois ; 0 pour les routes publiques de prise
+   * de rendez-vous, dont le plafond horaire (5 par heure et par IP, G Q79) ne se lève pas en
+   * quelques secondes.
+   */
+  public ApiClient(String baseUrl, int maxRetries) {
+    this.maxRetries = Math.max(0, maxRetries);
     this.base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
     this.http =
         HttpClient.newBuilder()
@@ -83,6 +94,10 @@ public final class ApiClient {
     return send("PATCH", path, body);
   }
 
+  public Response put(String path, Object body) {
+    return send("PUT", path, body);
+  }
+
   public Response delete(String path) {
     return send("DELETE", path, null);
   }
@@ -98,6 +113,10 @@ public final class ApiClient {
 
   public Response patch(String path, Object body, int... expected) {
     return check("PATCH", path, patch(path, body), expected);
+  }
+
+  public Response put(String path, Object body, int... expected) {
+    return check("PUT", path, put(path, body), expected);
   }
 
   private Response check(String method, String path, Response response, int... expected) {
@@ -138,7 +157,7 @@ public final class ApiClient {
         throw new SeedException("Interrompu pendant " + method + " " + path, e);
       }
       storeCookies(response);
-      if (response.statusCode() == 429 && attempt < MAX_RETRIES) {
+      if (response.statusCode() == 429 && attempt < maxRetries) {
         pause(response.headers().firstValue("Retry-After").orElse("5"));
         continue;
       }

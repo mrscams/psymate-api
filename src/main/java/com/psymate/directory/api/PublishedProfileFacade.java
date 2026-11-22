@@ -1,6 +1,5 @@
 package com.psymate.directory.api;
 
-import com.psymate.shared.Reserved;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -11,9 +10,6 @@ import java.util.UUID;
  * inconnu, fiche non publiée, praticien suspendu, rejeté ou clos, argument nul ou vide : {@link
  * Optional#empty()}, sans distinction (G Q78).
  */
-@Reserved(
-    consumer = "M14-05, module agenda (prise de rendez-vous en ligne, G Q71)",
-    reason = "Livrée par M14-03 avant son premier appelant ; M14-05 retire l'annotation")
 public interface PublishedProfileFacade {
 
   /** Fiche publiée d'un praticien approuvé, par slug exact. */

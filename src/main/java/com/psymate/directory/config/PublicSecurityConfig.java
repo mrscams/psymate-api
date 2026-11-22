@@ -34,7 +34,9 @@ class PublicSecurityConfig {
         .addFilterBefore(rateLimits.forRule("public-directory"), AuthorizationFilter.class)
         // ... puis, après elle, 5 / h / IP qui ne concerne que POST …/contact. Même position
         // d'ancrage : à ordre égal, Spring Security garde l'ordre d'ajout.
-        .addFilterBefore(rateLimits.forRule("public-contact"), AuthorizationFilter.class);
+        .addFilterBefore(rateLimits.forRule("public-contact"), AuthorizationFilter.class)
+        // ... et 5 / h / IP sur POST /api/public/booking/practitioners/*/requests (G Q79, agenda).
+        .addFilterBefore(rateLimits.forRule("public-booking"), AuthorizationFilter.class);
     return http.build();
   }
 }

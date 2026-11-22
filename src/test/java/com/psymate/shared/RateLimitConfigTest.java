@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Garde « aucune valeur de limite n'a changé » (G Q24) : lit le vrai application.yml et vérifie les
- * trois règles, puis que le limiteur les applique bien.
+ * quatre règles, puis que le limiteur les applique bien.
  */
 class RateLimitConfigTest {
 
@@ -37,7 +37,7 @@ class RateLimitConfigTest {
         ctx -> {
           RateLimitProperties props = ctx.getBean(RateLimitProperties.class);
           assertThat(props.rules())
-              .containsOnlyKeys("public-directory", "public-contact", "session");
+              .containsOnlyKeys("public-directory", "public-contact", "public-booking", "session");
 
           Rule directory = props.rules().get("public-directory");
           assertThat(directory.pattern()).isEqualTo("/api/public/**");
@@ -52,6 +52,14 @@ class RateLimitConfigTest {
           assertThat(contact.key()).isEqualTo(Key.IP);
           assertThat(contact.limit()).isEqualTo(5);
           assertThat(contact.period()).isEqualTo(Duration.ofHours(1));
+
+          // Prise de rendez-vous en ligne (G Q79, M14-05) : création d'une demande.
+          Rule booking = props.rules().get("public-booking");
+          assertThat(booking.pattern()).isEqualTo("/api/public/booking/practitioners/*/requests");
+          assertThat(booking.methods()).isEqualTo(Set.of("POST"));
+          assertThat(booking.key()).isEqualTo(Key.IP);
+          assertThat(booking.limit()).isEqualTo(5);
+          assertThat(booking.period()).isEqualTo(Duration.ofHours(1));
 
           Rule session = props.rules().get("session");
           assertThat(session.pattern()).isEqualTo("/api/**");

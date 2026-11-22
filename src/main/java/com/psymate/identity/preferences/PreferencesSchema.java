@@ -1,22 +1,26 @@
 package com.psymate.identity.preferences;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
- * Documentation OpenAPI uniquement (jamais sérialisée) : les 13 clés V1 des préférences et leurs
- * domaines, fiche 14 et agenda (G Q57). Les clés réelles sont plates et pointées (ADR-11).
+ * Documentation OpenAPI uniquement (jamais sérialisée) : les 21 clés des préférences et leurs
+ * domaines, fiche 14, agenda (G Q57) et prise de rendez-vous en ligne (Q75). Les clés réelles sont
+ * plates et pointées (ADR-11).
  */
 @Schema(
     name = "Preferences",
     description =
-        "Préférences à plat du compte : 13 clés connues, aux noms pointés (par exemple"
-            + " \"overview.view\"), sans objet imbriqué. En lecture, les 13 clés sont toujours"
+        "Préférences à plat du compte : 21 clés connues, aux noms pointés (par exemple"
+            + " \"overview.view\"), jamais imbriquées les unes dans les autres (seule la valeur de"
+            + " booking.windows est une liste d'objets). En lecture, les 21 clés sont toujours"
             + " présentes (valeur enregistrée, sinon défaut selon la profession). En PATCH, toutes"
             + " les clés sont optionnelles : null remet la clé à son défaut, une clé inconnue est"
             + " ignorée. Les bornes de la journée de l'agenda doivent rester cohérentes :"
             + " agenda.dayEndHour strictement supérieur à agenda.dayStartHour, sinon 422"
-            + " OUT_OF_RANGE sur agenda.dayEndHour.")
+            + " OUT_OF_RANGE sur agenda.dayEndHour. Aucune règle croisée entre les clés"
+            + " booking.*.")
 record PreferencesSchema(
     @Schema(
             name = "overview.view",
@@ -122,4 +126,123 @@ record PreferencesSchema(
                     + " list = liste. Défaut : week.",
             allowableValues = {"day", "week", "month", "list"},
             example = "week")
-        String agendaDefaultView) {}
+        String agendaDefaultView,
+    @Schema(
+            name = "booking.enabled",
+            description =
+                "true si le praticien propose la prise de rendez-vous en ligne sur sa fiche"
+                    + " publique. Elle n'est réellement offerte que s'il existe au moins une plage"
+                    + " (booking.windows) et si le profil est publié et le praticien approuvé ;"
+                    + " true sans plage est accepté. Autre type qu'un booléen : 422 INVALID_VALUE."
+                    + " Défaut : false.",
+            example = "false")
+        Boolean bookingEnabled,
+    @Schema(
+            name = "booking.confirmation",
+            description =
+                "Confirmation des demandes de rendez-vous en ligne : manual = le praticien accepte"
+                    + " chaque demande, auto = rendez-vous confirmé dès la demande. Autre valeur :"
+                    + " 422 INVALID_VALUE. Défaut : manual.",
+            allowableValues = {"manual", "auto"},
+            example = "manual")
+        String bookingConfirmation,
+    @Schema(
+            name = "booking.windows",
+            example = "[{\"day\":1,\"start\":\"09:00\",\"end\":\"12:00\"}]")
+        @ArraySchema(
+            maxItems = 21,
+            arraySchema =
+                @Schema(
+                    name = "booking.windows",
+                    description =
+                        "Plages hebdomadaires ouvertes à la prise de rendez-vous en ligne, 21 au"
+                            + " plus, renvoyées triées par jour puis par début. Deux plages du"
+                            + " même jour ne se chevauchent pas (09:00–12:00 puis 12:00–14:00 sont"
+                            + " contiguës, donc admises). Plus de 21 plages : 422 OUT_OF_RANGE ;"
+                            + " plage mal formée, champ manquant ou inconnu, chevauchement ou"
+                            + " autre type : 422 INVALID_VALUE. Liste vide admise. Défaut : []."))
+        List<BookingWindowSchema> bookingWindows,
+    @Schema(
+            name = "booking.slotDurationMin",
+            description =
+                "Durée d'un créneau proposé en ligne, en minutes : entier de 15 à 180, multiple de"
+                    + " 5. Hors bornes ou non multiple de 5 : 422 OUT_OF_RANGE ; non entier : 422"
+                    + " INVALID_VALUE. Défaut : 60.",
+            minimum = "15",
+            maximum = "180",
+            multipleOf = 5,
+            example = "60")
+        Integer bookingSlotDurationMin,
+    @Schema(
+            name = "booking.minNoticeHours",
+            description =
+                "Délai minimal, en heures, entre la demande et le début du créneau : entier de 1 à"
+                    + " 168. Hors bornes : 422 OUT_OF_RANGE ; non entier : 422 INVALID_VALUE."
+                    + " Défaut : 24.",
+            minimum = "1",
+            maximum = "168",
+            example = "24")
+        Integer bookingMinNoticeHours,
+    @Schema(
+            name = "booking.horizonDays",
+            description =
+                "Horizon, en jours, au-delà duquel aucun créneau n'est proposé : entier de 7 à 90."
+                    + " Hors bornes : 422 OUT_OF_RANGE ; non entier : 422 INVALID_VALUE. Défaut :"
+                    + " 28.",
+            minimum = "7",
+            maximum = "90",
+            example = "28")
+        Integer bookingHorizonDays,
+    @Schema(name = "booking.modalities", example = "[\"in_person\"]")
+        @ArraySchema(
+            minItems = 1,
+            maxItems = 3,
+            uniqueItems = true,
+            schema = @Schema(allowableValues = {"in_person", "video", "phone"}),
+            arraySchema =
+                @Schema(
+                    name = "booking.modalities",
+                    description =
+                        "Modalités proposées en ligne : liste non vide, sans doublon, parmi"
+                            + " in_person (au cabinet), video (visio) et phone (téléphone), dans"
+                            + " l'ordre enregistré. Liste vide, doublon, autre valeur ou autre"
+                            + " type : 422 INVALID_VALUE. Défaut : [\"in_person\"]."))
+        List<String> bookingModalities,
+    @Schema(
+            name = "booking.timezone",
+            description =
+                "Fuseau horaire des plages : identifiant régional IANA connu (par exemple"
+                    + " Europe/Paris, America/Montreal). Décalage (+02:00, UTC+1), nom incomplet"
+                    + " (Paris) ou autre type : 422 INVALID_VALUE. Défaut : Europe/Paris.",
+            example = "Europe/Paris")
+        String bookingTimezone) {
+
+  /** Une plage hebdomadaire de booking.windows (Q75). */
+  @Schema(
+      name = "BookingWindow",
+      description =
+          "Plage hebdomadaire de prise de rendez-vous en ligne : exactement les trois champs day,"
+              + " start et end (champ manquant ou inconnu : 422 INVALID_VALUE sur"
+              + " booking.windows). end est strictement après start.")
+  record BookingWindowSchema(
+      @Schema(
+              description = "Jour de la semaine : entier de 1 (lundi) à 7 (dimanche).",
+              minimum = "1",
+              maximum = "7",
+              example = "1")
+          Integer day,
+      @Schema(
+              description =
+                  "Début de la plage, heure locale du fuseau booking.timezone, au format HH:mm"
+                      + " (00:00 à 23:55), minutes multiples de 5.",
+              pattern = "^([01][0-9]|2[0-3]):[0-5][05]$",
+              example = "09:00")
+          String start,
+      @Schema(
+              description =
+                  "Fin de la plage, exclue, au format HH:mm (00:00 à 23:55), minutes multiples de"
+                      + " 5, strictement après start.",
+              pattern = "^([01][0-9]|2[0-3]):[0-5][05]$",
+              example = "12:00")
+          String end) {}
+}

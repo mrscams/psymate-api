@@ -198,7 +198,7 @@ class PreferencesTest {
         .containsEntry(END, 19)
         .containsEntry(DAYS, List.of(1, 2, 3, 4, 5, 6))
         .containsEntry(VIEW, "week")
-        .hasSize(13);
+        .hasSize(21);
     assertThat(Preferences.defaults("coach"))
         .containsEntry("vocabulary.subjectLabel", "client")
         .containsEntry(MED, false);
@@ -213,6 +213,6 @@ class PreferencesTest {
         .containsEntry("theme", "dark")
         .containsEntry("locale", "fr")
         .doesNotContainKey("foo")
-        .hasSize(13);
+        .hasSize(21);
   }
 }

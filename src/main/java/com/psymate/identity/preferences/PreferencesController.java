@@ -22,7 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
     name = "Préférences",
     description =
         "Préférences d'affichage et de saisie du praticien connecté, mémorisées par compte :"
-            + " treize clés plates (affichage, saisie, agenda), modifiées par merge-patch (RFC 7396).")
+            + " vingt et une clés plates (affichage, saisie, agenda, prise de rendez-vous en ligne),"
+            + " modifiées par merge-patch (RFC 7396).")
 @RestController
 @RequestMapping("/api/me/preferences")
 class PreferencesController {
@@ -38,7 +39,7 @@ class PreferencesController {
       summary = "Préférences du compte (valeurs stockées complétées par les défauts)",
       description =
           """
-          Session praticien. Renvoie toujours les 13 clés : la valeur enregistrée si elle est \
+          Session praticien. Renvoie toujours les 21 clés : la valeur enregistrée si elle est \
           valide, sinon le défaut calculé selon la profession (coach : vocabulary.subjectLabel = \
           client et entryTypes.medicationVisible = false ; psychiatre : entryTypes.medicationVisible \
           = true). Les clés inconnues stockées ne sont pas renvoyées.\
@@ -46,7 +47,7 @@ class PreferencesController {
   @ApiResponses(
       @ApiResponse(
           responseCode = "200",
-          description = "Les 13 préférences effectives du compte.",
+          description = "Les 21 préférences effectives du compte.",
           content =
               @Content(
                   mediaType = "application/json",
@@ -64,7 +65,7 @@ class PreferencesController {
           avec seulement les clés à changer : les autres sont conservées. null remet la clé à son \
           défaut ; une clé inconnue est ignorée sans erreur. Une seule valeur hors domaine rejette \
           toute la requête (422, errors[].field = clé fautive) et rien n'est appliqué. Renvoie les \
-          13 préférences effectives après fusion ; un PATCH qui ne change rien est un succès.\
+          21 préférences effectives après fusion ; un PATCH qui ne change rien est un succès.\
           """,
       requestBody =
           @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -81,7 +82,7 @@ class PreferencesController {
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
-        description = "Les 13 préférences effectives après fusion.",
+        description = "Les 21 préférences effectives après fusion.",
         content =
             @Content(
                 mediaType = "application/json",
@@ -89,9 +90,12 @@ class PreferencesController {
     @ApiResponse(
         responseCode = "422",
         description =
-            "VALIDATION_FAILED avec errors[] {field, code, message} : code INVALID_VALUE, field ="
-                + " la clé fautive (par exemple overview.window) ; valeurs admises dans message ;"
-                + " rien n'est appliqué.",
+            "VALIDATION_FAILED avec errors[] {field, code, message} : field = la clé fautive (par"
+                + " exemple overview.window ou booking.windows), code INVALID_VALUE (valeur hors"
+                + " domaine ou mal formée) ou OUT_OF_RANGE (nombre hors bornes, par exemple"
+                + " booking.slotDurationMin, ou plus de 21 plages dans booking.windows) ; valeurs"
+                + " admises dans message ; rien n'est appliqué, même pour les clés valides du"
+                + " même PATCH.",
         content =
             @Content(
                 mediaType = "application/problem+json",

@@ -18,6 +18,11 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -201,6 +206,67 @@ class BookingExpiryJobIT {
 
     assertThat(f.appointmentRow(id).get("status")).isEqualTo("tentative");
     assertThat(mails.countAllAfterQuiet(email)).isZero();
+  }
+
+  @Test
+  void attachPatientAndExpiryInParallelNeverLoseTheAttachment() throws Exception {
+    for (int round = 0; round < 3; round++) {
+      clock.reset();
+      Practitioner p = f.practitioner("manual");
+      String email = applicantEmail();
+      UUID id = f.appointmentOf(f.verifiedRequest(p, slot(6 + round, "09:00"), email));
+      UUID patient = UUID.randomUUID();
+      jdbc.update(
+          "insert into patient (id, tenant_id, owner_id, display_name) values (?, ?, ?, 'S. B.')",
+          patient,
+          f.tenant,
+          p.id());
+      f.settle(id, mailer);
+      clock.advance(Duration.ofHours(73));
+      boolean sameGuest = round % 2 == 1;
+
+      CountDownLatch start = new CountDownLatch(1);
+      ExecutorService pool = Executors.newFixedThreadPool(2);
+      try {
+        Future<Integer> attach =
+            pool.submit(
+                () -> {
+                  start.await();
+                  return f.practitionerPost(
+                          p,
+                          "/api/appointments/" + id + "/attach-patient",
+                          "{\"patientId\":\""
+                              + patient
+                              + "\",\"includeSameGuest\":"
+                              + sameGuest
+                              + "}")
+                      .andReturn()
+                      .getResponse()
+                      .getStatus();
+                });
+        Future<Integer> expiry =
+            pool.submit(
+                () -> {
+                  start.await();
+                  return job.run();
+                });
+        start.countDown();
+        assertThat(attach.get(30, TimeUnit.SECONDS)).isEqualTo(200);
+        expiry.get(30, TimeUnit.SECONDS);
+      } finally {
+        pool.shutdownNow();
+      }
+      f.settle(id, mailer);
+
+      Map<String, Object> row = f.appointmentRow(id);
+      assertThat(row.get("patient_id")).as("rattachement gardé").isEqualTo(patient);
+      assertThat(row.get("guest_last_name")).isNull();
+      assertThat(row.get("guest_email")).isNull();
+      // L'expiration passe dans tous les cas, avant ou après le rattachement.
+      assertThat(row.get("status")).isEqualTo("cancelled");
+      assertThat(f.state(id).get("closed_by")).isEqualTo("expired");
+      assertThat(f.publications(AppointmentCancelled.class, id)).isEqualTo(1);
+    }
   }
 
   @Test

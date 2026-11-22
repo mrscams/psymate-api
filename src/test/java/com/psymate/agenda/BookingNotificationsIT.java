@@ -17,6 +17,7 @@ import com.psymate.testsupport.SharedMailpit;
 import com.psymate.testsupport.SharedPostgres;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -57,6 +58,7 @@ class BookingNotificationsIT {
   static final String REFUSED = "Votre demande n'a pas pu être acceptée";
   static final String CANCELLED = "Votre rendez-vous est annulé";
   static final String MOVED = "Votre rendez-vous est déplacé";
+  static final String MODIFIED = "Votre rendez-vous est modifié";
   static final String VISITOR_CANCELLED = "Rendez-vous en ligne annulé";
 
   private static final DateTimeFormatter DATE_FR =
@@ -217,7 +219,7 @@ class BookingNotificationsIT {
   // ---- déplacement
 
   @Test
-  void movingMailsBothDatesButNoteIdentityOrModalityChangesMailNothing() throws Exception {
+  void movingMailsBothDatesButNoteOrIdentityChangesMailNothing() throws Exception {
     Practitioner p = f.practitioner("auto");
     String email = applicantEmail();
     Instant before = slot(4, "09:00");
@@ -229,8 +231,6 @@ class BookingNotificationsIT {
         .andExpect(status().isOk());
     f.practitionerPatch(
             p, url(id, null), "{\"guest\":{\"lastName\":\"Benali\",\"firstName\":\"Sarah\"}}")
-        .andExpect(status().isOk());
-    f.practitionerPatch(p, url(id, null), "{\"modality\":\"in_person\"}")
         .andExpect(status().isOk());
     f.settle(id, mailer);
     assertThat(mails.countAllAfterQuiet(email)).as("aucun e-mail de plus").isEqualTo(1);
@@ -249,15 +249,106 @@ class BookingNotificationsIT {
                 + DATE_FR.format(before.atZone(PARIS))
                 + " à 09:00 (fuseau Europe/Paris)")
         .contains("Date : " + DATE_FR.format(after.atZone(PARIS)) + " à 11:00")
-        .contains("au cabinet")
+        .contains("en visioconférence")
         .contains("/rendez-vous/gerer/")
+        .doesNotContain("Durée modifiée")
+        .doesNotContain("Modalité modifiée")
         .doesNotContain("Note privée");
+  }
 
-    // Changer la durée déplace aussi la fin : un second e-mail.
+  @Test
+  void changingOnlyTheDurationGivesOldAndNewDurationNotTheSameDateTwice() throws Exception {
+    Practitioner p = f.practitioner("auto");
+    String email = applicantEmail();
+    UUID id = f.appointmentOf(f.verifiedRequest(p, slot(4, "10:00"), email));
+    f.settle(id, mailer);
+
     f.practitionerPatch(p, url(id, null), "{\"durationMin\":90}").andExpect(status().isOk());
     f.settle(id, mailer);
-    assertThat(mails.awaitCount(email, MOVED, 2)).isEqualTo(2);
-    assertThat(mails.countAfterQuiet(email, MOVED)).isEqualTo(2);
+
+    String text = mails.awaitText(email, MOVED);
+    assertThat(text).as("e-mail de déplacement").isNotNull();
+    assertThat(text)
+        .contains("Durée modifiée : 90 minutes (auparavant 60)")
+        .contains("Durée : 90 minutes")
+        .doesNotContain("Ancienne date");
+    assertThat(mails.countAfterQuiet(email, MOVED)).isEqualTo(1);
+  }
+
+  @Test
+  void changingOnlyTheModalityMailsModifiedWithANewLink() throws Exception {
+    Practitioner p = f.practitioner("manual");
+    String email = applicantEmail();
+    String first = f.verifiedRequest(p, slot(4, "11:00"), email);
+    UUID id = f.appointmentOf(first);
+    f.settle(id, mailer);
+
+    f.practitionerPatch(p, url(id, null), "{\"modality\":\"in_person\"}")
+        .andExpect(status().isOk());
+    f.settle(id, mailer);
+
+    String text = mails.awaitText(email, MODIFIED);
+    assertThat(text).as("e-mail de modification").isNotNull();
+    assertNeutral(MODIFIED, p);
+    assertThat(text)
+        .contains("Modalité modifiée : au cabinet (auparavant en visioconférence)")
+        .contains("(fuseau Europe/Paris)")
+        .contains("/rendez-vous/gerer/")
+        .doesNotContain("Ancienne date");
+    String second = manageTokenIn(text);
+    assertThat(second).hasSize(43).isNotEqualTo(first);
+    f.manage(first).andExpect(status().isNotFound());
+    f.manage(second)
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.modality").value("in_person"));
+    assertThat(mails.countAfterQuiet(email, MOVED)).isZero();
+    assertThat(mails.countAfterQuiet(email, MODIFIED)).isEqualTo(1);
+  }
+
+  @Test
+  void changingModalityAndDateSendsOnlyTheMoveWhichCitesTheModality() throws Exception {
+    Practitioner p = f.practitioner("auto");
+    String email = applicantEmail();
+    UUID id = f.appointmentOf(f.verifiedRequest(p, slot(5, "09:00"), email));
+    f.settle(id, mailer);
+
+    f.practitionerPatch(
+            p,
+            url(id, null),
+            "{\"startsAt\":\"" + slot(5, "11:00") + "\",\"modality\":\"in_person\"}")
+        .andExpect(status().isOk());
+    f.settle(id, mailer);
+
+    String text = mails.awaitText(email, MOVED);
+    assertThat(text).as("e-mail de déplacement").isNotNull();
+    assertThat(text)
+        .contains("Ancienne date : ")
+        .contains("Modalité modifiée : au cabinet (auparavant en visioconférence)");
+    assertThat(mails.countAfterQuiet(email, MOVED)).isEqualTo(1);
+    assertThat(mails.countAfterQuiet(email, MODIFIED)).isZero();
+  }
+
+  @Test
+  void movingIntoThePastSendsNoCancellationLinkAndKeepsTheLastLink() throws Exception {
+    Practitioner p = f.practitioner("auto");
+    String email = applicantEmail();
+    String token = f.verifiedRequest(p, slot(5, "10:00"), email);
+    UUID id = f.appointmentOf(token);
+    f.settle(id, mailer);
+
+    Instant past = Instant.now().minus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+    f.practitionerPatch(p, url(id, null), "{\"startsAt\":\"" + past + "\"}")
+        .andExpect(status().isOk());
+    f.settle(id, mailer);
+
+    String text = mails.awaitText(email, MOVED);
+    assertThat(text).as("e-mail de déplacement").isNotNull();
+    assertThat(text)
+        .contains("Ce rendez-vous a déjà commencé : il ne peut plus être annulé en ligne.")
+        .doesNotContain("/rendez-vous/gerer/")
+        .doesNotContain("annuler, ouvrez");
+    // Aucun lien émis : le dernier reste valable et dit qu'on ne peut plus annuler.
+    f.manage(token).andExpect(status().isOk()).andExpect(jsonPath("$.canCancel").value(false));
   }
 
   // ---- invité sans e-mail, rattaché à un patient
@@ -356,6 +447,111 @@ class BookingNotificationsIT {
       return statuses;
     } finally {
       pool.shutdownNow();
+    }
+  }
+
+  @Test
+  void afterConfirmationThenCancellationTheLastLinkStillShowsTheCancellation() throws Exception {
+    // G Q80 précisée (M14-07) : un e-mail sans lien ne remplace pas le dernier lien.
+    Practitioner p = f.practitioner("manual");
+    String email = applicantEmail();
+    UUID id = f.appointmentOf(f.verifiedRequest(p, slot(7, "10:00"), email));
+    f.settle(id, mailer);
+    f.practitionerPost(p, url(id, "confirm"), "{}").andExpect(status().isOk());
+    f.settle(id, mailer);
+    String last = manageTokenIn(mails.awaitText(email, CONFIRMED));
+
+    f.practitionerPost(p, url(id, "cancel"), "{\"reason\":\"Empêchement\"}")
+        .andExpect(status().isOk());
+    f.settle(id, mailer);
+
+    assertThat(mails.awaitText(email, CANCELLED)).doesNotContain("/rendez-vous/gerer/");
+    f.manage(last)
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("cancelled"))
+        .andExpect(jsonPath("$.cancelledBy").value("practitioner"));
+  }
+
+  @Test
+  void patchAndVisitorCancelInParallelLetExactlyOneWinAndSendOneEmail() throws Exception {
+    for (int round = 0; round < 3; round++) {
+      Practitioner p = f.practitioner("auto");
+      String email = applicantEmail();
+      String token = f.verifiedRequest(p, slot(8 + round, "11:00"), email);
+      UUID id = f.appointmentOf(token);
+      f.settle(id, mailer);
+      Instant moved = slot(8 + round, "09:00");
+
+      List<Integer> statuses =
+          race(
+              () ->
+                  f.practitionerPatch(p, url(id, null), "{\"startsAt\":\"" + moved + "\"}")
+                      .andReturn()
+                      .getResponse()
+                      .getStatus(),
+              () -> f.cancel(token).andReturn().getResponse().getStatus());
+      f.settle(id, mailer);
+
+      Map<String, Object> state = f.state(id);
+      if (statuses.get(0) == 200) {
+        // Déplacé d'abord : l'e-mail a remplacé le lien, l'ancien ne vaut plus.
+        assertThat(statuses.get(1)).isEqualTo(404);
+        assertThat(state.get("status")).isEqualTo("planned");
+        assertThat(mails.awaitCount(email, MOVED, 1)).isEqualTo(1);
+        assertThat(f.publications(AppointmentCancelled.class, id)).isZero();
+      } else {
+        assertThat(statuses).containsExactly(409, 200);
+        assertThat(state.get("status")).isEqualTo("cancelled");
+        assertThat(state.get("closed_by")).isEqualTo("visitor");
+        assertThat(mails.awaitCount(p.email(), VISITOR_CANCELLED, 1)).isEqualTo(1);
+        assertThat(f.publications(AppointmentCancelled.class, id)).isEqualTo(1);
+      }
+      assertThat(
+              mails.countAfterQuiet(email, MOVED)
+                  + mails.countAfterQuiet(p.email(), VISITOR_CANCELLED))
+          .as("un seul e-mail part")
+          .isEqualTo(1);
+    }
+  }
+
+  @Test
+  void attachPatientAndVisitorCancelInParallelNeverLoseTheAttachment() throws Exception {
+    for (int round = 0; round < 3; round++) {
+      Practitioner p = f.practitioner("manual");
+      String token = f.verifiedRequest(p, slot(8 + round, "10:00"), applicantEmail());
+      UUID id = f.appointmentOf(token);
+      UUID patient = UUID.randomUUID();
+      jdbc.update(
+          "insert into patient (id, tenant_id, owner_id, display_name) values (?, ?, ?, 'S. B.')",
+          patient,
+          f.tenant,
+          p.id());
+      f.settle(id, mailer);
+      boolean sameGuest = round % 2 == 1;
+
+      List<Integer> statuses =
+          race(
+              () ->
+                  f.practitionerPost(
+                          p,
+                          url(id, "attach-patient"),
+                          "{\"patientId\":\""
+                              + patient
+                              + "\",\"includeSameGuest\":"
+                              + sameGuest
+                              + "}")
+                      .andReturn()
+                      .getResponse()
+                      .getStatus(),
+              () -> f.cancel(token).andReturn().getResponse().getStatus());
+
+      assertThat(statuses).containsExactly(200, 200);
+      Map<String, Object> row = f.appointmentRow(id);
+      assertThat(row.get("patient_id")).as("rattachement gardé").isEqualTo(patient);
+      assertThat(row.get("guest_last_name")).isNull();
+      assertThat(row.get("guest_email")).isNull();
+      assertThat(row.get("status")).isEqualTo("cancelled");
+      assertThat(f.state(id).get("closed_by")).isEqualTo("visitor");
     }
   }
 

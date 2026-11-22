@@ -6,14 +6,16 @@ import com.psymate.agenda.model.BookingRequest;
 import com.psymate.agenda.repository.BookingRequestRepository;
 import com.psymate.directory.api.PublishedProfileFacade;
 import com.psymate.directory.api.PublishedProfileView;
-import java.time.Instant;
+import java.time.Clock;
 import java.util.Locale;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
 
 /**
  * E-mails de suivi au demandeur d'un rendez-vous pris en ligne (M14-07, G Q81) : confirmation,
- * refus, annulation et déplacement par le praticien, expiration de la demande.
+ * refus, annulation, déplacement et changement de modalité par le praticien, expiration de la
+ * demande. Un e-mail sans lien (refus, annulation, expiration, ou rendez-vous déjà commencé) laisse
+ * le dernier lien valable (G Q80 précisée).
  *
  * <p>Seul un rendez-vous d'origine {@code online} dont l'invité a encore un e-mail ({@code
  * guest_email} non nul : ni rattaché à un patient, ni purgé) et dont la demande existe encore est
@@ -32,16 +34,19 @@ public class BookingNotifier {
   private final BookingSettingsReader settings;
   private final PublishedProfileFacade profiles;
   private final BookingMailer mailer;
+  private final Clock clock;
 
   BookingNotifier(
       BookingRequestRepository requests,
       BookingSettingsReader settings,
       PublishedProfileFacade profiles,
-      BookingMailer mailer) {
+      BookingMailer mailer,
+      Clock clock) {
     this.requests = requests;
     this.settings = settings;
     this.profiles = profiles;
     this.mailer = mailer;
+    this.clock = clock;
   }
 
   /** Le praticien a confirmé la demande ({@code tentative → planned}). */
@@ -58,10 +63,19 @@ public class BookingNotifier {
   }
 
   /**
-   * Le praticien a déplacé le rendez-vous ou changé sa durée ; {@code previousStartsAt} : avant.
+   * PATCH du praticien ; {@code previous} : début, durée et modalité d'avant. Un seul e-mail : «
+   * déplacé » si le début ou la durée change (il cite aussi une nouvelle modalité), « modifié » si
+   * seule la modalité change, rien sinon (note, identité de l'invité).
    */
-  public void rescheduled(Appointment a, Instant previousStartsAt) {
-    notify(a, BookingMailer.FollowUp.RESCHEDULED, previousStartsAt);
+  public void changed(Appointment a, BookingMailer.Change previous) {
+    boolean moved =
+        !previous.startsAt().equals(a.getStartsAt().toInstant())
+            || previous.durationMin() != a.getDurationMin();
+    if (moved) {
+      notify(a, BookingMailer.FollowUp.RESCHEDULED, previous);
+    } else if (previous.modality() != a.getModality()) {
+      notify(a, BookingMailer.FollowUp.MODIFIED, previous);
+    }
   }
 
   /** La demande sans réponse a expiré ({@code BookingExpiryJob}). */
@@ -74,7 +88,7 @@ public class BookingNotifier {
     return a.getOrigin() == AppointmentOrigin.ONLINE && a.getGuestEmail() != null;
   }
 
-  private void notify(Appointment a, BookingMailer.FollowUp kind, Instant previousStartsAt) {
+  private void notify(Appointment a, BookingMailer.FollowUp kind, BookingMailer.Change previous) {
     if (!followed(a)) {
       return;
     }
@@ -84,7 +98,12 @@ public class BookingNotifier {
     }
     BookingRequest request = found.get();
     String manageToken = null;
-    if (kind.carriesLink()) {
+    // Déplacé ou modifié alors qu'il a déjà commencé, il ne s'annule plus (canCancel faux) : pas
+    // de lien, et le dernier lien reste valable pour en lire l'état. La confirmation porte
+    // toujours un lien.
+    if (kind.carriesLink()
+        && (kind == BookingMailer.FollowUp.CONFIRMED
+            || BookingRules.canCancel(a, clock.instant()))) {
       manageToken = BookingRules.newToken();
       request.replaceManageToken(BookingRules.sha256(manageToken));
     }
@@ -104,6 +123,6 @@ public class BookingNotifier {
     String token = manageToken;
     mailer.afterCommit(
         "follow-up " + kind.name().toLowerCase(Locale.ROOT),
-        () -> mailer.sendFollowUp(to, locale, kind, details, previousStartsAt, token));
+        () -> mailer.sendFollowUp(to, locale, kind, details, previous, token));
   }
 }

@@ -75,7 +75,7 @@ Décisions de l'API, inscrites dans le G de psymate-api (G10) par M14-01. Celles
 
 ### K3.4 Cas limites
 
-- **Deux personnes, même créneau.** Aucune ne retient le créneau avant de vérifier son e-mail. La première qui vérifie l'obtient ; la seconde lit « Ce créneau vient d'être pris » et choisit un autre créneau.
+- **Deux personnes, même créneau.** Aucune ne retient le créneau avant de vérifier son e-mail. La première qui vérifie l'obtient ; la seconde lit « Ce créneau n'est plus disponible. » et choisit un autre créneau.
 - **Le praticien pose un rendez-vous sur un créneau demandé mais pas encore vérifié.** Même issue : `409 SLOT_TAKEN` à la vérification.
 - **Le praticien désactive la fonction ou dépublie son profil.** Les pages publiques répondent `404`. Les rendez-vous déjà créés restent, et le lien de gestion continue de fonctionner.
 - **Le praticien change de mode.** Le mode appliqué est celui lu à la vérification. Les demandes déjà en attente restent en attente.
@@ -436,9 +436,10 @@ Objectif :
   - cancel d'un tentative par le praticien : « Votre demande n'a pas pu être acceptée », sans motif ;
   - cancel d'un planned par le praticien : « Votre rendez-vous est annulé », sans motif ;
   - PATCH qui change startsAt ou la durée : « Votre rendez-vous est déplacé », ancienne et nouvelle date ;
+  - PATCH qui ne change que la modalité : « Votre rendez-vous est modifié », nouvelle modalité, date, nouveau lien de gestion ; si le même PATCH change aussi la date ou la durée, un seul e-mail, celui du déplacement, qui cite aussi la modalité (précisé le 22 novembre 2026, G Q81) ;
   - PATCH qui ne change que la note ou l'identité de l'invité : aucun e-mail.
   Objets neutres (Q81), lien de gestion rappelé quand le rendez-vous reste actif, langue = booking_request.locale. Le cancel_reason du praticien n'est jamais transmis.
-- Le lien de gestion ne peut pas être reconstruit (seule son empreinte est stockée) : chaque e-mail de suivi émet un nouveau jeton de gestion et remplace manage_token_hash. Le lien le plus récent est le seul valable ; les gabarits le disent en une phrase.
+- Le lien de gestion ne peut pas être reconstruit (seule son empreinte est stockée) : chaque e-mail de suivi qui porte un lien émet un nouveau jeton de gestion et remplace manage_token_hash. Le lien le plus récent est le seul valable ; les gabarits le disent en une phrase. Les e-mails sans lien (refus, annulation, expiration) laissent le dernier lien valable, pour que le demandeur puisse encore lire l'état de sa demande (précisé le 22 novembre 2026, G Q80).
 - BookingExpiryJob (cron app.booking.expiry.cron, défaut toutes les 15 min ; app.booking.pending-ttl, défaut PT72H) : annule les rendez-vous origin = online, status = tentative, dont la vérification date de plus de pending-ttl ou dont starts_at est passé ; cancel_reason = libellé i18n « Demande expirée », booking_request.closed_by = expired, événement AppointmentCancelled, e-mail « Votre demande a expiré » au demandeur. run() appelable par les tests ; idempotent.
 - BookingPurgeJob (cron app.booking.purge.cron, défaut 0 45 3 * * * UTC) : supprime les lignes booking_request non vérifiées créées depuis plus de app.booking.unverified-retention (PT24H), et les lignes vérifiées dont le rendez-vous est terminé ou annulé depuis plus de app.booking.closed-retention (P30D). Journalise des nombres, jamais d'identité.
 - E9 est déjà à jour (M14-01) : le code doit lui correspondre exactement.

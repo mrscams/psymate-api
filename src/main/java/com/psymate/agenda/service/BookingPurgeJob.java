@@ -56,11 +56,23 @@ public class BookingPurgeJob {
       @Value("${app.booking.purge.cron:0 45 3 * * *}") String cron,
       @Value("${app.booking.unverified-retention:PT24H}") Duration unverifiedRetention,
       @Value("${app.booking.closed-retention:P30D}") Duration closedRetention) {
+    requirePositive(unverifiedRetention, "app.booking.unverified-retention");
+    requirePositive(closedRetention, "app.booking.closed-retention");
     this.requests = requests;
     this.clock = clock;
     this.cron = cron;
     this.unverifiedRetention = unverifiedRetention;
     this.closedRetention = closedRetention;
+  }
+
+  /**
+   * Une conservation absente, nulle ou négative effacerait des demandes encore utiles (lien de
+   * vérification en cours, rendez-vous à venir) : refusée au démarrage.
+   */
+  static void requirePositive(Duration value, String property) {
+    if (value == null || value.isNegative() || value.isZero()) {
+      throw new IllegalStateException(property + " doit être une durée positive");
+    }
   }
 
   @PostConstruct

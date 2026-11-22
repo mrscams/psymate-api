@@ -39,10 +39,12 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import tools.jackson.databind.JsonNode;
 
 /**
@@ -250,6 +252,44 @@ class PublicBookingVerifyIT {
     assertThat(f.appointmentsOf(p.id())).isEqualTo(1);
     assertThat(mails.countAfterQuiet(email, "Votre demande de rendez-vous")).isEqualTo(1);
     assertThat(mails.countAfterQuiet(p.email(), "Nouvelle demande de rendez-vous")).isEqualTo(1);
+  }
+
+  @Test
+  void alreadyVerifiedRequestStaysIdempotentAfterItsLinkHasExpired() throws Exception {
+    Practitioner p = f.practitioner("manual");
+    String token = f.pendingRequest(p, slot(3, "10:00"), applicantEmail());
+    JsonNode first = json(f.verify(token).andExpect(status().isOk()).andReturn());
+    // Le lien de vérification arrive à échéance après la vérification.
+    jdbc.update(
+        "update booking_request set verify_expires_at = now() - interval '1 hour'"
+            + " where verify_token_hash = ?",
+        sha256(token));
+
+    JsonNode second = json(f.verify(token).andExpect(status().isOk()).andReturn());
+
+    assertThat(second.path("status").asString()).isEqualTo("pending");
+    assertThat(second.path("startsAt")).isEqualTo(first.path("startsAt"));
+    assertThat(second.path("manageToken").isNull()).isTrue();
+    assertThat(f.appointmentsOf(p.id())).isEqualTo(1);
+  }
+
+  @Test
+  void slotTakenIsWordedNeutrallyInEnglish() throws Exception {
+    Practitioner p = f.practitioner("manual");
+    Instant startsAt = slot(5, "11:00");
+    f.verifiedRequest(p, startsAt, applicantEmail());
+    String second = f.pendingRequest(p, startsAt, applicantEmail());
+
+    mvc.perform(
+            PublicBookingFixtures.from(
+                    PublicBookingFixtures.freshIp(),
+                    MockMvcRequestBuilders.post(PublicBookingFixtures.BASE + "/requests/verify"))
+                .header("Accept-Language", "en")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"" + second + "\"}"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("SLOT_TAKEN"))
+        .andExpect(jsonPath("$.detail").value("This slot is no longer available."));
   }
 
   @Test

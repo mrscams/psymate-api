@@ -167,7 +167,14 @@ class PublicBookingManageIT {
     f.manage(token)
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("pending"))
-        .andExpect(jsonPath("$.practitioner.slug").isEmpty());
+        .andExpect(jsonPath("$.practitioner.slug").isEmpty())
+        .andExpect(jsonPath("$.practitioner.displayName").isEmpty());
+    // Présents et à null, plutôt qu'absents (K5.1).
+    JsonNode dto = json(f.manage(token).andReturn());
+    assertThat(dto.path("practitioner").has("slug")).isTrue();
+    assertThat(dto.path("practitioner").path("slug").isNull()).isTrue();
+    assertThat(dto.path("practitioner").has("displayName")).isTrue();
+    assertThat(dto.path("practitioner").path("displayName").isNull()).isTrue();
     f.cancel(token).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("cancelled"));
   }
 

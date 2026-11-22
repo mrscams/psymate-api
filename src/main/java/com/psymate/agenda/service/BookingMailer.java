@@ -223,8 +223,10 @@ public class BookingMailer {
     REFUSED("refused", false),
     /** Le praticien annule un rendez-vous confirmé, sans motif. */
     CANCELLED("cancelled", false),
-    /** Le praticien déplace le rendez-vous ou change sa durée. */
+    /** Le praticien déplace le rendez-vous ou change sa durée (et peut-être sa modalité). */
     RESCHEDULED("rescheduled", true),
+    /** Le praticien change seulement la modalité. */
+    MODIFIED("modified", true),
     /** Demande sans réponse annulée d'office ({@code BookingExpiryJob}, G Q82). */
     EXPIRED("expired", false);
 
@@ -236,9 +238,28 @@ public class BookingMailer {
       this.carriesLink = carriesLink;
     }
 
-    /** Le rendez-vous reste actif : l'e-mail porte un nouveau lien de gestion. */
+    /**
+     * Le rendez-vous reste actif : l'e-mail porte un nouveau lien de gestion, sauf s'il a déjà
+     * commencé (déplacé ou modifié dans le passé, le demandeur ne peut plus l'annuler).
+     */
     public boolean carriesLink() {
       return carriesLink;
+    }
+  }
+
+  /**
+   * Ce qui change dans un e-mail « déplacé » ou « modifié » : valeurs d'avant le PATCH. Une valeur
+   * égale à la nouvelle n'est pas citée.
+   *
+   * @param startsAt ancien début
+   * @param durationMin ancienne durée, en minutes
+   * @param modality ancienne modalité
+   */
+  public record Change(Instant startsAt, int durationMin, AppointmentModality modality) {
+
+    public Change {
+      Objects.requireNonNull(startsAt, "startsAt");
+      Objects.requireNonNull(modality, "modality");
     }
   }
 
@@ -247,37 +268,78 @@ public class BookingMailer {
    * dans son fuseau, la durée, la modalité ; jamais le motif d'annulation ni la note de
    * planification.
    *
-   * @param previousStartsAt ancien début, pour {@link FollowUp#RESCHEDULED} seulement
-   * @param manageToken nouveau jeton de gestion, si {@link FollowUp#carriesLink()}
+   * @param previous valeurs d'avant, pour {@link FollowUp#RESCHEDULED} et {@link FollowUp#MODIFIED}
+   *     seulement
+   * @param manageToken nouveau jeton de gestion ; obligatoire pour {@link FollowUp#CONFIRMED} ;
+   *     null pour un déplacement ou une modification d'un rendez-vous déjà commencé, dont l'e-mail
+   *     dit alors qu'il ne peut plus être annulé en ligne
    */
   public void sendFollowUp(
       String to,
       Locale locale,
       FollowUp kind,
       Details details,
-      Instant previousStartsAt,
+      Change previous,
       String manageToken) {
     Locale l = normalize(locale);
     String prefix = "booking.mail.followUp." + kind.key;
     String name = practitioner(details.practitionerName(), l);
     String link = manageToken == null ? null : webBaseUrl + "/rendez-vous/gerer/" + manageToken;
+    if (kind == FollowUp.CONFIRMED && link == null) {
+      throw new IllegalArgumentException("manageToken required for " + kind);
+    }
     Object[] args =
         switch (kind) {
           case CONFIRMED -> new Object[] {name, details(details, l), link, appName};
-          case RESCHEDULED ->
+          case RESCHEDULED, MODIFIED ->
               new Object[] {
                 name,
-                when(Objects.requireNonNull(previousStartsAt), details.zone(), l),
+                changes(Objects.requireNonNull(previous, "previous"), details, l),
                 details(details, l),
-                link,
+                link == null
+                    ? text("booking.mail.followUp.started", l)
+                    : text("booking.mail.followUp.link", l, link),
                 appName
               };
           case REFUSED, CANCELLED, EXPIRED -> new Object[] {name, details(details, l), appName};
         };
-    if (kind.carriesLink() && link == null) {
-      throw new IllegalArgumentException("manageToken required for " + kind);
-    }
     send(to, text(prefix + ".subject", l), text(prefix + ".body", l, args));
+  }
+
+  /** Lignes « ancienne date », « durée … au lieu de … », « modalité … au lieu de … ». */
+  String changes(Change previous, Details now, Locale locale) {
+    StringBuilder sb = new StringBuilder();
+    if (!previous.startsAt().equals(now.startsAt())) {
+      line(
+          sb,
+          text("booking.mail.change.date", locale, when(previous.startsAt(), now.zone(), locale)));
+    }
+    if (previous.durationMin() != now.durationMin()) {
+      line(
+          sb,
+          text(
+              "booking.mail.change.duration",
+              locale,
+              String.valueOf(previous.durationMin()),
+              String.valueOf(now.durationMin())));
+    }
+    if (previous.modality() != now.modality()) {
+      line(
+          sb,
+          text(
+              "booking.mail.change.modality",
+              locale,
+              text("booking.mail.modality." + previous.modality().name(), locale),
+              text("booking.mail.modality." + now.modality().name(), locale)));
+    }
+    return sb.toString();
+  }
+
+  private static void line(StringBuilder sb, String line) {
+    if (!sb.isEmpty()) {
+      sb.append('\n');
+    }
+    sb.append(line);
   }
 
   // ---- e-mails au praticien (adresse du compte, sa langue)

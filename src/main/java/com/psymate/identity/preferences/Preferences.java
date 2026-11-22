@@ -71,6 +71,9 @@ public final class Preferences {
 
   private static final Set<String> MODALITIES = Set.of("in_person", "video", "phone");
 
+  /** Identifiants tz connus de java.time, copiés une fois. */
+  private static final Set<String> ZONE_IDS = Set.copyOf(ZoneId.getAvailableZoneIds());
+
   private static final Map<String, Set<String>> ENUMS =
       Map.of(
           OVERVIEW_VIEW, Set.of("simple", "complete"),
@@ -214,11 +217,11 @@ public final class Preferences {
   }
 
   /**
-   * Identifiant régional IANA connu de java.time (par exemple Europe/Paris) : les décalages
+   * Identifiant de la base IANA (tz) connu de java.time (par exemple Europe/Paris) : les décalages
    * ("+02:00", "UTC+1") et les noms incomplets ("Paris") sont refusés.
    */
   private static boolean isRegionalZone(Object value) {
-    return value instanceof String s && ZoneId.getAvailableZoneIds().contains(s);
+    return value instanceof String s && ZONE_IDS.contains(s);
   }
 
   /**

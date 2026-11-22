@@ -141,7 +141,8 @@ record PreferencesSchema(
             name = "booking.confirmation",
             description =
                 "Confirmation des demandes de rendez-vous en ligne : manual = le praticien accepte"
-                    + " chaque demande, auto = rendez-vous confirmé dès la demande. Autre valeur :"
+                    + " chaque demande, auto = rendez-vous confirmé dès que le demandeur a vérifié"
+                    + " son e-mail. Autre valeur :"
                     + " 422 INVALID_VALUE. Défaut : manual.",
             allowableValues = {"manual", "auto"},
             example = "manual")
@@ -211,8 +212,9 @@ record PreferencesSchema(
     @Schema(
             name = "booking.timezone",
             description =
-                "Fuseau horaire des plages : identifiant régional IANA connu (par exemple"
-                    + " Europe/Paris, America/Montreal). Décalage (+02:00, UTC+1), nom incomplet"
+                "Fuseau horaire des plages : identifiant de la base IANA (tz) connu de java.time"
+                    + " (par exemple Europe/Paris, America/Montreal). Décalage (+02:00, UTC+1), nom"
+                    + " incomplet"
                     + " (Paris) ou autre type : 422 INVALID_VALUE. Défaut : Europe/Paris.",
             example = "Europe/Paris")
         String bookingTimezone) {

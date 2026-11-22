@@ -189,6 +189,7 @@ class PreferencesBookingIT {
         .isLessThan(raw.indexOf("\"14:00\""));
     // Les mêmes plages dans un autre ordre ne changent rien et ne publient rien de plus.
     int before = publishedChanges(id);
+    assertThat(before).isEqualTo(1);
     patchJson(
             id,
             "{\"booking.windows\":["
@@ -285,6 +286,11 @@ class PreferencesBookingIT {
         Arguments.of(
             "booking.windows",
             "[{\"day\":1,\"start\":\"09:00\",\"end\":\"12:00\",\"label\":\"matin\"}]",
+            "INVALID_VALUE"),
+        Arguments.of(
+            "booking.windows",
+            "[{\"day\":1,\"start\":\"09:00\",\"end\":\"12:00\"},"
+                + "{\"day\":1,\"start\":\"11:00\",\"end\":\"13:00\"}]",
             "INVALID_VALUE"),
         Arguments.of("booking.windows", twentyTwoWindows(), "OUT_OF_RANGE"),
         Arguments.of("booking.slotDurationMin", "10", "OUT_OF_RANGE"),

@@ -24,7 +24,7 @@ import org.springframework.data.domain.Persistable;
  * créé et est effacée ici ({@code ck_booking_request_identity}) : il ne reste que des empreintes
  * ({@code email_hash}) et des jetons hachés. {@code verified_at} et {@code appointment_id} sont
  * posés ensemble ({@code ck_booking_request_verified}). Les transitions (vérification, clôture) et
- * les purges arrivent avec M14-06 et M14-07 ; M14-04 ne pose que la correspondance de la table.
+ * les purges arrivent avec M14-06 ({@link #verify}, {@link #close}) et M14-07.
  */
 @Entity
 @Table(name = "booking_request")
@@ -122,6 +122,46 @@ public class BookingRequest implements Persistable<UUID> {
     this.verifyTokenHash = Objects.requireNonNull(verifyTokenHash);
     this.verifyExpiresAt = Objects.requireNonNull(verifyExpiresAt);
     this.createdAt = Objects.requireNonNull(createdAt);
+  }
+
+  // ---- transitions (M14-06)
+
+  /** {@code closed_by} : le demandeur a annulé par son lien de gestion. */
+  public static final String CLOSED_BY_VISITOR = "visitor";
+
+  /** {@code closed_by} : le praticien a refusé ou annulé. */
+  public static final String CLOSED_BY_PRACTITIONER = "practitioner";
+
+  /** {@code closed_by} : demande sans réponse expirée (M14-07). */
+  public static final String CLOSED_BY_EXPIRED = "expired";
+
+  /**
+   * Vérification de l'e-mail (G Q73, Q82 b) : rendez-vous créé, empreinte du lien de gestion,
+   * identité saisie effacée ({@code ck_booking_request_identity}). Une seule fois.
+   */
+  public void verify(OffsetDateTime at, UUID appointmentId, String manageTokenHash) {
+    if (verifiedAt != null) {
+      throw new IllegalStateException("booking request already verified");
+    }
+    this.verifiedAt = Objects.requireNonNull(at);
+    this.appointmentId = Objects.requireNonNull(appointmentId);
+    this.manageTokenHash = Objects.requireNonNull(manageTokenHash);
+    this.firstName = null;
+    this.lastName = null;
+    this.email = null;
+    this.phone = null;
+  }
+
+  /** Qui a clos la demande ; la première clôture est gardée. */
+  public void close(String by) {
+    if (closedBy == null) {
+      this.closedBy = Objects.requireNonNull(by);
+    }
+  }
+
+  /** Vrai une fois l'e-mail vérifié. */
+  public boolean isVerified() {
+    return verifiedAt != null;
   }
 
   // ---- lecture

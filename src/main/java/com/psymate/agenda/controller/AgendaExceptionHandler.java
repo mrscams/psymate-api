@@ -1,6 +1,8 @@
 package com.psymate.agenda.controller;
 
 import com.psymate.agenda.dto.AttachPatientRequest;
+import com.psymate.agenda.dto.BookingTokenRequest;
+import com.psymate.agenda.dto.CreateBookingRequest;
 import com.psymate.agenda.model.AppointmentException;
 import com.psymate.agenda.model.BookingException;
 import com.psymate.shared.problem.AdviceOrder;
@@ -48,7 +50,10 @@ class AgendaExceptionHandler {
   /** Contexte des messages de {@code POST /api/appointments/{id}/attach-patient}. */
   static final String ATTACH_SCOPE = "attach";
 
-  /** Contexte des messages des routes publiques de prise de rendez-vous (M14-05). */
+  /**
+   * Contexte des messages des routes publiques de prise de rendez-vous (M14-05, M14-06) : clés
+   * {@code agenda.error.booking.CODE} et {@code agenda.error.CODE.booking.champ}.
+   */
   static final String BOOKING_SCOPE = "booking";
 
   private final AgendaMessages messages;
@@ -96,7 +101,7 @@ class AgendaExceptionHandler {
     return switch (constraint) {
       case "NotBlank", "NotNull", "NotEmpty" -> "REQUIRED";
       case "Min", "Max", "Size", "Positive", "PositiveOrZero", "Range" -> "OUT_OF_RANGE";
-      case "Pattern" -> "INVALID_VALUE";
+      case "Pattern", "AssertTrue" -> "INVALID_VALUE";
       default -> "INVALID";
     };
   }
@@ -160,10 +165,25 @@ class AgendaExceptionHandler {
               : codeOf(String.valueOf(fe.getCode()));
       problems.add(new FieldProblem(fe.getField(), code));
     }
+    Object target = ex.getBindingResult().getTarget();
+    if (target instanceof CreateBookingRequest || target instanceof BookingTokenRequest) {
+      // Routes publiques de prise de rendez-vous (M14-06) : messages et instance fixe (G Q78).
+      return publicBooking(validation(problems, locale, BOOKING_SCOPE));
+    }
     // Rattachement d'un invité (G Q60) : patientId seul, sans l'alternative « ou un invité ».
-    String scope =
-        ex.getBindingResult().getTarget() instanceof AttachPatientRequest ? ATTACH_SCOPE : null;
+    String scope = target instanceof AttachPatientRequest ? ATTACH_SCOPE : null;
     return validation(problems, locale, scope);
+  }
+
+  /** {@code instance} fixe des routes publiques de prise de rendez-vous : jamais le slug. */
+  private static ProblemDetail publicBooking(ProblemDetail pd) {
+    pd.setInstance(BookingException.INSTANCE);
+    return pd;
+  }
+
+  private static boolean isPublicBooking(HttpServletRequest request) {
+    String uri = request.getRequestURI();
+    return uri != null && uri.startsWith(BookingException.INSTANCE.getPath() + "/");
   }
 
   /** Contraintes Jakarta des paramètres de requête (@Validated). */
@@ -198,15 +218,22 @@ class AgendaExceptionHandler {
   @ExceptionHandler(HttpMessageNotReadableException.class)
   ProblemDetail unreadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
     Locale locale = messages.localeOf(request);
-    for (Throwable t = ex.getCause(); t != null; t = t.getCause()) {
+    ProblemDetail pd = null;
+    for (Throwable t = ex.getCause(); t != null && pd == null; t = t.getCause()) {
       if (t instanceof MismatchedInputException mismatch && !mismatch.getPath().isEmpty()) {
-        return validation(List.of(new FieldProblem(path(mismatch), "INVALID_FORMAT")), locale);
-      }
-      if (t.getCause() == t) {
+        pd =
+            validation(
+                List.of(new FieldProblem(path(mismatch), "INVALID_FORMAT")),
+                locale,
+                isPublicBooking(request) ? BOOKING_SCOPE : null);
+      } else if (t.getCause() == t) {
         break;
       }
     }
-    return malformed(locale);
+    if (pd == null) {
+      pd = malformed(locale);
+    }
+    return isPublicBooking(request) ? publicBooking(pd) : pd;
   }
 
   private static String path(JacksonException ex) {

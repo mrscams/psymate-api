@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-22T15:13:11.207Z",
+  "task": "M14-06",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Demande en ligne (202 silencieux, pot de miel, plafonds), vérification de l'e-mail sous verrou par praticien, rendez-vous invité online tentative/planned, lien de gestion haché, manage et annulation par le demandeur, e-mails fr/en à objet neutre ; contrat 0.15.0",
+  "next": "M14-07",
+  "pr": "https://github.com/mrscams/psymate-api/pull/107",
+  "branch": "claude/m14-06-demande-en-ligne-v2",
+  "checkout": "m14-05-creneaux-publics-c5ceb0"
+}

@@ -20,8 +20,11 @@ import com.psymate.agenda.dto.UpdateAppointmentRequest;
 import com.psymate.agenda.model.Appointment;
 import com.psymate.agenda.model.AppointmentException;
 import com.psymate.agenda.model.AppointmentModality;
+import com.psymate.agenda.model.AppointmentOrigin;
 import com.psymate.agenda.model.AppointmentStatus;
+import com.psymate.agenda.model.BookingRequest;
 import com.psymate.agenda.repository.AppointmentRepository;
+import com.psymate.agenda.repository.BookingRequestRepository;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.patients.api.PatientAccessException;
@@ -59,6 +62,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AppointmentService {
 
   private final AppointmentRepository appointments;
+  private final BookingRequestRepository bookingRequests;
   private final AppointmentAssembler assembler;
   private final PatientOwnershipGuard guard;
   private final DomainEventPublisher events;
@@ -66,11 +70,13 @@ public class AppointmentService {
 
   public AppointmentService(
       AppointmentRepository appointments,
+      BookingRequestRepository bookingRequests,
       AppointmentAssembler assembler,
       PatientOwnershipGuard guard,
       DomainEventPublisher events,
       Clock clock) {
     this.appointments = appointments;
+    this.bookingRequests = bookingRequests;
     this.assembler = assembler;
     this.guard = guard;
     this.events = events;
@@ -272,7 +278,8 @@ public class AppointmentService {
 
   /**
    * Annule : idempotent (un second appel renvoie le rendez-vous inchangé, sans événement), 409 si
-   * {@code done}. Aucune suppression (G Q53).
+   * {@code done}. Aucune suppression (G Q53). Un rendez-vous pris en ligne clôt sa demande ({@code
+   * booking_request.closed_by = practitioner}, M14-06).
    */
   @Transactional
   public AppointmentDto cancel(UUID id, String reason) {
@@ -280,6 +287,12 @@ public class AppointmentService {
     boolean wasCancelled = appointment.getStatus() == AppointmentStatus.cancelled;
     appointment.cancel(reason, now());
     if (!wasCancelled) {
+      if (appointment.getOrigin() == AppointmentOrigin.ONLINE) {
+        // Demande en ligne refusée ou annulée par le praticien (K3.3, M14-06).
+        bookingRequests
+            .findByAppointmentId(appointment.getId())
+            .ifPresent(r -> r.close(BookingRequest.CLOSED_BY_PRACTITIONER));
+      }
       events.publish(event(AppointmentCancelled::new, appointment));
     }
     return assembler.toDto(appointment);

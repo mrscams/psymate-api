@@ -157,6 +157,38 @@ public class Appointment implements Persistable<UUID> {
     return a;
   }
 
+  /**
+   * Rendez-vous invité né d'une demande en ligne vérifiée (M14-06, G Q74) : origine {@code online},
+   * hors série, sans note de planification ; {@code tentative} en mode {@code manual}, {@code
+   * planned} en mode {@code auto}.
+   */
+  public static Appointment online(
+      UUID id,
+      UUID tenantId,
+      UUID practitionerId,
+      Guest guest,
+      OffsetDateTime startsAt,
+      OffsetDateTime endsAt,
+      AppointmentModality modality,
+      boolean tentative,
+      OffsetDateTime createdAt) {
+    Appointment a =
+        forGuest(
+            id,
+            tenantId,
+            practitionerId,
+            guest,
+            null,
+            startsAt,
+            endsAt,
+            modality,
+            tentative,
+            null,
+            createdAt);
+    a.origin = AppointmentOrigin.ONLINE;
+    return a;
+  }
+
   /** Identité d'un invité : nom obligatoire, prénom, téléphone et e-mail (V15) facultatifs. */
   public record Guest(String firstName, String lastName, String phone, String email) {
     public Guest {

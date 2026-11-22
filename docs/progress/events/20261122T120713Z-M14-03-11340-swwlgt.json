@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-22T12:07:13.058Z",
+  "task": "M14-03",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "PublishedProfileFacade dans directory.api (bySlug, byPractitioner) : vue practitionerId, tenantId, slug, displayName seulement pour une fiche publiée d'un praticien approuvé, sinon Optional vide sans distinction ; @Reserved jusqu'à M14-05 ; verify vert (1221 tests), reviewer 0 bloquant.",
+  "notes": "M14-05 doit retirer @Reserved de PublishedProfileFacade et ajouter directory :: api aux dépendances d'agenda.",
+  "pr": "https://github.com/mrscams/psymate-api/pull/102",
+  "branch": "claude/m14-03-published-profile-facade-91f4ee",
+  "checkout": "m14-03-published-profile-facade-91f4ee"
+}

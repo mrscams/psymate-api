@@ -4109,6 +4109,55 @@ components:
           example: https://cabinet.example
           type: string
       type: object
+    PublicBookingDto:
+      description: 'Prise de rendez-vous en ligne offerte par un praticien et ses réglages publics (G Q75) : ni les plages ouvertes, ni les rendez-vous, ni l''amplitude de travail.'
+      properties:
+        confirmation:
+          description: 'Mode de confirmation : manual, le praticien confirme ou refuse chaque demande ; auto, le rendez-vous est confirmé dès la vérification de l''e-mail.'
+          enum:
+          - manual
+          - auto
+          example: manual
+          type: string
+        displayName:
+          description: Nom affiché sur la fiche publique.
+          example: Claire Lambert
+          type: string
+        horizonDays:
+          description: 'Horizon, en jours : aucun créneau après la fin du jour aujourd''hui + horizonDays dans le fuseau du praticien.'
+          example: 28
+          format: int32
+          type: integer
+        minNoticeHours:
+          description: Délai minimal, en heures, entre maintenant et le début d'un créneau.
+          example: 24
+          format: int32
+          type: integer
+        modalities:
+          description: Modalités offertes, jamais vide, dans l'ordre in_person, video, phone.
+          items:
+            description: Modalité de consultation.
+            enum:
+            - in_person
+            - video
+            - phone
+            example: in_person
+            type: string
+          type: array
+        slotDurationMin:
+          description: Durée d'un créneau, en minutes (15 à 180).
+          example: 60
+          format: int32
+          type: integer
+        slug:
+          description: Adresse publique (slug) du praticien.
+          example: claire-lambert
+          type: string
+        timezone:
+          description: Fuseau IANA du praticien, dans lequel les créneaux s'affichent.
+          example: Europe/Paris
+          type: string
+      type: object
     PublicProfile:
       description: Fiche publique complète d'un praticien publié. Les coordonnées (phone, email, address) et professionalNumber sont null si le praticien ne les affiche pas.
       properties:
@@ -4212,6 +4261,33 @@ components:
         websiteUrl:
           description: Site web ; null si non renseigné.
           example: https://cabinet.example
+          type: string
+      type: object
+    PublicSlotDto:
+      description: 'Créneau offert à la prise de rendez-vous en ligne : son début et sa fin, sans identifiant, sans raison ni nombre de places. Seuls les créneaux libres sont publiés.'
+      properties:
+        endsAt:
+          description: 'Fin du créneau, UTC ISO 8601 : startsAt + slotDurationMin.'
+          example: 2026-12-07T09:00:00Z
+          format: date-time
+          type: string
+        startsAt:
+          description: Début du créneau, UTC ISO 8601.
+          example: 2026-12-07T08:00:00Z
+          format: date-time
+          type: string
+      type: object
+    PublicSlotsDto:
+      description: Créneaux offerts à la prise de rendez-vous en ligne sur une fenêtre de dates (G Q76).
+      properties:
+        slots:
+          description: Créneaux offerts, instants UTC triés par début ; vide si aucun créneau n'est libre.
+          items:
+            $ref: '#/components/schemas/PublicSlotDto'
+          type: array
+        timezone:
+          description: Fuseau IANA du praticien, dans lequel les dates from et to sont lues et les créneaux s'affichent.
+          example: Europe/Paris
           type: string
       type: object
     QueueDto:
@@ -12092,6 +12168,154 @@ paths:
       summary: Liste l'historique des versions de la fiche d'un patient
       tags:
       - Patients
+  /api/public/booking/practitioners/{slug}:
+    get:
+      description: 'Public, sans session ni cookie ; 60 requêtes par minute et par IP ; Cache-Control: no-store. La prise de rendez-vous est offerte si la fiche du praticien est publiée, le praticien approuvé, la fonction activée (booking.enabled) et au moins une plage ouverte. La réponse donne le mode de confirmation, la durée d''un créneau, les modalités, le fuseau, le délai minimal et l''horizon ; jamais les plages ouvertes ni les rendez-vous. Sinon 404 BOOKING_NOT_AVAILABLE, même corps quelle que soit la cause.'
+      operationId: getPublicBooking
+      parameters:
+      - description: Adresse publique (slug) du praticien.
+        example: claire-lambert
+        in: path
+        name: slug
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PublicBookingDto'
+          description: Prise de rendez-vous offerte ; réglages publics.
+          headers:
+            Cache-Control:
+              description: no-store.
+              schema:
+                type: string
+              style: simple
+        '404':
+          content:
+            application/problem+json:
+              examples:
+                BOOKING_NOT_AVAILABLE:
+                  description: BOOKING_NOT_AVAILABLE
+                  value:
+                    code: BOOKING_NOT_AVAILABLE
+                    detail: Prise de rendez-vous en ligne indisponible à cette adresse.
+                    instance: /api/public/booking
+                    status: 404
+                    title: Not Found
+                    type: about:blank
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'BOOKING_NOT_AVAILABLE : prise de rendez-vous non offerte à cette adresse. Même corps pour toutes les causes, sans les distinguer (G Q78) : slug inconnu, fiche non publiée, praticien non approuvé (suspendu, rejeté, clos), fonction désactivée, aucune plage ouverte.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : plus de 60 requêtes par minute depuis cette adresse IP sur les routes publiques ; en-tête Retry-After et champ retryAfterSeconds en secondes.'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Dit si la prise de rendez-vous en ligne est offerte, et avec quels réglages
+      tags:
+      - Prise de rendez-vous en ligne
+  /api/public/booking/practitioners/{slug}/slots:
+    get:
+      description: 'Public, sans session ni cookie ; 60 requêtes par minute et par IP ; Cache-Control: no-store. from et to sont des dates AAAA-MM-JJ dans le fuseau du praticien (timezone de la réponse), to inclus ; from absent = aujourd''hui dans ce fuseau, to absent = from + 13 jours ; 31 jours au plus. Chaque plage ouverte est découpée en créneaux de slotDurationMin minutes à partir de son début (le reste en fin de plage est ignoré). Un créneau est offert s''il commence au plus tôt maintenant + minNoticeHours, au plus tard le jour aujourd''hui + horizonDays, s''il ne chevauche aucun rendez-vous actif du praticien, et si aucun changement d''heure ne le traverse (une heure locale qui n''existe pas n''est jamais offerte, une heure répétée l''est une fois). Seuls les créneaux offerts sont publiés, en instants UTC triés par début : jamais un créneau pris, ni sa raison, ni un identifiant. Les vérifications se font dans cet ordre : 404, to avant from, fenêtre trop large.'
+      operationId: listPublicBookingSlots
+      parameters:
+      - description: Adresse publique (slug) du praticien.
+        example: claire-lambert
+        in: path
+        name: slug
+        required: true
+        schema:
+          type: string
+      - description: 'Premier jour, inclus, AAAA-MM-JJ dans le fuseau du praticien. Défaut : aujourd''hui dans ce fuseau.'
+        example: 2026-12-07T00:00:00Z
+        in: query
+        name: from
+        required: false
+        schema:
+          format: date
+          type: string
+      - description: 'Dernier jour, inclus, AAAA-MM-JJ dans le fuseau du praticien, au plus 30 jours après from. Défaut : from + 13 jours.'
+        example: 2026-12-20T00:00:00Z
+        in: query
+        name: to
+        required: false
+        schema:
+          format: date
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PublicSlotsDto'
+          description: Créneaux offerts de la fenêtre (liste vide si aucun n'est libre).
+          headers:
+            Cache-Control:
+              description: no-store.
+              schema:
+                type: string
+              style: simple
+        '404':
+          content:
+            application/problem+json:
+              examples:
+                BOOKING_NOT_AVAILABLE:
+                  description: BOOKING_NOT_AVAILABLE
+                  value:
+                    code: BOOKING_NOT_AVAILABLE
+                    detail: Prise de rendez-vous en ligne indisponible à cette adresse.
+                    instance: /api/public/booking
+                    status: 404
+                    title: Not Found
+                    type: about:blank
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'BOOKING_NOT_AVAILABLE : prise de rendez-vous non offerte à cette adresse. Même corps pour toutes les causes, sans les distinguer (G Q78) : slug inconnu, fiche non publiée, praticien non approuvé (suspendu, rejeté, clos), fonction désactivée, aucune plage ouverte.'
+        '422':
+          content:
+            application/problem+json:
+              examples:
+                WINDOW_TOO_LARGE:
+                  description: WINDOW_TOO_LARGE
+                  value:
+                    code: WINDOW_TOO_LARGE
+                    detail: La fenêtre demandée dépasse 31 jours.
+                    errors:
+                    - code: WINDOW_TOO_LARGE
+                      field: to
+                      message: La fenêtre demandée dépasse 31 jours.
+                    instance: /api/public/booking
+                    status: 422
+                    title: Unprocessable Content
+                    type: about:blank
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'VALIDATION_FAILED avec errors[] {field, code, message} : to INVALID_VALUE (to précède from) ; from ou to INVALID_FORMAT (date illisible, AAAA-MM-JJ attendu). WINDOW_TOO_LARGE avec errors[0].field = to : plus de 31 jours, to inclus.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : plus de 60 requêtes par minute depuis cette adresse IP sur les routes publiques ; en-tête Retry-After et champ retryAfterSeconds en secondes.'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Liste les créneaux offerts d'un praticien sur une fenêtre de dates
+      tags:
+      - Prise de rendez-vous en ligne
   /api/public/directory:
     get:
       description: 'Public, sans session ; limité à 60 requêtes par minute et par IP (429 RATE_LIMITED). Ne rend que les profils publiés d''un praticien approuvé (suspendu, clos ou rejeté : ni listé, ni trouvé par q, ni compté). Les filtres se cumulent ; pour specialties, modalities, audiences et languages une fiche est retenue si elle a au moins une des valeurs demandées. Réponse paginée par page de 20 (page, totalPages) ; au plus 500 fiches sont examinées avant pagination : total et compteurs de toutes les facettes sont exacts jusqu''à 500 fiches, au-delà ils portent sur les 500 premières dans l''ordre du tri (G Q48). La facette specialties ignore le filtre specialties (compteur d''un code = résultats qu''il donnerait seul). 200 avec Cache-Control: max-age=60, public.'
@@ -12904,6 +13128,8 @@ tags:
   name: 'Administration : vocabulaire de l''annuaire'
 - description: 'Agenda du praticien : rendez-vous planifiés, fenêtre de la grille, conflits d''un créneau et rendez-vous d''un patient. Dates en UTC ISO 8601 ; le client convertit dans le fuseau du praticien. Aucune synchronisation externe dans cette version.'
   name: Agenda
+- description: 'Pages publiques de prise de rendez-vous d''un praticien, sans compte ni session : réglages publics et créneaux offerts. Aucune réponse ne révèle un rendez-vous, un nom ou un créneau pris ; « non offerte » a une seule réponse, quelle qu''en soit la cause.'
+  name: Prise de rendez-vous en ligne
 - description: 'Ce qui décrit la personne elle-même, hors séance, rangé en quatre rubriques (history, family, health, values_goals) : lecture de tout le profil, ajout, correction sur place et retrait d''une information. Une information n''appartient à aucune séance et n''a pas d''historique de versions.'
   name: Profil 360
 - description: 'Rendez-vous de l''agenda du praticien : création depuis un créneau, détail, déplacement, annulation et confirmation. Un chevauchement n''est jamais bloquant : il est signalé dans conflicts. Un rendez-vous ne se supprime jamais.'

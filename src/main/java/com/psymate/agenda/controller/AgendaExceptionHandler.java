@@ -2,6 +2,7 @@ package com.psymate.agenda.controller;
 
 import com.psymate.agenda.dto.AttachPatientRequest;
 import com.psymate.agenda.model.AppointmentException;
+import com.psymate.agenda.model.BookingException;
 import com.psymate.shared.problem.AdviceOrder;
 import com.psymate.shared.problem.FieldProblem;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,6 +47,9 @@ class AgendaExceptionHandler {
 
   /** Contexte des messages de {@code POST /api/appointments/{id}/attach-patient}. */
   static final String ATTACH_SCOPE = "attach";
+
+  /** Contexte des messages des routes publiques de prise de rendez-vous (M14-05). */
+  static final String BOOKING_SCOPE = "booking";
 
   private final AgendaMessages messages;
 
@@ -115,6 +119,31 @@ class AgendaExceptionHandler {
     if (ex.field() != null) {
       pd.setProperty("errors", List.of(new FieldProblem(ex.field(), ex.code(), detail)));
     }
+    return pd;
+  }
+
+  /**
+   * Erreur des routes publiques de prise de rendez-vous (M14-05) : comme {@link #domain}, messages
+   * {@code agenda.error.booking.CODE} et {@code agenda.error.CODE.booking.champ}, et {@code
+   * instance} fixe ({@link BookingException#INSTANCE}) : le corps ne répète jamais le slug, et le
+   * 404 est le même quelle que soit sa cause (G Q78).
+   */
+  @ExceptionHandler(BookingException.class)
+  ProblemDetail booking(BookingException ex, HttpServletRequest request) {
+    Locale locale = messages.localeOf(request);
+    ProblemDetail pd;
+    if (ex.field() != null && !ex.code().equals(ex.fieldCode())) {
+      pd = validation(List.of(new FieldProblem(ex.field(), ex.fieldCode())), locale, BOOKING_SCOPE);
+    } else {
+      String detail = messages.domain(BOOKING_SCOPE + "." + ex.code(), ex.detail(), locale);
+      pd = ProblemDetail.forStatusAndDetail(ex.status(), detail);
+      pd.setTitle(ex.title());
+      pd.setProperty("code", ex.code());
+      if (ex.field() != null) {
+        pd.setProperty("errors", List.of(new FieldProblem(ex.field(), ex.code(), detail)));
+      }
+    }
+    pd.setInstance(BookingException.INSTANCE);
     return pd;
   }
 

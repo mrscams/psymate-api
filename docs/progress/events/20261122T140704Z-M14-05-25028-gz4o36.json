@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-22T14:07:04.116Z",
+  "task": "M14-05",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Créneaux publics : BookingSettings, BookingAvailability, SlotCalculator pur (40 tests), GET /api/public/booking/practitioners/{slug} et /slots, 404 BOOKING_NOT_AVAILABLE identiques, règle public-booking, agenda -> directory :: api, contrat 0.15.0 regénéré",
+  "next": "M14-06",
+  "pr": "https://github.com/mrscams/psymate-api/pull/106",
+  "branch": "claude/m14-05-creneaux-publics-c5ceb0",
+  "checkout": "m14-05-creneaux-publics-c5ceb0"
+}

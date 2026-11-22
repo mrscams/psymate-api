@@ -100,6 +100,13 @@ app:
         key: ip
         limit: 5
         period: 1h
+      # Prise de rendez-vous en ligne (G Q79) : creation d une demande, en plus de public-directory.
+      public-booking:
+        pattern: /api/public/booking/practitioners/*/requests
+        methods: POST
+        key: ip
+        limit: 5
+        period: 1h
       session:
         pattern: /api/**
         key: session

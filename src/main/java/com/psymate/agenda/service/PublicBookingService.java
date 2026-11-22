@@ -69,14 +69,26 @@ public class PublicBookingService {
     BookingSettings s = offer.settings();
     ZoneId zone = s.timezone();
     Instant now = clock.instant();
-    LocalDate first = from != null ? from : now.atZone(zone).toLocalDate();
-    LocalDate last = to != null ? to : first.plusDays(DEFAULT_WINDOW_DAYS - 1L);
+    LocalDate today = now.atZone(zone).toLocalDate();
+    LocalDate first = from != null ? from : today;
+    LocalDate last = to != null ? to : defaultLast(first);
     if (last.isBefore(first)) {
       throw BookingException.toBeforeFrom();
     }
     if (ChronoUnit.DAYS.between(first, last) + 1 > BookingException.MAX_WINDOW_DAYS) {
       throw BookingException.windowTooLarge();
     }
+    // Aucun créneau n'est offert avant aujourd'hui ni après aujourd'hui + horizonDays (Q76) : la
+    // fenêtre est ramenée à ces bornes avant toute lecture, ce qui garde aussi les dates extrêmes
+    // (an -5000, +999999999) loin de la base et de l'arithmétique des dates.
+    LocalDate lo = first.isBefore(today) ? today : first;
+    LocalDate horizonEnd = today.plusDays(s.horizonDays());
+    LocalDate hi = last.isAfter(horizonEnd) ? horizonEnd : last;
+    if (hi.isBefore(lo)) {
+      return new PublicSlotsDto(zone.getId(), List.of());
+    }
+    first = lo;
+    last = hi;
     Instant windowStart = first.atStartOfDay(zone).toInstant();
     Instant windowEnd = last.plusDays(1).atStartOfDay(zone).toInstant();
     List<SlotCalculator.Busy> busy =
@@ -97,5 +109,12 @@ public class PublicBookingService {
             .map(slot -> new PublicSlotDto(slot.startsAt(), slot.endsAt()))
             .toList();
     return new PublicSlotsDto(zone.getId(), slots);
+  }
+
+  /** from + 13 jours, sans dépasser {@link LocalDate#MAX} pour une date extrême. */
+  private static LocalDate defaultLast(LocalDate first) {
+    return first.isAfter(LocalDate.MAX.minusDays(DEFAULT_WINDOW_DAYS - 1L))
+        ? LocalDate.MAX
+        : first.plusDays(DEFAULT_WINDOW_DAYS - 1L);
   }
 }

@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.CacheControl;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -64,8 +63,12 @@ class PublicBookingController {
     this.service = service;
   }
 
+  /**
+   * 200 ; Cache-Control: no-store est posé une seule fois, pour toutes les réponses de ces routes
+   * (erreurs comprises), par {@code agenda.config.PublicBookingWebConfig}.
+   */
   private static <T> ResponseEntity<T> noStore(T body) {
-    return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(body);
+    return ResponseEntity.ok(body);
   }
 
   @GetMapping("/practitioners/{slug}")

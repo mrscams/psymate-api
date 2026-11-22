@@ -188,7 +188,7 @@ class PublicBookingSlotsIT {
     MvcResult result =
         anon(BASE + p.slug())
             .andExpect(status().isOk())
-            .andExpect(header().string("Cache-Control", "no-store"))
+            .andExpect(header().stringValues("Cache-Control", "no-store"))
             .andExpect(jsonPath("$.slug").value(p.slug()))
             .andExpect(jsonPath("$.displayName").value(org.hamcrest.Matchers.startsWith("Claire")))
             .andExpect(jsonPath("$.confirmation").value("auto"))
@@ -410,6 +410,31 @@ class PublicBookingSlotsIT {
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
         .andExpect(jsonPath("$.errors[0].field").value("from"))
         .andExpect(jsonPath("$.errors[0].code").value("INVALID_FORMAT"));
+  }
+
+  @Test
+  void pastFarFutureAndExtremeDatesGiveNoSlotsInsteadOfAnError() throws Exception {
+    Practitioner p = offeredPractitioner();
+    LocalDate today = today();
+
+    for (String query :
+        List.of(
+            "from=" + today.minusDays(20) + "&to=" + today.minusDays(1),
+            "from=" + today.plusDays(91) + "&to=" + today.plusDays(100),
+            "from=+999999999-12-31",
+            "from=+999999999-12-20&to=+999999999-12-31",
+            "from=-5000-01-01&to=-5000-01-01")) {
+      anon(BASE + p.slug() + "/slots?" + query)
+          .andExpect(status().isOk())
+          .andExpect(header().stringValues("Cache-Control", "no-store"))
+          .andExpect(jsonPath("$.timezone").value("Europe/Paris"))
+          .andExpect(jsonPath("$.slots.length()").value(0));
+    }
+
+    // Une fenêtre à cheval sur aujourd'hui ne garde que les jours offerts.
+    anon(BASE + p.slug() + "/slots?from=" + today.minusDays(10) + "&to=" + today.plusDays(3))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.slots.length()").value(org.hamcrest.Matchers.greaterThan(0)));
   }
 
   @Test

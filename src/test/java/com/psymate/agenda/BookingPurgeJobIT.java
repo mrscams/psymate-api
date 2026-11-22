@@ -76,8 +76,9 @@ class BookingPurgeJobIT {
         > 0;
   }
 
-  private int allAppointments() {
-    return jdbc.queryForObject("select count(*) from appointment", Integer.class);
+  private int allAppointments(Practitioner p) {
+    // Base partagée (B1) : on ne compte que les rendez-vous du praticien du test.
+    return f.appointmentsOf(p.id());
   }
 
   private UUID cancelledByThePractitioner(Practitioner p, Instant startsAt) throws Exception {
@@ -122,14 +123,14 @@ class BookingPurgeJobIT {
   void requestOfAnAppointmentCancelledThirtyOneDaysAgoIsDeletedAppointmentStays() throws Exception {
     Practitioner p = f.practitioner("manual");
     UUID id = cancelledByThePractitioner(p, slot(4, "09:00"));
-    int before = allAppointments();
+    int before = allAppointments(p);
 
     clock.advance(Duration.ofDays(31));
     assertThat(job.run().closed()).isGreaterThanOrEqualTo(1);
 
     assertThat(requestExists(id)).isFalse();
     assertThat(f.appointmentRow(id).get("status")).isEqualTo("cancelled");
-    assertThat(allAppointments()).isEqualTo(before);
+    assertThat(allAppointments(p)).isEqualTo(before);
   }
 
   @Test
@@ -177,12 +178,12 @@ class BookingPurgeJobIT {
     Practitioner p = f.practitioner("manual");
     cancelledByThePractitioner(p, slot(4, "11:00"));
     f.pendingRequest(p, slot(5, "11:00"), applicantEmail());
-    int before = allAppointments();
+    int before = allAppointments(p);
 
     clock.advance(Duration.ofDays(400));
     job.run();
 
-    assertThat(allAppointments()).isEqualTo(before);
+    assertThat(allAppointments(p)).isEqualTo(before);
     assertThat(f.appointmentsOf(p.id())).isEqualTo(1);
     assertThat(f.requestsOf(p.id())).isZero();
   }

@@ -207,13 +207,12 @@ class BookingExpiryJobIT {
   void expiryNeverDeletesAnAppointment() throws Exception {
     Practitioner p = f.practitioner("manual");
     f.verifiedRequest(p, slot(6, "11:00"), applicantEmail());
-    int before = jdbc.queryForObject("select count(*) from appointment", Integer.class);
+    // Base partagée (B1) : on ne compte que les rendez-vous du praticien du test.
+    assertThat(f.appointmentsOf(p.id())).isEqualTo(1);
 
     clock.advance(Duration.ofHours(73).plus(1, ChronoUnit.MINUTES));
     job.run();
 
-    assertThat(jdbc.queryForObject("select count(*) from appointment", Integer.class))
-        .isGreaterThanOrEqualTo(before);
     assertThat(f.appointmentsOf(p.id())).isEqualTo(1);
   }
 }

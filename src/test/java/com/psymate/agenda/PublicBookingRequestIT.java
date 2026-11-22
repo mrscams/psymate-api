@@ -23,6 +23,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
@@ -188,6 +194,41 @@ class PublicBookingRequestIT {
                 Integer.class,
                 p.id()))
         .isEqualTo(1);
+    assertThat(mails.awaitCount(email, VERIFY_SUBJECT, 3)).isEqualTo(3);
+    assertThat(mails.countAfterQuiet(email, VERIFY_SUBJECT)).isEqualTo(3);
+  }
+
+  @Test
+  void simultaneousRequestsOfTheSameAddressNeverExceedTheCap() throws Exception {
+    Practitioner p = f.practitioner("manual");
+    String email = applicantEmail();
+    int threads = 8;
+    CountDownLatch start = new CountDownLatch(1);
+    ExecutorService pool = Executors.newFixedThreadPool(threads);
+    try {
+      List<Future<Integer>> results = new ArrayList<>();
+      for (int i = 0; i < threads; i++) {
+        // Une IP par fil : la règle public-booking (5 par heure et par IP) n'intervient pas.
+        String ip = freshIp();
+        Callable<Integer> call =
+            () -> {
+              start.await();
+              return f.postRequest(p.slug(), request(slot(4, "10:00"), email), ip)
+                  .andReturn()
+                  .getResponse()
+                  .getStatus();
+            };
+        results.add(pool.submit(call));
+      }
+      start.countDown();
+      for (Future<Integer> r : results) {
+        assertThat(r.get(60, TimeUnit.SECONDS)).isEqualTo(202);
+      }
+    } finally {
+      pool.shutdownNow();
+    }
+
+    assertThat(f.requestsOf(p.id())).isEqualTo(3);
     assertThat(mails.awaitCount(email, VERIFY_SUBJECT, 3)).isEqualTo(3);
     assertThat(mails.countAfterQuiet(email, VERIFY_SUBJECT)).isEqualTo(3);
   }

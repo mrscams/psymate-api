@@ -101,4 +101,42 @@ public record CreateBookingRequest(
             format = "date-time",
             example = "2026-12-01T14:30:00Z")
         @NotNull
-        Instant formShownAt) {}
+        Instant formShownAt) {
+
+  /** Valeur masquée dans {@link #toString()}. */
+  static final String MASKED = "***";
+
+  /**
+   * Sans nom, prénom, e-mail ni téléphone en clair : un journal, une trace d'exception ou un
+   * message de validation qui imprime la requête ne révèle personne.
+   */
+  @Override
+  public String toString() {
+    return "CreateBookingRequest[startsAt="
+        + startsAt
+        + ", modality="
+        + modality
+        + ", firstName="
+        + mask(firstName)
+        + ", lastName="
+        + mask(lastName)
+        + ", email="
+        + mask(email)
+        + ", phone="
+        + mask(phone)
+        + ", locale="
+        + locale
+        + ", consent="
+        + consent
+        + ", website="
+        + (website == null || website.isEmpty() ? website : MASKED)
+        + ", formShownAt="
+        + formShownAt
+        + "]";
+  }
+
+  /** {@code null} reste {@code null} ; toute autre valeur devient {@link #MASKED}. */
+  static String mask(String value) {
+    return value == null ? null : MASKED;
+  }
+}

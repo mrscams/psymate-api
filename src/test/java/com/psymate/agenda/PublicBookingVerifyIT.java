@@ -14,6 +14,7 @@ import com.psymate.agenda.PublicBookingFixtures.Practitioner;
 import com.psymate.agenda.api.AppointmentPlanned;
 import com.psymate.testsupport.SharedMailpit;
 import com.psymate.testsupport.SharedPostgres;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -387,7 +388,9 @@ class PublicBookingVerifyIT {
     String manage = f.verifiedRequest(p, slot(7, "10:00"), email);
     f.cancel(manage).andExpect(status().isOk());
 
-    f.verify(f.pendingRequest(p, slot(9, "10:00"), email)).andExpect(status().isOk());
+    // Annulé : n'empêche pas une nouvelle demande.
+    String afterCancelled = f.pendingRequest(p, slot(9, "10:00"), email);
+    f.verify(afterCancelled).andExpect(status().isOk());
     assertThat(
             jdbc.queryForObject(
                 "select count(*) from appointment where practitioner_id = ? and status ="
@@ -395,6 +398,17 @@ class PublicBookingVerifyIT {
                 Integer.class,
                 p.id()))
         .isEqualTo(1);
+
+    // Passé : le rendez-vous actif ci-dessus est déplacé dans le passé (toujours tentative),
+    // il n'est plus « à venir » et n'empêche pas une troisième demande.
+    Instant start = Instant.now().minus(2, ChronoUnit.DAYS);
+    jdbc.update(
+        "update appointment set starts_at = ?, ends_at = ? where id = ?",
+        Timestamp.from(start),
+        Timestamp.from(start.plus(60, ChronoUnit.MINUTES)),
+        f.requestRow(afterCancelled).get("appointment_id"));
+    f.verify(f.pendingRequest(p, slot(10, "10:00"), email)).andExpect(status().isOk());
+    assertThat(f.appointmentsOf(p.id())).isEqualTo(3);
     // La ligne vérifiée ne garde ni identité ni adresse en clair.
     assertThat(
             jdbc.queryForObject(

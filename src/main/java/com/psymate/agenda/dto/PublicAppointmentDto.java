@@ -57,4 +57,29 @@ public record PublicAppointmentDto(
                     + " fois, par la première vérification réussie ; null dans toute autre"
                     + " réponse. Seule son empreinte est gardée : il ne peut pas être renvoyé.",
             example = "Zk3vN8xQ1wE5rT7yU9iO2pA4sD6fG8hJ0kL3zX5cV7b")
-        String manageToken) {}
+        String manageToken) {
+
+  /** Sans le jeton de gestion en clair : il vaut accès au rendez-vous. */
+  @Override
+  public String toString() {
+    return "PublicAppointmentDto[status="
+        + status
+        + ", cancelledBy="
+        + cancelledBy
+        + ", startsAt="
+        + startsAt
+        + ", endsAt="
+        + endsAt
+        + ", durationMin="
+        + durationMin
+        + ", modality="
+        + modality
+        + ", practitioner="
+        + practitioner
+        + ", canCancel="
+        + canCancel
+        + ", manageToken="
+        + CreateBookingRequest.mask(manageToken)
+        + "]";
+  }
+}

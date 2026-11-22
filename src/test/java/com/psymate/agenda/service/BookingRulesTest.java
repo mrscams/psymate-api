@@ -1,13 +1,23 @@
 package com.psymate.agenda.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.psymate.agenda.dto.BookingTokenRequest;
+import com.psymate.agenda.dto.CreateBookingRequest;
+import com.psymate.agenda.dto.PublicAppointmentDto;
+import com.psymate.agenda.dto.PublicAppointmentPractitionerDto;
+import com.psymate.agenda.model.AppointmentModality;
 import com.psymate.agenda.model.AppointmentStatus;
+import com.psymate.agenda.model.BookingRequest;
 import com.psymate.agenda.service.BookingRules.PublicStatus;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 /** Règles pures de la prise de rendez-vous en ligne (M14-06) : jetons, empreintes, états. */
@@ -133,5 +143,129 @@ class BookingRulesTest {
     assertThat(BookingMailer.localeOf("en").getLanguage()).isEqualTo("en");
     assertThat(BookingMailer.localeOf("fr").getLanguage()).isEqualTo("fr");
     assertThat(BookingMailer.localeOf(null).getLanguage()).isEqualTo("fr");
+  }
+
+  // ---- idempotence
+
+  @Test
+  void normalizationAndAddressHashAreIdempotent() {
+    String once = BookingRules.normalizeEmail(" Sara.Benali@Example.TEST ");
+    assertThat(BookingRules.normalizeEmail(once)).isEqualTo(once);
+    String hash = BookingRules.emailHash(once, SECRET);
+    for (String spelling :
+        new String[] {
+          "sara.benali@example.test",
+          "SARA.BENALI@EXAMPLE.TEST",
+          "  Sara.Benali@Example.test\t",
+          "sara.benali@example.test\u00a0",
+          once
+        }) {
+      assertThat(BookingRules.emailHash(spelling, SECRET)).as(spelling).isEqualTo(hash);
+      assertThat(BookingRules.emailHash(spelling, SECRET))
+          .isEqualTo(BookingRules.emailHash(spelling, SECRET));
+    }
+  }
+
+  @Test
+  void publicStateOfAVerifiedRequestIsStableAcrossReads() {
+    Instant startsAt = NOW.plusSeconds(86_400);
+    Instant endsAt = startsAt.plusSeconds(3600);
+    for (AppointmentStatus status : AppointmentStatus.values()) {
+      PublicStatus first = BookingRules.publicStatus(status, endsAt, NOW);
+      boolean cancellable = BookingRules.canCancel(status, startsAt, NOW);
+      for (int i = 0; i < 3; i++) {
+        assertThat(BookingRules.publicStatus(status, endsAt, NOW)).isEqualTo(first);
+        assertThat(BookingRules.canCancel(status, startsAt, NOW)).isEqualTo(cancellable);
+      }
+    }
+  }
+
+  @Test
+  void verifyingARequestIsOneShotAndClosingKeepsTheFirstCause() {
+    OffsetDateTime at = OffsetDateTime.of(2026, 12, 1, 10, 0, 0, 0, ZoneOffset.UTC);
+    BookingRequest request =
+        new BookingRequest(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            at.plusDays(2),
+            at.plusDays(2).plusHours(1),
+            AppointmentModality.video,
+            "Sara",
+            "Benali",
+            "sara@example.test",
+            null,
+            "fr",
+            "empreinte",
+            "jeton-hache",
+            at.plusMinutes(30),
+            at);
+    UUID appointment = UUID.randomUUID();
+    request.verify(at, appointment, "gestion-hachee");
+
+    assertThat(request.isVerified()).isTrue();
+    assertThat(request.getFirstName()).isNull();
+    assertThat(request.getLastName()).isNull();
+    assertThat(request.getEmail()).isNull();
+    assertThat(request.getPhone()).isNull();
+    // Une seconde vérification ne recrée rien : l'entité la refuse, le service rend l'état.
+    assertThatThrownBy(() -> request.verify(at.plusMinutes(1), UUID.randomUUID(), "autre"))
+        .isInstanceOf(IllegalStateException.class);
+    assertThat(request.getAppointmentId()).isEqualTo(appointment);
+    assertThat(request.getManageTokenHash()).isEqualTo("gestion-hachee");
+
+    request.close(BookingRequest.CLOSED_BY_VISITOR);
+    request.close(BookingRequest.CLOSED_BY_PRACTITIONER);
+    assertThat(request.getClosedBy()).isEqualTo(BookingRequest.CLOSED_BY_VISITOR);
+  }
+
+  // ---- journaux : aucune identité ni jeton en clair
+
+  @Test
+  void toStringOfRequestsAndPublicDtoMasksIdentityAndTokens() {
+    CreateBookingRequest request =
+        new CreateBookingRequest(
+            NOW,
+            "video",
+            "Sara",
+            "Benali",
+            "sara@example.test",
+            "+33 6 12 34 56 78",
+            "fr",
+            true,
+            "",
+            NOW.minusSeconds(30));
+    assertThat(request.toString())
+        .doesNotContain("Sara", "Benali", "sara@example.test", "12 34")
+        .contains("firstName=***", "email=***", "phone=***", "modality=video");
+    assertThat(
+            new CreateBookingRequest(
+                    NOW,
+                    "video",
+                    "Sara",
+                    "Benali",
+                    "sara@example.test",
+                    null,
+                    "fr",
+                    true,
+                    null,
+                    NOW)
+                .toString())
+        .contains("phone=null");
+
+    String token = BookingRules.newToken();
+    assertThat(new BookingTokenRequest(token).toString()).doesNotContain(token).contains("***");
+    PublicAppointmentDto dto =
+        new PublicAppointmentDto(
+            "pending",
+            null,
+            NOW,
+            NOW.plusSeconds(3600),
+            60,
+            "video",
+            new PublicAppointmentPractitionerDto("claire-lambert", "Claire Lambert"),
+            true,
+            token);
+    assertThat(dto.toString()).doesNotContain(token).contains("manageToken=***");
   }
 }

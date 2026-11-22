@@ -21,4 +21,11 @@ public record BookingTokenRequest(
             example = "q9Xw2v0sJb3L5mK8nH1cR4tY7uE6iO0pA2sD5fG8hJk")
         @NotBlank
         @Size(max = 200)
-        String token) {}
+        String token) {
+
+  /** Sans le jeton en clair : il vaut accès au rendez-vous. */
+  @Override
+  public String toString() {
+    return "BookingTokenRequest[token=" + CreateBookingRequest.mask(token) + "]";
+  }
+}

@@ -238,6 +238,16 @@ class PublicBookingManageIT {
     move(appointmentOf(past), start, start.plus(60, ChronoUnit.MINUTES));
     f.cancel(past).andExpect(status().isConflict());
 
+    // Séance tenue (done), même à une date encore à venir : 409 aussi.
+    String done = f.verifiedRequest(p, slot(5, "09:00"), applicantEmail());
+    jdbc.update("update appointment set status = 'done' where id = ?", appointmentOf(done));
+    f.manage(done)
+        .andExpect(jsonPath("$.status").value("past"))
+        .andExpect(jsonPath("$.canCancel").value(false));
+    f.cancel(done)
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("APPOINTMENT_NOT_ACTIVE"));
+
     assertThat(
             jdbc.queryForObject(
                 "select count(*) from appointment where practitioner_id = ? and status ="

@@ -170,6 +170,9 @@ public class BookingRequestService {
     }
     OffsetDateTime createdAt = now();
     String emailHash = BookingRules.emailHash(r.email(), hashSecret);
+    // Plafond par adresse (Q79) : comptage et insertion sous le verrou de l'empreinte, sinon des
+    // envois simultanés compteraient tous moins de 3 avant que le premier soit validé.
+    requests.lockEmail(emailHash);
     long recent = requests.countByEmailHashAndCreatedAtAfter(emailHash, createdAt.minusHours(1));
     if (BookingRules.emailCapReached(recent)) {
       LOG.debug("booking request ignored (address cap)");

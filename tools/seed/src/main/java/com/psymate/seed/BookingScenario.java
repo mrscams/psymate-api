@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -183,5 +184,99 @@ public final class BookingScenario {
     }
     // picked = [jour 0, jour 1, jour 2] -> [attente, attente, confirmé] = [1, 2, 0]
     return List.of(picked.get(1), picked.get(2), picked.get(0));
+  }
+
+  // ---- idempotence par demandeur
+
+  /** Les trois demandeurs de Claire, dans l'ordre des créneaux de {@link #choose}. */
+  public static List<Guest> guests() {
+    List<Guest> all = new ArrayList<>(PENDING);
+    all.add(CONFIRMED);
+    return List.copyOf(all);
+  }
+
+  /**
+   * Motifs d'annulation posés par l'expiration d'une demande sans réponse (G Q82, {@code
+   * booking.cancelReason.expired} en français et en anglais) : seule annulation tolérée.
+   */
+  static final Set<String> EXPIRED_REASONS = Set.of("Demande expirée", "Request expired");
+
+  /** Un rendez-vous d'origine online lu dans l'agenda de Claire ({@code AppointmentDto}). */
+  public record OnlineSeen(String guestEmail, String status, String cancelReason) {}
+
+  /** Où en est un demandeur dans l'agenda de Claire. */
+  public enum GuestState {
+    /** Aucun rendez-vous online à son adresse : à écrire. */
+    ABSENT,
+    /** {@code tentative} : demande en attente. */
+    PENDING,
+    /** {@code planned} ou {@code done} : rendez-vous confirmé. */
+    CONFIRMED,
+    /** Annulé d'office par l'expiration (G Q82) : toléré. */
+    EXPIRED,
+    /** Annulé autrement (refus, annulation) : anomalie pour le contrôle final. */
+    CANCELLED
+  }
+
+  /**
+   * État d'un demandeur : son meilleur rendez-vous online (confirmé, puis en attente, puis expiré,
+   * puis annulé), adresse comparée sans tenir compte de la casse ni des blancs.
+   */
+  public static GuestState state(Guest guest, List<OnlineSeen> seen) {
+    GuestState best = GuestState.ABSENT;
+    for (OnlineSeen a : seen) {
+      if (a.guestEmail() == null || !a.guestEmail().strip().equalsIgnoreCase(guest.email())) {
+        continue;
+      }
+      GuestState s =
+          switch (String.valueOf(a.status())) {
+            case "planned", "done" -> GuestState.CONFIRMED;
+            case "tentative" -> GuestState.PENDING;
+            default ->
+                a.cancelReason() != null && EXPIRED_REASONS.contains(a.cancelReason().strip())
+                    ? GuestState.EXPIRED
+                    : GuestState.CANCELLED;
+          };
+      if (rank(s) > rank(best)) {
+        best = s;
+      }
+    }
+    return best;
+  }
+
+  private static int rank(GuestState s) {
+    return switch (s) {
+      case ABSENT -> 0;
+      case CANCELLED -> 1;
+      case EXPIRED -> 2;
+      case PENDING -> 3;
+      case CONFIRMED -> 4;
+    };
+  }
+
+  /** Demandeurs sans aucun rendez-vous online : les seuls à écrire. */
+  public static List<Guest> toWrite(List<OnlineSeen> seen) {
+    return guests().stream().filter(g -> state(g, seen) == GuestState.ABSENT).toList();
+  }
+
+  /** Nadia est encore en attente : Claire doit la confirmer. */
+  public static boolean needsConfirmation(List<OnlineSeen> seen) {
+    return state(CONFIRMED, seen) == GuestState.PENDING;
+  }
+
+  /**
+   * Écarts du contrôle final : chaque demande en attente est {@code PENDING} et Nadia {@code
+   * CONFIRMED}, une expiration seule étant tolérée. Liste vide si tout est en place.
+   */
+  public static List<String> problems(List<OnlineSeen> seen) {
+    List<String> problems = new ArrayList<>();
+    for (Guest g : guests()) {
+      GuestState expected = g.equals(CONFIRMED) ? GuestState.CONFIRMED : GuestState.PENDING;
+      GuestState actual = state(g, seen);
+      if (actual != expected && actual != GuestState.EXPIRED) {
+        problems.add(g.email() + " : " + actual + " (attendu " + expected + ")");
+      }
+    }
+    return problems;
   }
 }

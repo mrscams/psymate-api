@@ -1,11 +1,14 @@
 package com.psymate.seed;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.psymate.seed.BookingScenario.Guest;
+import com.psymate.seed.BookingScenario.GuestState;
+import com.psymate.seed.BookingScenario.OnlineSeen;
 import com.psymate.seed.Plan.Practitioner;
 import java.time.Duration;
 import java.time.Instant;
@@ -54,6 +57,9 @@ class BookingScenarioTest {
     assertEquals("auto", p.get("booking.confirmation"));
     List<?> windows = (List<?>) p.get("booking.windows");
     assertTrue(!windows.isEmpty() && windows.size() <= 3);
+    assertEquals(45, p.get("booking.slotDurationMin"));
+    assertEquals(List.of("video", "phone"), p.get("booking.modalities"));
+    assertEquals("Europe/Paris", p.get("booking.timezone"));
     assertEquals(8, p.size());
   }
 
@@ -140,6 +146,125 @@ class BookingScenarioTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> LocalApproval.sql(List.of("a.seed@example.test' OR '1'='1")));
+  }
+
+  @Test
+  void slotsAtOrBeforeNowAreIgnored() {
+    List<Instant> offered =
+        List.of(
+            NOW.minus(Duration.ofHours(2)),
+            NOW,
+            at("2026-11-24", "09:00"),
+            at("2026-11-25", "09:00"),
+            at("2026-11-26", "09:00"));
+    List<Instant> chosen = BookingScenario.choose(offered, NOW);
+    assertEquals(3, chosen.size());
+    for (Instant s : chosen) {
+      assertTrue(s.isAfter(NOW), s.toString());
+    }
+    // seuls deux créneaux futurs : pas assez, les créneaux passés ne comptent pas
+    assertThrows(
+        SeedException.class,
+        () ->
+            BookingScenario.choose(
+                List.of(
+                    NOW.minusSeconds(60),
+                    NOW,
+                    at("2026-11-24", "09:00"),
+                    at("2026-11-25", "09:00")),
+                NOW));
+  }
+
+  // ---- idempotence par demandeur
+
+  private static final String INES = BookingScenario.PENDING.get(0).email();
+  private static final String HUGO = BookingScenario.PENDING.get(1).email();
+  private static final String NADIA = BookingScenario.CONFIRMED.email();
+
+  private static OnlineSeen seen(String email, String status) {
+    return new OnlineSeen(email, status, null);
+  }
+
+  @Test
+  void emptyAgendaWritesEveryGuestInOrder() {
+    assertEquals(BookingScenario.guests(), BookingScenario.toWrite(List.of()));
+    assertEquals(3, BookingScenario.problems(List.of()).size());
+    assertFalse(BookingScenario.needsConfirmation(List.of()));
+  }
+
+  @Test
+  void interruptedRunWritesOnlyMissingGuestsAndConfirmsNadia() {
+    // premier passage interrompu par un 429 : Inès écrite, Hugo et Nadia absents
+    List<OnlineSeen> afterInes = List.of(seen(INES, "tentative"));
+    assertEquals(
+        List.of(BookingScenario.PENDING.get(1), BookingScenario.CONFIRMED),
+        BookingScenario.toWrite(afterInes));
+
+    // premier passage interrompu avant la confirmation : rien à écrire, Nadia à confirmer
+    List<OnlineSeen> unconfirmed =
+        List.of(seen(INES, "tentative"), seen(HUGO, "tentative"), seen(NADIA, "tentative"));
+    assertTrue(BookingScenario.toWrite(unconfirmed).isEmpty());
+    assertTrue(BookingScenario.needsConfirmation(unconfirmed));
+    assertEquals(1, BookingScenario.problems(unconfirmed).size(), "Nadia pas encore confirmée");
+
+    // tout en place : rien à faire, aucun écart
+    List<OnlineSeen> done =
+        List.of(seen(INES, "tentative"), seen(HUGO, "tentative"), seen(NADIA, "planned"));
+    assertTrue(BookingScenario.toWrite(done).isEmpty());
+    assertFalse(BookingScenario.needsConfirmation(done));
+    assertEquals(List.of(), BookingScenario.problems(done));
+  }
+
+  @Test
+  void addressIsComparedWithoutCaseOrBlanks() {
+    List<OnlineSeen> seen =
+        List.of(
+            seen(" " + INES.toUpperCase(java.util.Locale.ROOT) + " ", "tentative"),
+            seen(null, "cancelled"), // invité purgé : ne compte pour personne
+            seen("autre@example.test", "tentative"));
+    assertEquals(GuestState.PENDING, BookingScenario.state(BookingScenario.PENDING.get(0), seen));
+    assertEquals(2, BookingScenario.toWrite(seen).size());
+  }
+
+  @Test
+  void onlyAnExpiryIsTolerated() {
+    List<OnlineSeen> expired =
+        List.of(
+            new OnlineSeen(INES, "cancelled", "Demande expirée"),
+            new OnlineSeen(HUGO, "cancelled", "Request expired"),
+            seen(NADIA, "planned"));
+    assertTrue(
+        BookingScenario.toWrite(expired).isEmpty(), "une demande expirée n'est pas réécrite");
+    assertEquals(
+        GuestState.EXPIRED, BookingScenario.state(BookingScenario.PENDING.get(0), expired));
+    assertEquals(List.of(), BookingScenario.problems(expired));
+
+    List<OnlineSeen> refused =
+        List.of(
+            new OnlineSeen(INES, "cancelled", "Créneau indisponible"),
+            seen(HUGO, "tentative"),
+            seen(NADIA, "planned"));
+    assertTrue(BookingScenario.toWrite(refused).isEmpty(), "présent, même annulé");
+    assertEquals(
+        GuestState.CANCELLED, BookingScenario.state(BookingScenario.PENDING.get(0), refused));
+    assertEquals(1, BookingScenario.problems(refused).size());
+
+    // une nouvelle demande active l'emporte sur une ancienne annulation
+    List<OnlineSeen> again =
+        List.of(new OnlineSeen(INES, "cancelled", "Créneau indisponible"), seen(INES, "tentative"));
+    assertEquals(GuestState.PENDING, BookingScenario.state(BookingScenario.PENDING.get(0), again));
+  }
+
+  @Test
+  void pgContainerNameIsValidated() {
+    assertTrue(LocalApproval.validContainer("psymate-api-postgres-1"));
+    assertTrue(LocalApproval.validContainer("m1408_pg.2"));
+    assertTrue(LocalApproval.validContainer("2b74bf6aed7d"));
+    assertFalse(LocalApproval.validContainer("-it"));
+    assertFalse(LocalApproval.validContainer("--privileged"));
+    assertFalse(LocalApproval.validContainer("pg; rm -rf /"));
+    assertFalse(LocalApproval.validContainer(""));
+    assertThrows(IllegalArgumentException.class, () -> new LocalApproval("-e"));
   }
 
   // ---- outils

@@ -32,13 +32,16 @@ import java.util.regex.Pattern;
  *   <li>chez Claire, trois demandes de visiteurs par le parcours public complet : {@code POST
  *       …/requests}, lien de vérification lu dans Mailpit comme pour la confirmation des comptes
  *       ({@link Accounts}), {@code POST /requests/verify} ; deux restent en attente, la troisième
- *       est confirmée par Claire ({@code POST /api/appointments/{id}/confirm}). Rien n'est écrit si
- *       Claire a déjà un rendez-vous d'origine {@code online} (annulé compris) autour
- *       d'aujourd'hui.
+ *       est confirmée par Claire ({@code POST /api/appointments/{id}/confirm}). Idempotence par
+ *       demandeur ({@link BookingScenario#toWrite}) : seul un demandeur sans aucun rendez-vous
+ *       {@code online} à son adresse dans la fenêtre (31 jours de part et d'autre d'aujourd'hui,
+ *       annulés compris) est écrit ; Nadia est confirmée si elle est encore en attente. Une relance
+ *       après une interruption (429, échec de confirmation) complète donc ce qui manque.
  * </ol>
  *
  * <p>Contrôle final, en lecture : fiche publique de réservation des deux praticiens ({@code 200}),
- * créneaux offerts chez Claire, demandes en attente ({@code GET /api/agenda/requests}).
+ * créneaux offerts chez les deux, et chaque demandeur à sa place ({@link BookingScenario#problems}
+ * : deux demandes en attente, Nadia confirmée, une expiration seule tolérée).
  */
 public final class BookingSeeder {
 
@@ -51,23 +54,25 @@ public final class BookingSeeder {
       String demoSlug,
       String secondSlug,
       List<String> approved,
-      boolean requestsAlreadyPresent,
+      int written,
+      boolean confirmedNow,
       int publicDemoStatus,
       int publicSecondStatus,
       int demoSlots,
       int secondSlots,
       int pendingRequests,
-      int confirmedOnline) {
+      List<String> problems) {
 
     /**
-     * Critères de M14-08 : fiches offertes, créneaux, et les deux demandes si elles sont neuves.
+     * Critères de M14-08 : les deux fiches offertes avec des créneaux, et chaque demandeur à sa
+     * place (deux en attente, Nadia confirmée ; une expiration seule est tolérée).
      */
     public boolean ok() {
       return publicDemoStatus == 200
           && publicSecondStatus == 200
           && demoSlots > 0
           && secondSlots > 0
-          && (requestsAlreadyPresent || (pendingRequests == 2 && confirmedOnline == 1));
+          && problems.isEmpty();
     }
 
     public String describe() {
@@ -77,10 +82,11 @@ public final class BookingSeeder {
           + demoSlots
           + " créneaux sur 28 jours, "
           + pendingRequests
-          + " demandes en attente, "
-          + confirmedOnline
-          + " rendez-vous en ligne confirmé"
-          + (requestsAlreadyPresent ? ", déjà présents" : "")
+          + " demandes en attente ; "
+          + written
+          + " demande(s) écrite(s)"
+          + (confirmedNow ? ", Nadia confirmée" : "")
+          + (problems.isEmpty() ? "" : " ; écarts : " + String.join(", ", problems))
           + "), Karim /"
           + secondSlug
           + " (auto, "
@@ -112,9 +118,15 @@ public final class BookingSeeder {
     configure(claire, Practitioner.CLAIRE);
     configure(karim, Practitioner.KARIM);
 
-    boolean already = hasOnlineAppointment(claire);
-    if (!already) {
-      writeRequests(claire, demoSlug);
+    // idempotence par demandeur : seuls les absents sont écrits, Nadia est confirmée si besoin
+    List<Guest> toWrite = BookingScenario.toWrite(seen(claire));
+    if (!toWrite.isEmpty()) {
+      writeRequests(demoSlug, toWrite);
+    }
+    boolean confirmedNow = false;
+    if (BookingScenario.needsConfirmation(seen(claire))) {
+      confirm(claire);
+      confirmedNow = true;
     }
 
     ApiClient visitor = new ApiClient(apiUrl, 0);
@@ -123,13 +135,14 @@ public final class BookingSeeder {
         demoSlug,
         secondSlug,
         approved,
-        already,
+        toWrite.size(),
+        confirmedNow,
         visitor.get(PUBLIC + demoSlug).status(),
         visitor.get(PUBLIC + secondSlug).status(),
         slots(visitor, demoSlug, today, today.plusDays(28)).size(),
         slots(visitor, secondSlug, today, today.plusDays(28)).size(),
         pending(claire).size(),
-        (int) online(claire).stream().filter(a -> "planned".equals(a.get("status"))).count());
+        BookingScenario.problems(seen(claire)));
   }
 
   // ---- approbation (seule écriture SQL)
@@ -191,29 +204,38 @@ public final class BookingSeeder {
 
   // ---- demandes de visiteurs (Claire)
 
-  private void writeRequests(ApiClient claire, String slug) {
+  /**
+   * Parcours public des demandeurs absents, chacun sur le créneau que {@link
+   * BookingScenario#choose} lui donne parmi les créneaux encore offerts.
+   */
+  private void writeRequests(String slug, List<Guest> absent) {
     ApiClient visitor = new ApiClient(apiUrl, 0);
     visitor.get(PUBLIC + slug, 200);
     LocalDate today = LocalDate.now(BookingScenario.ZONE);
     List<Instant> offered = slots(visitor, slug, today, today.plusDays(8));
     List<Instant> chosen = BookingScenario.choose(offered, Instant.now());
-    List<Guest> guests = new ArrayList<>(BookingScenario.PENDING);
-    guests.add(BookingScenario.CONFIRMED);
+    List<Guest> guests = BookingScenario.guests();
     for (int i = 0; i < guests.size(); i++) {
-      request(visitor, slug, guests.get(i), chosen.get(i));
+      if (absent.contains(guests.get(i))) {
+        request(visitor, slug, guests.get(i), chosen.get(i));
+      }
     }
-    Instant confirmedAt = chosen.get(2);
+  }
+
+  /** Claire confirme la demande de Nadia, encore en attente. */
+  private static void confirm(ApiClient claire) {
     String id = null;
-    for (Map<?, ?> a : pending(claire)) {
-      if (a.get("guest") instanceof Map<?, ?> g
-          && BookingScenario.CONFIRMED.email().equals(g.get("email"))
-          && Instant.parse(String.valueOf(a.get("startsAt"))).equals(confirmedAt)) {
+    for (Map<?, ?> a : online(claire)) {
+      if ("tentative".equals(a.get("status"))
+          && a.get("guest") instanceof Map<?, ?> g
+          && g.get("email") instanceof String email
+          && email.strip().equalsIgnoreCase(BookingScenario.CONFIRMED.email())) {
         id = String.valueOf(a.get("id"));
       }
     }
     if (id == null) {
       throw new SeedException(
-          "Demande de " + BookingScenario.CONFIRMED.email() + " absente de /api/agenda/requests.");
+          "Demande en attente de " + BookingScenario.CONFIRMED.email() + " introuvable.");
     }
     claire.post("/api/appointments/" + id + "/confirm", null, 200);
   }
@@ -248,7 +270,17 @@ public final class BookingSeeder {
     String token = awaitVerifyToken(guest.email(), before);
     Map<String, Object> verify = new LinkedHashMap<>();
     verify.put("token", token);
-    visitor.post("/api/public/booking/requests/verify", verify, 200);
+    Response v = visitor.post("/api/public/booking/requests/verify", verify);
+    if (v.status() == 429) {
+      throw new SeedException(
+          "Vérification de la demande de "
+              + guest.email()
+              + " refusée (429) : plafond de 60 requêtes publiques par minute et par IP atteint ;"
+              + " relance le seed dans une minute (seuls les demandeurs absents seront écrits).");
+    }
+    if (v.status() != 200) {
+      throw new ApiClient.ApiException("POST", "/api/public/booking/requests/verify", v);
+    }
   }
 
   private Set<String> messageIds(String email) {
@@ -303,9 +335,20 @@ public final class BookingSeeder {
 
   /** Créneaux offerts de {@code from} à {@code to} inclus (dates du fuseau du praticien). */
   private static List<Instant> slots(ApiClient visitor, String slug, LocalDate from, LocalDate to) {
-    Response r = visitor.get(PUBLIC + slug + "/slots?from=" + from + "&to=" + to);
+    String path = PUBLIC + slug + "/slots?from=" + from + "&to=" + to;
+    Response r = visitor.get(path);
+    if (r.status() == 429) {
+      throw new SeedException(
+          "GET "
+              + path
+              + " refusé (429) : plafond de 60 requêtes publiques par minute et par IP atteint ;"
+              + " relance le seed dans une minute.");
+    }
+    if (r.status() != 200) {
+      throw new ApiClient.ApiException("GET", path, r);
+    }
     List<Instant> slots = new ArrayList<>();
-    if (r.status() == 200 && r.json().get("slots") instanceof List<?> list) {
+    if (r.json().get("slots") instanceof List<?> list) {
       for (Object o : list) {
         if (o instanceof Map<?, ?> s) {
           slots.add(Instant.parse(String.valueOf(s.get("startsAt"))));
@@ -341,8 +384,19 @@ public final class BookingSeeder {
     return online;
   }
 
-  private static boolean hasOnlineAppointment(ApiClient api) {
-    return !online(api).isEmpty();
+  /** Les rendez-vous online de la fenêtre, réduits à ce que décide {@link BookingScenario}. */
+  private static List<BookingScenario.OnlineSeen> seen(ApiClient api) {
+    List<BookingScenario.OnlineSeen> seen = new ArrayList<>();
+    for (Map<?, ?> a : online(api)) {
+      Object email = a.get("guest") instanceof Map<?, ?> g ? g.get("email") : null;
+      Object reason = a.get("cancelReason");
+      seen.add(
+          new BookingScenario.OnlineSeen(
+              email == null ? null : email.toString(),
+              String.valueOf(a.get("status")),
+              reason == null ? null : reason.toString()));
+    }
+    return seen;
   }
 
   private static List<Map<?, ?>> maps(Object value) {

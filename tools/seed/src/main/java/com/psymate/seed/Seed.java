@@ -62,6 +62,13 @@ public final class Seed {
     if (size == null || !Set.of("small", "medium", "demo").contains(size)) {
       throw new Refused("Option --size obligatoire : small, medium ou demo.\n" + usage());
     }
+    String pgContainer = options.get("pg-container");
+    if (pgContainer != null && !LocalApproval.validContainer(pgContainer)) {
+      throw new Refused(
+          "--pg-container : nom de conteneur invalide (« "
+              + pgContainer
+              + " ») ; attendu [A-Za-z0-9][A-Za-z0-9_.-]*.");
+    }
     guard(api, mailpit);
 
     Plan plan =
@@ -101,7 +108,7 @@ public final class Seed {
     if (!"demo".equals(size)) {
       seedAgenda(plan, runner, seed, out);
       booking =
-          new BookingSeeder(api, mailpit, new LocalApproval(options.get("pg-container")))
+          new BookingSeeder(api, mailpit, new LocalApproval(pgContainer))
               .seed(runner.mainClient(Practitioner.CLAIRE), runner.mainClient(Practitioner.KARIM));
       out.println(booking.describe());
     }

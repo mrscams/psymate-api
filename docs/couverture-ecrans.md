@@ -97,4 +97,4 @@ API livrée par M14-02 à M14-07 dans le module `agenda` (contrat `0.15.0`, K5) 
 | Agenda : demandes en ligne, compteur « Demandes », Confirmer / Refuser | `15-agenda.md` | `GET /api/agenda/requests`, `POST /api/appointments/{id}/confirm`, `POST /api/appointments/{id}/cancel` ; `AppointmentDto.origin`, `guest.email` | Claire : 2 demandes `tentative` d'origine `online` dans les sept jours, 1 rendez-vous en ligne `planned` |
 | Rattacher l'invité à un patient | `15b-nouveau-rendez-vous.md` (détail du rendez-vous) | `POST /api/appointments/{id}/attach-patient` (existant) | les trois rendez-vous en ligne de Claire |
 
-En mode `manual`, une demande sans réponse est annulée d'office 72 h après sa vérification (G Q82) : pour retrouver les deux demandes en attente, `make db-reset` puis `make seed`.
+En mode `manual`, une demande sans réponse est annulée d'office 72 h après sa vérification ou au début du créneau si c'est plus tôt (G Q82) : pour retrouver les deux demandes en attente, `make db-reset` puis `make seed`.

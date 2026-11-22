@@ -15,15 +15,16 @@ import java.util.regex.Pattern;
  * Approbation des comptes du seed, <b>seule écriture SQL du seed</b> (M14-08).
  *
  * <p>Une fiche n'est publiée, et la prise de rendez-vous offerte, que pour un praticien approuvé (G
- * Q71, Q75). L'approbation n'a qu'un chemin dans l'application : la décision d'un administrateur
- * ({@code POST /api/admin/verifications/{id}/decision}), qui exige un compte administrateur créé
- * par la commande {@code make admin} (une seconde application Spring Boot, mot de passe à usage
- * unique affiché une fois), un changement de mot de passe et une double authentification TOTP
- * active, plus un dossier de justificatifs déposé par le praticien. Rien de cela n'est à la portée
- * d'un client de l'API locale. Le seed pose donc ce seul état en SQL, dans le Postgres de {@code
- * make up} : {@code verification_status = 'approved'} et {@code verified_at} pour les comptes du
- * seed (adresses {@code *.seed@example.test}) encore en attente de vérification. Tout le reste
- * passe par l'API.
+ * Q71, Q75). Dans l'application, l'approbation est la décision d'un administrateur ({@code POST
+ * /api/admin/verifications/{id}/decision}). La passer par l'API serait possible mais
+ * disproportionné pour un seed : il faudrait lancer une seconde application ({@code make admin}) et
+ * lire son mot de passe à usage unique, activer la double authentification TOTP, déposer un
+ * justificatif pour chaque praticien, et laisser en base un compte administrateur durable dont
+ * personne n'a besoin. Les IT approuvent déjà leurs praticiens en SQL ({@code
+ * PublicBookingFixtures}, par exemple). Le seed pose donc ce seul état en SQL, dans le Postgres de
+ * {@code make up} : {@code verification_status = 'approved'} et {@code verified_at} pour les
+ * comptes du seed (adresses {@code *.seed@example.test}) encore en attente de vérification. Tout le
+ * reste passe par l'API.
  *
  * <p>Exécution : {@code docker exec -i <conteneur> psql} ; conteneur donné par {@code
  * --pg-container}, sinon celui du service {@code postgres} de {@code docker compose} (fichier
@@ -40,7 +41,18 @@ public final class LocalApproval {
    * @param container nom ou identifiant du conteneur Postgres ; null pour celui de docker compose
    */
   public LocalApproval(String container) {
+    if (container != null && !validContainer(container)) {
+      throw new IllegalArgumentException("Nom de conteneur invalide : " + container);
+    }
     this.container = container;
+  }
+
+  /** Nom ou identifiant de conteneur Docker ; jamais une option (rien ne commence par « - »). */
+  private static final Pattern CONTAINER = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9_.-]*$");
+
+  /** {@code --pg-container} acceptable : motif de Docker, sans tiret initial. */
+  public static boolean validContainer(String name) {
+    return name != null && CONTAINER.matcher(name).matches();
   }
 
   /** Requête d'approbation : ne touche que des comptes praticiens en attente de vérification. */

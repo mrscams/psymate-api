@@ -33,12 +33,12 @@ Marquages : **[À valider pilotes]** = contenu clinique livré avec les valeurs 
 | Événements | `events` | `event_publication` | Outbox Spring Modulith |
 | Projections | `search`, `overview` | `patient_overview` (+ colonne `entry.search_vector` et ses triggers) | Lecture rapide |
 | Annuaire | `directory` | `practitioner_profile`, `directory_vocabulary`, `contact_request` | Profil public, liste fermée des spécialités et publics, relais de contact |
-| Agenda (M11, 15 novembre 2026) | `agenda` | `appointment` | Rendez-vous planifiés, séries, annulation par statut, rendez-vous invités purgés à 6 mois (E3.14, V12, V13, G Q50–Q60) |
+| Agenda (M11, 15 novembre 2026) | `agenda` | `appointment`, `booking_request` | Rendez-vous planifiés, séries, annulation par statut, rendez-vous invités purgés à 6 mois (E3.14, V12, V13, G Q50–Q60) ; prise de rendez-vous en ligne (M14, 22 novembre 2026) : origine d'un rendez-vous, e-mail de l'invité, demandes publiques vérifiées par e-mail (E3.14, V15, G Q71–Q82) |
 | **Réservé V2** | `ai` | `entry_embedding`, `entry_chunk`, `ai_feedback` | Vides en V1 |
 | **Réservé compagnon** | `companion` | `patient_device`, `patient_submission` + colonnes `entry.author_type`, `entry.submission_id` | Vides en V1 |
 | **Conditionnel** | `directory`, `identity.admin` (V1.1, G Q26) ; synchronisation Google de l'agenda (M12, hors V1, G Q51) | `directory_profile_version`, `directory_report` ; `practitioner_integration` et colonnes `google_event_id`, `google_etag`, `source` d'`appointment` | DDL prêt, pas de migration en V1 |
 
-Quarante et une tables (trente-neuf au 27 octobre 2026, plus `appointment` ajoutée le 15 novembre 2026 par V12, jalon M11, et `patient_profile_item` ajoutée le 18 novembre 2026 par V14, jalon M13), dont six réservées et vides (`entry_embedding`, `entry_chunk`, `ai_feedback`, `patient_device`, `patient_submission`, `patient_access`), plus trois conditionnelles. Le DDL complet a été exécuté sur un PostgreSQL 16 vierge le 27 octobre 2026 (hors extension `vector`, remplacée pour le test) : il s'applique sans erreur, le seed compte 6 types, 29 émotions et 8 types de liens, et les contraintes `ck_entry_session_required`, `ux_link_active`, `ck_link_not_self`, `ck_decision_message` et les deux triggers `search_vector` se comportent comme décrit. Les tables `directory_vocabulary` et `export_job` (ajoutées le 29 octobre) n'ont pas encore été rejouées.
+Quarante-deux tables (trente-neuf au 27 octobre 2026, plus `appointment` ajoutée le 15 novembre 2026 par V12, jalon M11, `patient_profile_item` ajoutée le 18 novembre 2026 par V14, jalon M13, et `booking_request` ajoutée le 22 novembre 2026 par V15, jalon M14), dont six réservées et vides (`entry_embedding`, `entry_chunk`, `ai_feedback`, `patient_device`, `patient_submission`, `patient_access`), plus trois conditionnelles. Le DDL complet a été exécuté sur un PostgreSQL 16 vierge le 27 octobre 2026 (hors extension `vector`, remplacée pour le test) : il s'applique sans erreur, le seed compte 6 types, 29 émotions et 8 types de liens, et les contraintes `ck_entry_session_required`, `ux_link_active`, `ck_link_not_self`, `ck_decision_message` et les deux triggers `search_vector` se comportent comme décrit. Les tables `directory_vocabulary` et `export_job` (ajoutées le 29 octobre) n'ont pas encore été rejouées.
 
 ### Diagramme entité-relation complet
 
@@ -95,6 +95,8 @@ erDiagram
   PRACTITIONER ||--o| PRACTITIONER_INTEGRATION : connecte_cond
   PRACTITIONER ||--o{ APPOINTMENT : planifie_cond
   PATIENT ||--o{ APPOINTMENT : a_cond
+  PRACTITIONER ||--o{ BOOKING_REQUEST : recoit_en_ligne
+  BOOKING_REQUEST |o--o| APPOINTMENT : devient
 ```
 
 Les suffixes `_v2`, `_reserve`, `_cond` marquent les relations qui n'ont aucune ligne en V1.
@@ -930,7 +932,7 @@ CREATE VIEW admin_journal_v AS
   FROM verification_decision d;
 ```
 
-### E3.14 Agenda (M11, fiches 15, 15b, G Q50–Q59)
+### E3.14 Agenda (M11, fiches 15, 15b, G Q50–Q59 ; M14, G Q71–Q82)
 
 Ajouté le 15 novembre 2026. Module propriétaire : `agenda` (`TableOwnershipTests.TABLE_OWNERS += appointment → agenda`). Migration `V12__agenda.sql` (M11-02), DDL identique octet pour octet au bloc I2 de `docs/I-plan-agenda-api.md`. Statuts `planned` (défaut), `tentative` (case « À confirmer »), `cancelled`, `done` (séance rattachée, M11-08) : G Q52. Annulation par statut, `cancelled_at` et `cancel_reason`, jamais de `DELETE` (G Q53 ; `appointment` n'entre pas dans E9). Les occurrences d'une série partagent `series_id`, aucune règle de récurrence stockée (G Q55). `session_entry_id` référence `entry` par clé étrangère SQL mais **jamais** par association JPA (UUID nu, règle ArchUnit). Aucune colonne Google ni `source` : la synchronisation est le jalon M12 (E6.2, G Q51).
 
@@ -976,6 +978,53 @@ ALTER TABLE appointment
 CREATE INDEX ix_appointment_guest_purge ON appointment(ends_at) WHERE patient_id IS NULL AND guest_purged_at IS NULL;
 ```
 
+**Prise de rendez-vous en ligne (M14, G Q71–Q82, 22 novembre 2026).** Migration `V15__agenda_booking.sql` (M14-04 ; V12 et V13 restent telles quelles), DDL identique octet pour octet au bloc SQL de `docs/K-plan-prise-de-rendez-vous-api.md` K4. `appointment` reçoit `guest_email` (e-mail de l'invité, facultatif) et `origin` (`practitioner` par défaut, `online` pour un rendez-vous né d'une demande en ligne) ; `ck_appointment_subject` est refaite pour inclure `guest_email`. La table `booking_request` porte les demandes publiques : identité en clair tant que l'e-mail n'est pas vérifié, puis effacée à la vérification (`ck_booking_request_identity`, G Q82 b) ; ne restent que l'empreinte de l'adresse (`email_hash`, HMAC, plafonds de G Q79) et les empreintes des jetons (`verify_token_hash`, `manage_token_hash`, G Q80). Propriétaire : module `agenda` (`TableOwnershipTests.TABLE_OWNERS += booking_request → agenda`). `origin` est distincte de la colonne `source` que M12 prévoyait pour Google (E6.2) : M12 devra réutiliser `origin` (valeur `google`) plutôt que d'ajouter `source`. Purges : E9 (lignes `booking_request` et colonnes invité).
+
+```sql
+-- Prise de rendez-vous en ligne (K, G Q71 à Q82) : origine et e-mail de l'invité, demandes publiques
+ALTER TABLE appointment
+  ADD COLUMN guest_email text,
+  ADD COLUMN origin      text NOT NULL DEFAULT 'practitioner' CHECK (origin IN ('practitioner','online'));
+
+ALTER TABLE appointment DROP CONSTRAINT ck_appointment_subject;
+ALTER TABLE appointment ADD CONSTRAINT ck_appointment_subject CHECK (
+  (patient_id IS NOT NULL AND guest_first_name IS NULL AND guest_last_name IS NULL AND guest_phone IS NULL AND guest_email IS NULL AND guest_purged_at IS NULL)
+  OR (patient_id IS NULL AND (guest_last_name IS NOT NULL OR guest_purged_at IS NOT NULL))
+);
+CREATE INDEX ix_appointment_online_pending ON appointment(practitioner_id, starts_at)
+  WHERE origin = 'online' AND status = 'tentative';
+
+CREATE TABLE booking_request (
+  id                 uuid PRIMARY KEY,
+  tenant_id          uuid NOT NULL REFERENCES tenant(id),
+  practitioner_id    uuid NOT NULL REFERENCES practitioner(id),
+  starts_at          timestamptz NOT NULL,
+  ends_at            timestamptz NOT NULL,
+  modality           text NOT NULL CHECK (modality IN ('in_person','video','phone')),
+  first_name         text,                 -- NULL dès la vérification (Q82 b)
+  last_name          text,
+  email              text,
+  phone              text,
+  locale             text NOT NULL DEFAULT 'fr' CHECK (locale IN ('fr','en')),
+  email_hash         text NOT NULL,        -- HMAC de l'adresse normalisée : plafonds de Q79
+  verify_token_hash  text NOT NULL UNIQUE,
+  verify_expires_at  timestamptz NOT NULL,
+  verified_at        timestamptz,
+  manage_token_hash  text UNIQUE,
+  appointment_id     uuid REFERENCES appointment(id),
+  closed_by          text CHECK (closed_by IN ('visitor','practitioner','expired')),
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT ck_booking_request_order CHECK (ends_at > starts_at),
+  CONSTRAINT ck_booking_request_verified CHECK ((verified_at IS NULL) = (appointment_id IS NULL)),
+  CONSTRAINT ck_booking_request_identity CHECK (
+    verified_at IS NULL OR (first_name IS NULL AND last_name IS NULL AND email IS NULL AND phone IS NULL)
+  )
+);
+CREATE INDEX ix_booking_request_email ON booking_request(email_hash, created_at);
+CREATE INDEX ix_booking_request_created ON booking_request(created_at) WHERE verified_at IS NULL;
+CREATE INDEX ix_booking_request_appointment ON booking_request(appointment_id) WHERE appointment_id IS NOT NULL;
+```
+
 ## E4. Découpage en migrations Flyway
 
 ### Règles
@@ -1004,6 +1053,7 @@ CREATE INDEX ix_appointment_guest_purge ON appointment(ends_at) WHERE patient_id
 | `V12__agenda.sql` | M11-02 (agenda) | M11-A | E3.14 `appointment` | V01, V05 |
 | `V13__agenda_guest.sql` | M11-10 (agenda) | après M11-D | E3.14 rendez-vous invité : `patient_id` facultatif, colonnes `guest_first_name`, `guest_last_name`, `guest_phone`, `guest_purged_at`, `ck_appointment_subject`, `ix_appointment_guest_purge` (G Q60) | V12 |
 | `V14__patient_profile.sql` | M13-02 (patients) | M13-A | E3.4 `patient_profile_item` | V01 |
+| `V15__agenda_booking.sql` | M14-04 (agenda) | M14-A | E3.14 prise de rendez-vous en ligne : colonnes `guest_email` et `origin` d'`appointment`, `ck_appointment_subject` refaite, `ix_appointment_online_pending`, table `booking_request` (G Q71–Q82) | V13 |
 | *conditionnelles* | voir E6 | — | `directory_profile_version`, `directory_report` (V1.1, G Q26) ; `practitioner_integration` et colonnes Google d'`appointment` (M12, hors V1, G Q51) | — |
 
 Ce que ce plan change par rapport à C (reporté en E8) : M0-03 crée `practitioner` **avec** ses colonnes A10.2 (M1-10 ne fait plus d'`ALTER`, il crée les tables de vérification) ; M0-03 ne crée plus `entry_embedding` / `entry_chunk` / `ai_feedback`, impossibles avant `entry` et `link` ; M5-01 reçoit sa propre migration.
@@ -1163,6 +1213,8 @@ Conséquence sur les modules : première dépendance de `identity.admin` vers `d
 
 **Hors V1.** Le 29 octobre 2026, G Q25 plaçait tout l'agenda hors V1 ; le 15 novembre 2026, G Q50–Q59 ont fait entrer l'agenda local en M11 (table `appointment`, E3.14, V12). Ne restent ici que les objets de la **synchronisation Google** (fiches 15, 15b), jalon M12 non planifié : la table `practitioner_integration` et les colonnes Google d'`appointment`. M12 les créera par ses propres migrations (`CREATE TABLE practitioner_integration`, `ALTER TABLE appointment ADD …`) ; aucune tâche M11 ne les touche.
 
+Note du 22 novembre 2026 (M14, `docs/K-plan-prise-de-rendez-vous-api.md` K4) : `V15__agenda_booking.sql` ajoute à `appointment` la colonne `origin` (`practitioner`, `online`), distincte de la colonne `source` ci-dessous. M12 devra réutiliser `origin` (valeur `google`) plutôt que d'ajouter `source`. Le bloc ci-dessous n'est pas réécrit avant M12.
+
 ```sql
 CREATE TABLE practitioner_integration (
   practitioner_id     uuid PRIMARY KEY REFERENCES practitioner(id),
@@ -1236,7 +1288,7 @@ Les lignes de ce tableau ont été reportées dans A (A4, A10) et C (M0-03, M1-1
 
 ## E9. Suppressions physiques autorisées (G Q37, 2 novembre 2026)
 
-Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `entry_version`, `link` et les tables de détail courantes s'archivent (`archived_at`, statut `superseded`). Ce tableau est la liste fermée de ce qui peut l'être ; une tâche qui ajoute une suppression physique ajoute sa ligne ici. Le test d'appartenance des tables (C8, M9-02) refuse tout `DELETE` sur une table clinique. `appointment` (E3.14) n'y figure pas comme ligne : un rendez-vous s'annule par statut (G Q53) ; seules les colonnes d'identité d'un invité sont purgées (G Q60, dernière ligne du tableau).
+Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `entry_version`, `link` et les tables de détail courantes s'archivent (`archived_at`, statut `superseded`). Ce tableau est la liste fermée de ce qui peut l'être ; une tâche qui ajoute une suppression physique ajoute sa ligne ici. Le test d'appartenance des tables (C8, M9-02) refuse tout `DELETE` sur une table clinique. `appointment` (E3.14) n'y figure pas comme ligne : un rendez-vous s'annule par statut (G Q53) ; seules les colonnes d'identité d'un invité sont purgées (G Q60, Q82, ligne « Colonnes invité » du tableau). `booking_request` (E3.14, M14) y figure : ses lignes sont supprimées par paliers (G Q82).
 
 | Table ou fichier | Ce qui est supprimé | Par qui | Raison |
 | --- | --- | --- | --- |
@@ -1248,4 +1300,5 @@ Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `ent
 | Fichiers des justificatifs (`verification_document`) | Le **fichier** chiffré, à `purge_after` ou quand le praticien retire la pièce ; **la ligne reste** (`purged_at`, marque de retrait) | identity.verification | Minimisation des pièces d'identité ; la trace reste auditable |
 | Fichiers d'export (`export_job`) | Le **fichier**, à `expires_at` (7 jours) ; **la ligne reste** (`purged_at`) | clinical.export, `ExportPurgeJob` | Le lien expire ; la trace de l'export reste |
 | Photos de profil (`practitioner_profile`) | L'ancien fichier, quand la photo est remplacée ou retirée | directory | Seule la photo courante est publiée |
-| Colonnes invité d'`appointment` (`guest_first_name`, `guest_last_name`, `guest_phone`) | Les **valeurs**, mises à `NULL` (`UPDATE`, jamais de `DELETE`) 6 mois (`app.agenda.guest-purge.retention`, `P180D`) après la fin du rendez-vous invité ou après son annulation ; `guest_purged_at` est posé, **la ligne reste** | agenda, `GuestPurgeJob` (M11-10) | Minimisation : un invité n'a pas de fiche patient (G Q60) ; seul le rendez-vous reste dans l'agenda |
+| Colonnes invité d'`appointment` (`guest_first_name`, `guest_last_name`, `guest_phone`, `guest_email`) | Les **valeurs**, mises à `NULL` (`UPDATE`, jamais de `DELETE`) 6 mois (`app.agenda.guest-purge.retention`, `P180D`) après la fin du rendez-vous invité ou après son annulation ; pour un rendez-vous en ligne (`origin = online`) annulé, **30 jours** après l'annulation (`app.agenda.guest-purge.online-cancelled-retention`, `P30D`, G Q82 c) ; `guest_purged_at` est posé, **la ligne reste** | agenda, `GuestPurgeJob` (M11-10, complété par M14-04) | Minimisation : un invité n'a pas de fiche patient (G Q60, Q82) ; seul le rendez-vous reste dans l'agenda |
+| `booking_request` | La ligne : 24 h après sa création si l'e-mail n'a jamais été vérifié (`app.booking.unverified-retention`, `PT24H`) ; sinon 30 jours après la fin ou l'annulation du rendez-vous (`app.booking.closed-retention`, `P30D`). Le rendez-vous reste | agenda, `BookingPurgeJob` (M14-07) | Minimisation : demande publique d'un inconnu, identité effacée dès la vérification (G Q73, Q82) ; ne restent que des empreintes et des jetons hachés |

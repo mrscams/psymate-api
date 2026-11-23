@@ -25,6 +25,7 @@ import com.psymate.identity.api.PractitionerApproved;
 import com.psymate.identity.api.PractitionerRejected;
 import com.psymate.identity.verification.service.DocumentCipher;
 import com.psymate.identity.verification.service.StorageService;
+import com.psymate.shared.i18n.ServedLanguage;
 import jakarta.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -522,7 +523,7 @@ public class AdminVerificationService {
   }
 
   private static Locale locale(String tag) {
-    return Locale.forLanguageTag(tag == null ? "fr" : tag);
+    return ServedLanguage.ofTag(tag).locale();
   }
 
   private static String normalizeIp(String raw) {

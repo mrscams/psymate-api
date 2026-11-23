@@ -1,5 +1,6 @@
 package com.psymate.clinical.export.service;
 
+import com.psymate.shared.i18n.ServedLanguage;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -27,11 +28,13 @@ public final class ExportTexts {
     return s;
   }
 
-  /** Textes dans la langue demandée : anglais si {@code en}, français sinon. */
+  /**
+   * Textes dans la langue demandée : anglais si {@code en}, français sinon. L'arabe est résolu en
+   * français, explicitement et toujours (G Q102) : les clés {@code clinical.export.*} ne sont pas
+   * traduites et le PDF n'a pas de police arabe.
+   */
   public static ExportTexts of(Locale requested) {
-    boolean english =
-        requested != null && Locale.ENGLISH.getLanguage().equals(requested.getLanguage());
-    return new ExportTexts(english ? Locale.ENGLISH : Locale.FRENCH);
+    return new ExportTexts(ServedLanguage.of(requested).arabicAsFrench().locale());
   }
 
   public Locale locale() {

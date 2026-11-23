@@ -2,6 +2,7 @@ package com.psymate.linking.dto;
 
 import com.psymate.clinical.api.EntryFacade;
 import com.psymate.linking.model.Link;
+import com.psymate.shared.i18n.ServedLanguage;
 import com.psymate.vocabulary.api.LinkTypeCatalog;
 import com.psymate.vocabulary.api.LinkTypeView;
 import java.util.Locale;
@@ -43,7 +44,7 @@ public class LinkAssembler {
   }
 
   private String label(Link link, UUID referenceEntryId, Locale locale) {
-    boolean english = Locale.ENGLISH.getLanguage().equals(locale.getLanguage());
+    boolean english = ServedLanguage.of(locale) == ServedLanguage.EN;
     LinkTypeView type = catalog.findByCode(link.linkType()).orElse(null);
     if (type == null) {
       return link.linkType();

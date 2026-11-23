@@ -3,6 +3,7 @@ package com.psymate.directory.service;
 import com.psymate.directory.dto.DirectoryVocabularyDto;
 import com.psymate.directory.dto.Item;
 import com.psymate.directory.repository.DirectoryVocabularyRepository;
+import com.psymate.shared.i18n.ServedLanguage;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -42,9 +43,12 @@ public class DirectoryVocabularyService {
         LANGUAGES.stream()
             .map(
                 c -> {
-                  Locale l = Locale.forLanguageTag(c);
+                  // Code ISO 639-1 d'une langue parlée (donnée de la fiche), pas une langue servie.
+                  Locale l = Locale.of(c);
                   return new Item(
-                      c, l.getDisplayLanguage(Locale.FRENCH), l.getDisplayLanguage(Locale.ENGLISH));
+                      c,
+                      l.getDisplayLanguage(ServedLanguage.FR.locale()),
+                      l.getDisplayLanguage(ServedLanguage.EN.locale()));
                 })
             .sorted(Comparator.comparing(Item::labelFr))
             .toList();

@@ -12,6 +12,7 @@ import com.psymate.clinical.export.repository.ExportRepository;
 import com.psymate.clinical.export.repository.ExportRepository.EntryRow;
 import com.psymate.clinical.export.repository.ExportRepository.SessionRow;
 import com.psymate.patients.api.PatientFacade;
+import com.psymate.shared.i18n.ServedLanguage;
 import com.psymate.vocabulary.api.EmotionCatalog;
 import com.psymate.vocabulary.api.EmotionView;
 import com.psymate.vocabulary.api.LinkTypeCatalog;
@@ -99,7 +100,8 @@ public class PatientExportService {
 
   /** Export Markdown en français (langue par défaut du produit). */
   public String markdown(UUID patientId) {
-    return markdown.render(build(patientId, Locale.FRENCH), ExportTexts.of(Locale.FRENCH));
+    Locale french = ServedLanguage.FR.locale();
+    return markdown.render(build(patientId, french), ExportTexts.of(french));
   }
 
   /** Fichier d'export du patient dans le format et la langue demandés. */
@@ -250,7 +252,7 @@ public class PatientExportService {
     if (port == null) {
       return List.of();
     }
-    boolean english = Locale.ENGLISH.getLanguage().equals(texts.locale().getLanguage());
+    boolean english = ServedLanguage.of(texts.locale()) == ServedLanguage.EN;
     List<String> sentences = new ArrayList<>();
     for (LinkedEntryView link : port.acceptedLinksOf(entryId)) {
       boolean incoming = link.targetId().equals(entryId);
@@ -281,7 +283,7 @@ public class PatientExportService {
   }
 
   private Map<String, String> emotionLabels(ExportTexts texts) {
-    boolean english = Locale.ENGLISH.getLanguage().equals(texts.locale().getLanguage());
+    boolean english = ServedLanguage.of(texts.locale()) == ServedLanguage.EN;
     Map<String, String> labels = new HashMap<>();
     for (EmotionView e : emotions.activeEmotions()) {
       String label = english && e.labelEn() != null ? e.labelEn() : e.labelFr();

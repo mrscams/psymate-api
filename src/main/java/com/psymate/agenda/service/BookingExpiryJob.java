@@ -9,6 +9,7 @@ import com.psymate.agenda.repository.AppointmentRepository;
 import com.psymate.agenda.repository.BookingRequestRepository;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.PractitionerFacade;
+import com.psymate.shared.i18n.ServedLanguage;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.time.Clock;
@@ -166,7 +167,10 @@ public class BookingExpiryJob {
       return false;
     }
     Locale locale = practitionerLocale(appointment.getPractitionerId());
-    appointment.cancel(messages.getMessage("booking.cancelReason.expired", null, locale), now);
+    appointment.cancel(
+        messages.getMessage(
+            "booking.cancelReason.expired", null, ServedLanguage.messageLocaleOf(locale)),
+        now);
     request.close(BookingRequest.CLOSED_BY_EXPIRED);
     events.publish(AppointmentService.event(AppointmentCancelled::new, appointment));
     notifier.expired(appointment);

@@ -57,7 +57,7 @@ record PreferencesSchema(
     @Schema(
             name = "locale",
             description = "Langue de l'interface : fr (français) ou en (anglais). Défaut : fr.",
-            allowableValues = {"fr", "en"},
+            allowableValues = {"fr", "en", "ar"},
             example = "fr")
         String locale,
     @Schema(

@@ -1,5 +1,6 @@
 package com.psymate.identity.preferences;
 
+import com.psymate.shared.i18n.ServedLanguage;
 import com.psymate.shared.problem.AdviceOrder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -33,7 +34,7 @@ class PreferencesExceptionHandler {
   @ExceptionHandler(PreferencesService.InvalidPreferencesException.class)
   ResponseEntity<ProblemDetail> invalid(
       PreferencesService.InvalidPreferencesException ex, Locale locale) {
-    Locale l = locale != null && "en".equals(locale.getLanguage()) ? Locale.ENGLISH : Locale.FRENCH;
+    Locale l = ServedLanguage.messageLocaleOf(locale);
     ProblemDetail pd =
         ProblemDetail.forStatusAndDetail(
             HttpStatus.UNPROCESSABLE_CONTENT,

@@ -1,6 +1,7 @@
 package com.psymate.agenda.service;
 
 import com.psymate.agenda.model.AppointmentModality;
+import com.psymate.shared.i18n.ServedLanguage;
 import jakarta.annotation.PreDestroy;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -128,9 +129,13 @@ public class BookingMailer {
     return true;
   }
 
-  /** {@code en} pour « en », le français sinon (langue du produit). */
+  /**
+   * Locale servie d'une étiquette enregistrée ({@code booking_request.locale}, préférence {@code
+   * locale}) : {@code en}, {@code ar}, le français sinon (langue du produit, {@link
+   * ServedLanguage#ofTag}).
+   */
   static Locale localeOf(String tag) {
-    return "en".equals(tag) ? Locale.ENGLISH : Locale.FRENCH;
+    return ServedLanguage.ofTag(tag).locale();
   }
 
   // ---- envoi différé
@@ -379,8 +384,9 @@ public class BookingMailer {
 
   // ---- mise en forme
 
+  /** Locale des textes et de la date : celle des messages ({@link ServedLanguage}). */
   private static Locale normalize(Locale locale) {
-    return locale != null && "en".equals(locale.getLanguage()) ? Locale.ENGLISH : Locale.FRENCH;
+    return ServedLanguage.messageLocaleOf(locale);
   }
 
   /** Message avec arguments : MessageFormat actif, apostrophes doublées dans les fichiers. */

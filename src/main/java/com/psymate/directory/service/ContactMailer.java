@@ -1,5 +1,6 @@
 package com.psymate.directory.service;
 
+import com.psymate.shared.i18n.ServedLanguage;
 import jakarta.mail.internet.MimeMessage;
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
@@ -44,7 +45,7 @@ class ContactMailer {
 
   /** Envoie le message ; lève une {@link MailException} en cas d'échec. */
   void send(ContactMessage m, Locale locale) {
-    Locale l = locale != null && "en".equals(locale.getLanguage()) ? Locale.ENGLISH : Locale.FRENCH;
+    Locale l = ServedLanguage.messageLocaleOf(locale);
     String senderName = singleLine(m.senderName());
     String subject = m.subject() == null || m.subject().isBlank() ? null : singleLine(m.subject());
     String shownSubject =

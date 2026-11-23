@@ -110,9 +110,9 @@ L'arabe devient la troisième langue servie (G Q96–Q102, proposées par le pla
 
 | ID | Tâche | Couloir (module) | Dépend de | Débloque |
 | --- | --- | --- | --- | --- |
-| M16-01 | Décisions Q96 à Q102 et documentation ; copie du plan côté API (G, C, D, F, CLAUDE.md, agent) | docs (+ `.claude/agents`) | — | rien de bloquant : M fait foi en attendant |
-| M16-02 | Langue de la requête résolue en un seul endroit ; préférence `locale` = `ar` ; dates et nombres en chiffres latins | shared + classes de messages des modules + identity (préférences) + agenda (`CreateBookingRequest`) | M16-01 | M16-03, M16-04 |
-| M16-03 | Catalogues : `label_ar`, `inverse_label_ar`, vues, administration, libellés des catalogues globaux | vocabulary, directory, linking, migration `V16` | M16-02, glossaire (M16-07, web) | M16-06 |
+| M16-01 | Décisions Q96 à Q102 et documentation ; copie du plan côté API (G, C, D, F, CLAUDE.md, agent) | docs (+ `.claude/agents`) | — | M16-02, dès la PR ouverte (M fait foi en attendant) |
+| M16-02 | Langue de la requête résolue en un seul endroit ; préférence `locale` = `ar` ; dates et nombres en chiffres latins | shared + classes de messages des modules + identity (préférences) + agenda (`CreateBookingRequest`) + migration `V16` | M16-01 | M16-03, M16-04 |
+| M16-03 | Catalogues : `label_ar`, `inverse_label_ar`, vues, administration, libellés des catalogues globaux | vocabulary, directory, linking, migration `V17` | M16-02, glossaire (M16-07, web) | M16-06 |
 | M16-04 | `messages_ar.properties` complet, test de parité des clés | ressources + test | M16-02, glossaire (M16-07, web) | M16-05 |
 | M16-05 | E-mails en arabe, de droite à gauche | services d'envoi (identity, directory, agenda) + clés d'e-mail | M16-04 | M16-06 |
 | M16-06 | Seed, contrat `0.16.0`, tag, suivi | racine (`tools/seed`, contrat) | M16-03, M16-05 | tag `contract-v0.16.0` ; tâche web M16-25 |
@@ -263,8 +263,8 @@ Ce qui peut démarrer, quand, et avec combien d'agents en parallèle. « ∥ » 
 | **M14-D** | M14-06 | **M14-07** | 1 (`agenda`) | M14-08 |
 | **M14-E** | M14-07 | **M14-08** | 1 (`racine`) | tag `contract-v0.15.0` ; tâches web M14-10 à M14-15 |
 | **M16-A** (23 novembre 2026) | rien (M14 fusionnée) | **M16-01** | 1 (docs) ; en parallèle avec M16-07 dans psymate-web | M16-02 |
-| **M16-B** | M16-01 (la PR suffit : M fait foi en attendant) | **M16-02** | 1 (transverse : `shared` et une classe par module) | M16-03, M16-04 |
-| **M16-C** | M16-02 fusionnée, glossaire du web sur `main` (M16-07) | **M16-03** ∥ **M16-04** | 2 (catalogues et `V16` ; ressources de messages : fichiers disjoints) | M16-05 (via M16-04), M16-06 (via M16-03) |
+| **M16-B** | M16-01 (la PR ouverte suffit : M fait foi en attendant) | **M16-02** | 1 (transverse : `shared` et une classe par module) | M16-03, M16-04 |
+| **M16-C** | M16-02 fusionnée, glossaire du web sur `main` (M16-07) | **M16-03** ∥ **M16-04** | 2 (catalogues et `V17` ; ressources de messages : fichiers disjoints) | M16-05 (via M16-04), M16-06 (via M16-03) |
 | **M16-D** | M16-04 | **M16-05** | 1 (services d'envoi) | M16-06 |
 | **M16-E** | M16-03, M16-05 | **M16-06** | 1 (`racine`) | tag `contract-v0.16.0` ; tâche web M16-25 |
 
@@ -317,7 +317,7 @@ Un couloir par module ; un seul agent par couloir à la fois ; un worktree par a
 | shared | M7-02 · M16-02 (transverse, voir « Couloirs M16 ») | — (il touche `shared`, lu par tous : la CI de toutes les branches ouvertes doit être relancée après fusion) | à lancer quand peu de branches sont ouvertes |
 | agenda (ajouté le 15 novembre 2026, G Q50) | M11-02 · M11-05 ‖ M11-06 · M11-07 · M11-08b (si retenue) · M14-04 · M14-05 · M14-06 · M14-07 (prise de rendez-vous en ligne, G Q71 ; aucun couloir ajouté) | tout : `agenda` ne lit que les `api` d'`identity`, `patients`, `events` et, depuis M14, `directory` (`PublishedProfileFacade`, G Q71) ; `directory` ne dépend pas d'`agenda` | une autre tâche `agenda`, **sauf** M11-05 ‖ M11-06 (exception ci-dessous) ; M11-08b le temps de M11-08a (elle attend sa façade) |
 
-**Couloirs M16 (version arabe, 23 novembre 2026).** M16-02 et M16-05 touchent plusieurs modules à la fois (résolution de la langue dans `shared` et une classe par module ; services d'envoi d'`identity`, `directory` et `agenda`) : chacune se lance seule, quand aucune autre tâche ne touche les mêmes fichiers, et toutes les branches ouvertes relancent leur CI après sa fusion (comme une tâche `shared`). M16-03 (vocabulary, directory, linking, `V16`) et M16-04 (`messages_ar.properties` et un test) ont des fichiers disjoints et tournent en parallèle. M16-06 est dans le couloir `racine`.
+**Couloirs M16 (version arabe, 23 novembre 2026).** M16-02 et M16-05 touchent plusieurs modules à la fois (résolution de la langue dans `shared` et une classe par module ; services d'envoi d'`identity`, `directory` et `agenda`) : chacune se lance seule, quand aucune autre tâche ne touche les mêmes fichiers, et toutes les branches ouvertes relancent leur CI après sa fusion (comme une tâche `shared`). M16-03 (vocabulary, directory, linking, `V17`) et M16-04 (`messages_ar.properties` et un test) ont des fichiers disjoints et tournent en parallèle. M16-06 est dans le couloir `racine`.
 
 **Exception à D5 pour M11-05 ‖ M11-06.** Même couloir, mais fichiers disjoints par construction : M11-02 crée tout ce qui est partagé (entité, repository, `AgendaExceptionHandler`, `AgendaMessages`, `package-info`, enregistrements ArchUnit). M11-05 ne crée que des fichiers préfixés `Appointment` (`AppointmentController`, `AppointmentService`, `CreateAppointmentRequest`, `UpdateAppointmentRequest`, `CancelAppointmentRequest`, `AppointmentDto`, `AppointmentMapper`, `AppointmentAssembler`, `AppointmentCreatedDto`, `AppointmentUpdatedDto`, `ConflictDto`, événements `api/Appointment*`). M11-06 ne crée que `AgendaController`, `AgendaQueryService`, `AgendaWindowDto`, `FreeBusyDto`, `PatientAppointmentsDto`, `AppointmentDefaultsDto`, et des méthodes de lecture ajoutées à `AppointmentRepository` (seul fichier commun : la seconde PR fusionnée rebase). `AppointmentDto`, `AppointmentMapper`, `AppointmentAssembler` et `ConflictDto` appartiennent à M11-05 ; M11-06 les crée **provisoirement identiques** si M11-05 n'est pas encore fusionnée et le signale dans sa PR, la seconde PR fusionnée garde une seule version. `messages_fr.properties` / `messages_en.properties` : chacun ajoute ses clés sous un commentaire `# agenda (M11-0x)`. Contrat : les deux visent `app.contract.version = 0.12.0` ; la seconde fusionnée relance `make contract`.
 

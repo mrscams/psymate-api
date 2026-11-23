@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-23T10:14:06.397Z",
+  "task": "M16-01",
+  "agent": "claude",
+  "status": "in-progress",
+  "summary": "Version arabe : décisions Q96 à Q102 (G12), copie API du plan M, C15, D, F, CLAUDE.md, agent",
+  "branch": "M16-01-decisions-version-arabe",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

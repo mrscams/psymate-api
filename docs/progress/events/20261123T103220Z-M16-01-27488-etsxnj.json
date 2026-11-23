@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-23T10:32:20.286Z",
+  "task": "M16-01",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Décisions Q96 à Q102 (G12, proposées, non relues), copie API du plan M avec écarts M2.4, C15, D, E4 (V16, V17), F, CLAUDE.md, agent",
+  "next": "M16-02",
+  "pr": "https://github.com/mrscams/psymate-api/pull/111",
+  "branch": "M16-01-decisions-version-arabe",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

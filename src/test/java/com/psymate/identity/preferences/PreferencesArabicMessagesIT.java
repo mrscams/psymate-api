@@ -137,8 +137,11 @@ class PreferencesArabicMessagesIT {
     patchJson(id, "{\"locale\":\"de\"}", "fr")
         .andExpect(status().isUnprocessableContent())
         .andExpect(jsonPath("$.detail").value("Certaines préférences sont invalides."))
-        .andExpect(jsonPath("$.errors[0].message").value("Valeurs admises : fr, en."));
+        // M16-06 : le message cite ar, admis depuis M16-02 (G Q97) ; le reste est inchangé
+        .andExpect(jsonPath("$.errors[0].message").value("Valeurs admises : fr, en, ar."));
     String english = body(patchJson(id, "{\"locale\":\"de\"}", "en"));
     assertThat(ARABIC_LETTER.matcher(english).find()).as("réponse anglaise").isFalse();
+    assertThat((String) JsonPath.read(english, "$.errors[0].message"))
+        .isEqualTo("Allowed values: fr, en, ar.");
   }
 }

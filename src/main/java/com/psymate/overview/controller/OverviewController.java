@@ -52,8 +52,10 @@ class OverviewController {
           (moyenne glissante sur 7 jours, 90 points au plus, repères de séances et de \
           médicaments), émotions dominantes comparées à la fenêtre précédente, ressentis réels, \
           brouillons, entrées depuis la dernière séance, 5 séances récentes et résumé « En bref » \
-          rédigé par règles, sans IA, dans la langue d'Accept-Language (français par défaut). La \
-          fenêtre window borne la tendance, les émotions et les ressentis. Les données viennent \
+          rédigé par règles, sans IA, dans la langue d'Accept-Language (français par défaut). \
+          Quand Accept-Language demande l'arabe (ar), ce résumé est rendu en français (G Q102) ; \
+          le passage à l'arabe est proposé pour un second temps. La fenêtre window borne la tendance, \
+          les émotions et les ressentis. Les données viennent \
           d'une projection recalculée à la volée si elle est en retard sur le dossier : la \
           réponse n'est jamais obsolète ; recentActivity est lu en direct. Entrées archivées \
           exclues, entrées privées du praticien incluses.""")

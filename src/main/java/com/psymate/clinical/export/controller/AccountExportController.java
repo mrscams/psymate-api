@@ -101,7 +101,10 @@ class AccountExportController implements AuthErrorScope {
           asynchrone : jobId et statusUrl à interroger (GET /api/me/export/{jobId}), ou otpRequired \
           sans création de job si la double authentification est active et que otp manque. Le zip \
           (patients.md, puis un .md et un .pdf par patient) est conservé chiffré et téléchargeable \
-          7 jours. Verrouillage de 15 minutes après 5 échecs d'authentification (423 Retry-After).\
+          7 jours. Ses documents sont en français quelle que soit la langue demandée : quand \
+          Accept-Language demande l'arabe (ar), ils sont rendus en français (G Q102) ; le passage \
+          à l'arabe est proposé pour un second temps. Verrouillage de 15 minutes après 5 échecs \
+          d'authentification (423 Retry-After).\
           """)
   @ApiResponses({
     @ApiResponse(

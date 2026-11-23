@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-23T17:53:22.167Z",
+  "task": "M16-06",
+  "agent": "seed-perf",
+  "status": "review",
+  "summary": "Seed : nour.seed@example.test (locale ar), dossier SEED · Youssef A. en arabe ; contrat 0.16.0 avec repli français Q102 ; tag à poser après fusion",
+  "next": "tag contract-v0.16.0 après fusion",
+  "pr": "https://github.com/mrscams/psymate-api/pull/116",
+  "branch": "M16-06-seed-contrat",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

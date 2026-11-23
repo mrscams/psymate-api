@@ -112,7 +112,9 @@ class BookingArabicIT {
       postRequest(p.slug(), body, "fr")
           .andExpect(status().isUnprocessableContent())
           .andExpect(jsonPath("$.errors[0].field").value("locale"))
-          .andExpect(jsonPath("$.errors[0].code").value("INVALID_VALUE"));
+          .andExpect(jsonPath("$.errors[0].code").value("INVALID_VALUE"))
+          // M16-06 : le message cite ar, admis depuis M16-02
+          .andExpect(jsonPath("$.errors[0].message").value("Valeurs admises : fr, en, ar."));
     }
     Map<String, Object> body = request(slot(3, "09:00"), applicantEmail());
     body.put("locale", "de");

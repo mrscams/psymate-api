@@ -1396,7 +1396,7 @@ components:
       properties:
         code:
           description: 'Code stable de l''entrée, unique pour le type : commence par une lettre minuscule, puis minuscules, chiffres et underscores, 2 à 40 caractères. Ne change plus ensuite.'
-          example: sleep_therapy
+          example: sleep_disorders
           pattern: ^[a-z][a-z0-9_]{1,39}$
           type: string
         kind:
@@ -1413,12 +1413,12 @@ components:
           type: string
         labelEn:
           description: 'Libellé anglais, 120 caractères au plus ; vide ou absent : pas de libellé anglais.'
-          example: Sleep therapy
+          example: Sleep disorders
           maxLength: 120
           type: string
         labelFr:
           description: Libellé français, 120 caractères au plus.
-          example: Thérapie du sommeil
+          example: Troubles du sommeil
           maxLength: 120
           type: string
         sortOrder:
@@ -3381,7 +3381,7 @@ components:
           type: string
       type: object
     NarrativeDto:
-      description: 'Résumé rédigé par règles (jusqu''à 5 phrases, chacune omise si ses données manquent, sans IA), dans la langue de la requête (Accept-Language : français par défaut, anglais si demandé).'
+      description: 'Résumé rédigé par règles (jusqu''à 5 phrases, chacune omise si ses données manquent, sans IA), dans la langue de la requête (Accept-Language : français par défaut, anglais si demandé). Quand Accept-Language demande l''arabe (ar), ce texte est rendu en français (G Q102) ; le passage à l''arabe est proposé pour un second temps.'
       properties:
         attention:
           description: Point d'attention issu des drapeaux actifs ; null sans drapeau. Le mot « risque » n'apparaît jamais.
@@ -3449,7 +3449,7 @@ components:
           description: 'Ressentis réels de la fenêtre : un point par ressenti, une série par émotion.'
         narrative:
           $ref: '#/components/schemas/NarrativeDto'
-          description: Résumé « En bref » rédigé par règles (sans IA), dans la langue d'Accept-Language.
+          description: Résumé « En bref » rédigé par règles (sans IA), dans la langue d'Accept-Language. Quand Accept-Language demande l'arabe (ar), ce texte est rendu en français (G Q102) ; le passage à l'arabe est proposé pour un second temps.
         recentActivity:
           description: 10 dernières entrées non archivées saisies ou corrigées, de la plus récente à la plus ancienne, lues en direct (hors projection) ; entrées privées incluses.
           items:
@@ -3930,7 +3930,7 @@ components:
           description: 'true si le type d''entrée « médication » est proposé à la saisie. Défaut : true pour un psychiatre, false sinon.'
           type: boolean
         locale:
-          description: 'Langue de l''interface : fr (français) ou en (anglais). Défaut : fr.'
+          description: 'Langue de l''interface : fr (français), en (anglais) ou ar (arabe). Défaut : fr.'
           enum:
           - fr
           - en
@@ -9188,7 +9188,7 @@ paths:
       - Émotions personnelles
   /api/me/export:
     post:
-      description: 'Public pour la chaîne de sécurité, contrôle fait par la route : compte approuvé connecté (session praticien, corps ignoré), ou compte refusé ou suspendu sans session, qui fournit {email, password, otp?} dans le corps. Un seul export en cours par compte. Réponse 202 asynchrone : jobId et statusUrl à interroger (GET /api/me/export/{jobId}), ou otpRequired sans création de job si la double authentification est active et que otp manque. Le zip (patients.md, puis un .md et un .pdf par patient) est conservé chiffré et téléchargeable 7 jours. Verrouillage de 15 minutes après 5 échecs d''authentification (423 Retry-After).'
+      description: 'Public pour la chaîne de sécurité, contrôle fait par la route : compte approuvé connecté (session praticien, corps ignoré), ou compte refusé ou suspendu sans session, qui fournit {email, password, otp?} dans le corps. Un seul export en cours par compte. Réponse 202 asynchrone : jobId et statusUrl à interroger (GET /api/me/export/{jobId}), ou otpRequired sans création de job si la double authentification est active et que otp manque. Le zip (patients.md, puis un .md et un .pdf par patient) est conservé chiffré et téléchargeable 7 jours. Ses documents sont en français quelle que soit la langue demandée : quand Accept-Language demande l''arabe (ar), ils sont rendus en français (G Q102) ; le passage à l''arabe est proposé pour un second temps. Verrouillage de 15 minutes après 5 échecs d''authentification (423 Retry-After).'
       operationId: requestAccountExport
       requestBody:
         content:
@@ -10825,7 +10825,7 @@ paths:
       - Entrées
   /api/patients/{id}/export:
     get:
-      description: 'Session praticien, propriétaire du patient. Le fichier est généré à la volée et renvoyé en pièce jointe (Content-Disposition attachment, nom export-nom-AAAAMMJJ.md ou .pdf). Il contient les séances et les entrées en ordre chronologique, avec le texte de leur version courante. Les entrées privées et archivées n''en sortent jamais, et un lien vers une entrée non exportée est omis. Langue du document : Accept-Language (français par défaut). Le PDF est au thème clair. Aucune pagination.'
+      description: 'Session praticien, propriétaire du patient. Le fichier est généré à la volée et renvoyé en pièce jointe (Content-Disposition attachment, nom export-nom-AAAAMMJJ.md ou .pdf). Il contient les séances et les entrées en ordre chronologique, avec le texte de leur version courante. Les entrées privées et archivées n''en sortent jamais, et un lien vers une entrée non exportée est omis. Langue du document : Accept-Language (français par défaut). Quand Accept-Language demande l''arabe (ar), le document est rendu en français (G Q102) ; le passage à l''arabe est proposé pour un second temps. Le PDF est au thème clair. Aucune pagination.'
       operationId: exportPatient
       parameters:
       - description: Identifiant du patient.
@@ -11237,7 +11237,7 @@ paths:
       - Graphe
   /api/patients/{id}/overview:
     get:
-      description: 'Session praticien propriétaire du patient (fonctionne aussi pour un patient archivé). Une seule réponse porte tout : faits clés, situations actives, tendance d''intensité (moyenne glissante sur 7 jours, 90 points au plus, repères de séances et de médicaments), émotions dominantes comparées à la fenêtre précédente, ressentis réels, brouillons, entrées depuis la dernière séance, 5 séances récentes et résumé « En bref » rédigé par règles, sans IA, dans la langue d''Accept-Language (français par défaut). La fenêtre window borne la tendance, les émotions et les ressentis. Les données viennent d''une projection recalculée à la volée si elle est en retard sur le dossier : la réponse n''est jamais obsolète ; recentActivity est lu en direct. Entrées archivées exclues, entrées privées du praticien incluses.'
+      description: 'Session praticien propriétaire du patient (fonctionne aussi pour un patient archivé). Une seule réponse porte tout : faits clés, situations actives, tendance d''intensité (moyenne glissante sur 7 jours, 90 points au plus, repères de séances et de médicaments), émotions dominantes comparées à la fenêtre précédente, ressentis réels, brouillons, entrées depuis la dernière séance, 5 séances récentes et résumé « En bref » rédigé par règles, sans IA, dans la langue d''Accept-Language (français par défaut). Quand Accept-Language demande l''arabe (ar), ce résumé est rendu en français (G Q102) ; le passage à l''arabe est proposé pour un second temps. La fenêtre window borne la tendance, les émotions et les ressentis. Les données viennent d''une projection recalculée à la volée si elle est en retard sur le dossier : la réponse n''est jamais obsolète ; recentActivity est lu en direct. Entrées archivées exclues, entrées privées du praticien incluses.'
       operationId: getPatientOverview
       parameters:
       - description: Identifiant du patient.
@@ -11643,7 +11643,7 @@ paths:
       - Patients
   /api/patients/{id}/search:
     get:
-      description: 'Session praticien propriétaire du patient. Recherche plein texte en français, sans accents ni casse, classée par pertinence avec un boost x1,5 pour les entrées de moins de 90 jours ; sans texte, liste par date décroissante. Avec un texte (sans exclusion -mot) et moins de 3 résultats exacts, la page 1 est complétée par des résultats approchés (tolérance aux fautes, approximate=true). Extraits échappés en HTML avec <mark>. Syntaxe de q, filtres et facettes (chacune ignore son propre filtre) : voir les paramètres ; plusieurs valeurs d''un même filtre se combinent en « ou », les filtres entre eux en « et ». Les entrées privées d''un autre praticien ne sont jamais renvoyées. Pagination par numéro de page (exception au curseur) : 20 résultats par page, 500 pages au plus ; approchés sur la page 1 seulement.'
+      description: 'Session praticien propriétaire du patient. Recherche plein texte en français, sans accents ni casse, classée par pertinence avec un boost x1,5 pour les entrées de moins de 90 jours ; sans texte, liste par date décroissante. Avec un texte (sans exclusion -mot) et moins de 3 résultats exacts, la page 1 est complétée par des résultats approchés (tolérance aux fautes, approximate=true). Extraits échappés en HTML avec <mark>. Syntaxe de q, filtres et facettes (chacune ignore son propre filtre) : voir les paramètres ; plusieurs valeurs d''un même filtre se combinent en « ou », les filtres entre eux en « et ». Les entrées privées d''un autre praticien ne sont jamais renvoyées. Pagination par numéro de page (exception au curseur) : 20 résultats par page, 500 pages au plus ; approchés sur la page 1 seulement. Quel que soit Accept-Language, un texte cherché en arabe est comparé mot à mot (les résultats approchés passent par des trigrammes), sans traitement propre à l''arabe (formes de l''alif, ta marbuta, article collé, racines) (G Q102) ; ce traitement est proposé pour un second temps.'
       operationId: searchPatientEntries
       parameters:
       - description: Identifiant du patient.

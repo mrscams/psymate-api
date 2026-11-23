@@ -23,6 +23,8 @@ public record Plan(List<PatientPlan> patients) {
    * @param displayName préfixé « SEED · » (ou « DEMO · ») : sert à l'idempotence
    * @param birthDate AAAA-MM-JJ, toujours renseignée (la phase de vie « enfance » en dépend)
    * @param tags libellés de tags du patient, créés avant lui
+   * @param practitioner praticien du seed ; {@code null} pour le dossier en arabe ({@link
+   *     ArabicStory}), écrit par {@link ArabicSeeder} hors du {@link Runner}
    * @param steps étapes dans l'ordre d'exécution
    * @param profile informations du Profil 360 (M13), écrites après le dossier, dans cet ordre ;
    *     vide pour un onglet sans information

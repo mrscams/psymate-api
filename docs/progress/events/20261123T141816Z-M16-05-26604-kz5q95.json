@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-23T14:18:16.444Z",
+  "task": "M16-05",
+  "agent": "backend-module-dev",
+  "status": "in-progress",
+  "summary": "E-mails en arabe, de droite à gauche : multipart texte et HTML lang=ar dir=rtl",
+  "branch": "M16-05-emails-ar",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

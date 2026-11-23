@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-23T14:09:29.762Z",
+  "task": "M16-04",
+  "agent": "backend-module-dev",
+  "status": "review",
+  "summary": "messages_ar.properties (423 clés, résumé et export exclus), tournures sans accord en nombre, test de parité, IT de validation en arabe",
+  "next": "M16-05",
+  "pr": "https://github.com/mrscams/psymate-api/pull/114",
+  "branch": "M16-04-messages-ar",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

@@ -104,6 +104,19 @@ La prise de rendez-vous en ligne vit dans le module `agenda` (G Q71) : aucun mod
 | M14-07 | E-mails de suivi, expiration, purges | agenda | M14-06 | M14-08 |
 | M14-08 | Seed, tag `contract-v0.15.0`, suivi | racine (`tools/seed`) | M14-07 | tag `contract-v0.15.0` ; tâches web M14-10 à M14-15 |
 
+### Tâches M16 Version arabe (API), ajoutées le 23 novembre 2026 (C15, `docs/M-plan-version-arabe-api.md` M4.1)
+
+L'arabe devient la troisième langue servie (G Q96–Q102, proposées par le plan M, non relues par l'utilisateur au 23 novembre 2026). Aucun module n'est ajouté. M16-02 et M16-05 sont **transverses** : elles touchent `shared` et une classe ou deux par module (résolution de la langue, services d'envoi) ; leur périmètre est celui de leur prompt (M5), pas un couloir de D5.
+
+| ID | Tâche | Couloir (module) | Dépend de | Débloque |
+| --- | --- | --- | --- | --- |
+| M16-01 | Décisions Q96 à Q102 et documentation ; copie du plan côté API (G, C, D, F, CLAUDE.md, agent) | docs (+ `.claude/agents`) | — | rien de bloquant : M fait foi en attendant |
+| M16-02 | Langue de la requête résolue en un seul endroit ; préférence `locale` = `ar` ; dates et nombres en chiffres latins | shared + classes de messages des modules + identity (préférences) + agenda (`CreateBookingRequest`) | M16-01 | M16-03, M16-04 |
+| M16-03 | Catalogues : `label_ar`, `inverse_label_ar`, vues, administration, libellés des catalogues globaux | vocabulary, directory, linking, migration `V16` | M16-02, glossaire (M16-07, web) | M16-06 |
+| M16-04 | `messages_ar.properties` complet, test de parité des clés | ressources + test | M16-02, glossaire (M16-07, web) | M16-05 |
+| M16-05 | E-mails en arabe, de droite à gauche | services d'envoi (identity, directory, agenda) + clés d'e-mail | M16-04 | M16-06 |
+| M16-06 | Seed, contrat `0.16.0`, tag, suivi | racine (`tools/seed`, contrat) | M16-03, M16-05 | tag `contract-v0.16.0` ; tâche web M16-25 |
+
 ## D2. Graphe de dépendances
 
 ```mermaid
@@ -249,6 +262,11 @@ Ce qui peut démarrer, quand, et avec combien d'agents en parallèle. « ∥ » 
 | **M14-C** | M14-05 | **M14-06** | 1 (`agenda`) | M14-07 |
 | **M14-D** | M14-06 | **M14-07** | 1 (`agenda`) | M14-08 |
 | **M14-E** | M14-07 | **M14-08** | 1 (`racine`) | tag `contract-v0.15.0` ; tâches web M14-10 à M14-15 |
+| **M16-A** (23 novembre 2026) | rien (M14 fusionnée) | **M16-01** | 1 (docs) ; en parallèle avec M16-07 dans psymate-web | M16-02 |
+| **M16-B** | M16-01 (la PR suffit : M fait foi en attendant) | **M16-02** | 1 (transverse : `shared` et une classe par module) | M16-03, M16-04 |
+| **M16-C** | M16-02 fusionnée, glossaire du web sur `main` (M16-07) | **M16-03** ∥ **M16-04** | 2 (catalogues et `V16` ; ressources de messages : fichiers disjoints) | M16-05 (via M16-04), M16-06 (via M16-03) |
+| **M16-D** | M16-04 | **M16-05** | 1 (services d'envoi) | M16-06 |
+| **M16-E** | M16-03, M16-05 | **M16-06** | 1 (`racine`) | tag `contract-v0.16.0` ; tâche web M16-25 |
 
 **Ce qu'on peut commencer aujourd'hui, sans rien d'autre** : M0-01. Dès qu'il est fusionné : M0-02 et M0-03 en même temps. Dès que ces deux-là sont fusionnés : trois agents sur trois modules (`identity`, `events`, `vocabulary`) qui ne se croiseront jamais.
 
@@ -285,7 +303,7 @@ Un couloir par module ; un seul agent par couloir à la fois ; un worktree par a
 
 | Couloir | Tâches, dans l'ordre | Peut tourner en même temps que | Jamais en même temps que |
 | --- | --- | --- | --- |
-| racine | M0-01 · M0-05 · M0-08 · M7-01 · M11-09 · M13-03 · M14-08 | tout, sauf pendant M0-01 (seul) | — |
+| racine | M0-01 · M0-05 · M0-08 · M7-01 · M11-09 · M13-03 · M14-08 · M16-06 | tout, sauf pendant M0-01 (seul) | — |
 | identity | M0-04 · M1-10 · M1-11 · M1-12 · M1-13 · M1-14 · M7-08 · M1-14b · M11-04 (`preferences`) · M14-02 (`preferences`) | patients, vocabulary, events, clinical, linking, search, overview, directory | une autre tâche `identity` ; **M5-06** le temps de M1-14 (il lit `PractitionerFacade`, qui change) ; une tâche `directory` le temps de M1-14b (il ajoute une façade dans `directory.api`) |
 | events | M4-01a · M4-01 · M7-05 | tout | M1-03 le temps de M4-01a (M1-03 attend de toute façon) |
 | vocabulary | M1-02 | tout | M1-03 (attend M1-02) |
@@ -296,8 +314,10 @@ Un couloir par module ; un seul agent par couloir à la fois ; un worktree par a
 | search | M4-02 | tout | — (lit `entry` par SQL et événements, n'écrit dans aucun autre module) |
 | overview | M4-03 · M4-06 | tout | — |
 | directory | M5-01 · M5-02 · M5-03 · M5-06 · M14-03 (`api` seulement, `PublishedProfileFacade`) | tout | `identity` pendant M1-14 (pour M5-06 seulement) et pendant M1-14b ; une tâche qui touche `directory/config/PublicSecurityConfig.java` pendant M14-05 (elle y ajoute la règle `public-booking`) |
-| shared | M7-02 | — (il touche `shared`, lu par tous : la CI de toutes les branches ouvertes doit être relancée après fusion) | à lancer quand peu de branches sont ouvertes |
+| shared | M7-02 · M16-02 (transverse, voir « Couloirs M16 ») | — (il touche `shared`, lu par tous : la CI de toutes les branches ouvertes doit être relancée après fusion) | à lancer quand peu de branches sont ouvertes |
 | agenda (ajouté le 15 novembre 2026, G Q50) | M11-02 · M11-05 ‖ M11-06 · M11-07 · M11-08b (si retenue) · M14-04 · M14-05 · M14-06 · M14-07 (prise de rendez-vous en ligne, G Q71 ; aucun couloir ajouté) | tout : `agenda` ne lit que les `api` d'`identity`, `patients`, `events` et, depuis M14, `directory` (`PublishedProfileFacade`, G Q71) ; `directory` ne dépend pas d'`agenda` | une autre tâche `agenda`, **sauf** M11-05 ‖ M11-06 (exception ci-dessous) ; M11-08b le temps de M11-08a (elle attend sa façade) |
+
+**Couloirs M16 (version arabe, 23 novembre 2026).** M16-02 et M16-05 touchent plusieurs modules à la fois (résolution de la langue dans `shared` et une classe par module ; services d'envoi d'`identity`, `directory` et `agenda`) : chacune se lance seule, quand aucune autre tâche ne touche les mêmes fichiers, et toutes les branches ouvertes relancent leur CI après sa fusion (comme une tâche `shared`). M16-03 (vocabulary, directory, linking, `V16`) et M16-04 (`messages_ar.properties` et un test) ont des fichiers disjoints et tournent en parallèle. M16-06 est dans le couloir `racine`.
 
 **Exception à D5 pour M11-05 ‖ M11-06.** Même couloir, mais fichiers disjoints par construction : M11-02 crée tout ce qui est partagé (entité, repository, `AgendaExceptionHandler`, `AgendaMessages`, `package-info`, enregistrements ArchUnit). M11-05 ne crée que des fichiers préfixés `Appointment` (`AppointmentController`, `AppointmentService`, `CreateAppointmentRequest`, `UpdateAppointmentRequest`, `CancelAppointmentRequest`, `AppointmentDto`, `AppointmentMapper`, `AppointmentAssembler`, `AppointmentCreatedDto`, `AppointmentUpdatedDto`, `ConflictDto`, événements `api/Appointment*`). M11-06 ne crée que `AgendaController`, `AgendaQueryService`, `AgendaWindowDto`, `FreeBusyDto`, `PatientAppointmentsDto`, `AppointmentDefaultsDto`, et des méthodes de lecture ajoutées à `AppointmentRepository` (seul fichier commun : la seconde PR fusionnée rebase). `AppointmentDto`, `AppointmentMapper`, `AppointmentAssembler` et `ConflictDto` appartiennent à M11-05 ; M11-06 les crée **provisoirement identiques** si M11-05 n'est pas encore fusionnée et le signale dans sa PR, la seconde PR fusionnée garde une seule version. `messages_fr.properties` / `messages_en.properties` : chacun ajoute ses clés sous un commentaire `# agenda (M11-0x)`. Contrat : les deux visent `app.contract.version = 0.12.0` ; la seconde fusionnée relance `make contract`.
 

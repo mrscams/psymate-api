@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-23T11:26:45.230Z",
+  "task": "M16-01",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR #111 fusionnée en squash (568d587) ; décisions Q96 à Q102 en G12, plan docs/M-plan-version-arabe-api.md",
+  "next": "M16-02",
+  "pr": "https://github.com/mrscams/psymate-api/pull/111",
+  "branch": "M16-02-langue-requete",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

@@ -66,7 +66,7 @@ class PatientExportController {
           courante. Les entrées privées et archivées n'en sortent jamais, et un lien vers une entrée \
           non exportée est omis. Langue du document : Accept-Language (français par défaut). Quand \
           Accept-Language demande l'arabe (ar), le document est rendu en français (G Q102) ; le \
-          passage à l'arabe est prévu en second temps. Le PDF est au thème clair. Aucune \
+          passage à l'arabe est proposé pour un second temps. Le PDF est au thème clair. Aucune \
           pagination.\
           """)
   @ApiResponses({

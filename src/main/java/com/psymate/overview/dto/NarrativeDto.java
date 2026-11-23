@@ -8,7 +8,7 @@ import java.util.List;
         "Résumé rédigé par règles (jusqu'à 5 phrases, chacune omise si ses données manquent,"
             + " sans IA), dans la langue de la requête (Accept-Language : français par défaut,"
             + " anglais si demandé). Quand Accept-Language demande l'arabe (ar), ce texte est"
-            + " rendu en français (G Q102) ; le passage à l'arabe est prévu en second temps.")
+            + " rendu en français (G Q102) ; le passage à l'arabe est proposé pour un second temps.")
 public record NarrativeDto(
     @Schema(
             description =

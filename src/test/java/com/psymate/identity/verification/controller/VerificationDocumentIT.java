@@ -492,7 +492,7 @@ class VerificationDocumentIT {
 
     assertThat(statusOf(id)).isEqualTo("under_review");
     assertThat(recorder.submitted).contains(id);
-    String mail = lastMail(adminEmail, "dossier");
+    String mail = lastMail(adminEmail, "dossier", "Dr Test Praticien");
     assertThat(mail).isNotNull().contains("Dr Test Praticien");
 
     // Verrou après soumission : ni retrait, ni nouveau dépôt, ni seconde soumission.
@@ -612,10 +612,24 @@ class VerificationDocumentIT {
 
   /** Texte du dernier e-mail reçu par Mailpit pour ce destinataire ; null après 10 s. */
   private String lastMail(String to, String subjectPart) throws Exception {
+    return lastMail(to, subjectPart, null);
+  }
+
+  /**
+   * Texte du dernier e-mail reçu par Mailpit pour ce destinataire et contenant {@code text} ; null
+   * après 10 s. Les notifications aux administrateurs partent sur un exécuteur à un seul fil qui
+   * lit la liste des administrateurs au moment de l'envoi : la notification en retard d'une
+   * soumission d'un autre test peut donc atteindre un administrateur créé ensuite. Filtrer sur le
+   * texte attendu désigne l'e-mail de la soumission du test, pas le dernier arrivé.
+   */
+  private String lastMail(String to, String subjectPart, String text) throws Exception {
     HttpClient http = HttpClient.newHttpClient();
     String base = "http://" + mailpit.getHost() + ":" + mailpit.getMappedPort(8025);
-    String query =
-        URLEncoder.encode("to:" + to + " subject:\"" + subjectPart + "\"", StandardCharsets.UTF_8);
+    String terms = "to:" + to + " subject:\"" + subjectPart + "\"";
+    if (text != null) {
+      terms += " \"" + text + "\"";
+    }
+    String query = URLEncoder.encode(terms, StandardCharsets.UTF_8);
     long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
     while (System.nanoTime() < deadline) {
       JsonNode found =

@@ -16,6 +16,10 @@ public record EntryTypeView(
     @Schema(description = "Libellé français affiché.", example = "Ressenti") String labelFr,
     @Schema(description = "Libellé anglais.", example = "Feeling") String labelEn,
     @Schema(
+            description = "Libellé arabe ; null s'il n'y en a pas : afficher alors labelFr.",
+            example = "شعور")
+        String labelAr,
+    @Schema(
             description =
                 "Nom de la table de détail propre au type (entry_feeling, entry_session,"
                     + " entry_medication) ; null pour les types sans détail (note, event,"

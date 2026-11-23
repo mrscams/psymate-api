@@ -12,7 +12,8 @@ import org.springframework.stereotype.Component;
 /**
  * Liens posés à la création d'une entrée, vus depuis cette entrée. Le libellé vient du catalogue de
  * types de liens : le libellé inverse quand la nouvelle entrée est la cible d'un type dirigé
- * (direction incoming), le libellé anglais pour Accept-Language: en, le français sinon.
+ * (direction incoming), dans la langue servie : anglais pour Accept-Language: en, arabe pour ar (le
+ * français à défaut de libellé arabe, G Q98), français sinon.
  */
 @Component
 public class EntryLinkAssembler {
@@ -33,18 +34,15 @@ public class EntryLinkAssembler {
   }
 
   private String label(UUID entryId, CreatedLink link, Locale locale) {
-    boolean english = ServedLanguage.of(locale) == ServedLanguage.EN;
+    ServedLanguage language = ServedLanguage.of(locale);
     LinkTypeView type = catalog.findByCode(link.linkType()).orElse(null);
     if (type == null) {
       return link.linkType();
     }
     boolean inverse = type.directed() && link.targetId().equals(entryId);
-    String text =
-        english
-            ? (inverse ? type.inverseLabelEn() : type.labelEn())
-            : (inverse ? type.inverseLabelFr() : type.labelFr());
+    String text = inverse ? type.inverseLabel(language) : type.label(language);
     if (text == null) {
-      text = english ? type.labelEn() : type.labelFr();
+      text = type.label(language);
     }
     return text;
   }

@@ -26,6 +26,9 @@ public class EntryType {
   @Column(nullable = false)
   private String labelEn;
 
+  /** Libellé arabe (V17, G Q98) ; null : le français est rendu à sa place. */
+  private String labelAr;
+
   private String detailTable;
 
   @Column(nullable = false)
@@ -67,6 +70,10 @@ public class EntryType {
 
   public String getLabelEn() {
     return labelEn;
+  }
+
+  public String getLabelAr() {
+    return labelAr;
   }
 
   public String getDetailTable() {

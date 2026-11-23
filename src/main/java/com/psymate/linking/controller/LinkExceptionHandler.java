@@ -87,7 +87,7 @@ class LinkExceptionHandler {
   }
 
   private static String labelOf(LinkTypeView type, Locale locale) {
-    return ServedLanguage.of(locale) == ServedLanguage.EN ? type.labelEn() : type.labelFr();
+    return type.label(ServedLanguage.of(locale));
   }
 
   private static String fieldOf(LinkError error) {

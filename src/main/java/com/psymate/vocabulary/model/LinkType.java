@@ -34,6 +34,12 @@ public class LinkType {
 
   private String inverseLabelEn;
 
+  /** Libellé arabe vu depuis la source (V17, G Q98) ; null : le français est rendu à sa place. */
+  private String labelAr;
+
+  /** Libellé arabe vu depuis la cible ; null si non orienté ou sans libellé arabe. */
+  private String inverseLabelAr;
+
   @JdbcTypeCode(SqlTypes.ARRAY)
   @Column(nullable = false)
   private List<String> allowedSourceTypes;
@@ -101,6 +107,14 @@ public class LinkType {
 
   public String getInverseLabelEn() {
     return inverseLabelEn;
+  }
+
+  public String getLabelAr() {
+    return labelAr;
+  }
+
+  public String getInverseLabelAr() {
+    return inverseLabelAr;
   }
 
   public List<String> getAllowedSourceTypes() {

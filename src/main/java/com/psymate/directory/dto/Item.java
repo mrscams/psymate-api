@@ -2,7 +2,7 @@ package com.psymate.directory.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Entrée d'une liste fermée de l'annuaire, avec ses libellés fr et en.")
+@Schema(description = "Entrée d'une liste fermée de l'annuaire, avec ses libellés fr, en et ar.")
 public record Item(
     @Schema(
             description =
@@ -14,4 +14,10 @@ public record Item(
     @Schema(
             description = "Libellé en anglais ; peut être null pour une entrée ajoutée sans.",
             example = "Anxiety")
-        String labelEn) {}
+        String labelEn,
+    @Schema(
+            description =
+                "Libellé en arabe ; peut être null pour une entrée ajoutée sans : afficher alors"
+                    + " labelFr.",
+            example = "القلق")
+        String labelAr) {}

@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-23T13:39:39.296Z",
+  "task": "M16-03",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR #113 fusionnée en squash (6dac96a) ; V17, 78 libellés arabes du glossaire, labelAr des vues et de l'annuaire",
+  "next": "M16-04, M16-05",
+  "pr": "https://github.com/mrscams/psymate-api/pull/113",
+  "branch": "M16-04-messages-ar",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

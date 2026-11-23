@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-23T16:26:28.448Z",
+  "task": "M16-05",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR #115 fusionnée en squash (d5891ab) ; e-mails arabes multipart, HTML lang=ar dir=rtl",
+  "next": "M16-06",
+  "pr": "https://github.com/mrscams/psymate-api/pull/115",
+  "branch": "M16-06-seed-contrat",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

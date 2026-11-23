@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-23T16:26:29.416Z",
+  "task": "M16-06",
+  "agent": "seed-perf",
+  "status": "in-progress",
+  "summary": "Seed arabe, contrat 0.16.0 (repli français écrit), tag contract-v0.16.0",
+  "branch": "M16-06-seed-contrat",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

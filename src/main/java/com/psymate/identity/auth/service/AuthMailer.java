@@ -1,5 +1,6 @@
 package com.psymate.identity.auth.service;
 
+import com.psymate.shared.mail.RightToLeftMail;
 import jakarta.mail.internet.MimeMessage;
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
@@ -40,7 +41,8 @@ class AuthMailer {
     send(
         to,
         messages.get("mail.reset.subject", locale, appName),
-        messages.get("mail.reset.body", locale, appName, link, 30));
+        messages.get("mail.reset.body", locale, appName, link, 30),
+        locale);
   }
 
   /** Lien de confirmation d'e-mail (24 h, usage unique). */
@@ -49,7 +51,8 @@ class AuthMailer {
     send(
         to,
         messages.get("mail.confirm.subject", locale, appName),
-        messages.get("mail.confirm.body", locale, appName, link, 24));
+        messages.get("mail.confirm.body", locale, appName, link, 24),
+        locale);
   }
 
   /** Information envoyée quand une inscription vise une adresse déjà utilisée. */
@@ -58,7 +61,8 @@ class AuthMailer {
     send(
         to,
         messages.get("mail.exists.subject", locale, appName),
-        messages.get("mail.exists.body", locale, appName, link));
+        messages.get("mail.exists.body", locale, appName, link),
+        locale);
   }
 
   /** Lien de confirmation envoyé à la NOUVELLE adresse (changement d'e-mail, 24 h). */
@@ -67,7 +71,8 @@ class AuthMailer {
     send(
         to,
         messages.get("mail.change.subject", locale, appName),
-        messages.get("mail.change.body", locale, appName, link, 24));
+        messages.get("mail.change.body", locale, appName, link, 24),
+        locale);
   }
 
   /** Information envoyée à l'ANCIENNE adresse une fois le changement confirmé. */
@@ -75,7 +80,8 @@ class AuthMailer {
     send(
         to,
         messages.get("mail.changed.subject", locale, appName),
-        messages.get("mail.changed.body", locale, appName, newEmail, supportEmail));
+        messages.get("mail.changed.body", locale, appName, newEmail, supportEmail),
+        locale);
   }
 
   /** Information envoyée quand un changement d'e-mail vise une adresse déjà utilisée. */
@@ -84,17 +90,26 @@ class AuthMailer {
     send(
         to,
         messages.get("mail.changeExists.subject", locale, appName),
-        messages.get("mail.changeExists.body", locale, appName, link));
+        messages.get("mail.changeExists.body", locale, appName, link),
+        locale);
   }
 
-  private void send(String to, String subject, String text) {
+  /**
+   * Corps {@code text/plain} seul en français et en anglais ; en arabe, {@code
+   * multipart/alternative} de droite à gauche ({@link RightToLeftMail}, G Q100).
+   */
+  private void send(String to, String subject, String text, Locale locale) {
     try {
       MimeMessage message = sender.createMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
       helper.setFrom(from, appName);
       helper.setTo(to);
       helper.setSubject(subject);
-      helper.setText(text);
+      if (RightToLeftMail.applies(locale)) {
+        RightToLeftMail.setBody(message, text);
+      } else {
+        helper.setText(text);
+      }
       sender.send(message);
     } catch (jakarta.mail.MessagingException | UnsupportedEncodingException e) {
       throw new org.springframework.mail.MailPreparationException(e);

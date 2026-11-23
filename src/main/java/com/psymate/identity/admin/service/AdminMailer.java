@@ -1,5 +1,6 @@
 package com.psymate.identity.admin.service;
 
+import com.psymate.shared.mail.RightToLeftMail;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.UnsupportedEncodingException;
@@ -36,6 +37,7 @@ class AdminMailer {
   void sendApproved(String to, Locale locale, String name) {
     send(
         to,
+        locale,
         messages.get("admin.mail.approved.subject", locale, appName),
         messages.get("admin.mail.approved.body", locale, appName, name, webBaseUrl));
   }
@@ -43,6 +45,7 @@ class AdminMailer {
   void sendNeedsMore(String to, Locale locale, String name, String message) {
     send(
         to,
+        locale,
         messages.get("admin.mail.needs_more.subject", locale, appName),
         messages.get(
             "admin.mail.needs_more.body",
@@ -56,6 +59,7 @@ class AdminMailer {
   void sendRejected(String to, Locale locale, String name, String reason) {
     send(
         to,
+        locale,
         messages.get("admin.mail.rejected.subject", locale, appName),
         messages.get("admin.mail.rejected.body", locale, appName, name, reason));
   }
@@ -64,6 +68,7 @@ class AdminMailer {
   void sendSuspended(String to, Locale locale, String name, String reason) {
     send(
         to,
+        locale,
         messages.get("admin.mail.suspended.subject", locale, appName),
         messages.get(
             "admin.mail.suspended.body",
@@ -77,6 +82,7 @@ class AdminMailer {
   void sendReactivated(String to, Locale locale, String name) {
     send(
         to,
+        locale,
         messages.get("admin.mail.reactivated.subject", locale, appName),
         messages.get("admin.mail.reactivated.body", locale, appName, name, webBaseUrl));
   }
@@ -84,6 +90,7 @@ class AdminMailer {
   void sendAppealAccepted(String to, Locale locale, String name, String message) {
     send(
         to,
+        locale,
         messages.get("admin.mail.appeal_accepted.subject", locale, appName),
         messages.get(
             "admin.mail.appeal_accepted.body", locale, appName, name, message, webBaseUrl));
@@ -92,6 +99,7 @@ class AdminMailer {
   void sendAppealDismissed(String to, Locale locale, String name, String message) {
     send(
         to,
+        locale,
         messages.get("admin.mail.appeal_dismissed.subject", locale, appName),
         messages.get("admin.mail.appeal_dismissed.body", locale, appName, name, message));
   }
@@ -99,6 +107,7 @@ class AdminMailer {
   void sendOverdue(String to, Locale locale, int count, String list) {
     send(
         to,
+        locale,
         messages.get("admin.mail.overdue.subject", locale, appName, count),
         messages.get(
             "admin.mail.overdue.body",
@@ -109,14 +118,22 @@ class AdminMailer {
             webBaseUrl + "/admin/verifications"));
   }
 
-  private void send(String to, String subject, String text) {
+  /**
+   * Corps {@code text/plain} seul en français et en anglais ; en arabe, {@code
+   * multipart/alternative} de droite à gauche ({@link RightToLeftMail}, G Q100).
+   */
+  private void send(String to, Locale locale, String subject, String text) {
     try {
       MimeMessage message = sender.createMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
       helper.setFrom(from, appName);
       helper.setTo(to);
       helper.setSubject(subject);
-      helper.setText(text);
+      if (RightToLeftMail.applies(locale)) {
+        RightToLeftMail.setBody(message, text);
+      } else {
+        helper.setText(text);
+      }
       sender.send(message);
     } catch (MessagingException | UnsupportedEncodingException e) {
       throw new MailPreparationException(e);

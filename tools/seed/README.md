@@ -1,6 +1,6 @@
 # tools/seed : données fictives et tests de charge (M7-01)
 
-Générateur de patients fictifs, de leur agenda, de leur Profil 360 et de la prise de rendez-vous en ligne pour PsyMate (C3, E5.5, G Q22, M11-09, M13-03, M14-08). Il n'écrit **jamais** de donnée en SQL : tout passe par l'API REST d'une instance locale, donc par les mêmes règles que l'application (séance obligatoire, versions, matrice des liens E5.3, `author_type = 'practitioner'`). Une seule exception, l'approbation des deux comptes du seed (voir « Prise de rendez-vous en ligne »).
+Générateur de patients fictifs, de leur agenda, de leur Profil 360 et de la prise de rendez-vous en ligne pour PsyMate (C3, E5.5, G Q22, M11-09, M13-03, M14-08), plus une démonstration en arabe (M16-06). Il n'écrit **jamais** de donnée en SQL : tout passe par l'API REST d'une instance locale, donc par les mêmes règles que l'application (séance obligatoire, versions, matrice des liens E5.3, `author_type = 'practitioner'`). Une seule exception, l'approbation des comptes de Claire et de Karim (voir « Prise de rendez-vous en ligne »).
 
 Projet Maven autonome (`com.psymate.tools:psymate-seed`), **sans aucune dépendance d'exécution** : JDK 21 seul, JSON maison (`Json`), `java.net.http` pour les appels.
 
@@ -40,8 +40,9 @@ Sous Windows sans shell POSIX, `make` ne sait pas lancer `./mvnw` : exécuter le
 | --- | --- | --- | --- |
 | Claire Martin | `claire.seed@example.test` | psychologue | environ 40 % ; le patient DEMO |
 | Karim Haddad | `karim.seed@example.test` | psychiatre | environ 60 %, surtout les médicaments |
+| Nour Benali | `nour.seed@example.test` | psychologue | le seul patient `SEED · Youssef A.`, dossier en arabe (voir « Démonstration en arabe ») |
 
-Mot de passe unique des deux comptes : `Donnees-Fictives-2026` (valeur de développement, sans valeur hors du poste local). Les comptes sont créés au premier lancement (inscription, confirmation de l'e-mail par le lien lu dans Mailpit, connexion) ; ensuite le seed se contente de se connecter.
+Mot de passe unique des trois comptes : `Donnees-Fictives-2026` (valeur de développement, sans valeur hors du poste local). Les comptes sont créés au premier lancement (inscription, confirmation de l'e-mail par le lien lu dans Mailpit, connexion) ; ensuite le seed se contente de se connecter.
 
 ## Tailles
 
@@ -114,6 +115,27 @@ Idempotence, demandeur par demandeur (`BookingScenario.toWrite`) : un demandeur 
 
 Contrôle final (lecture) : `GET /api/public/booking/practitioners/{slug}` répond `200` pour les deux praticiens, chacun a des créneaux sur 28 jours, et chaque demandeur est à sa place (`BookingScenario.problems`) : Inès et Hugo en attente (`tentative`), Nadia confirmée (`planned`), une annulation par expiration étant seule tolérée ; un demandeur absent ou dont la demande a été refusée ou annulée fait échouer le contrôle (code de sortie 1). Exemple au premier passage : `Prise de rendez-vous en ligne : Claire /claire-martin (manual, 98 créneaux sur 28 jours, 2 demandes en attente ; 3 demande(s) écrite(s), Nadia confirmée), Karim /karim-haddad (auto, 24 créneaux) ; fiches publiques 200 et 200 ; approuvés en SQL : claire.seed@example.test, karim.seed@example.test : OK` ; à la relance, `0 demande(s) écrite(s)`. `BookingScenarioTest` vérifie sans réseau les réglages, les données fictives, le choix des créneaux, la décision « qui reste à écrire » et la requête d'approbation.
 
+## Démonstration en arabe (M16-06, tailles `small` et `medium`)
+
+Après la prise de rendez-vous en ligne, le seed écrit la démonstration en arabe du jalon M16 (G Q96 à Q102, `docs/M-plan-version-arabe-api.md`), **par l'API seulement** (`ArabicStory`, pur et déterministe, puis `ArabicSeeder`). Identifiants stables, pour les e2e arabes du web :
+
+| Quoi | Valeur |
+| --- | --- |
+| Compte | `nour.seed@example.test` (Nour Benali, psychologue), mot de passe du seed |
+| Préférence `locale` | `ar` (`PATCH /api/me/preferences`) ; colonne `practitioner.locale` = `ar` (inscription avec `Accept-Language: ar`, e-mail de confirmation en arabe) |
+| Patient | `SEED · Youssef A.` (Youssef Amrani, né le 12 avril 1988, « il »), seul patient du compte |
+| Dossier | 3 séances passées (il y a 42, 28 et 14 jours, reportées au lundi un week-end), closes avec un compte rendu en arabe ; 9 entrées, 7 liens |
+
+- **Huit entrées en arabe standard moderne**, titre et texte : deux situations (« ضغط متواصل في العمل », « صعوبات في النوم »), un événement (« اجتماع متوتر مع المدير »), trois ressentis (« قلق مساء الأحد », anxiété 7 ; « خزي بعد الاجتماع », honte 6 ; « هدوء نسبي », calme 4), deux notes (« سبب الاستشارة », « تقدّم تدريجي »).
+- **Une note qui mêle arabe et français dans une même phrase** : titre « Vocabulaire du patient : « تعب في الرأس » », texte « Le patient parle de « تعب في الرأس » pour décrire sa fatigue du soir, et il ajoute que le dimanche « القلق يبدأ من الظهر » bien avant la reprise du travail. »
+- Le texte parle du patient au masculin grammatical de « المريض » (forme générique du glossaire, règle 4) ; chiffres latins partout (Q101). Il contient exprès des formes que la recherche mot à mot distingue (article collé, ta marbuta, alif avec ou sans hamza, singulier et pluriel : « النوم » et « نوم », « الاجتماع » et « الاجتماعات », « صعوبة » et « صعوبات ») : M16-32 mesurera dessus ce que la recherche actuelle trouve et manque.
+- Le compte n'est **ni approuvé ni publié** : il n'a ni fiche d'annuaire, ni agenda, ni prise de rendez-vous, et aucune écriture SQL ne le concerne (`LocalApproval` ne touche que Claire et Karim). Il ne fait pas partie de l'énumération `Practitioner` : l'agenda, la prise de rendez-vous et les tests de performance, qui la parcourent, ne changent pas.
+- Claire et Karim ne changent pas : leurs requêtes portent toujours `Accept-Language: fr`.
+
+Idempotence : la préférence n'est posée que si elle ne vaut pas déjà `ar`, et le dossier n'est écrit que si `SEED · Youssef A.` n'existe pas chez Nour (comme les autres patients ; un dossier interrompu est archivé pour être recréé à la relance).
+
+Contrôle final (lecture, `Accept-Language: ar`) : la préférence vaut `ar`, chaque titre du plan se relit tel quel dans la timeline, et les catalogues portent leur libellé arabe : `labelAr` sur les 29 émotions globales (`GET /api/vocabulary/emotions`), les types d'entrée et les types de lien, `inverseLabelAr` sur les types de lien orientés ; le dossier passe aussi par le contrôle commun (`authorType`, `sessionId`). Exemple au premier passage : `Démonstration en arabe : nour.seed@example.test, préférence locale = ar (posée maintenant) ; dossier « SEED · Youssef A. » créé (3 séances, 9 entrées, 7 liens) ; catalogues lus avec Accept-Language: ar : labelAr sur 29/29 émotions globales, 6/6 types d'entrée, 8/8 types de lien, inverseLabelAr sur 7/7 types orientés : OK` ; à la relance, `Démonstration en arabe : nour.seed@example.test, préférence locale = ar (déjà posée) ; dossier « SEED · Youssef A. » déjà présent ; catalogues lus avec Accept-Language: ar : labelAr sur 29/29 émotions globales, 6/6 types d'entrée, 8/8 types de lien, inverseLabelAr sur 7/7 types orientés : OK`. `ArabicStoryTest` vérifie sans réseau le plan (règles de E, types et textes en arabe, entrée mixte, chiffres latins, comptes rendus), le compte, et les décisions de `ArabicSeeder` (préférence, titres relus, catalogues).
+
 ## Idempotence
 
 Avant d'écrire, le seed liste les patients du praticien (toutes les pages). Un patient du plan dont le `displayName` existe déjà est **ignoré** (compté « déjà présent »). Relancer `make seed` ne duplique donc rien ; seul un plan plus grand ajoute les patients manquants. Si l'écriture d'un patient échoue en route, son dossier partiel est archivé (suppression logique) pour qu'une relance le recrée proprement.
@@ -138,7 +160,7 @@ Lecture seule, par l'API : pour chaque patient du plan (créé ou déjà présen
 - Les corrections (PATCH) créent des versions, sauf dans la fenêtre de grâce de 1 h 15 : comme le seed écrit vite, la plupart des corrections de situations et de médicaments modifient l'entrée en place.
 - Les tags du praticien (`travail`, `couple`, `famille`...) sont créés au besoin ; un tag déjà présent est réutilisé.
 - Le seed ne supprime rien : `make db-reset` repart d'une base vide.
-- Le seed n'écrit qu'une chose en SQL : l'approbation de ses deux comptes (voir « Prise de rendez-vous en ligne ») ; il lui faut donc `docker` et le conteneur Postgres local.
+- Le seed n'écrit qu'une chose en SQL : l'approbation des comptes de Claire et de Karim (voir « Prise de rendez-vous en ligne » ; celui de Nour n'est pas approuvé) ; il lui faut donc `docker` et le conteneur Postgres local.
 - L'idempotence se fait sur le nom d'affichage : deux graines différentes (ou deux tailles) peuvent produire le même `SEED · Prénom I.` ; ce patient est alors considéré comme déjà présent et n'est pas recréé.
 
 ## Tests de charge (`make perf`)

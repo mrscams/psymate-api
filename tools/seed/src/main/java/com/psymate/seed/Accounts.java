@@ -23,15 +23,35 @@ public final class Accounts {
   private static final String PHONE = "+33600000001";
   private static final Pattern TOKEN = Pattern.compile("confirmer-email/([A-Za-z0-9_.~%-]+)");
 
-  /** Identité d'un praticien du seed. */
+  /**
+   * Identité d'un praticien du seed.
+   *
+   * @param who praticien de l'énumération ; {@code null} pour la praticienne arabophone ({@link
+   *     #ARABIC}), qui n'en fait pas partie (voir {@link ArabicStory})
+   * @param language {@code Accept-Language} de toutes ses requêtes, inscription comprise : la
+   *     colonne {@code practitioner.locale} en vient
+   */
   public record Account(
-      Practitioner who, String email, String firstName, String lastName, String profession) {}
+      Practitioner who,
+      String email,
+      String firstName,
+      String lastName,
+      String profession,
+      String language) {}
+
+  /**
+   * Praticienne de démonstration en arabe (M16-06) : compte neuf, utilisé par aucun e2e en
+   * français, préférence {@code locale = ar} posée par {@link ArabicSeeder}.
+   */
+  public static final Account ARABIC =
+      new Account(null, "nour.seed@example.test", "Nour", "Benali", "psychologist", "ar");
 
   public static Account of(Practitioner who) {
     return switch (who) {
       case CLAIRE ->
-          new Account(who, "claire.seed@example.test", "Claire", "Martin", "psychologist");
-      case KARIM -> new Account(who, "karim.seed@example.test", "Karim", "Haddad", "psychiatrist");
+          new Account(who, "claire.seed@example.test", "Claire", "Martin", "psychologist", "fr");
+      case KARIM ->
+          new Account(who, "karim.seed@example.test", "Karim", "Haddad", "psychiatrist", "fr");
     };
   }
 
@@ -45,8 +65,12 @@ public final class Accounts {
 
   /** Ouvre une NOUVELLE session connectée pour ce praticien, en créant le compte au besoin. */
   public ApiClient login(Practitioner who) {
-    Account account = of(who);
-    ApiClient client = new ApiClient(apiUrl);
+    return login(of(who));
+  }
+
+  /** Ouvre une NOUVELLE session connectée pour ce compte, en le créant au besoin. */
+  public ApiClient login(Account account) {
+    ApiClient client = new ApiClient(apiUrl, ApiClient.MAX_RETRIES, account.language());
     Response r = tryLogin(client, account);
     if (r.status() == 200) {
       return client;

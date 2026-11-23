@@ -58,6 +58,7 @@ public final class ApiClient {
   private final String base;
   private final HttpClient http;
   private final int maxRetries;
+  private final String language;
 
   // pot de cookies maison : la session est posée avec l attribut Secure, que java.net.CookieManager
   // refuse de renvoyer en http (l API locale n a pas de TLS)
@@ -73,6 +74,16 @@ public final class ApiClient {
    * quelques secondes.
    */
   public ApiClient(String baseUrl, int maxRetries) {
+    this(baseUrl, maxRetries, "fr");
+  }
+
+  /**
+   * Client dont chaque requête porte {@code Accept-Language: language} : {@code fr} pour Claire,
+   * Karim et les visiteurs, {@code ar} pour la praticienne arabophone (M16-06), qui s'inscrit donc
+   * en arabe ({@code practitioner.locale = ar}).
+   */
+  public ApiClient(String baseUrl, int maxRetries, String language) {
+    this.language = language;
     this.maxRetries = Math.max(0, maxRetries);
     this.base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
     this.http =
@@ -132,7 +143,7 @@ public final class ApiClient {
           HttpRequest.newBuilder(URI.create(base + path))
               .timeout(Duration.ofSeconds(120))
               .header("Accept", "application/json, application/problem+json")
-              .header("Accept-Language", "fr");
+              .header("Accept-Language", language);
       if (!cookies.isEmpty()) {
         builder.header("Cookie", cookieHeader());
       }

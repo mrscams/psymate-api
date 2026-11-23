@@ -105,21 +105,32 @@ public final class Seed {
         pretty(summary.elapsed()));
 
     BookingSeeder.Result booking = null;
+    ArabicSeeder arabicSeeder = null;
+    ArabicSeeder.Result arabic = null;
     if (!"demo".equals(size)) {
       seedAgenda(plan, runner, seed, out);
       booking =
           new BookingSeeder(api, mailpit, new LocalApproval(pgContainer))
               .seed(runner.mainClient(Practitioner.CLAIRE), runner.mainClient(Practitioner.KARIM));
       out.println(booking.describe());
+      // démonstration en arabe (M16-06) : sa propre praticienne, hors de l'énumération Practitioner
+      arabicSeeder = new ArabicSeeder(accounts);
+      arabic = arabicSeeder.seed();
+      out.println(arabic.describe());
     }
 
     Map<String, ApiClient> toCheck = new LinkedHashMap<>();
     for (Map.Entry<String, Practitioner> e : summary.patientOwners().entrySet()) {
       toCheck.put(e.getKey(), runner.mainClient(e.getValue()));
     }
+    if (arabic != null) {
+      toCheck.put(arabic.patientId(), arabicSeeder.client());
+    }
     Verifier.Report report = Verifier.verify(toCheck);
     out.println(report.describe());
-    return report.ok() && (booking == null || booking.ok()) ? 0 : 1;
+    return report.ok() && (booking == null || booking.ok()) && (arabic == null || arabic.ok())
+        ? 0
+        : 1;
   }
 
   // ---- agenda (M11-09)

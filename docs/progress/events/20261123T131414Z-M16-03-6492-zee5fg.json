@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-23T13:14:14.817Z",
+  "task": "M16-03",
+  "agent": "backend-module-dev",
+  "status": "review",
+  "summary": "Catalogues : label_ar et inverse_label_ar (V17, 78 libellés du glossaire), labelAr des vues, de l'administration et des listes de l'annuaire, contrat 0.16.0",
+  "next": "M16-04",
+  "pr": "https://github.com/mrscams/psymate-api/pull/113",
+  "branch": "M16-03-catalogues-ar",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

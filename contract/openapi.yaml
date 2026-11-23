@@ -1406,6 +1406,11 @@ components:
           - audience
           example: specialty
           type: string
+        labelAr:
+          description: 'Libellé arabe, 120 caractères au plus ; vide ou absent : pas de libellé arabe.'
+          example: اضطرابات النوم
+          maxLength: 120
+          type: string
         labelEn:
           description: 'Libellé anglais, 120 caractères au plus ; vide ou absent : pas de libellé anglais.'
           example: Sleep therapy
@@ -1783,6 +1788,10 @@ components:
           maximum: 3
           minimum: 1
           type: integer
+        labelAr:
+          description: 'Libellé arabe ; null pour une émotion personnalisée (un seul libellé, celui saisi par le praticien) ou pour une globale sans libellé arabe : afficher alors labelFr.'
+          example: قلق
+          type: string
         labelEn:
           description: Libellé anglais ; null pour une émotion personnalisée (saisie en français seulement).
           example: Anxiety
@@ -2425,6 +2434,10 @@ components:
           description: true si le type porte une durée (situation, session, medication), false sinon.
           example: false
           type: boolean
+        labelAr:
+          description: 'Libellé arabe ; null s''il n''y en a pas : afficher alors labelFr.'
+          example: شعور
+          type: string
         labelEn:
           description: Libellé anglais.
           example: Feeling
@@ -2946,11 +2959,15 @@ components:
       - lastName
       type: object
     Item:
-      description: Entrée d'une liste fermée de l'annuaire, avec ses libellés fr et en.
+      description: Entrée d'une liste fermée de l'annuaire, avec ses libellés fr, en et ar.
       properties:
         code:
           description: Code stable à envoyer dans le profil ou dans les filtres de recherche (minuscules et underscores, ou code de langue ISO 639-1).
           example: anxiety
+          type: string
+        labelAr:
+          description: 'Libellé en arabe ; peut être null pour une entrée ajoutée sans : afficher alors labelFr.'
+          example: القلق
           type: string
         labelEn:
           description: Libellé en anglais ; peut être null pour une entrée ajoutée sans.
@@ -2977,6 +2994,10 @@ components:
           - specialty
           - audience
           example: specialty
+          type: string
+        labelAr:
+          description: Libellé arabe ; null s'il n'y en a pas.
+          example: القلق
           type: string
         labelEn:
           description: Libellé anglais ; null s'il n'y en a pas.
@@ -3158,6 +3179,10 @@ components:
           description: true si le lien a un sens (source vers cible) ; false si symétrique (co_occurs).
           example: true
           type: boolean
+        inverseLabelAr:
+          description: 'Libellé arabe vu depuis l''entrée cible ; null si non orienté ou s''il n''y en a pas : afficher alors inverseLabelFr.'
+          example: يُثيره
+          type: string
         inverseLabelEn:
           description: Libellé anglais vu depuis l'entrée cible ; null si non orienté.
           example: triggered by
@@ -3165,6 +3190,10 @@ components:
         inverseLabelFr:
           description: Libellé français vu depuis l'entrée cible ; null si le lien n'est pas orienté.
           example: déclenché par
+          type: string
+        labelAr:
+          description: 'Libellé arabe vu depuis l''entrée source ; null s''il n''y en a pas : afficher alors labelFr.'
+          example: يُثير
           type: string
         labelEn:
           description: Libellé anglais vu depuis l'entrée source.
@@ -3611,6 +3640,10 @@ components:
         active:
           description: false pour désactiver l'entrée (409 VOCABULARY_IN_USE si une fiche publiée l'utilise), true pour la réactiver.
           type: boolean
+        labelAr:
+          description: 'Nouveau libellé arabe, 120 caractères au plus ; chaîne vide : efface le libellé arabe.'
+          maxLength: 120
+          type: string
         labelEn:
           description: 'Nouveau libellé anglais, 120 caractères au plus ; chaîne vide : efface le libellé anglais.'
           maxLength: 120
@@ -4980,6 +5013,10 @@ components:
           example: 12
           format: int64
           type: integer
+        labelAr:
+          description: 'Libellé en arabe ; peut être null pour une entrée ajoutée sans : afficher alors labelFr.'
+          example: القلق
+          type: string
         labelEn:
           description: Libellé en anglais ; peut être null pour une entrée ajoutée sans.
           example: Anxiety
@@ -6845,7 +6882,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED avec errors[] {field, code, message} ; codes de champ : INVALID_VALUE (kind absent ou autre que specialty ou audience), REQUIRED (code, labelFr), INVALID_FORMAT (code hors du format minuscule, chiffres et underscores, 2 à 40 caractères, commençant par une lettre), TOO_LONG (labelFr, labelEn au-delà de 120 caractères), OUT_OF_RANGE (sortOrder hors de 0 à 32767).'
+          description: 'VALIDATION_FAILED avec errors[] {field, code, message} ; codes de champ : INVALID_VALUE (kind absent ou autre que specialty ou audience), REQUIRED (code, labelFr), INVALID_FORMAT (code hors du format minuscule, chiffres et underscores, 2 à 40 caractères, commençant par une lettre), TOO_LONG (labelFr, labelEn, labelAr au-delà de 120 caractères), OUT_OF_RANGE (sortOrder hors de 0 à 32767).'
         '429':
           content:
             application/problem+json:
@@ -6863,7 +6900,7 @@ paths:
       - 'Administration : vocabulaire de l''annuaire'
   /api/admin/vocabulary/directory/{kind}/{code}:
     patch:
-      description: 'Admin avec double authentification active. Modification partielle : un champ absent reste inchangé, labelEn vide efface le libellé anglais. Une entrée désactivée disparaît de GET /api/vocabulary/directory et ne peut plus être choisie ni publiée ; on ne peut la désactiver que si aucune fiche publiée ne l''utilise. Le code et le type ne changent pas.'
+      description: 'Admin avec double authentification active. Modification partielle : un champ absent reste inchangé, labelEn vide efface le libellé anglais et labelAr vide le libellé arabe. Une entrée désactivée disparaît de GET /api/vocabulary/directory et ne peut plus être choisie ni publiée ; on ne peut la désactiver que si aucune fiche publiée ne l''utilise. Le code et le type ne changent pas.'
       operationId: updateAdminDirectoryVocabulary
       parameters:
       - description: 'Type de l''entrée : specialty (spécialité) ou audience (public).'
@@ -6931,7 +6968,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED avec errors[] {field, code, message} ; codes de champ : REQUIRED (labelFr vide), TOO_LONG (labelFr, labelEn au-delà de 120 caractères), OUT_OF_RANGE (sortOrder hors de 0 à 32767).'
+          description: 'VALIDATION_FAILED avec errors[] {field, code, message} ; codes de champ : REQUIRED (labelFr vide), TOO_LONG (labelFr, labelEn, labelAr au-delà de 120 caractères), OUT_OF_RANGE (sortOrder hors de 0 à 32767).'
         '429':
           content:
             application/problem+json:

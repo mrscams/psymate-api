@@ -15,6 +15,12 @@ public record SpecialtyFacetCount(
         String labelEn,
     @Schema(
             description =
+                "Libellé en arabe ; peut être null pour une entrée ajoutée sans : afficher alors"
+                    + " labelFr.",
+            example = "القلق")
+        String labelAr,
+    @Schema(
+            description =
                 "Nombre de fiches qui auraient ce code seul, tous les autres filtres appliqués"
                     + " sauf specialties. Exact jusqu'à 500 fiches examinées ; au-delà, il porte"
                     + " sur les 500 premières dans l'ordre du tri (G Q48).",

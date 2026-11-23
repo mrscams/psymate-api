@@ -157,7 +157,10 @@ public class PublicDirectoryService {
     }
     return active.stream()
         .filter(i -> counts.containsKey(i.code()))
-        .map(i -> new SpecialtyFacetCount(i.code(), i.labelFr(), i.labelEn(), counts.get(i.code())))
+        .map(
+            i ->
+                new SpecialtyFacetCount(
+                    i.code(), i.labelFr(), i.labelEn(), i.labelAr(), counts.get(i.code())))
         .sorted(Comparator.comparingLong(SpecialtyFacetCount::count).reversed())
         .toList();
   }

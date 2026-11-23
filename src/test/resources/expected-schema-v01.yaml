@@ -26,6 +26,7 @@ emotion:
   - promoted_to
   - created_by
   - created_at
+  - label_ar
 entry_type:
   - code
   - label_fr
@@ -34,6 +35,7 @@ entry_type:
   - has_duration
   - sort_order
   - active
+  - label_ar
 event_publication:
   - id
   - listener_id
@@ -56,6 +58,8 @@ link_type:
   - line_style
   - sort_order
   - active
+  - label_ar
+  - inverse_label_ar
 patient:
   - id
   - tenant_id
@@ -283,6 +287,7 @@ directory_vocabulary:
   - active
   - created_at
   - updated_at
+  - label_ar
 practitioner_profile:
   - practitioner_id
   - slug

@@ -35,9 +35,22 @@ public record CreateRequest(
         String labelEn,
     @Schema(
             description =
+                "Libellé arabe, 120 caractères au plus ; vide ou absent : pas de libellé arabe.",
+            maxLength = 120,
+            example = "اضطرابات النوم")
+        String labelAr,
+    @Schema(
+            description =
                 "Rang d'affichage dans le type, de 0 à 32767 ; absent : après le dernier du"
                     + " type.",
             minimum = "0",
             maximum = "32767",
             example = "23")
-        Integer sortOrder) {}
+        Integer sortOrder) {
+
+  /** Création sans libellé arabe. */
+  public CreateRequest(
+      String kind, String code, String labelFr, String labelEn, Integer sortOrder) {
+    this(kind, code, labelFr, labelEn, null, sortOrder);
+  }
+}

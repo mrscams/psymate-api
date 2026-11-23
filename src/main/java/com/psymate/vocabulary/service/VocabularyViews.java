@@ -25,6 +25,7 @@ public final class VocabularyViews {
         e.getIntensityLevel(),
         e.getLabelFr(),
         e.getLabelEn(),
+        e.getLabelAr(),
         e.isActive());
   }
 
@@ -42,6 +43,7 @@ public final class VocabularyViews {
         t.getCode(),
         t.getLabelFr(),
         t.getLabelEn(),
+        t.getLabelAr(),
         t.getDetailTable(),
         t.hasDuration(),
         t.getSortOrder());
@@ -53,8 +55,10 @@ public final class VocabularyViews {
         t.isDirected(),
         t.getLabelFr(),
         t.getLabelEn(),
+        t.getLabelAr(),
         t.getInverseLabelFr(),
         t.getInverseLabelEn(),
+        t.getInverseLabelAr(),
         t.getAllowedSourceTypes(),
         t.getAllowedTargetTypes(),
         t.getLineStyle(),

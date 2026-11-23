@@ -443,7 +443,8 @@ CREATE TABLE entry_type (
   detail_table  text,                                  -- entry_feeling, entry_medication, entry_session ; NULL si aucune
   has_duration  boolean NOT NULL DEFAULT false,        -- situation, medication, session
   sort_order    smallint NOT NULL,
-  active        boolean NOT NULL DEFAULT true
+  active        boolean NOT NULL DEFAULT true,
+  label_ar      text                                   -- V17 (M16-03, G Q98) : libellé arabe du glossaire ; NULL = français rendu à sa place
 );
 
 -- Émotions : globales (produit) et personnalisées (praticien), A4.5.
@@ -465,6 +466,7 @@ CREATE TABLE emotion (
   promoted_to         text REFERENCES emotion(code),   -- custom fusionnée dans une globale (V2)
   created_by          uuid REFERENCES practitioner(id),
   created_at          timestamptz NOT NULL DEFAULT now(),
+  label_ar            text,                            -- V17 (M16-03, G Q98) : globales seulement ; une custom garde son seul libellé (NULL)
   CONSTRAINT ck_emotion_custom_owner CHECK (
     (scope = 'global' AND practitioner_id IS NULL) OR (scope = 'custom' AND practitioner_id IS NOT NULL))
 );
@@ -496,7 +498,9 @@ CREATE TABLE link_type (
   allowed_target_types  text[] NOT NULL,
   line_style            text NOT NULL DEFAULT 'solid', -- solid, long_dash, short_dash, dotted, thin, double (étude couleurs §4)
   sort_order            smallint NOT NULL,
-  active                boolean NOT NULL DEFAULT true
+  active                boolean NOT NULL DEFAULT true,
+  label_ar              text,                          -- V17 (M16-03, G Q98) : « يُثير » ; NULL = français rendu à sa place
+  inverse_label_ar      text                           -- V17 : « يُثيره » ; NULL si non orienté
 );
 
 -- Tags libres du praticien (A4.6). practitioner_id NULL = tag partagé global (V2, réservé).
@@ -767,6 +771,7 @@ CREATE TABLE directory_vocabulary (
   active      boolean NOT NULL DEFAULT true,           -- désactivation, jamais suppression
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now(),
+  label_ar    text,                                    -- V17 (M16-03, G Q98) : libellé arabe, mêmes règles que label_en en administration
   PRIMARY KEY (kind, code)
 );
 
@@ -1055,7 +1060,7 @@ CREATE INDEX ix_booking_request_appointment ON booking_request(appointment_id) W
 | `V14__patient_profile.sql` | M13-02 (patients) | M13-A | E3.4 `patient_profile_item` | V01 |
 | `V15__agenda_booking.sql` | M14-04 (agenda) | M14-A | E3.14 prise de rendez-vous en ligne : colonnes `guest_email` et `origin` d'`appointment`, `ck_appointment_subject` refaite, `ix_appointment_online_pending`, table `booking_request` (G Q71–Q82) | V13 |
 | `V16` (nom au choix de la tâche, réservé le 23 novembre 2026 par M16-01) | M16-02 (shared, identity, agenda) | M16-B | Version arabe : contraintes `CHECK (locale IN ('fr','en'))` de `practitioner.locale` et `booking_request.locale` élargies à `ar` (G Q97) | V15 |
-| `V17` (nom au choix de la tâche, réservé le 23 novembre 2026 par M16-01) | M16-03 (vocabulary, directory, linking) | M16-C | Version arabe : `label_ar` sur `entry_type`, `emotion`, `link_type`, `directory_vocabulary`, `inverse_label_ar` sur `link_type`, libellés arabes des lignes globales (G Q98) | V16 |
+| `V17__catalog_label_ar.sql` (réservé le 23 novembre 2026 par M16-01) | M16-03 (vocabulary, directory, linking) | M16-C | Version arabe : `label_ar` sur `entry_type`, `emotion`, `link_type`, `directory_vocabulary`, `inverse_label_ar` sur `link_type`, libellés arabes des lignes globales (G Q98) | V16 |
 | *conditionnelles* | voir E6 | — | `directory_profile_version`, `directory_report` (V1.1, G Q26) ; `practitioner_integration` et colonnes Google d'`appointment` (M12, hors V1, G Q51) | — |
 
 Ce que ce plan change par rapport à C (reporté en E8) : M0-03 crée `practitioner` **avec** ses colonnes A10.2 (M1-10 ne fait plus d'`ALTER`, il crée les tables de vérification) ; M0-03 ne crée plus `entry_embedding` / `entry_chunk` / `ai_feedback`, impossibles avant `entry` et `link` ; M5-01 reçoit sa propre migration.

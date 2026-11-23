@@ -27,6 +27,9 @@ public class DirectoryVocabulary implements Persistable<DirectoryVocabularyId> {
 
   private String labelEn;
 
+  /** Libellé arabe (V17, G Q98) ; null : le français est rendu à sa place. */
+  private String labelAr;
+
   @Column(nullable = false)
   private short sortOrder;
 
@@ -45,10 +48,16 @@ public class DirectoryVocabulary implements Persistable<DirectoryVocabularyId> {
 
   /** Nouvelle entrée, active. {@code sortOrder} est borné à smallint par le service. */
   public DirectoryVocabulary(
-      DirectoryVocabularyId id, String labelFr, String labelEn, int sortOrder, OffsetDateTime now) {
+      DirectoryVocabularyId id,
+      String labelFr,
+      String labelEn,
+      String labelAr,
+      int sortOrder,
+      OffsetDateTime now) {
     this.id = Objects.requireNonNull(id);
     this.labelFr = Objects.requireNonNull(labelFr);
     this.labelEn = labelEn;
+    this.labelAr = labelAr;
     this.sortOrder = (short) sortOrder;
     this.active = true;
     this.createdAt = now;
@@ -56,9 +65,15 @@ public class DirectoryVocabulary implements Persistable<DirectoryVocabularyId> {
   }
 
   public void update(
-      String labelFr, String labelEn, int sortOrder, boolean active, OffsetDateTime now) {
+      String labelFr,
+      String labelEn,
+      String labelAr,
+      int sortOrder,
+      boolean active,
+      OffsetDateTime now) {
     this.labelFr = Objects.requireNonNull(labelFr);
     this.labelEn = labelEn;
+    this.labelAr = labelAr;
     this.sortOrder = (short) sortOrder;
     this.active = active;
     this.updatedAt = now;
@@ -83,6 +98,10 @@ public class DirectoryVocabulary implements Persistable<DirectoryVocabularyId> {
 
   public String getLabelEn() {
     return labelEn;
+  }
+
+  public String getLabelAr() {
+    return labelAr;
   }
 
   public int getSortOrder() {

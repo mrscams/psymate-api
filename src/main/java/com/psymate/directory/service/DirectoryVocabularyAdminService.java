@@ -87,6 +87,10 @@ public class DirectoryVocabularyAdminService {
     if (labelEn != null && labelEn.length() > MAX_LABEL) {
       errors.add(new FieldError("labelEn", "TOO_LONG", "vocabulary.error.label"));
     }
+    String labelAr = blankToNull(r.labelAr());
+    if (labelAr != null && labelAr.length() > MAX_LABEL) {
+      errors.add(new FieldError("labelAr", "TOO_LONG", "vocabulary.error.label"));
+    }
     if (r.sortOrder() != null && (r.sortOrder() < 0 || r.sortOrder() > MAX_SORT)) {
       errors.add(new FieldError("sortOrder", "OUT_OF_RANGE", "vocabulary.error.sort"));
     }
@@ -94,7 +98,7 @@ public class DirectoryVocabularyAdminService {
       throw DirectoryVocabularyException.invalid(errors);
     }
     try {
-      return tx.execute(status -> doCreate(r, labelFr, labelEn));
+      return tx.execute(status -> doCreate(r, labelFr, labelEn, labelAr));
     } catch (DataIntegrityViolationException race) {
       // Seule la course sur la clé (kind, code) devient un 409 ; toute autre violation
       // d'intégrité reste une erreur serveur, comme l'ancien catch de DuplicateKeyException.
@@ -118,7 +122,7 @@ public class DirectoryVocabularyAdminService {
     return false;
   }
 
-  private ItemDto doCreate(CreateRequest r, String labelFr, String labelEn) {
+  private ItemDto doCreate(CreateRequest r, String labelFr, String labelEn, String labelAr) {
     DirectoryVocabularyId id = new DirectoryVocabularyId(r.kind(), r.code());
     if (repo.existsById(id)) {
       throw exists();
@@ -126,7 +130,8 @@ public class DirectoryVocabularyAdminService {
     int sort =
         r.sortOrder() != null ? r.sortOrder() : Math.min(repo.nextSortOrder(r.kind()), MAX_SORT);
     DirectoryVocabulary created =
-        repo.save(new DirectoryVocabulary(id, labelFr, labelEn, sort, Timestamps.now(clock)));
+        repo.save(
+            new DirectoryVocabulary(id, labelFr, labelEn, labelAr, sort, Timestamps.now(clock)));
     // Un code qui n'existait pas ne peut être dans aucune fiche : aucun usage.
     return dto(created, 0);
   }
@@ -156,6 +161,13 @@ public class DirectoryVocabularyAdminService {
         errors.add(new FieldError("labelEn", "TOO_LONG", "vocabulary.error.label"));
       }
     }
+    String labelAr = current.getLabelAr();
+    if (r.labelAr() != null) {
+      labelAr = blankToNull(r.labelAr());
+      if (labelAr != null && labelAr.length() > MAX_LABEL) {
+        errors.add(new FieldError("labelAr", "TOO_LONG", "vocabulary.error.label"));
+      }
+    }
     int sort = current.getSortOrder();
     if (r.sortOrder() != null) {
       sort = r.sortOrder();
@@ -175,7 +187,7 @@ public class DirectoryVocabularyAdminService {
           "vocabulary.error.inuse",
           Map.of("usedByPublishedProfiles", used));
     }
-    current.update(labelFr, labelEn, sort, active, Timestamps.now(clock));
+    current.update(labelFr, labelEn, labelAr, sort, active, Timestamps.now(clock));
     return dto(current, used);
   }
 
@@ -190,6 +202,7 @@ public class DirectoryVocabularyAdminService {
         v.getCode(),
         v.getLabelFr(),
         v.getLabelEn(),
+        v.getLabelAr(),
         v.getSortOrder(),
         v.isActive(),
         usedByPublishedProfiles);

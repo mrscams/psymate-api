@@ -198,7 +198,7 @@ class PublicDirectoryVocabularyIT {
       for (JsonNode item : b.path(list)) {
         List<String> itemFields = new ArrayList<>();
         item.propertyNames().forEach(itemFields::add);
-        assertThat(itemFields).containsExactlyInAnyOrder("code", "labelFr", "labelEn");
+        assertThat(itemFields).containsExactlyInAnyOrder("code", "labelFr", "labelEn", "labelAr");
       }
     }
   }

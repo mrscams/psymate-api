@@ -60,6 +60,13 @@ public class Emotion implements Persistable<String> {
 
   private String labelEn;
 
+  /**
+   * Libellé arabe d'une globale (V17, G Q98). Jamais écrit par l'application : une émotion
+   * personnalisée garde son seul libellé, celui que le praticien a saisi.
+   */
+  @Column(insertable = false, updatable = false)
+  private String labelAr;
+
   @Column(nullable = false)
   private String labelNormalized;
 
@@ -194,6 +201,10 @@ public class Emotion implements Persistable<String> {
 
   public String getLabelEn() {
     return labelEn;
+  }
+
+  public String getLabelAr() {
+    return labelAr;
   }
 
   String getLabelNormalized() {

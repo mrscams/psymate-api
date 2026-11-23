@@ -2,7 +2,7 @@ package com.psymate.directory.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-/** Modification partielle : un champ absent reste inchangé ; labelEn vide efface le libellé. */
+/** Modification partielle : un champ absent reste inchangé ; labelEn ou labelAr vide l'efface. */
 @Schema(
     description =
         "Modification partielle d'une entrée : un champ absent reste inchangé. Le code et le"
@@ -19,6 +19,12 @@ public record PatchRequest(
             maxLength = 120)
         String labelEn,
     @Schema(
+            description =
+                "Nouveau libellé arabe, 120 caractères au plus ; chaîne vide : efface le libellé"
+                    + " arabe.",
+            maxLength = 120)
+        String labelAr,
+    @Schema(
             description = "Nouveau rang d'affichage dans le type, de 0 à 32767.",
             minimum = "0",
             maximum = "32767")
@@ -27,4 +33,10 @@ public record PatchRequest(
             description =
                 "false pour désactiver l'entrée (409 VOCABULARY_IN_USE si une fiche publiée"
                     + " l'utilise), true pour la réactiver.")
-        Boolean active) {}
+        Boolean active) {
+
+  /** Modification qui laisse le libellé arabe inchangé. */
+  public PatchRequest(String labelFr, String labelEn, Integer sortOrder, Boolean active) {
+    this(labelFr, labelEn, null, sortOrder, active);
+  }
+}

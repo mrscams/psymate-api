@@ -17,11 +17,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class DirectoryVocabularyService {
 
+  /**
+   * Modalités : libellés arabes du glossaire du web (psymate-web/docs/design/arabe-glossaire.md,
+   * section 9.3 ; « في المنزل » pour home, terme employé par le web, G Q98).
+   */
   private static final List<Item> MODALITIES =
       List.of(
-          new Item("in_person", "Au cabinet", "In person"),
-          new Item("video", "En visio", "Video"),
-          new Item("home", "À domicile", "At home"));
+          new Item("in_person", "Au cabinet", "In person", "حضوريًا"),
+          new Item("video", "En visio", "Video", "عبر الفيديو"),
+          new Item("home", "À domicile", "At home", "في المنزل"));
 
   /** Langues proposées, codes ISO 639-1 (tout code ISO 639-1 reste accepté en écriture). */
   private static final List<String> LANGUAGES =
@@ -48,7 +52,8 @@ public class DirectoryVocabularyService {
                   return new Item(
                       c,
                       l.getDisplayLanguage(ServedLanguage.FR.locale()),
-                      l.getDisplayLanguage(ServedLanguage.EN.locale()));
+                      l.getDisplayLanguage(ServedLanguage.EN.locale()),
+                      l.getDisplayLanguage(ServedLanguage.AR.locale()));
                 })
             .sorted(Comparator.comparing(Item::labelFr))
             .toList();
@@ -59,7 +64,7 @@ public class DirectoryVocabularyService {
   /** Entrées actives d'un type (specialty ou audience), par rang puis libellé français. */
   public List<Item> activeItems(String kind) {
     return repo.activeItems(kind).stream()
-        .map(r -> new Item(r.code(), r.labelFr(), r.labelEn()))
+        .map(r -> new Item(r.code(), r.labelFr(), r.labelEn(), r.labelAr()))
         .toList();
   }
 }

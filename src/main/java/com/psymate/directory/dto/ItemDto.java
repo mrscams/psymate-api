@@ -14,6 +14,8 @@ public record ItemDto(
     @Schema(description = "Libellé français.", example = "Anxiété") String labelFr,
     @Schema(description = "Libellé anglais ; null s'il n'y en a pas.", example = "Anxiety")
         String labelEn,
+    @Schema(description = "Libellé arabe ; null s'il n'y en a pas.", example = "القلق")
+        String labelAr,
     @Schema(description = "Rang d'affichage dans le type, de 0 à 32767.", example = "1")
         int sortOrder,
     @Schema(

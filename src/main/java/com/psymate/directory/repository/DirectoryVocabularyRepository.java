@@ -17,14 +17,14 @@ public interface DirectoryVocabularyRepository
         DirectoryVocabularyUsageQueries {
 
   /** Entrée active proposée dans le profil (code, libellés), triée pour l'affichage. */
-  record ActiveItem(String code, String labelFr, String labelEn) {}
+  record ActiveItem(String code, String labelFr, String labelEn, String labelAr) {}
 
   @Query("select v.id.code from DirectoryVocabulary v where v.id.kind = :kind and v.active = true")
   Set<String> activeCodes(@Param("kind") String kind);
 
   @Query(
       "select new com.psymate.directory.repository.DirectoryVocabularyRepository$ActiveItem("
-          + "v.id.code, v.labelFr, v.labelEn) from DirectoryVocabulary v"
+          + "v.id.code, v.labelFr, v.labelEn, v.labelAr) from DirectoryVocabulary v"
           + " where v.id.kind = :kind and v.active = true order by v.sortOrder, v.labelFr")
   List<ActiveItem> activeItems(@Param("kind") String kind);
 

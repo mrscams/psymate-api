@@ -52,6 +52,13 @@ public record EmotionView(
         String labelEn,
     @Schema(
             description =
+                "Libellé arabe ; null pour une émotion personnalisée (un seul libellé, celui saisi"
+                    + " par le praticien) ou pour une globale sans libellé arabe : afficher alors"
+                    + " labelFr.",
+            example = "قلق")
+        String labelAr,
+    @Schema(
+            description =
                 "true si l'émotion peut être choisie. Les listes ne renvoient que des émotions"
                     + " actives ; une personnalisée fusionnée devient inactive jusqu'à l'annulation"
                     + " de la fusion.",

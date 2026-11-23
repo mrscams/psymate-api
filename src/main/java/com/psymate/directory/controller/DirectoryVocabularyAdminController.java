@@ -110,8 +110,8 @@ class DirectoryVocabularyAdminController {
                 + " INVALID_VALUE (kind absent ou autre que specialty ou audience), REQUIRED"
                 + " (code, labelFr), INVALID_FORMAT (code hors du format minuscule, chiffres et"
                 + " underscores, 2 à 40 caractères, commençant par une lettre), TOO_LONG (labelFr,"
-                + " labelEn au-delà de 120 caractères), OUT_OF_RANGE (sortOrder hors de 0 à"
-                + " 32767).",
+                + " labelEn, labelAr au-delà de 120 caractères), OUT_OF_RANGE (sortOrder hors de"
+                + " 0 à 32767).",
         content =
             @Content(
                 mediaType = "application/problem+json",
@@ -128,8 +128,8 @@ class DirectoryVocabularyAdminController {
       description =
           """
           Admin avec double authentification active. Modification partielle : un champ absent reste \
-          inchangé, labelEn vide efface le libellé anglais. Une entrée désactivée disparaît de \
-          GET /api/vocabulary/directory et ne peut plus être choisie ni publiée ; on ne peut la \
+          inchangé, labelEn vide efface le libellé anglais et labelAr vide le libellé arabe. Une \
+          entrée désactivée disparaît de GET /api/vocabulary/directory et ne peut plus être choisie ni publiée ; on ne peut la \
           désactiver que si aucune fiche publiée ne l'utilise. Le code et le type ne changent \
           pas.""")
   @ApiResponses({
@@ -161,8 +161,8 @@ class DirectoryVocabularyAdminController {
         responseCode = "422",
         description =
             "VALIDATION_FAILED avec errors[] {field, code, message} ; codes de champ : REQUIRED"
-                + " (labelFr vide), TOO_LONG (labelFr, labelEn au-delà de 120 caractères),"
-                + " OUT_OF_RANGE (sortOrder hors de 0 à 32767).",
+                + " (labelFr vide), TOO_LONG (labelFr, labelEn, labelAr au-delà de 120"
+                + " caractères), OUT_OF_RANGE (sortOrder hors de 0 à 32767).",
         content =
             @Content(
                 mediaType = "application/problem+json",

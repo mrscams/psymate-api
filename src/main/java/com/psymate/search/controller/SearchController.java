@@ -56,7 +56,11 @@ class SearchController {
           son propre filtre) : voir les paramètres ; plusieurs valeurs d'un même filtre se \
           combinent en « ou », les filtres entre eux en « et ». Les entrées privées d'un autre \
           praticien ne sont jamais renvoyées. Pagination par numéro de page (exception au curseur) \
-          : 20 résultats par page, 500 pages au plus ; approchés sur la page 1 seulement.""")
+          : 20 résultats par page, 500 pages au plus ; approchés sur la page 1 seulement. Quand \
+          Accept-Language demande l'arabe (ar), ou qu'un texte cherché est en arabe, la \
+          correspondance se fait mot à mot, sans traitement propre à l'arabe (formes de l'alif, \
+          ta marbuta, article collé, racines) (G Q102) ; ce traitement est prévu en second \
+          temps.""")
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",

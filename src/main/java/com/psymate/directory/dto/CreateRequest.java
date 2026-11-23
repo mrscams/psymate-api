@@ -18,20 +18,20 @@ public record CreateRequest(
                     + " Ne change plus ensuite.",
             pattern = "^[a-z][a-z0-9_]{1,39}$",
             requiredMode = Schema.RequiredMode.REQUIRED,
-            example = "sleep_therapy")
+            example = "sleep_disorders")
         String code,
     @Schema(
             description = "Libellé français, 120 caractères au plus.",
             maxLength = 120,
             requiredMode = Schema.RequiredMode.REQUIRED,
-            example = "Thérapie du sommeil")
+            example = "Troubles du sommeil")
         String labelFr,
     @Schema(
             description =
                 "Libellé anglais, 120 caractères au plus ; vide ou absent : pas de libellé"
                     + " anglais.",
             maxLength = 120,
-            example = "Sleep therapy")
+            example = "Sleep disorders")
         String labelEn,
     @Schema(
             description =

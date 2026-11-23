@@ -258,4 +258,65 @@ class BookingMailsArabicIT {
         mails.await(french, message(ServedLanguage.FR, "booking.mail.verify.subject")),
         message(ServedLanguage.FR, "booking.mail.verify.subject"));
   }
+
+  // ---- langues croisées : chaque e-mail suit la langue de son destinataire
+
+  /**
+   * Pose une demande dans la langue {@code applicant} (champ {@code locale}), lit sa vérification
+   * dans cette langue, la vérifie ; rend l'e-mail de vérification reçu.
+   */
+  private Mail requestAndVerify(Practitioner p, String email, ServedLanguage applicant)
+      throws Exception {
+    Map<String, Object> body = request(slot(4, "10:00"), email);
+    body.put("locale", applicant.tag());
+    f.postRequest(p.slug(), body).andExpect(status().isAccepted());
+    String subject = message(applicant, "booking.mail.verify.subject");
+    Mail verification = mails.await(email, subject);
+    assertThat(verification).as("vérification").isNotNull();
+    Matcher token = VERIFY_LINK.matcher(verification.text());
+    assertThat(token.find()).isTrue();
+    f.verify(token.group(1))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("pending"));
+    return verification;
+  }
+
+  /** Praticien en {@code ar}, demandeur en {@code fr}. */
+  @Test
+  void arabicPractitionerAndFrenchApplicantEachGetTheirOwnLanguage() throws Exception {
+    Map<String, Object> prefs = PublicBookingFixtures.offered("manual");
+    prefs.put("locale", "ar");
+    Practitioner p = f.practitioner(prefs);
+    String email = applicantEmail();
+
+    Mail verification = requestAndVerify(p, email, ServedLanguage.FR);
+
+    assertPlainTextOnly(verification, message(ServedLanguage.FR, "booking.mail.verify.subject"));
+    assertPlainTextOnly(
+        mails.await(email, message(ServedLanguage.FR, "booking.mail.pending.subject")),
+        message(ServedLanguage.FR, "booking.mail.pending.subject"));
+    Mail practitioner = mails.await(p.email(), arabic("booking.mail.newRequest.subject"));
+    assertArabic(practitioner, arabic("booking.mail.newRequest.subject"), true);
+    assertThat(practitioner.html()).contains("<span dir=\"ltr\">Sara Benali</span>");
+  }
+
+  /** Praticien en {@code fr} (préférence par défaut), demandeur en {@code ar}. */
+  @Test
+  void frenchPractitionerAndArabicApplicantEachGetTheirOwnLanguage() throws Exception {
+    Practitioner p = f.practitioner("manual");
+    String email = applicantEmail();
+
+    Mail verification = requestAndVerify(p, email, ServedLanguage.AR);
+
+    assertArabic(verification, arabic("booking.mail.verify.subject"), true);
+    assertArabic(
+        mails.await(email, arabic("booking.mail.pending.subject")),
+        arabic("booking.mail.pending.subject"),
+        true);
+    Mail practitioner =
+        mails.await(p.email(), message(ServedLanguage.FR, "booking.mail.newRequest.subject"));
+    assertPlainTextOnly(
+        practitioner, message(ServedLanguage.FR, "booking.mail.newRequest.subject"));
+    assertThat(practitioner.text()).contains("Sara Benali");
+  }
 }

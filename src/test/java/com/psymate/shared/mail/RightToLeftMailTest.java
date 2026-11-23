@@ -1,6 +1,7 @@
 package com.psymate.shared.mail;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import com.psymate.shared.i18n.ServedLanguage;
 import jakarta.mail.Session;
@@ -9,6 +10,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -102,11 +104,94 @@ class RightToLeftMailTest {
 
   @Test
   void latinTextBeforeALinkDoesNotSwallowIt() {
-    String b = body("voir https://x.test/a");
+    String b = body("الرابط: voir https://x.test/a");
     assertThat(b)
         .isEqualTo(
-            "<p><span dir=\"ltr\">voir</span> <a href=\"https://x.test/a\" dir=\"ltr\">"
+            "<p>الرابط: <span dir=\"ltr\">voir</span> <a href=\"https://x.test/a\" dir=\"ltr\">"
                 + "https://x.test/a</a></p>\n");
+  }
+
+  // ---- lignes entièrement latines
+
+  /**
+   * Une ligne sans caractère de droite à gauche est isolée entière : sinon, dans un paragraphe
+   * {@code rtl}, « ? » et « . » entre deux isolats se placent à rebours et le praticien lit « .
+   * Merci ? Bonjour, pouvez-vous me rappeler ».
+   */
+  @Test
+  void aLatinLineIsIsolatedWholeWithItsPunctuation() {
+    String b = body("الرسالة:\nBonjour, pouvez-vous me rappeler ? Merci.");
+    assertThat(b)
+        .isEqualTo(
+            "<p>الرسالة:<br>\n"
+                + "<span dir=\"ltr\">Bonjour, pouvez-vous me rappeler ? Merci.</span></p>\n");
+  }
+
+  @Test
+  void aPunctuatedLatinAdminReasonIsIsolatedWhole() {
+    String b =
+        body(
+            "السبب:\n\nDocument illisible (scan flou) ; merci de renvoyer « le diplôme » !\n"
+                + "Voir https://x.test/aide, ou écrire à support@psymate.test.");
+    assertThat(b)
+        .contains(
+            "<span dir=\"ltr\">Document illisible (scan flou) ; merci de renvoyer « le diplôme »"
+                + " !</span><br>")
+        .contains(
+            "<span dir=\"ltr\">Voir <a href=\"https://x.test/aide\" dir=\"ltr\">"
+                + "https://x.test/aide</a>, ou écrire à support@psymate.test.</span></p>");
+  }
+
+  @Test
+  void aLinkAloneOnItsLineIsIsolatedAndClickable() {
+    assertThat(body("https://x.test/a"))
+        .isEqualTo(
+            "<p><span dir=\"ltr\"><a href=\"https://x.test/a\" dir=\"ltr\">https://x.test/a</a>"
+                + "</span></p>\n");
+  }
+
+  /**
+   * Lien suivi d'arabe : U+200F avant le lien dans le texte brut, jamais dedans ni dans le HTML.
+   */
+  @Test
+  void aLinkFollowedByArabicGetsTheMarkBeforeTheLinkOnly() {
+    String line = "https://x.test/rendez-vous/gerer/abc يُرجى الاحتفاظ به";
+    String plain = RightToLeftMail.plainText(line);
+    assertThat(plain).isEqualTo(RLM + line);
+    assertThat(plain.indexOf(RLM, 1)).isEqualTo(-1);
+    String html = RightToLeftMail.html(line);
+    assertThat(html)
+        .doesNotContain(RLM)
+        .contains(
+            "<a href=\"https://x.test/rendez-vous/gerer/abc\" dir=\"ltr\">"
+                + "https://x.test/rendez-vous/gerer/abc</a> يُرجى");
+  }
+
+  // ---- entrées hostiles : temps linéaire
+
+  @Test
+  void hostileInputsRenderInLinearTime() {
+    String[] inputs = {
+      "%".repeat(4000),
+      "a%".repeat(2000),
+      "https://x/" + ".".repeat(4000),
+      "مرحبًا " + "%".repeat(4000),
+      "مرحبًا " + "a%".repeat(2000),
+      "مرحبًا https://x/" + ".".repeat(4000),
+      "مرحبًا a" + " ".repeat(4000) + "@"
+    };
+    for (String input : inputs) {
+      assertTimeoutPreemptively(
+          Duration.ofSeconds(1),
+          () -> {
+            RightToLeftMail.html(input);
+            RightToLeftMail.plainText(input);
+          });
+    }
+    assertThat(RightToLeftMail.withoutTrailingPunctuation("https://x/" + ".".repeat(4000)))
+        .isEqualTo("https://x/");
+    assertThat(RightToLeftMail.withoutTrailingPunctuation("https://x/a?b=c).،"))
+        .isEqualTo("https://x/a?b=c");
   }
 
   // ---- adresses, codes, dates, texte latin

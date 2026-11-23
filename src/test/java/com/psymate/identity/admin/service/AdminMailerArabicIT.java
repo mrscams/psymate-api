@@ -95,6 +95,18 @@ class AdminMailerArabicIT {
     assertArabic(mails.await(to), arabic("admin.mail.rejected.subject", APP), false);
   }
 
+  /** Motif latin ponctué : sa ligne est isolée entière, sa ponctuation reste à sa place. */
+  @Test
+  void rejectedWithAPunctuatedLatinReasonInArabic() throws Exception {
+    String to = recipient("ar-rejected-latin");
+    String reason = "Diplôme illisible (scan flou) ; merci de le renvoyer ? Cordialement.";
+    mailer.sendRejected(to, ar, NAME, reason);
+    Mail mail = mails.await(to);
+    assertArabic(mail, arabic("admin.mail.rejected.subject", APP), false);
+    assertThat(mail.html()).contains("<span dir=\"ltr\">" + reason + "</span>");
+    assertThat(mail.text()).contains("\n" + reason + "\n");
+  }
+
   @Test
   void suspendedInArabic() throws Exception {
     String to = recipient("ar-suspended");

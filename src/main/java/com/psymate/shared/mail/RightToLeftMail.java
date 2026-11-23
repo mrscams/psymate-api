@@ -30,7 +30,8 @@ import java.util.regex.Pattern;
  *       http(s)} deviennent des {@code <a dir="ltr">} cliquables ; les adresses e-mail et toute
  *       suite latine ou chiffrée (« PsyMate », noms saisis en lettres latines, dates, heures,
  *       fuseaux, durées) sont isolées dans un {@code <span dir="ltr">}, pour ne pas s'afficher à
- *       l'envers.
+ *       l'envers ; une ligne sans aucun caractère de droite à gauche est isolée entière dans un
+ *       seul {@code <span dir="ltr">}, pour que sa ponctuation reste à sa place.
  * </ul>
  *
  * Les chiffres restent latins : le texte est mis en forme avec la locale servie {@code
@@ -44,7 +45,13 @@ public final class RightToLeftMail {
   /** Lien http(s) : jusqu'à un espace, un guillemet, un chevron ou une marque de direction. */
   private static final String URL = "https?://[^\\s<>\"'\\u200E\\u200F]+";
 
-  private static final String EMAIL = "[A-Za-z0-9._%+\\-]+@[A-Za-z0-9\\-]+(?:\\.[A-Za-z0-9\\-]+)+";
+  /**
+   * Adresse e-mail. Le lookbehind interdit de commencer au milieu d'une partie locale : sans lui,
+   * {@code find()} relancerait la partie locale à chaque position d'une longue suite de {@code
+   * %._+-} (temps quadratique sur une entrée hostile).
+   */
+  private static final String EMAIL =
+      "(?<![A-Za-z0-9._%+\\-])[A-Za-z0-9._%+\\-]+@[A-Za-z0-9\\-]+(?:\\.[A-Za-z0-9\\-]+)+";
 
   /**
    * Suite latine ou chiffrée : lettres latines (accentuées comprises) et chiffres latins, reliés
@@ -58,8 +65,8 @@ public final class RightToLeftMail {
   private static final Pattern INLINE =
       Pattern.compile("(?<url>" + URL + ")|(?<email>" + EMAIL + ")|(?<run>" + LATIN_RUN + ")");
 
-  /** Ponctuation qui termine une phrase plutôt qu'un lien. */
-  private static final Pattern URL_TRAILING = Pattern.compile("[.,;:!?)\\]}»،؛؟]+$");
+  /** Ponctuation qui termine une phrase plutôt qu'un lien (retirée de la fin d'un lien). */
+  private static final String URL_TRAILING = ".,;:!?)]}»،؛؟";
 
   private static final Pattern BLANK_LINES = Pattern.compile("\\n[ \\t\\u00A0]*\\n\\s*");
 
@@ -150,7 +157,10 @@ public final class RightToLeftMail {
   /**
    * HTML minimal de droite à gauche bâti à partir du texte brut (sans marque U+200F) : un
    * paragraphe par bloc séparé d'une ligne vide, un {@code <br>} par saut de ligne, texte échappé,
-   * liens cliquables et suites latines isolés en {@code dir="ltr"}.
+   * liens cliquables et suites latines isolés en {@code dir="ltr"}. Une ligne sans aucun caractère
+   * de droite à gauche (texte saisi en français, motif latin, lien seul) est isolée entière dans un
+   * seul {@code <span dir="ltr">}, ses liens rendus à l'intérieur : elle se lit de gauche à droite
+   * avec sa ponctuation, comme dans le texte brut, qui la laisse telle quelle.
    */
   public static String html(String text) {
     StringBuilder out = new StringBuilder(normalize(text).length() * 2 + 400);
@@ -172,7 +182,14 @@ public final class RightToLeftMail {
           if (i > 0) {
             out.append("<br>\n");
           }
-          inline(out, lines[i]);
+          String line = lines[i];
+          if (containsRightToLeft(line)) {
+            inline(out, line, true);
+          } else {
+            out.append("<span dir=\"ltr\">");
+            inline(out, line, false);
+            out.append("</span>");
+          }
         }
         out.append("</p>\n");
       }
@@ -180,8 +197,11 @@ public final class RightToLeftMail {
     return out.append("</div>\n</body>\n</html>\n").toString();
   }
 
-  /** Une ligne : liens, adresses et suites latines isolés, le reste échappé tel quel. */
-  private static void inline(StringBuilder out, String line) {
+  /**
+   * Une ligne : liens cliquables ; avec {@code isolate}, adresses et suites latines isolées en
+   * {@code dir="ltr"} ; le reste échappé tel quel.
+   */
+  private static void inline(StringBuilder out, String line, boolean isolate) {
     Matcher m = INLINE.matcher(line);
     int last = 0;
     while (m.find()) {
@@ -189,20 +209,18 @@ public final class RightToLeftMail {
       int end = m.end();
       out.append(escape(line.substring(last, start)));
       if (m.group("url") != null) {
-        String url = m.group("url");
-        Matcher trailing = URL_TRAILING.matcher(url);
-        if (trailing.find()) {
-          url = url.substring(0, trailing.start());
-          end = start + url.length();
-        }
+        String url = withoutTrailingPunctuation(m.group("url"));
+        end = start + url.length();
         if (url.indexOf("://") + 3 < url.length()) {
           String e = escape(url);
           out.append("<a href=\"").append(e).append("\" dir=\"ltr\">").append(e).append("</a>");
         } else {
           out.append(escape(url));
         }
-      } else {
+      } else if (isolate) {
         out.append("<span dir=\"ltr\">").append(escape(m.group())).append("</span>");
+      } else {
+        out.append(escape(m.group()));
       }
       last = end;
       if (end < m.end()) {
@@ -211,6 +229,15 @@ public final class RightToLeftMail {
       }
     }
     out.append(escape(line.substring(last)));
+  }
+
+  /** Lien sans la ponctuation finale qui termine la phrase : boucle arrière, temps linéaire. */
+  static String withoutTrailingPunctuation(String url) {
+    int end = url.length();
+    while (end > 0 && URL_TRAILING.indexOf(url.charAt(end - 1)) >= 0) {
+      end--;
+    }
+    return url.substring(0, end);
   }
 
   /** Échappe {@code & < > " '} pour un texte ou une valeur d'attribut entre guillemets. */

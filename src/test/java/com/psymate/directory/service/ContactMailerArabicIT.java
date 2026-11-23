@@ -51,11 +51,12 @@ class ContactMailerArabicIT {
     assertThat(mail.html())
         .contains("<span dir=\"ltr\">" + visitor + "</span>")
         .contains("<span dir=\"ltr\">Sara Benali</span>")
-        .contains("&lt;<span dir=\"ltr\">b</span>&gt;")
         .doesNotContain("<b>")
+        // Ligne entièrement latine : isolée entière, échappée, lien cliquable à l'intérieur.
         .contains(
-            "<a href=\"https://example.test/page?a=1&amp;b=2\" dir=\"ltr\">"
-                + "https://example.test/page?a=1&amp;b=2</a>");
+            "<span dir=\"ltr\">&lt;b&gt;Bonjour&lt;/b&gt; &amp; merci, voir"
+                + " <a href=\"https://example.test/page?a=1&amp;b=2\" dir=\"ltr\">"
+                + "https://example.test/page?a=1&amp;b=2</a></span>");
     // Le texte du visiteur reste tel quel dans le texte brut ; aucune marque sur une ligne latine.
     assertThat(mail.text()).contains("<b>Bonjour</b> & merci");
     // « 30 » jours, en chiffres latins (G Q101).

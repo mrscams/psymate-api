@@ -242,7 +242,7 @@ Critères d'acceptation :
 
 Interdits : journaliser une adresse ou un contenu d'e-mail ; changer le texte d'un e-mail fr ou en ; dépendance Maven.
 
-Précisé par M16-01 (M2.4 point 5, G Q100) : cinq services d'envoi sur main = 670a375 (AuthMailer, VerificationMailer, AdminMailer, ContactMailer, BookingMailer, ce dernier appelé aussi par BookingNotifier et BookingExpiryJob). En arabe seulement, l'e-mail part en multipart/alternative : texte brut et corps HTML minimal produit par le code (aucun moteur de modèles ajouté) ; en fr et en, il reste en texte brut seul, octet pour octet.
+Précisé par M16-01 (M2.4 point 5, G Q100) : cinq services d'envoi sur main = 670a375 (AuthMailer, VerificationMailer, AdminMailer, ContactMailer, BookingMailer, ce dernier appelé par BookingRequestService, BookingNotifier, BookingExpiryJob et AppointmentService). En arabe seulement, l'e-mail part en multipart/alternative : texte brut et corps HTML minimal produit par le code (aucun moteur de modèles ajouté) ; en fr et en, il reste en texte brut seul, octet pour octet.
 
 Livrable : PR « M16-05 E-mails en arabe », puis make log TASK=M16-05 AGENT=backend-module-dev STATUS=review SUMMARY="…" PR=<url>.
 ```

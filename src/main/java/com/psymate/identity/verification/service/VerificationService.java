@@ -16,6 +16,7 @@ import com.psymate.identity.verification.repository.VerificationRepository;
 import com.psymate.identity.verification.repository.VerificationRepository.AccountRow;
 import com.psymate.identity.verification.repository.VerificationRepository.DocumentRow;
 import com.psymate.identity.verification.repository.VerificationRepository.DuePurge;
+import com.psymate.shared.i18n.ServedLanguage;
 import jakarta.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -26,7 +27,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -462,7 +462,7 @@ public class VerificationService {
                     for (var admin : repo.adminRecipients()) {
                       mailer.sendSubmitted(
                           admin.email(),
-                          Locale.forLanguageTag(admin.locale() == null ? "fr" : admin.locale()),
+                          ServedLanguage.ofTag(admin.locale()).locale(),
                           account.displayName(),
                           account.profession());
                     }

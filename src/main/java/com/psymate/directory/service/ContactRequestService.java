@@ -7,6 +7,7 @@ import com.psymate.directory.repository.PractitionerProfileRepository;
 import com.psymate.directory.repository.PractitionerProfileRepository.Recipient;
 import com.psymate.directory.service.ContactMailer.ContactMessage;
 import com.psymate.identity.api.PractitionerFacade;
+import com.psymate.shared.i18n.ServedLanguage;
 import com.psymate.shared.web.IpAddresses;
 import jakarta.annotation.PreDestroy;
 import java.time.Clock;
@@ -174,7 +175,7 @@ public class ContactRequestService {
 
   private Locale localeOf(UUID practitionerId) {
     Object locale = practitioners.preferencesOf(practitionerId).get("locale");
-    return "en".equals(locale) ? Locale.ENGLISH : Locale.FRENCH;
+    return ServedLanguage.ofTag(locale instanceof String s ? s : null).locale();
   }
 
   static String truncate(String s) {

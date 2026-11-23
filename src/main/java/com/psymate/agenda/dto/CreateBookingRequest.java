@@ -76,9 +76,9 @@ public record CreateBookingRequest(
         String phone,
     @Schema(
             description = "Langue des e-mails envoyés au demandeur. Défaut : fr.",
-            allowableValues = {"fr", "en"},
+            allowableValues = {"fr", "en", "ar"},
             example = "fr")
-        @Pattern(regexp = "fr|en")
+        @Pattern(regexp = "fr|en|ar")
         String locale,
     @Schema(
             description =

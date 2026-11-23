@@ -21,10 +21,10 @@ import com.psymate.identity.auth.model.FieldValidationException;
 import com.psymate.identity.auth.model.InvalidCredentialsException;
 import com.psymate.identity.auth.model.PractitionerRow;
 import com.psymate.identity.auth.model.UserAgents;
-import com.psymate.identity.auth.service.AuthMessages;
 import com.psymate.identity.auth.service.AuthService;
 import com.psymate.identity.auth.service.LoginService;
 import com.psymate.identity.model.SessionAttributes;
+import com.psymate.shared.i18n.ServedLanguage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -772,19 +772,12 @@ class AuthController {
     }
   }
 
-  /** Langue des e-mails : celle du navigateur si c'est l'anglais, le français sinon. */
+  /**
+   * Langue des e-mails et de {@code practitioner.locale} : celle du navigateur si c'est l'anglais
+   * ou l'arabe, le français sinon ({@link ServedLanguage#ofAcceptLanguageTag}).
+   */
   static Locale preferredLocale(String acceptLanguage) {
-    if (acceptLanguage == null || acceptLanguage.isBlank()) {
-      return Locale.FRENCH;
-    }
-    try {
-      List<Locale.LanguageRange> ranges = Locale.LanguageRange.parse(acceptLanguage);
-      return ranges.isEmpty()
-          ? Locale.FRENCH
-          : AuthMessages.normalize(Locale.forLanguageTag(ranges.get(0).getRange()));
-    } catch (IllegalArgumentException e) {
-      return Locale.FRENCH;
-    }
+    return ServedLanguage.ofAcceptLanguageTag(acceptLanguage).locale();
   }
 
   private static MeResponse toMe(CurrentPractitioner c, AccountState state) {

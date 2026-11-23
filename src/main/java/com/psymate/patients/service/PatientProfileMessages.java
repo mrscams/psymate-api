@@ -1,5 +1,6 @@
 package com.psymate.patients.service;
 
+import com.psymate.shared.i18n.ServedLanguage;
 import com.psymate.shared.problem.FieldProblem;
 import com.psymate.shared.problem.ProblemMessages;
 import java.util.Locale;
@@ -37,17 +38,17 @@ public class PatientProfileMessages {
     if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attrs) {
       return ProblemMessages.localeOf(attrs.getRequest());
     }
-    return Locale.FRENCH;
+    return ServedLanguage.FR.locale();
   }
 
   /** Message d'un code métier ({@code patients.profile.error.CODE}). */
   public String domain(String code, Object... args) {
-    return source.getMessage(PREFIX + code, args, code, locale());
+    return source.getMessage(PREFIX + code, args, code, ServedLanguage.messageLocaleOf(locale()));
   }
 
   /** Erreur de champ complétée de son message localisé. */
   public FieldProblem field(FieldProblem problem) {
-    Locale locale = locale();
+    Locale locale = ServedLanguage.messageLocaleOf(locale());
     String generic = PREFIX + problem.code();
     // Pas de message par défaut imbriqué : il serait reformaté par MessageFormat (apostrophes).
     String message = source.getMessage(generic + "." + problem.field(), null, null, locale);

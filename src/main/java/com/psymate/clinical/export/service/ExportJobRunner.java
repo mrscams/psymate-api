@@ -11,6 +11,7 @@ import com.psymate.identity.api.PractitionerFacade;
 import com.psymate.identity.api.PractitionerFacade.PractitionerView;
 import com.psymate.patients.api.PatientFacade;
 import com.psymate.patients.api.PatientRef;
+import com.psymate.shared.i18n.ServedLanguage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +53,8 @@ public class ExportJobRunner {
   static final String APPOINTMENTS_FILE = "rendez-vous.md";
 
   private static final Logger LOG = LoggerFactory.getLogger(ExportJobRunner.class);
-  private static final Locale LOCALE = Locale.FRENCH;
+  // Toujours en français (langue par défaut du produit ; l'arabe n'y est jamais servi, G Q102).
+  private static final Locale LOCALE = ServedLanguage.FR.locale();
 
   private final ExportJobRepository jobs;
   private final PatientFacade patients;

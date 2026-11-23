@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-23T10:33:17.896Z",
+  "task": "M16-02",
+  "agent": "backend-module-dev",
+  "status": "in-progress",
+  "summary": "Langue servie fr, en, ar résolue dans shared ; locale = ar ; V16 ; chiffres latins",
+  "branch": "M16-02-langue-requete",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

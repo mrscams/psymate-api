@@ -18,6 +18,7 @@ import com.psymate.directory.api.PublishedProfileFacade;
 import com.psymate.directory.api.PublishedProfileView;
 import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.PractitionerFacade;
+import com.psymate.shared.i18n.ServedLanguage;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
@@ -180,7 +181,7 @@ public class BookingRequestService {
     }
 
     String token = BookingRules.newToken();
-    String locale = r.locale() == null ? "fr" : r.locale();
+    String locale = ServedLanguage.ofTag(r.locale()).tag();
     String email = r.email().strip();
     BookingRequest request =
         new BookingRequest(
@@ -427,7 +428,7 @@ public class BookingRequestService {
   }
 
   private String text(String key, Locale locale) {
-    return messages.getMessage(key, null, locale);
+    return messages.getMessage(key, null, ServedLanguage.messageLocaleOf(locale));
   }
 
   private static String fullName(String firstName, String lastName) {

@@ -4,6 +4,7 @@ import com.psymate.linking.dto.LinkMessages;
 import com.psymate.linking.model.GraphRequestException;
 import com.psymate.linking.model.LinkError;
 import com.psymate.linking.model.LinkException;
+import com.psymate.shared.i18n.ServedLanguage;
 import com.psymate.shared.problem.AdviceOrder;
 import com.psymate.shared.problem.FieldProblem;
 import com.psymate.vocabulary.api.LinkTypeView;
@@ -86,7 +87,7 @@ class LinkExceptionHandler {
   }
 
   private static String labelOf(LinkTypeView type, Locale locale) {
-    return "en".equals(locale.getLanguage()) ? type.labelEn() : type.labelFr();
+    return ServedLanguage.of(locale) == ServedLanguage.EN ? type.labelEn() : type.labelFr();
   }
 
   private static String fieldOf(LinkError error) {

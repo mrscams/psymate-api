@@ -1,6 +1,7 @@
 package com.psymate.directory.controller;
 
 import com.psymate.directory.model.DirectoryVocabularyException;
+import com.psymate.shared.i18n.ServedLanguage;
 import com.psymate.shared.problem.AdviceOrder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -38,7 +39,7 @@ class DirectoryVocabularyAdminExceptionHandler {
   }
 
   private String text(String key, Locale locale) {
-    Locale l = locale != null && "en".equals(locale.getLanguage()) ? Locale.ENGLISH : Locale.FRENCH;
+    Locale l = ServedLanguage.messageLocaleOf(locale);
     return messages.getMessage(key, null, l);
   }
 

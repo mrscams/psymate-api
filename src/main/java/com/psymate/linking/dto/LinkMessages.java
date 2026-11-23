@@ -1,5 +1,6 @@
 package com.psymate.linking.dto;
 
+import com.psymate.shared.i18n.ServedLanguage;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
@@ -24,12 +25,11 @@ public class LinkMessages {
   }
 
   private static Locale normalize(Locale locale) {
-    return locale != null && "en".equals(locale.getLanguage()) ? Locale.ENGLISH : Locale.FRENCH;
+    return ServedLanguage.messageLocaleOf(locale);
   }
 
   public Locale localeOf(HttpServletRequest request) {
-    String header = request.getHeader("Accept-Language");
-    return header == null || header.isBlank() ? Locale.FRENCH : normalize(request.getLocale());
+    return ServedLanguage.ofRequestLocale(request).locale();
   }
 
   /** Message de la clé, ou {@code fallback} si elle n'existe pas. */

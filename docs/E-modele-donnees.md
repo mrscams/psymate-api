@@ -160,7 +160,7 @@ CREATE TABLE practitioner (
   first_name            text NOT NULL,
   last_name             text NOT NULL,
   display_name          text NOT NULL,                 -- « Dr Maya Kaddour », « Claire Lambert »
-  locale                text NOT NULL DEFAULT 'fr' CHECK (locale IN ('fr','en')),
+  locale                text NOT NULL DEFAULT 'fr' CHECK (locale IN ('fr','en','ar')),  -- 'ar' ajouté par V16 (M16-02, G Q97)
   profession            text NOT NULL CHECK (profession IN ('psychologist','psychiatrist','coach')),
   role                  text NOT NULL DEFAULT 'practitioner' CHECK (role IN ('practitioner','admin')),
   -- A10.2 : coordonnées professionnelles (inscription enrichie)
@@ -1005,7 +1005,7 @@ CREATE TABLE booking_request (
   last_name          text,
   email              text,
   phone              text,
-  locale             text NOT NULL DEFAULT 'fr' CHECK (locale IN ('fr','en')),
+  locale             text NOT NULL DEFAULT 'fr' CHECK (locale IN ('fr','en','ar')),  -- 'ar' ajouté par V16 (M16-02, G Q97)
   email_hash         text NOT NULL,        -- HMAC de l'adresse normalisée : plafonds de Q79
   verify_token_hash  text NOT NULL UNIQUE,
   verify_expires_at  timestamptz NOT NULL,

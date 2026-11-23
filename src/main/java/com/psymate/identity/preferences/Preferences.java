@@ -80,7 +80,7 @@ public final class Preferences {
           OVERVIEW_WINDOW, Set.of("30d", "90d", "12m"),
           TIMELINE_GROUP_BY, Set.of("session", "month", "chronological"),
           THEME, Set.of("light", "soft", "dark", "system"),
-          LOCALE, Set.of("fr", "en"),
+          LOCALE, Set.of("fr", "en", "ar"),
           SUBJECT_LABEL, Set.of("patient", "client"),
           DEFAULT_VISIBILITY, Set.of("clinical", "private"),
           AGENDA_DEFAULT_VIEW, Set.of("day", "week", "month", "list"),

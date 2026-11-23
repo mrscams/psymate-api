@@ -7,6 +7,7 @@ import com.psymate.overview.model.NarrativeFacts.FlagFact;
 import com.psymate.overview.model.NarrativeFacts.MedicationFact;
 import com.psymate.overview.model.NarrativeFacts.Trend;
 import com.psymate.overview.model.NarrativeFacts.UncommentedEvent;
+import com.psymate.shared.i18n.ServedLanguage;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -72,8 +73,13 @@ class NarrativeComposer {
     }
   }
 
+  /**
+   * Langue du récit : anglais si demandé, français sinon. L'arabe est résolu en français,
+   * explicitement et toujours (G Q102) : les clés {@code overview.narrative.*} ne sont pas
+   * traduites.
+   */
   static Locale normalize(Locale locale) {
-    return locale != null && "en".equals(locale.getLanguage()) ? Locale.ENGLISH : Locale.FRENCH;
+    return ServedLanguage.of(locale).arabicAsFrench().locale();
   }
 
   /** Phrases du récit et point d'attention dans la locale demandée (français par défaut). */
@@ -109,9 +115,10 @@ class NarrativeComposer {
     try {
       sentence = builder.apply(locale);
     } catch (RuntimeException e) {
-      if (!Locale.FRENCH.equals(locale)) {
+      Locale french = ServedLanguage.FR.locale();
+      if (!french.equals(locale)) {
         try {
-          sentence = builder.apply(Locale.FRENCH);
+          sentence = builder.apply(french);
         } catch (RuntimeException ignored) {
           // fragment absent ou illisible aussi en français : la phrase est omise
         }
@@ -181,7 +188,7 @@ class NarrativeComposer {
     if (dominant == null) {
       return msg("dominant.unknown", l);
     }
-    boolean english = Locale.ENGLISH.equals(l);
+    boolean english = ServedLanguage.of(l) == ServedLanguage.EN;
     String label =
         english && dominant.labelEn() != null && !dominant.labelEn().isBlank()
             ? dominant.labelEn()

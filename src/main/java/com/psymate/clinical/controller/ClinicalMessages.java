@@ -1,5 +1,6 @@
 package com.psymate.clinical.controller;
 
+import com.psymate.shared.i18n.ServedLanguage;
 import com.psymate.shared.problem.FieldProblem;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Locale;
@@ -26,15 +27,15 @@ class ClinicalMessages {
   }
 
   private static Locale normalize(Locale locale) {
-    return locale != null && "en".equals(locale.getLanguage()) ? Locale.ENGLISH : Locale.FRENCH;
+    return ServedLanguage.messageLocaleOf(locale);
   }
 
   /**
-   * Français sans en-tête Accept-Language (langue par défaut du produit), sinon la langue demandée.
+   * Français sans en-tête Accept-Language (langue par défaut du produit), sinon la langue demandée
+   * ({@link ServedLanguage#ofRequestLocale}).
    */
   Locale localeOf(HttpServletRequest request) {
-    String header = request.getHeader("Accept-Language");
-    return header == null || header.isBlank() ? Locale.FRENCH : normalize(request.getLocale());
+    return ServedLanguage.ofRequestLocale(request).locale();
   }
 
   String get(String key, Locale locale) {

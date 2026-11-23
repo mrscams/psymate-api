@@ -1,5 +1,6 @@
 package com.psymate.identity.admin.service;
 
+import com.psymate.shared.i18n.ServedLanguage;
 import jakarta.annotation.PreDestroy;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -39,7 +40,7 @@ class AdminAsyncMail {
 
   /** Appelle {@code send} avec la langue du praticien une fois la transaction validée. */
   void afterCommit(String localeTag, Consumer<Locale> send) {
-    Locale locale = Locale.forLanguageTag(localeTag == null ? "fr" : localeTag);
+    Locale locale = ServedLanguage.ofTag(localeTag).locale();
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override

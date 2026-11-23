@@ -1,5 +1,6 @@
 package com.psymate.identity.auth.service;
 
+import com.psymate.shared.i18n.ServedLanguage;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -23,7 +24,7 @@ public class AuthMessages {
   }
 
   public static Locale normalize(Locale locale) {
-    return locale != null && "en".equals(locale.getLanguage()) ? Locale.ENGLISH : Locale.FRENCH;
+    return ServedLanguage.messageLocaleOf(locale);
   }
 
   public String get(String key, Locale locale, Object... args) {

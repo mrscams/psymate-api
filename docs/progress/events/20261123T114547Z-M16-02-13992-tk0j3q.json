@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-23T11:45:47.039Z",
+  "task": "M16-02",
+  "agent": "backend-module-dev",
+  "status": "review",
+  "summary": "Langue servie fr, en, ar dans shared.i18n (ar-u-nu-latn), locale = ar (préférence, demande de rendez-vous), V16, contrat 0.16.0, repli français du résumé et de l'export",
+  "next": "M16-03 et M16-04 après fusion",
+  "pr": "https://github.com/mrscams/psymate-api/pull/112",
+  "branch": "M16-02-langue-requete",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

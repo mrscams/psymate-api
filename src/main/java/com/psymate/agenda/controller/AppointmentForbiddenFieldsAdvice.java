@@ -4,6 +4,7 @@ import com.psymate.agenda.dto.AttachPatientRequest;
 import com.psymate.agenda.dto.CancelAppointmentRequest;
 import com.psymate.agenda.dto.CreateAppointmentRequest;
 import com.psymate.agenda.dto.UpdateAppointmentRequest;
+import com.psymate.shared.i18n.ServedLanguage;
 import com.psymate.shared.problem.AdviceOrder;
 import com.psymate.shared.problem.FieldProblem;
 import com.psymate.shared.problem.ProblemException;
@@ -124,7 +125,7 @@ class AppointmentForbiddenFieldsAdvice extends RequestBodyAdviceAdapter {
     if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attrs) {
       return messages.localeOf(attrs.getRequest());
     }
-    return Locale.FRENCH;
+    return ServedLanguage.FR.locale();
   }
 
   /** Un JSON illisible est laissé au convertisseur, qui produit l'erreur de syntaxe habituelle. */

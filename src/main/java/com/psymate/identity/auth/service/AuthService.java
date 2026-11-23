@@ -22,6 +22,7 @@ import com.psymate.identity.model.AuthToken;
 import com.psymate.identity.repository.AuthTokenJpaRepository;
 import com.psymate.identity.repository.AuthTokenNativeQueries.ConsumedToken;
 import com.psymate.identity.repository.UniqueViolations;
+import com.psymate.shared.i18n.ServedLanguage;
 import com.psymate.shared.time.Timestamps;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -140,7 +141,8 @@ public class AuthService {
       throw new PasswordPolicyException(violations);
     }
     Contact contact = contactOf(r);
-    Locale mailLocale = AuthMessages.normalize(locale);
+    ServedLanguage language = ServedLanguage.of(locale);
+    Locale mailLocale = language.locale();
     // Toujours haché, même si le compte existe : le coût dominant est identique dans les deux cas.
     String hash = encoder.encode(r.password());
 
@@ -161,7 +163,7 @@ public class AuthService {
             r.firstName().trim(),
             r.lastName().trim(),
             display,
-            mailLocale.getLanguage(),
+            language.tag(),
             r.profession(),
             "practitioner",
             "email_pending",
@@ -364,7 +366,7 @@ public class AuthService {
         ip,
         JSON.writeValueAsString(Map.of("scope", keepCurrent ? "others" : "all", "count", revoked)),
         now);
-    Locale locale = Locale.forLanguageTag(before.locale());
+    Locale locale = ServedLanguage.ofTag(before.locale()).locale();
     String oldAddress = before.email();
     afterCommit(
         "email-changed e-mail", () -> mailer.sendEmailChanged(oldAddress, newEmail, locale));
@@ -402,7 +404,7 @@ public class AuthService {
     String token = newToken();
     tokens.consumeActive(p.id(), KIND_EMAIL_CONFIRM, Timestamps.utc(now));
     issueConfirmationToken(p.id(), token, now);
-    Locale locale = Locale.forLanguageTag(p.locale());
+    Locale locale = ServedLanguage.ofTag(p.locale()).locale();
     afterCommit(
         "confirmation e-mail", () -> mailer.sendEmailConfirmation(p.email(), token, locale));
   }
@@ -489,7 +491,7 @@ public class AuthService {
       return;
     }
     String address = newEmail.trim();
-    Locale locale = Locale.forLanguageTag(p.locale());
+    Locale locale = ServedLanguage.ofTag(p.locale()).locale();
     Optional<PractitionerRow> owner = practitioners.findByEmailNormalized(normalizeEmail(address));
     String token = newToken();
     tokens.consumeActive(id, KIND_EMAIL_CHANGE, Timestamps.utc(now));
@@ -517,7 +519,7 @@ public class AuthService {
         throw e;
       }
       // Course : l'adresse a été prise entre la lecture et l'écriture (transaction annulée).
-      Locale locale = Locale.forLanguageTag(p.locale());
+      Locale locale = ServedLanguage.ofTag(p.locale()).locale();
       sendAsync("account-exists e-mail", () -> mailer.sendAccountExists(newEmail.trim(), locale));
     }
   }
@@ -529,7 +531,7 @@ public class AuthService {
       return;
     }
     String normalized = normalizeEmail(newEmail);
-    Locale locale = Locale.forLanguageTag(p.locale());
+    Locale locale = ServedLanguage.ofTag(p.locale()).locale();
     Optional<PractitionerRow> other = practitioners.findByEmailNormalized(normalized);
     if (other.isPresent() && !other.get().id().equals(id)) {
       afterCommit("account-exists e-mail", () -> mailer.sendAccountExists(newEmail.trim(), locale));
@@ -588,7 +590,7 @@ public class AuthService {
             sha256(token),
             now.plus(RESET_TTL),
             now));
-    Locale locale = Locale.forLanguageTag(p.locale());
+    Locale locale = ServedLanguage.ofTag(p.locale()).locale();
     afterCommit("password reset e-mail", () -> mailer.sendPasswordReset(p.email(), token, locale));
   }
 

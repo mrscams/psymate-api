@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-23T16:13:38.309Z",
+  "task": "M16-05",
+  "agent": "backend-module-dev",
+  "status": "review",
+  "summary": "E-mails arabes en multipart texte et HTML lang=ar dir=rtl (shared.mail.RightToLeftMail), cinq services, fr et en inchangés",
+  "next": "M16-06",
+  "pr": "https://github.com/mrscams/psymate-api/pull/115",
+  "branch": "M16-05-emails-ar",
+  "checkout": "m14-02-preferences-booking-b9b6d3"
+}

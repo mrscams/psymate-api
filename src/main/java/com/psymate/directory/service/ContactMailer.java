@@ -1,6 +1,7 @@
 package com.psymate.directory.service;
 
 import com.psymate.shared.i18n.ServedLanguage;
+import com.psymate.shared.mail.RightToLeftMail;
 import jakarta.mail.internet.MimeMessage;
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
@@ -43,7 +44,11 @@ class ContactMailer {
     this.messages = source;
   }
 
-  /** Envoie le message ; lève une {@link MailException} en cas d'échec. */
+  /**
+   * Envoie le message ; lève une {@link MailException} en cas d'échec. Corps {@code text/plain}
+   * seul en français et en anglais ; en arabe, {@code multipart/alternative} de droite à gauche
+   * ({@link RightToLeftMail}, G Q100).
+   */
   void send(ContactMessage m, Locale locale) {
     Locale l = ServedLanguage.messageLocaleOf(locale);
     String senderName = singleLine(m.senderName());
@@ -64,7 +69,11 @@ class ContactMailer {
       helper.setTo(m.to());
       helper.setReplyTo(m.senderEmail());
       helper.setSubject(mailSubject);
-      helper.setText(body);
+      if (RightToLeftMail.applies(l)) {
+        RightToLeftMail.setBody(mime, body);
+      } else {
+        helper.setText(body);
+      }
       sender.send(mime);
     } catch (jakarta.mail.MessagingException | UnsupportedEncodingException e) {
       throw new MailPreparationException(e);

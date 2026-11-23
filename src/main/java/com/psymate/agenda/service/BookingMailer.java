@@ -2,6 +2,7 @@ package com.psymate.agenda.service;
 
 import com.psymate.agenda.model.AppointmentModality;
 import com.psymate.shared.i18n.ServedLanguage;
+import com.psymate.shared.mail.RightToLeftMail;
 import jakarta.annotation.PreDestroy;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -30,13 +31,14 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
- * E-mails de la prise de rendez-vous en ligne (G Q81), en français ou en anglais (clés {@code
- * booking.mail.*}). Objets neutres : ni nom du praticien, ni profession, ni date. Les corps portent
- * le nom du praticien, la date et l'heure dans le fuseau du praticien avec le nom du fuseau, la
- * durée, la modalité, le lien, et rappellent que le produit n'est pas un service d'urgence ; jamais
- * la note de planification. Expéditeur : celui de l'API ({@code app.mail.from}, comme les autres
- * e-mails). E-mails de suivi au demandeur (M14-07, {@link #sendFollowUp}) : confirmation, refus,
- * annulation, déplacement, expiration ; jamais le motif d'annulation.
+ * E-mails de la prise de rendez-vous en ligne (G Q81), en français, en anglais ou en arabe (clés
+ * {@code booking.mail.*} ; en arabe, de droite à gauche, G Q100). Objets neutres : ni nom du
+ * praticien, ni profession, ni date. Les corps portent le nom du praticien, la date et l'heure dans
+ * le fuseau du praticien avec le nom du fuseau, la durée, la modalité, le lien, et rappellent que
+ * le produit n'est pas un service d'urgence ; jamais la note de planification. Expéditeur : celui
+ * de l'API ({@code app.mail.from}, comme les autres e-mails). E-mails de suivi au demandeur
+ * (M14-07, {@link #sendFollowUp}) : confirmation, refus, annulation, déplacement, expiration ;
+ * jamais le motif d'annulation.
  *
  * <p>Envoi après validation de la transaction ({@link #afterCommit}), hors du fil de la requête,
  * sur un pool privé de fils démons : un échec d'envoi ne remonte jamais au demandeur. Les journaux
@@ -183,6 +185,7 @@ public class BookingMailer {
     String link = webBaseUrl + "/rendez-vous/confirmer/" + token;
     send(
         to,
+        l,
         text("booking.mail.verify.subject", l),
         text(
             "booking.mail.verify.body",
@@ -205,6 +208,7 @@ public class BookingMailer {
     String kind = confirmed ? "confirmed" : "pending";
     send(
         to,
+        l,
         text("booking.mail." + kind + ".subject", l),
         text(
             "booking.mail." + kind + ".body",
@@ -308,7 +312,7 @@ public class BookingMailer {
               };
           case REFUSED, CANCELLED, EXPIRED -> new Object[] {name, details(details, l), appName};
         };
-    send(to, text(prefix + ".subject", l), text(prefix + ".body", l, args));
+    send(to, l, text(prefix + ".subject", l), text(prefix + ".body", l, args));
   }
 
   /** Lignes « ancienne date », « durée … au lieu de … », « modalité … au lieu de … ». */
@@ -356,6 +360,7 @@ public class BookingMailer {
     String kind = confirmed ? "newAppointment" : "newRequest";
     send(
         to,
+        l,
         text("booking.mail." + kind + ".subject", l),
         text(
             "booking.mail." + kind + ".body",
@@ -372,6 +377,7 @@ public class BookingMailer {
     Locale l = normalize(locale);
     send(
         to,
+        l,
         text("booking.mail.visitorCancelled.subject", l),
         text(
             "booking.mail.visitorCancelled.body",
@@ -433,14 +439,22 @@ public class BookingMailer {
     return value == null ? "" : value.replaceAll("\\p{Cntrl}+", " ").strip();
   }
 
-  private void send(String to, String subject, String body) {
+  /**
+   * Corps {@code text/plain} seul en français et en anglais ; en arabe, {@code
+   * multipart/alternative} de droite à gauche ({@link RightToLeftMail}, G Q100).
+   */
+  private void send(String to, Locale locale, String subject, String body) {
     try {
       MimeMessage mime = sender.createMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(mime, false, "UTF-8");
       helper.setFrom(from, appName);
       helper.setTo(to);
       helper.setSubject(subject);
-      helper.setText(body);
+      if (RightToLeftMail.applies(locale)) {
+        RightToLeftMail.setBody(mime, body);
+      } else {
+        helper.setText(body);
+      }
       sender.send(mime);
     } catch (MessagingException | UnsupportedEncodingException e) {
       throw new MailPreparationException(e);

@@ -1,5 +1,6 @@
 package com.psymate.identity.verification.service;
 
+import com.psymate.shared.mail.RightToLeftMail;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.UnsupportedEncodingException;
@@ -37,6 +38,7 @@ class VerificationMailer {
     String link = webBaseUrl + "/admin/verifications";
     send(
         to,
+        locale,
         messages.get("verification.mail.submitted.subject", locale, appName, practitionerName),
         messages.get(
             "verification.mail.submitted.body",
@@ -47,14 +49,22 @@ class VerificationMailer {
             link));
   }
 
-  private void send(String to, String subject, String text) {
+  /**
+   * Corps {@code text/plain} seul en français et en anglais ; en arabe, {@code
+   * multipart/alternative} de droite à gauche ({@link RightToLeftMail}, G Q100).
+   */
+  private void send(String to, Locale locale, String subject, String text) {
     try {
       MimeMessage message = sender.createMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
       helper.setFrom(from, appName);
       helper.setTo(to);
       helper.setSubject(subject);
-      helper.setText(text);
+      if (RightToLeftMail.applies(locale)) {
+        RightToLeftMail.setBody(message, text);
+      } else {
+        helper.setText(text);
+      }
       sender.send(message);
     } catch (MessagingException | UnsupportedEncodingException e) {
       throw new MailPreparationException(e);

@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-28T10:51:59.521Z",
+  "task": "M15-02",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Clinical publie SessionClosed (close, contact) et expose SessionFacade.closedSession ; SessionView reçoit practitionerId ; contrat inchangé",
+  "notes": "Revue reviewer : 0 bloquant ; verify : 760 unitaires verts, 1472 IT dont 1 flake de timing patients (PatientProfileControllerIT) vert relancé seul",
+  "next": "M15-07 (billing) : retirer @Reserved de SessionClosed et SessionFacade en les consommant",
+  "pr": "https://github.com/mrscams/psymate-api/pull/119",
+  "branch": "claude/m15-02-clinical-session-closed-328f76",
+  "checkout": "m15-02-clinical-session-closed-328f76"
+}

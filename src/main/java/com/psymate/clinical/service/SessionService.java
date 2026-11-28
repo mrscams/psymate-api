@@ -1,5 +1,6 @@
 package com.psymate.clinical.service;
 
+import com.psymate.clinical.api.SessionClosed;
 import com.psymate.clinical.api.SessionView;
 import com.psymate.clinical.model.ClinicalError;
 import com.psymate.clinical.model.ClinicalException;
@@ -12,6 +13,7 @@ import com.psymate.clinical.model.TimeSpan;
 import com.psymate.clinical.model.TimeSpec;
 import com.psymate.clinical.model.Visibility;
 import com.psymate.clinical.repository.EntryRepository;
+import com.psymate.events.api.DomainEventPublisher;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.identity.api.PractitionerFacade;
 import com.psymate.patients.api.PatientOwnershipGuard;
@@ -45,6 +47,7 @@ public class SessionService {
   private final EntryValidators validators;
   private final PatientOwnershipGuard guard;
   private final PractitionerFacade practitioners;
+  private final DomainEventPublisher events;
   private final Clock clock;
 
   SessionService(
@@ -53,12 +56,14 @@ public class SessionService {
       EntryValidators validators,
       PatientOwnershipGuard guard,
       PractitionerFacade practitioners,
+      DomainEventPublisher events,
       Clock clock) {
     this.repo = repo;
     this.entries = entries;
     this.validators = validators;
     this.guard = guard;
     this.practitioners = practitioners;
+    this.events = events;
     this.clock = clock;
   }
 
@@ -90,7 +95,8 @@ public class SessionService {
   /**
    * Clôture une séance : durée (sinon préférence du praticien, sinon 60 min), fin de séance et
    * compte rendu sont figés dans une VRAIE version, même dans la fenêtre de grâce. Renvoie l'id de
-   * cette version, qui devient le compte rendu de la séance.
+   * cette version, qui devient le compte rendu de la séance. Publie {@link SessionClosed} (G Q85)
+   * en plus de l'EntryCorrected de la correction.
    *
    * @throws ClinicalException ENTRY_NOT_FOUND, SESSION_INVALID (pas une séance), ENTRY_ARCHIVED,
    *     SESSION_ALREADY_CLOSED
@@ -139,6 +145,17 @@ public class SessionService {
         true);
     UUID versionId = repo.currentVersion(sessionId).orElseThrow().id();
     repo.setSummaryVersion(sessionId, versionId);
+    events.publish(
+        new SessionClosed(
+            me.tenantId(),
+            sessionId,
+            entry.patientId(),
+            me.id(),
+            detail.kind(),
+            detail.modality(),
+            from,
+            closedAt,
+            duration));
     return versionId;
   }
 
@@ -187,6 +204,17 @@ public class SessionService {
     UUID id =
         entries.write(me.tenantId(), me.id(), patientId, EntryType.SESSION, null, content, now);
     repo.setSummaryVersion(id, repo.currentVersion(id).orElseThrow().id());
+    events.publish(
+        new SessionClosed(
+            me.tenantId(),
+            id,
+            patientId,
+            me.id(),
+            SessionDetail.KIND_CONTACT,
+            cmd.modality(),
+            cmd.occurredFrom(),
+            now,
+            cmd.durationMin()));
     return id;
   }
 

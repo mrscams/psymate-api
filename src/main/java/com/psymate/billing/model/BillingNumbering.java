@@ -10,7 +10,8 @@ import java.util.Locale;
  * et par année civile de la date d'émission, au fuseau de {@code Europe/Paris}. Format : préfixe,
  * année, numéro sur quatre chiffres au moins ({@code F-2026-0001}, {@code AV-2026-0001}). Les
  * préfixes viennent des réglages ({@code billing_settings}) et ne changent plus dès qu'un numéro
- * existe ({@code billing_counter}).
+ * existe ({@code billing_counter}). Chaque année a sa suite : la première facture émise à une date
+ * d'une nouvelle année reçoit {@code 0001} ({@link #yearOf}).
  */
 public final class BillingNumbering {
 
@@ -39,5 +40,22 @@ public final class BillingNumbering {
   /** Année civile de numérotation du jour, à Paris. */
   public static int currentYear(Clock clock) {
     return LocalDate.now(clock.withZone(ZONE)).getYear();
+  }
+
+  /**
+   * Année de la suite d'un document : celle de sa date d'émission (G Q89), pas celle du jour où il
+   * est émis : une facture datée du 31 décembre et émise le 2 janvier prend la suite de décembre.
+   */
+  public static int yearOf(LocalDate issueDate) {
+    return issueDate.getYear();
+  }
+
+  /**
+   * Numéro que reçoit le document suivant d'une suite : préfixe, année de sa date d'émission,
+   * dernier numéro attribué dans cette année plus un ({@code lastOfThatYear} vaut 0 tant que
+   * l'année n'a rien reçu, si bien que la suite repart à {@code 0001}).
+   */
+  public static String next(String prefix, LocalDate issueDate, int lastOfThatYear) {
+    return format(prefix, yearOf(issueDate), Math.addExact(lastOfThatYear, 1));
   }
 }

@@ -2,6 +2,7 @@ package com.psymate.billing.repository;
 
 import com.psymate.billing.model.Invoice;
 import jakarta.persistence.LockModeType;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,6 +36,26 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID>, Invoice
       """)
   Optional<Invoice> findForUpdate(
       @Param("id") UUID id, @Param("practitionerId") UUID practitionerId);
+
+  /** Document émis du praticien par son numéro (factures et avoirs, M15-09). */
+  Optional<Invoice> findByPractitionerIdAndNumber(UUID practitionerId, String number);
+
+  /**
+   * Date d'émission la plus récente d'une suite (praticien, nature, année civile) parmi les
+   * documents numérotés, null s'il n'y en a pas : un nouveau numéro ne peut pas être daté avant
+   * elle (numérotation continue, G Q89).
+   */
+  @Query(
+      """
+      select max(i.issueDate) from Invoice i
+      where i.practitionerId = :practitionerId and i.kind = :kind and i.number is not null
+        and i.issueDate between :from and :to
+      """)
+  LocalDate lastIssueDate(
+      @Param("practitionerId") UUID practitionerId,
+      @Param("kind") String kind,
+      @Param("from") LocalDate from,
+      @Param("to") LocalDate to);
 
   /** Avoirs émis sur une facture du praticien, par date d'émission puis numéro (M15-11). */
   @Query(

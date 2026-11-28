@@ -29,6 +29,7 @@ import com.psymate.billing.repository.BillingServiceRepository;
 import com.psymate.billing.repository.InvoiceEventRepository;
 import com.psymate.billing.repository.InvoiceLineRepository;
 import com.psymate.billing.repository.InvoiceRepository;
+import com.psymate.billing.repository.PaymentRepository;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.patients.api.PatientAccessException;
 import com.psymate.patients.api.PatientBillingView;
@@ -57,7 +58,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Brouillons de facture (M15-08, L5.3 jusqu'à DELETE ; G Q86, Q87, Q88) : création (une ou par
- * lot), lecture, modification, suppression.
+ * lot), lecture (par identifiant ou par numéro), duplication (M15-09), modification, suppression.
  *
  * <p>Une séance mise dans un brouillon passe à {@code invoiced} (avec {@code invoice_id}) dans la
  * même transaction ; une ligne de séance retirée, ou le brouillon supprimé, la rend à {@code
@@ -94,6 +95,7 @@ public class InvoiceService {
   private final InvoiceRepository invoices;
   private final InvoiceLineRepository lines;
   private final InvoiceEventRepository events;
+  private final PaymentRepository payments;
   private final BillableSessionRepository sessions;
   private final BillableSessionService billable;
   private final BillingPatientRepository profiles;
@@ -108,6 +110,7 @@ public class InvoiceService {
       InvoiceRepository invoices,
       InvoiceLineRepository lines,
       InvoiceEventRepository events,
+      PaymentRepository payments,
       BillableSessionRepository sessions,
       BillableSessionService billable,
       BillingPatientRepository profiles,
@@ -120,6 +123,7 @@ public class InvoiceService {
     this.invoices = invoices;
     this.lines = lines;
     this.events = events;
+    this.payments = payments;
     this.sessions = sessions;
     this.billable = billable;
     this.profiles = profiles;
@@ -244,6 +248,76 @@ public class InvoiceService {
             .findByIdAndPractitionerId(id, me.id())
             .orElseThrow(BillingException::invoiceNotFound);
     return view(invoice, me, null);
+  }
+
+  /**
+   * Document du praticien par son numéro (M15-09 : même réponse que {@link #get}) ; 404
+   * INVOICE_NOT_FOUND pour un numéro inconnu ou d'un autre praticien.
+   */
+  @Transactional(readOnly = true)
+  public InvoiceDto getByNumber(String number) {
+    CurrentPractitioner me = me();
+    Invoice invoice =
+        invoices
+            .findByPractitionerIdAndNumber(me.id(), number)
+            .orElseThrow(BillingException::invoiceNotFound);
+    return view(invoice, me, null);
+  }
+
+  /** Facture relue après une écriture d'un autre service de la facturation (émission, M15-09). */
+  InvoiceDto read(Invoice invoice, CurrentPractitioner me) {
+    return view(invoice, me, null);
+  }
+
+  // ---- duplication
+
+  /**
+   * Nouveau brouillon copié d'une facture (M15-09, brouillon, émise ou annulée) : mêmes lignes
+   * (désignation, date, prestation, quantité, prix) sans leurs séances ({@code session_entry_id}
+   * null : aucune séance ne passe à {@code invoiced}), même patient (409 PATIENT_ARCHIVED s'il est
+   * archivé), destinataire par défaut, date du jour, échéance et mention des réglages, historique
+   * {@code draft_created} avec {@code duplicateOf}. Un avoir ne se duplique pas (409
+   * CREDIT_NOTE_NOT_DUPLICABLE).
+   */
+  @Transactional
+  public InvoiceDto duplicate(UUID id) {
+    CurrentPractitioner me = me();
+    Invoice source =
+        invoices
+            .findByIdAndPractitionerId(id, me.id())
+            .orElseThrow(BillingException::invoiceNotFound);
+    if (!Invoice.KIND_INVOICE.equals(source.getKind())) {
+      throw BillingException.creditNoteNotDuplicable();
+    }
+    PatientBillingView patient = ownPatient(source.getPatientId(), me);
+    if (patient.archived()) {
+      throw BillingException.patientArchivedForInvoice(patient.id());
+    }
+    List<PlannedLine> planned =
+        lines.findByInvoiceIdOrderByPosition(source.getId()).stream()
+            .map(
+                l ->
+                    new PlannedLine(
+                        null,
+                        l.getServiceId(),
+                        l.getLabel(),
+                        l.getOccurredOn(),
+                        l.getQuantity(),
+                        l.getUnitPriceCents()))
+            .toList();
+    BillingIssuer issuer = settings.issuerOfTheMoment(me);
+    OffsetDateTime now = now();
+    Invoice invoice = newDraft(me, patient, issuer, now);
+    InvoiceTotals totals = writeLines(invoice, planned, Map.of(), issuer, now);
+    Map<String, Object> detail = new LinkedHashMap<>();
+    detail.put("sessionCount", 0L);
+    detail.put("batch", false);
+    detail.put("duplicateOf", source.getId().toString());
+    events.save(
+        new InvoiceEvent(
+            UUID.randomUUID(), invoice.getId(), InvoiceEvent.DRAFT_CREATED, now, detail));
+    invoices.flush();
+    return view(invoice, me, totals);
   }
 
   // ---- modification
@@ -667,7 +741,8 @@ public class InvoiceService {
         invoices.findCreditNotes(invoice.getId(), me.id()),
         cancels,
         events.findByInvoiceIdOrderByAtAscIdAsc(invoice.getId()),
-        preview);
+        preview,
+        payments.findByInvoiceIdOrderByReceivedOnAscCreatedAtAscIdAsc(invoice.getId()));
   }
 
   // ---- outils : séances, patients, erreurs

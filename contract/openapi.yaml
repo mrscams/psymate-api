@@ -3635,6 +3635,35 @@ components:
       required:
       - lastName
       type: object
+    InvoiceAlreadyPaidRequest:
+      description: Paiement du total reçu avant l'émission. Tout autre champ est refusé (UNKNOWN_FIELD).
+      properties:
+        mode:
+          description: 'Mode : transfer, cheque, cash, card ou other ; un mode accepté par les réglages, other toujours (MODE_NOT_ACCEPTED sinon).'
+          enum:
+          - transfer
+          - cheque
+          - cash
+          - card
+          - other
+          example: transfer
+          minLength: 1
+          pattern: transfer|cheque|cash|card|other
+          type: string
+        receivedOn:
+          description: Date de réception (AAAA-MM-JJ), aujourd'hui au plus tard.
+          example: 2026-11-28T00:00:00Z
+          format: date
+          type: string
+        reference:
+          description: Référence (numéro de chèque…), 120 caractères au plus. Facultative.
+          maxLength: 120
+          minLength: 0
+          type: string
+      required:
+      - mode
+      - receivedOn
+      type: object
     InvoiceBatchDto:
       description: Brouillons créés, un par patient, dans l'ordre où chaque patient apparaît la première fois dans la demande.
       properties:
@@ -4134,6 +4163,21 @@ components:
           example: 18000
           format: int64
           type: integer
+      type: object
+    IssueInvoiceRequest:
+      description: 'Émission d''un brouillon : numéro attendu (celui affiché, nextNumberPreview) et, si la facture est déjà réglée, le paiement reçu. Tout autre champ est refusé (UNKNOWN_FIELD).'
+      properties:
+        alreadyPaid:
+          $ref: '#/components/schemas/InvoiceAlreadyPaidRequest'
+          description: 'Facture déjà réglée : un paiement du total est enregistré dans la même transaction que l''émission. Absent ou null : aucun paiement.'
+        expectedNumber:
+          description: 'Numéro que le praticien a vu (nextNumberPreview du brouillon). S''il n''est plus le suivant de la suite : 409 INVOICE_NUMBER_CHANGED, rien n''est émis.'
+          example: F-2026-0001
+          maxLength: 30
+          minLength: 0
+          type: string
+      required:
+      - expectedNumber
       type: object
     Item:
       description: Entrée d'une liste fermée de l'annuaire, avec ses libellés fr, en et ar.
@@ -10341,6 +10385,58 @@ paths:
       summary: Crée des brouillons par lot
       tags:
       - 'Facturation : factures'
+  /api/invoices/by-number/{number}:
+    get:
+      description: Session praticien. Même réponse que la lecture par identifiant, pour une facture ou un avoir émis du praticien (numéro exact, casse comprise).
+      operationId: getInvoiceByNumber
+      parameters:
+      - description: Numéro de la facture ou de l'avoir.
+        example: F-2026-0001
+        in: path
+        name: number
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/InvoiceDto'
+          description: La facture.
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'INVOICE_NOT_FOUND : numéro inconnu ou d''un autre praticien.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Lit une facture par son numéro
+      tags:
+      - 'Facturation : factures'
   /api/invoices/{id}:
     delete:
       description: 'Session praticien. Brouillon seulement : suppression physique (E9), avec ses lignes et son historique ; ses séances reviennent à facturer (pending).'
@@ -10534,6 +10630,240 @@ paths:
                 format: int32
                 type: integer
       summary: Modifie un brouillon
+      tags:
+      - 'Facturation : factures'
+  /api/invoices/{id}/duplicate:
+    post:
+      description: 'Session praticien. Nouveau brouillon du même patient avec les mêmes lignes (désignation, date, prestation, quantité, prix unitaire) mais sans leurs séances : aucune séance ne change d''état. Destinataire par défaut, date du jour, échéance et mention des réglages, montants recalculés ; historique draft_created avec duplicateOf. La facture d''origine, brouillon, émise ou annulée, ne change pas. Répond le brouillon créé.'
+      operationId: duplicateInvoice
+      parameters:
+      - description: Identifiant de la facture à copier.
+        example: 3f8e2b1a-6c4d-4e57-9a0b-1d2c3e4f5a6b
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/InvoiceDto'
+          description: Brouillon créé.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : identifiant qui n''est pas un UUID, ou corps JSON illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'INVOICE_NOT_FOUND : facture inexistante ou d''un autre praticien.'
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PATIENT_ARCHIVED : patient archivé, plus de nouveau brouillon (patientId dans le problème). CREDIT_NOTE_NOT_DUPLICABLE : un avoir ne se duplique pas.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Duplique une facture
+      tags:
+      - 'Facturation : factures'
+  /api/invoices/{id}/issue:
+    post:
+      description: 'Session praticien. Émission d''un brouillon, en une transaction : numéro attribué dans la suite du praticien et de l''année de la date d''émission (préfixe-année-0001, continue, sans trou), à condition que expectedNumber soit encore le suivant ; statut issued ; échéance calculée (à réception : la date d''émission ; 15 ou 30 jours ; ou la date choisie) ; émetteur (réglages du moment) et destinataire figés ; montants figés ; historique issued. La date d''émission est celle du brouillon : passée permise, future refusée, et jamais antérieure à la dernière facture émise de la même suite. alreadyPaid enregistre dans la même transaction un paiement du total (historique payment_recorded). Le PDF est rendu une fois, maintenant, et rangé chiffré : si le rendu échoue, rien n''est émis. Les séances restent facturées. Répond la facture émise.'
+      operationId: issueInvoice
+      parameters:
+      - description: Identifiant du brouillon.
+        example: 3f8e2b1a-6c4d-4e57-9a0b-1d2c3e4f5a6b
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssueInvoiceRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/InvoiceDto'
+          description: Facture émise.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : identifiant qui n''est pas un UUID, ou corps JSON illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'INVOICE_NOT_FOUND : facture inexistante ou d''un autre praticien.'
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'INVOICE_NUMBER_CHANGED : expectedNumber n''est plus le suivant (une autre facture vient d''être émise) ; nextNumber dans le problème ; rien n''est émis. INVOICE_ISSUED : la facture est émise, annulée, ou c''est un avoir : elle ne se modifie plus et ne se supprime pas.'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'BILLING_SETTINGS_INCOMPLETE avec errors[] (siret, addressLines, service ; code REQUIRED) : réglages incomplets, comme missing des réglages. EMPTY_INVOICE : aucune ligne, ou sous-total nul ou négatif. RATE_REQUIRED : une ligne de séance sans prix positif (sessionEntryId dans le problème). VALIDATION_FAILED avec errors[] : expectedNumber REQUIRED ou OUT_OF_RANGE ; issueDate OUT_OF_RANGE (date future) ou INVALID_VALUE (antérieure à la dernière facture émise de la même année) ; recipient.name REQUIRED ; alreadyPaid.mode REQUIRED, INVALID_VALUE ou MODE_NOT_ACCEPTED (absent des modes acceptés, other toujours accepté) ; alreadyPaid.receivedOn REQUIRED, INVALID_FORMAT ou OUT_OF_RANGE (date future) ; alreadyPaid.reference OUT_OF_RANGE ; UNKNOWN_FIELD.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+        '500':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PDF_UNAVAILABLE : le PDF n''a pas pu être produit ; rien n''est émis.'
+      summary: Émet un brouillon
+      tags:
+      - 'Facturation : factures'
+  /api/invoices/{id}/pdf:
+    get:
+      description: 'Session praticien. application/pdf, A4, en français. Brouillon : rendu à la demande avec le filigrane « Brouillon » et les réglages du moment ; fichier facture-brouillon.pdf. Facture émise ou avoir : le fichier rangé à l''émission, tel quel (il ne change pas si les réglages changent) ; fichier {numéro}.pdf. variant=receipted : facture acquittée rendue à la demande (titre « Facture acquittée », tampon « Acquittée », paiements), pour une facture entièrement réglée ; fichier {numéro}-acquittee.pdf.'
+      operationId: invoicePdf
+      parameters:
+      - description: Identifiant de la facture.
+        example: 3f8e2b1a-6c4d-4e57-9a0b-1d2c3e4f5a6b
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'receipted : facture acquittée. Absent : le document lui-même.'
+        in: query
+        name: variant
+        required: false
+        schema:
+          enum:
+          - receipted
+          type: string
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                format: binary
+                type: string
+          description: Le PDF, en pièce jointe (Content-Disposition).
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : identifiant qui n''est pas un UUID, ou corps JSON illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'INVOICE_NOT_FOUND : facture inexistante ou d''un autre praticien.'
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'INVOICE_NOT_PAID : variant=receipted sur un brouillon, un avoir, une facture annulée ou pas entièrement réglée.'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'VALIDATION_FAILED avec errors[] : variant INVALID_VALUE.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+        '500':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PDF_UNAVAILABLE : le PDF n''a pas pu être produit ou relu.'
+      summary: Télécharge le PDF d'une facture
       tags:
       - 'Facturation : factures'
   /api/links/{id}:

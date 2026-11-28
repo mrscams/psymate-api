@@ -24,8 +24,9 @@ import org.springframework.data.domain.Persistable;
  * ({@code status = draft}, {@code kind = invoice}) : tout s'y modifie, et le brouillon se supprime
  * physiquement avec ses lignes et son historique (E9, {@code on delete cascade}). Émise ({@code
  * issued}) ou annulée ({@code void}), une facture ne change plus et ne se supprime jamais : {@link
- * #requireDraft} refuse toute écriture (409 INVOICE_ISSUED). L'émission, le numéro, l'instantané de
- * l'émetteur ({@code issuer_snapshot}) et le PDF viennent de M15-09 ; paiements et avoirs de M15-10
+ * #requireDraft} refuse toute écriture (409 INVOICE_ISSUED). L'émission ({@link #issue} : numéro,
+ * instantané de l'émetteur {@code issuer_snapshot}, montants figés, PDF) vient de M15-09, qui tient
+ * aussi {@code paid_cents} pour un paiement enregistré à l'émission ; paiements et avoirs de M15-10
  * et M15-11.
  *
  * <p>Montants en centimes entiers (G Q84). Pour un brouillon, {@code subtotal_cents}, {@code
@@ -269,6 +270,15 @@ public class Invoice implements Persistable<UUID> {
     return updatedAt;
   }
 
+  /** Clé du PDF rangé chiffré à l'émission (M15-09) ; null pour un brouillon. */
+  public String getPdfStorageKey() {
+    return pdfStorageKey;
+  }
+
+  public OffsetDateTime getIssuedAt() {
+    return issuedAt;
+  }
+
   public boolean isDraft() {
     return DRAFT.equals(status);
   }
@@ -309,6 +319,45 @@ public class Invoice implements Persistable<UUID> {
   public void changeFooterNote(String footerNote, OffsetDateTime now) {
     requireDraft();
     this.footerNote = footerNote;
+    this.updatedAt = Objects.requireNonNull(now);
+  }
+
+  /**
+   * Émission (G Q88, Q89, M15-09) : numéro attribué, instantané de l'émetteur, échéance effective
+   * (L3.2), montants figés, clé du PDF rangé. Le destinataire ({@code recipient_name}, {@code
+   * recipient_address}) et la date d'émission sont ceux du brouillon, figés avec lui. Seul un
+   * brouillon s'émet (409 INVOICE_ISSUED sinon) ; ensuite plus rien ne change hors des compteurs de
+   * paiement et d'avoir.
+   */
+  public void issue(
+      String number,
+      Map<String, Object> issuerSnapshot,
+      LocalDate dueOn,
+      InvoiceTotals totals,
+      String pdfStorageKey,
+      OffsetDateTime now) {
+    requireDraft();
+    this.status = ISSUED;
+    this.number = Objects.requireNonNull(number);
+    this.issuerSnapshot = new LinkedHashMap<>(Objects.requireNonNull(issuerSnapshot));
+    this.dueOn = Objects.requireNonNull(dueOn);
+    this.subtotalCents = totals.subtotal();
+    this.vatCents = totals.vat();
+    this.totalCents = totals.total();
+    this.pdfStorageKey = Objects.requireNonNull(pdfStorageKey);
+    this.issuedAt = Objects.requireNonNull(now);
+    this.updatedAt = now;
+  }
+
+  /**
+   * Paiement enregistré sur une facture émise (G Q90) : {@code paid_cents} tenu dans la même
+   * transaction que la ligne {@code payment}.
+   */
+  public void recordPayment(long amountCents, OffsetDateTime now) {
+    if (!ISSUED.equals(status) || !KIND_INVOICE.equals(kind)) {
+      throw new IllegalStateException("paiement sur une facture qui n'est pas émise");
+    }
+    this.paidCents = Math.addExact(this.paidCents, amountCents);
     this.updatedAt = Objects.requireNonNull(now);
   }
 

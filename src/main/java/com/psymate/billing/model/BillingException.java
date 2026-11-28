@@ -22,8 +22,11 @@ import org.springframework.http.HttpStatusCode;
  * SESSION_NOT_BILLABLE (404) et SESSION_ALREADY_INVOICED (409). Codes de M15-08 (L5.3) :
  * INVOICE_NOT_FOUND (404), INVOICE_ISSUED (409), RATE_REQUIRED (422, {@code sessionEntryId} dans le
  * problème), SESSION_ALREADY_INVOICED avec {@code sessionEntryId} et PATIENT_ARCHIVED (409) à la
- * création d'un brouillon. Une propriété de problème ({@link #properties}) s'ajoute à la réponse ;
- * une clé de message propre ({@link #messageKey}) donne un texte adapté à la route.
+ * création d'un brouillon. Codes de M15-09 : BILLING_SETTINGS_INCOMPLETE (422, code racine avec
+ * errors[]), EMPTY_INVOICE (422), INVOICE_NUMBER_CHANGED (409, {@code nextNumber}),
+ * INVOICE_NOT_PAID (409), CREDIT_NOTE_NOT_DUPLICABLE (409), PDF_UNAVAILABLE (500). Une propriété de
+ * problème ({@link #properties}) s'ajoute à la réponse ; une clé de message propre ({@link
+ * #messageKey}) donne un texte adapté à la route.
  */
 public class BillingException extends ProblemException {
 
@@ -203,6 +206,60 @@ public class BillingException extends ProblemException {
   public static BillingException rateRequired(UUID sessionEntryId) {
     return new BillingException(422, "RATE_REQUIRED", null, null, "Cette séance n'a pas de tarif.")
         .with("sessionEntryId", sessionEntryId.toString());
+  }
+
+  /**
+   * Réglages incomplets à l'émission (L3.3) : 422 BILLING_SETTINGS_INCOMPLETE (code racine, pas
+   * VALIDATION_FAILED) avec errors[] = un champ manquant par élément ({@code siret}, {@code
+   * addressLines}, {@code service}, comme {@code missing} des réglages), code REQUIRED. Le
+   * brouillon reste intact.
+   */
+  public static BillingException settingsIncomplete(List<String> missing) {
+    if (missing.isEmpty()) {
+      throw new IllegalArgumentException("au moins un champ manquant");
+    }
+    return new BillingException(
+        422,
+        "BILLING_SETTINGS_INCOMPLETE",
+        "Réglages de facturation incomplets.",
+        missing.stream().map(m -> new FieldProblem(m, "REQUIRED")).toList());
+  }
+
+  /** Brouillon sans ligne, ou dont le sous-total n'est pas positif, à l'émission (L3.2). */
+  public static BillingException emptyInvoice() {
+    return new BillingException(
+        422, "EMPTY_INVOICE", null, null, "La facture est vide ou son total n'est pas positif.");
+  }
+
+  /**
+   * Le numéro attendu n'est plus le suivant (G Q89, L3.3) : rien n'est émis ; {@code nextNumber}
+   * dans le problème.
+   */
+  public static BillingException invoiceNumberChanged(String nextNumber) {
+    return new BillingException(
+            409, "INVOICE_NUMBER_CHANGED", null, null, "Le numéro de la facture a changé.")
+        .with("nextNumber", nextNumber);
+  }
+
+  /** Facture acquittée demandée alors que la facture n'est pas entièrement réglée (L5.3). */
+  public static BillingException invoiceNotPaid() {
+    return new BillingException(
+        409, "INVOICE_NOT_PAID", null, null, "Cette facture n'est pas entièrement réglée.");
+  }
+
+  /** Un avoir ne se duplique pas : seule une facture donne un nouveau brouillon (M15-09). */
+  public static BillingException creditNoteNotDuplicable() {
+    return new BillingException(
+        409, "CREDIT_NOTE_NOT_DUPLICABLE", null, null, "Un avoir ne se duplique pas.");
+  }
+
+  /**
+   * PDF impossible à produire (rendu) ou à relire (fichier rangé) : 500 PDF_UNAVAILABLE, détail
+   * générique ; à l'émission, rien n'est émis.
+   */
+  public static BillingException pdfUnavailable() {
+    return new BillingException(
+        500, "PDF_UNAVAILABLE", null, null, "Le PDF de la facture est indisponible.");
   }
 
   /** Un préfixe de numérotation change alors qu'un numéro a déjà été attribué (G Q89). */

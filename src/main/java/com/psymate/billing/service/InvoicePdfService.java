@@ -24,6 +24,8 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -44,6 +46,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  */
 @Service
 public class InvoicePdfService {
+
+  private static final Logger LOG = LoggerFactory.getLogger(InvoicePdfService.class);
 
   /** Préfixe des clés de stockage des PDF de facture (G Q93). */
   static final String KEY_PREFIX = "billing/invoice/";
@@ -126,21 +130,30 @@ public class InvoicePdfService {
   }
 
   /**
-   * Range le PDF chiffré. Si la transaction en cours est ensuite annulée, le fichier est effacé :
-   * aucun PDF ne survit à une émission qui n'a pas eu lieu.
+   * Range le PDF chiffré. L'effacement est inscrit avant l'écriture : si la transaction est annulée
+   * ({@code STATUS_ROLLED_BACK}), le fichier, même écrit à moitié, est effacé ; aucun PDF ne survit
+   * à une émission qui n'a pas eu lieu. Une issue inconnue ({@code STATUS_UNKNOWN}) ne l'efface pas
+   * : une facture peut-être émise ne perd jamais son fichier. Une écriture qui échoue devient 500
+   * PDF_UNAVAILABLE (la transaction est annulée).
    */
   void store(String key, byte[] pdf) {
-    storage.put(key, pdf);
     if (TransactionSynchronizationManager.isSynchronizationActive()) {
       TransactionSynchronizationManager.registerSynchronization(
           new TransactionSynchronization() {
             @Override
             public void afterCompletion(int status) {
-              if (status != STATUS_COMMITTED) {
+              if (status == STATUS_ROLLED_BACK) {
                 storage.delete(key);
               }
             }
           });
+    }
+    try {
+      storage.put(key, pdf);
+    } catch (RuntimeException e) {
+      // Ni clé ni contenu : seule la classe de l'erreur (G Q95).
+      LOG.error("Invoice PDF storage failed: {}", e.getClass().getName());
+      throw BillingException.pdfUnavailable();
     }
   }
 
@@ -208,7 +221,13 @@ public class InvoicePdfService {
     if (key == null || !storage.exists(key)) {
       throw BillingException.pdfUnavailable();
     }
-    return new PdfFile(invoice.getNumber() + ".pdf", storage.get(key));
+    try {
+      return new PdfFile(invoice.getNumber() + ".pdf", storage.get(key));
+    } catch (RuntimeException e) {
+      // Fichier disparu entre-temps ou indéchiffrable : 500, sans clé ni contenu au journal.
+      LOG.error("Invoice PDF read failed: {}", e.getClass().getName());
+      throw BillingException.pdfUnavailable();
+    }
   }
 
   /** {@code variant} : absent ou vide, ou {@code receipted} ; 422 variant INVALID_VALUE sinon. */
@@ -515,7 +534,8 @@ public class InvoicePdfService {
     String key = BillingIbanService.storageKey(practitionerId);
     try {
       return storage.exists(key) ? new String(storage.get(key), StandardCharsets.UTF_8) : null;
-    } catch (UncheckedIOException | IllegalArgumentException e) {
+    } catch (UncheckedIOException | IllegalArgumentException | IllegalStateException e) {
+      // Fichier absent, clé refusée ou contenu indéchiffrable : pas d'IBAN imprimé.
       return null;
     }
   }

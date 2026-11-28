@@ -744,6 +744,66 @@ class InvoiceIssueIT {
         .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"));
   }
 
+  @Test
+  void anIssuedInvoiceWhoseStoredFileVanishedAnswers500PdfUnavailable() throws Exception {
+    settings(alice);
+    service(alice, "Séance", 6000, true);
+    UUID draft = freeDraft(alice, theo, 6000);
+    issue(alice, draft, expected(year, 1)).andExpect(status().isOk());
+    storage.delete("billing/invoice/" + draft + ".pdf");
+
+    pdf(alice, draft, null)
+        .andExpect(status().isInternalServerError())
+        .andExpect(jsonPath("$.code").value("PDF_UNAVAILABLE"))
+        .andExpect(jsonPath("$.detail").isNotEmpty());
+    // Jamais rendu à nouveau : la facture garde sa clé, aucun fichier n'est recréé.
+    assertThat(storage.exists("billing/invoice/" + draft + ".pdf")).isFalse();
+  }
+
+  @Test
+  void thePdfStaysInFrenchWhateverTheServedLanguage() throws Exception {
+    settings(alice);
+    service(alice, "Séance", 6000, true);
+    UUID draft = freeDraft(alice, theo, 6000);
+    issue(alice, draft, expected(year, 1)).andExpect(status().isOk());
+    for (UUID id : List.of(draft, freeDraft(alice, theo, 3000))) {
+      MvcResult result =
+          mvc.perform(
+                  MockMvcRequestBuilders.get(INVOICES + "/" + id + "/pdf")
+                      .header("Accept-Language", "ar")
+                      .with(as(alice)))
+              .andExpect(status().isOk())
+              .andReturn();
+      assertThat(pdfText(result.getResponse().getContentAsByteArray()))
+          .contains("Échéance", "à réception", "Désignation".toUpperCase(Locale.ROOT))
+          .contains(HEALTH_EXEMPT)
+          .doesNotContainPattern("[\\u0621-\\u064A]");
+    }
+    // Les erreurs, elles, suivent la langue servie.
+    mvc.perform(
+            MockMvcRequestBuilders.get(INVOICES + "/" + draft + "/pdf")
+                .param("variant", "receipted")
+                .header("Accept-Language", "ar")
+                .with(as(alice)))
+        .andExpect(status().isConflict())
+        .andExpect(
+            jsonPath("$.detail")
+                .value(org.hamcrest.Matchers.matchesPattern(".*[\\u0621-\\u064A].*")));
+  }
+
+  @Test
+  void aDraftWhosePatientWasArchivedSinceCanStillBeIssued() throws Exception {
+    settings(alice);
+    service(alice, "Séance", 6000, true);
+    UUID draft = freeDraft(alice, theo, 6000);
+    jdbc.update("update patient set archived_at = now() where id = ?", theo);
+    issue(alice, draft, expected(year, 1))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("due"))
+        .andExpect(jsonPath("$.number").value(number(year, 1)))
+        .andExpect(jsonPath("$.patient.archived").value(true));
+  }
+
   // ---- POST /api/invoices/{id}/duplicate
 
   @Test

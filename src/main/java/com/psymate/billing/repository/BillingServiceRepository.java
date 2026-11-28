@@ -28,4 +28,7 @@ public interface BillingServiceRepository
       order by s.isDefault desc, lower(s.label), s.label, s.id
       """)
   List<BillingService> findActive(@Param("practitionerId") UUID practitionerId);
+
+  /** Vrai si le praticien a au moins une prestation non archivée ({@code missing}, M15-06). */
+  boolean existsByPractitionerIdAndArchivedAtIsNull(UUID practitionerId);
 }

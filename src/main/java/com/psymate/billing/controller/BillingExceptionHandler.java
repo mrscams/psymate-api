@@ -4,12 +4,14 @@ import com.psymate.billing.model.BillingException;
 import com.psymate.shared.problem.AdviceOrder;
 import com.psymate.shared.problem.FieldProblem;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -84,15 +86,22 @@ class BillingExceptionHandler {
    * Jakarta (code racine VALIDATION_FAILED) prend la forme des erreurs Jakarta.
    */
   @ExceptionHandler(BillingException.class)
-  ProblemDetail domain(BillingException ex, HttpServletRequest request) {
+  ProblemDetail domain(
+      BillingException ex, HttpServletRequest request, HttpServletResponse response) {
     Locale locale = messages.localeOf(request);
-    if (ex.field() != null) {
-      return validation(List.of(new FieldProblem(ex.field(), ex.fieldCode())), locale);
+    if (!ex.fieldProblems().isEmpty()) {
+      return validation(ex.fieldProblems(), locale);
     }
     String detail = messages.domain(ex.code(), ex.detail(), locale);
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.status(), detail);
     pd.setTitle(ex.title());
     pd.setProperty("code", ex.code());
+    if (ex.retryAfterSeconds() != null) {
+      // Comme le 429 RATE_LIMITED de shared : en-tête Retry-After et champ retryAfterSeconds.
+      pd.setProperty("retryAfterSeconds", ex.retryAfterSeconds());
+      response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(ex.retryAfterSeconds()));
+      response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+    }
     return pd;
   }
 

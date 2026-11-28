@@ -11,7 +11,10 @@ import org.springframework.http.HttpStatusCode;
  * statut et le code viennent d'ici, le message localisé (clé {@code billing.error.<code>}) du
  * handler. Codes de M15-05 (L5.1) : SERVICE_NOT_FOUND (404, aussi pour la prestation d'un autre
  * praticien), SERVICE_IS_DEFAULT et PATIENT_ARCHIVED (409), SERVICE_LIMIT_REACHED (422), et
- * VALIDATION_FAILED (422) pour une règle de champ que Jakarta Validation n'exprime pas.
+ * VALIDATION_FAILED (422) pour une règle de champ que Jakarta Validation n'exprime pas. Codes de
+ * M15-06 : NUMBERING_LOCKED (409), PASSWORD_INVALID (403), TOO_MANY_ATTEMPTS (429), et en
+ * VALIDATION_FAILED les codes de champ SIRET_INVALID, VAT_RATE_REQUIRED, VAT_NUMBER_REQUIRED,
+ * IBAN_INVALID, OUT_OF_RANGE, INVALID_VALUE ({@link #invalidFields}).
  */
 public class BillingException extends ProblemException {
 
@@ -20,16 +23,37 @@ public class BillingException extends ProblemException {
 
   private final String field;
   private final String fieldCode;
+  private final List<FieldProblem> fieldProblems;
+  private Long retryAfterSeconds;
 
   private BillingException(int status, String code, String field, String fieldCode, String detail) {
+    this(
+        status,
+        code,
+        detail,
+        field == null ? List.of() : List.of(new FieldProblem(field, fieldCode)));
+  }
+
+  private BillingException(int status, String code, String detail, List<FieldProblem> problems) {
     super(
         HttpStatusCode.valueOf(status),
         code,
         Problems.titleOf(HttpStatusCode.valueOf(status)),
         detail,
-        field == null ? List.of() : List.of(new FieldProblem(field, fieldCode, detail)));
-    this.field = field;
-    this.fieldCode = fieldCode;
+        problems.stream().map(p -> new FieldProblem(p.field(), p.code(), p.code())).toList());
+    this.fieldProblems = List.copyOf(problems);
+    this.field = problems.isEmpty() ? null : problems.getFirst().field();
+    this.fieldCode = problems.isEmpty() ? null : problems.getFirst().code();
+  }
+
+  /** Attente conseillée en secondes (en-tête Retry-After d'un 429), null sinon. */
+  public Long retryAfterSeconds() {
+    return retryAfterSeconds;
+  }
+
+  /** Erreurs de champ (sans message : le handler les localise), vide hors validation. */
+  public List<FieldProblem> fieldProblems() {
+    return fieldProblems;
   }
 
   /** Champ de {@code errors[]} d'une erreur de validation métier, {@code null} sinon. */
@@ -78,5 +102,43 @@ public class BillingException extends ProblemException {
    */
   public static BillingException invalidField(String field, String fieldCode) {
     return new BillingException(422, "VALIDATION_FAILED", field, fieldCode, fieldCode);
+  }
+
+  /**
+   * Règles de champ hors Jakarta Validation, toutes à la fois : 422 VALIDATION_FAILED, errors[] =
+   * {@code problems} dans l'ordre (codes de champ SIRET_INVALID, VAT_RATE_REQUIRED…).
+   */
+  public static BillingException invalidFields(List<FieldProblem> problems) {
+    if (problems.isEmpty()) {
+      throw new IllegalArgumentException("au moins une erreur de champ");
+    }
+    return new BillingException(422, "VALIDATION_FAILED", "VALIDATION_FAILED", problems);
+  }
+
+  /** Un préfixe de numérotation change alors qu'un numéro a déjà été attribué (G Q89). */
+  public static BillingException numberingLocked() {
+    return new BillingException(
+        409,
+        "NUMBERING_LOCKED",
+        null,
+        null,
+        "Les préfixes de numérotation ne changent plus après la première émission.");
+  }
+
+  /** Le mot de passe de confirmation ne correspond pas au compte (G Q95). */
+  public static BillingException passwordInvalid() {
+    return new BillingException(403, "PASSWORD_INVALID", null, null, "Mot de passe incorrect.");
+  }
+
+  /**
+   * Trop d'essais de mot de passe (5 échecs en 15 minutes, M15-06) : 429 TOO_MANY_ATTEMPTS, le mot
+   * de passe n'est pas vérifié ; {@code retryAfterSeconds} jusqu'à la sortie de la fenêtre.
+   */
+  public static BillingException tooManyAttempts(long retryAfterSeconds) {
+    BillingException e =
+        new BillingException(
+            429, "TOO_MANY_ATTEMPTS", null, null, "Trop d'essais : réessayez plus tard.");
+    e.retryAfterSeconds = Math.max(1, retryAfterSeconds);
+    return e;
   }
 }

@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-28T11:36:33.809Z",
+  "task": "M15-06",
+  "agent": "backend-module-dev",
+  "status": "in-progress",
+  "summary": "Reglages de facturation et IBAN",
+  "branch": "m15-06-billing-settings",
+  "checkout": "m15-05-billing-socle-4a7edd"
+}

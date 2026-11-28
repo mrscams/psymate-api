@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-28T12:28:50.327Z",
+  "task": "M15-06",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Reglages de facturation et IBAN (chiffre, mot de passe, plafond 5 essais / 15 min)",
+  "notes": "Ecarts en L5.6 : mention null en liable, next* formates, PUT 200 remplacement complet, 429 TOO_MANY_ATTEMPTS",
+  "next": "M15-07",
+  "pr": "https://github.com/mrscams/psymate-api/pull/122",
+  "branch": "m15-06-billing-settings",
+  "checkout": "m15-05-billing-socle-4a7edd"
+}

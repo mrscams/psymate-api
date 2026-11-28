@@ -312,6 +312,16 @@ Toutes les routes exigent une session praticien ; chaque ressource est filtrée 
 
 Montants en centimes ; pas de route d'aperçu (l'aperçu est dessiné par le web, Q70) ; pas de `sendByEmail` à l'émission (le web enchaîne émission puis envoi) ; tarif et adresse du patient par `billing-profile`, pas par `PATCH /api/patients/{id}` ; pas de champ `billing` sur la clôture de séance (le web appelle `dismiss`, ou crée puis émet une facture, après la clôture) ; export du journal en téléchargement direct ; `reasonCode` au lieu d'un libellé ; ligne de l'agenda hors M15.
 
+### L5.6 Écarts constatés à l'implémentation (tenu par le couloir billing, M15-05 à M15-11)
+
+Le contrat fusionné fait foi ; cette liste dit où il précise ou s'écarte de L5.
+
+- **Toutes les routes** : une erreur de champ est rangée dans `errors[]` sous le code racine `422 VALIDATION_FAILED` (codes de champ `SIRET_INVALID`, `VAT_RATE_REQUIRED`, `VAT_NUMBER_REQUIRED`, `IBAN_INVALID`, `OUT_OF_RANGE`, `INVALID_VALUE`, `INVALID_FORMAT`, `REQUIRED`, `UNKNOWN_FIELD`), toutes rapportées ensemble. Un montant décimal (`60.0` compris) ou en chaîne est refusé (`INVALID_FORMAT`). Un patient d'un autre praticien répond `404 PATIENT_NOT_FOUND`. (M15-05, M15-06)
+- **Prestations** (M15-05) : `POST` répond `201` sans `Location` ; `isDefault: false` sur la prestation par défaut → `422 INVALID_VALUE` ; `SERVICE_LIMIT_REACHED` sans `errors[]` ; `PATCH` avec `durationMin: null` efface la durée, tout autre champ absent ou null est inchangé ; archiver retire le défaut.
+- **Profil de facturation** (M15-05) : `PUT` remplace tout (absent, null ou vide efface) ; `GET` sans ligne renvoie tous les champs à null.
+- **Réglages** (M15-06) : `PUT` remplace tout et répond `200` avec les réglages relus ; un bloc absent reprend ses valeurs par défaut (le web renvoie toujours `numbering`, sinon `409 NUMBERING_LOCKED` dès que les préfixes ne sont plus F/AV) ; les champs en lecture seule du `GET` (`identity`, `vat.mention`, `numbering.next*`, `numbering.locked`, `payment.ibanLast4`, `missing`) sont refusés en `PUT` (`UNKNOWN_FIELD`) ; `vat.mention` vaut `null` en régime `liable` (Q92 ne donne pas de texte) ; `nextInvoiceNumber` et `nextCreditNoteNumber` sont formatés (`F-2026-0001`) ; `locked` = une ligne `billing_counter` avec `last_number > 0` ; `missing.addressLines` tient compte de l'adresse proposée par identity.
+- **IBAN** (M15-06) : `429 TOO_MANY_ATTEMPTS` (en-tête `Retry-After`) après 5 mots de passe faux en 15 minutes par praticien, PUT et DELETE confondus ; `DELETE` répond `204` même sans IBAN.
+
 ## L6. Tâches, couloirs et parallélisme
 
 ### L6.1 API (`psymate-api`)

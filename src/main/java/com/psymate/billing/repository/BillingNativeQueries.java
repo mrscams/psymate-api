@@ -17,4 +17,12 @@ public interface BillingNativeQueries {
    * tiennent en parallèle. Exige une transaction en cours ; libéré à sa fin.
    */
   void lockServices(UUID practitionerId);
+
+  /**
+   * Verrou consultatif transactionnel des réglages d'un praticien : deux écritures des réglages ou
+   * de l'IBAN d'un même praticien se suivent (la première crée la ligne sans conflit de clé). Une
+   * émission (M15-09) qui lit les préfixes le prend aussi, pour qu'un préfixe ne change pas entre
+   * sa lecture et l'attribution du numéro. Exige une transaction en cours ; libéré à sa fin.
+   */
+  void lockSettings(UUID practitionerId);
 }

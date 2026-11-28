@@ -265,15 +265,20 @@ public class EntryRepository {
         .listOfRows();
   }
 
-  private static final String SESSION_VIEW_SELECT =
-      "select e.id, e.patient_id, s.kind, s.modality, e.occurred_from, s.closed_at, s.duration_min"
+  /** Séances non archivées ; la requête complète par « and … ». */
+  private static final String SESSION_VIEW_BASE =
+      "select e.id, e.patient_id, e.created_by, s.kind, s.modality, e.occurred_from, s.closed_at,"
+          + " s.duration_min"
           + " from entry e join entry_session s on s.entry_id = e.id"
-          + " where e.patient_id = :p and e.type = 'session' and e.archived_at is null";
+          + " where e.type = 'session' and e.archived_at is null";
+
+  private static final String SESSION_VIEW_SELECT = SESSION_VIEW_BASE + " and e.patient_id = :p";
 
   private static SessionView sessionView(ResultSet rs, int i) throws SQLException {
     return new SessionView(
         uuid(rs, "id"),
         uuid(rs, "patient_id"),
+        uuid(rs, "created_by"),
         rs.getString("kind"),
         rs.getString("modality"),
         instant(rs, "occurred_from"),
@@ -306,6 +311,17 @@ public class EntryRepository {
                 + " when s.kind <> 'intake' then 1 else 2 end,"
                 + " e.occurred_from desc, s.closed_at desc nulls last limit 1")
         .param("p", patientId)
+        .query(EntryRepository::sessionView)
+        .optional();
+  }
+
+  /**
+   * Séance close (closed_at renseigné, tout kind), non archivée ; vide sinon. Sans garde de
+   * propriété : l'appelant filtre (SessionFacade).
+   */
+  public Optional<SessionView> closedSession(UUID sessionId) {
+    return jdbc.sql(SESSION_VIEW_BASE + " and e.id = :id and s.closed_at is not null")
+        .param("id", sessionId)
         .query(EntryRepository::sessionView)
         .optional();
   }

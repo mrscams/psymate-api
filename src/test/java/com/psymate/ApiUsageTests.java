@@ -46,8 +46,6 @@ class ApiUsageTests {
    */
   static final Map<String, String> UNUSED_API_EXCEPTIONS =
       Map.of(
-          "com.psymate.clinical.api.SessionView",
-          "M9-13 : ne sert plus qu'à clinical depuis M9-06, à déplacer hors d'api",
           "com.psymate.vocabulary.api.EntryTypeView",
           "M9-10 : lu par aucun autre module, à sortir d'api");
 

@@ -8,6 +8,7 @@ import com.psymate.clinical.ClinicalTestConfig;
 import com.psymate.clinical.ClinicalTestConfig.MutableClock;
 import com.psymate.clinical.api.EntryCorrected;
 import com.psymate.clinical.api.EntryCreated;
+import com.psymate.clinical.api.SessionClosed;
 import com.psymate.clinical.api.SessionView;
 import com.psymate.clinical.model.ClinicalError;
 import com.psymate.clinical.model.ClinicalException;
@@ -424,6 +425,80 @@ class SessionServiceIT {
               assertThat(e.error()).isEqualTo(ClinicalError.SESSION_ALREADY_CLOSED);
               assertThat(e.error().status()).isEqualTo(409);
             });
+  }
+
+  // ---- SessionClosed (M15-02, G Q85)
+
+  @Test
+  void closePublishesExactlyOneSessionClosedWithTheRetainedDurationAndInstant() {
+    jdbc.update(
+        "update practitioner set preferences = '{\"sessions.defaultDurationMin\": 40}'::jsonb"
+            + " where id = ?",
+        fx.practitioner);
+    UUID session = startAt(T0);
+    clock.advance(Duration.ofMinutes(55));
+    events.clear();
+
+    sessions.close(session, new CloseSessionCommand(null, "Compte rendu"));
+
+    Instant closedAt = instantOf("select closed_at from entry_session where entry_id = ?", session);
+    assertThat(events.stream(SessionClosed.class).toList())
+        .singleElement()
+        .satisfies(
+            e -> {
+              assertThat(e.getTenantId()).isEqualTo(fx.tenant);
+              assertThat(e.getSessionId()).isEqualTo(session);
+              assertThat(e.getPatientId()).isEqualTo(patient);
+              assertThat(e.getPractitionerId()).isEqualTo(fx.practitioner);
+              assertThat(e.getKind()).isEqualTo("session");
+              assertThat(e.getModality()).isEqualTo("video");
+              assertThat(e.getOccurredFrom()).isEqualTo(T0);
+              assertThat(e.getClosedAt()).isEqualTo(closedAt).isEqualTo(clock.instant());
+              assertThat(e.getDurationMin()).isEqualTo(durationOf(session)).isEqualTo(40);
+            });
+    assertThat(events.stream(EntryCorrected.class).toList()).singleElement();
+  }
+
+  @Test
+  void closingAnAlreadyClosedSessionPublishesNoSessionClosed() {
+    UUID session = start();
+    sessions.close(session, new CloseSessionCommand(30, null));
+    events.clear();
+
+    assertError(
+        () -> sessions.close(session, new CloseSessionCommand(30, null)),
+        ClinicalError.SESSION_ALREADY_CLOSED);
+
+    assertThat(events.stream(SessionClosed.class).toList()).isEmpty();
+  }
+
+  @Test
+  void contactPublishesExactlyOneSessionClosed() {
+    Instant when = Instant.parse("2026-10-20T16:30:00Z");
+    events.clear();
+
+    UUID contact = sessions.contact(patient, new ContactCommand("phone", when, "Appel", 10));
+
+    assertThat(events.stream(SessionClosed.class).toList())
+        .singleElement()
+        .satisfies(
+            e -> {
+              assertThat(e.getSessionId()).isEqualTo(contact);
+              assertThat(e.getKind()).isEqualTo("contact");
+              assertThat(e.getModality()).isEqualTo("phone");
+              assertThat(e.getOccurredFrom()).isEqualTo(when);
+              assertThat(e.getClosedAt()).isEqualTo(T0);
+              assertThat(e.getDurationMin()).isEqualTo(10);
+            });
+  }
+
+  @Test
+  void startingASessionPublishesNoSessionClosed() {
+    events.clear();
+
+    start();
+
+    assertThat(events.stream(SessionClosed.class).toList()).isEmpty();
   }
 
   @Test

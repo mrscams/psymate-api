@@ -444,6 +444,43 @@ class InvoiceIT {
   }
 
   @Test
+  void anArchivedServiceAlreadyOnTheDraftIsKeptButANewOneIsRefused() throws Exception {
+    UUID kept = service(alice, "Prestation P", 6000, false);
+    UUID other = service(alice, "Prestation Q", 7000, false);
+    String keptLine = "{\"label\":\"P\",\"unitPrice\":6000,\"serviceId\":\"" + kept + "\"}";
+    UUID draft =
+        id(
+            create(alice, "{\"patientId\":\"" + lea + "\",\"lines\":[" + keptLine + "]}")
+                .andExpect(status().isCreated())
+                .andReturn());
+    jdbc.update("update billing_service set archived_at = now() where id in (?, ?)", kept, other);
+
+    patch(alice, draft, "{\"lines\":[" + keptLine + "]}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.lines[0].serviceId").value(kept.toString()));
+    expectFieldError(
+        patch(
+            alice,
+            draft,
+            "{\"lines\":["
+                + keptLine
+                + ",{\"label\":\"Q\",\"unitPrice\":7000,\"serviceId\":\""
+                + other
+                + "\"}]}"),
+        "lines[1].serviceId",
+        "INVALID_VALUE");
+    // Une prestation d'un autre praticien, jamais.
+    UUID bobs = service(bob, "Prestation de Bob", 5000, false);
+    expectFieldError(
+        patch(
+            alice,
+            draft,
+            "{\"lines\":[{\"label\":\"B\",\"unitPrice\":1,\"serviceId\":\"" + bobs + "\"}]}"),
+        "lines[0].serviceId",
+        "INVALID_VALUE");
+  }
+
+  @Test
   void aSessionTwiceInSessionEntryIdsAndLinesIsRefused() throws Exception {
     rate(theo, 5000);
     UUID session = row(alice, theo, day1, "pending");

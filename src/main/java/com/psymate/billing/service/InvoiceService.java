@@ -150,7 +150,7 @@ public class InvoiceService {
     List<InvoiceLineRequest> given = request.lines() == null ? List.of() : request.lines();
     List<FieldProblem> problems = new ArrayList<>();
     duplicates(sessionIds, "sessionEntryIds", problems);
-    checkLines(given, new HashSet<>(sessionIds), me, problems);
+    checkLines(given, new HashSet<>(sessionIds), Set.of(), me, problems);
     throwIfAny(problems);
 
     Set<UUID> all = new LinkedHashSet<>(sessionIds);
@@ -311,7 +311,14 @@ public class InvoiceService {
         problems.add(new FieldProblem("lines", "REQUIRED"));
       } else {
         given = r.getLines();
-        checkLines(given, Set.of(), me, problems);
+        // Une prestation archivée depuis reste admise si une ligne actuelle du brouillon la porte :
+        // renvoyer les lignes telles quelles doit toujours passer.
+        Set<UUID> currentServices =
+            lines.findByInvoiceIdOrderByPosition(invoice.getId()).stream()
+                .map(InvoiceLine::getServiceId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        checkLines(given, Set.of(), currentServices, me, problems);
       }
     }
     throwIfAny(problems);
@@ -421,11 +428,13 @@ public class InvoiceService {
   /**
    * Règles des lignes que Jakarta n'exprime pas : 100 lignes libres et 200 lignes de séance au
    * plus, une séance une seule fois (ni deux lignes, ni une ligne et {@code sessionEntryIds}),
-   * prestation non archivée du praticien (comme le PATCH d'une séance à facturer, M15-07).
+   * prestation du praticien, non archivée (comme le PATCH d'une séance à facturer, M15-07) sauf si
+   * elle figure déjà sur une ligne actuelle du brouillon ({@code keptServiceIds}).
    */
   private void checkLines(
       List<InvoiceLineRequest> given,
       Set<UUID> autoSessionIds,
+      Set<UUID> keptServiceIds,
       CurrentPractitioner me,
       List<FieldProblem> problems) {
     long free = given.stream().filter(l -> l.sessionEntryId() == null).count();
@@ -450,7 +459,7 @@ public class InvoiceService {
     Set<UUID> known =
         services.findAllById(serviceIds).stream()
             .filter(s -> me.id().equals(s.getPractitionerId()))
-            .filter(s -> !s.isArchived())
+            .filter(s -> !s.isArchived() || keptServiceIds.contains(s.getId()))
             .map(BillingService::getId)
             .collect(Collectors.toSet());
     for (int i = 0; i < given.size(); i++) {

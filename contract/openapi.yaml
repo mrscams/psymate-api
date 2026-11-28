@@ -3964,7 +3964,7 @@ components:
           minimum: 1
           type: integer
         serviceId:
-          description: Prestation non archivée du praticien. Facultative.
+          description: Prestation du praticien, non archivée (une prestation archivée depuis reste admise si une ligne actuelle du brouillon la porte). Facultative.
           format: uuid
           type: string
         sessionEntryId:
@@ -10257,7 +10257,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_REQUIRED : une séance demandée n''a aucun tarif (ni montant fixé, ni tarif du patient, ni prestation) ; sessionEntryId dans le problème. VALIDATION_FAILED avec errors[] : patientId REQUIRED ou INVALID_FORMAT ; sessionEntryIds OUT_OF_RANGE (plus de 200) ou INVALID_FORMAT ; sessionEntryIds[i] INVALID_VALUE (doublon, ou séance d''un autre patient) ; lines OUT_OF_RANGE (plus de 100 lignes libres ou de 200 lignes de séance) ; lines[i].label REQUIRED ou OUT_OF_RANGE (200 caractères) ; lines[i].quantity OUT_OF_RANGE (1 à 999) ou INVALID_FORMAT ; lines[i].unitPrice REQUIRED, OUT_OF_RANGE (-10000000 à 10000000) ou INVALID_FORMAT (nombre décimal, chaîne) ; lines[i].serviceId INVALID_VALUE (prestation inconnue, archivée ou d''un autre praticien) ; lines[i].sessionEntryId INVALID_VALUE (séance en double, ou d''un autre patient) ; lines[i].occurredOn INVALID_FORMAT ; UNKNOWN_FIELD (champ refusé).'
+          description: 'RATE_REQUIRED : une séance demandée n''a aucun tarif (ni montant fixé, ni tarif du patient, ni prestation) ; sessionEntryId dans le problème. VALIDATION_FAILED avec errors[] : patientId REQUIRED ou INVALID_FORMAT ; sessionEntryIds OUT_OF_RANGE (plus de 200) ou INVALID_FORMAT ; sessionEntryIds[i] INVALID_VALUE (doublon, ou séance d''un autre patient) ; lines OUT_OF_RANGE (plus de 100 lignes libres ou de 200 lignes de séance) ; lines[i].label REQUIRED ou OUT_OF_RANGE (200 caractères) ; lines[i].quantity OUT_OF_RANGE (1 à 999) ou INVALID_FORMAT ; lines[i].unitPrice REQUIRED, OUT_OF_RANGE (-10000000 à 10000000) ou INVALID_FORMAT (nombre décimal, chaîne) ; lines[i].serviceId INVALID_VALUE (prestation inconnue, d''un autre praticien, ou archivée et absente des lignes actuelles du brouillon) ; lines[i].sessionEntryId INVALID_VALUE (séance en double, ou d''un autre patient) ; lines[i].occurredOn INVALID_FORMAT ; UNKNOWN_FIELD (champ refusé).'
         '429':
           content:
             application/problem+json:
@@ -10520,7 +10520,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'VALIDATION_FAILED avec errors[] : patientId REQUIRED, INVALID_FORMAT ou INVALID_VALUE (le brouillon garde des lignes de séance) ; recipient.name REQUIRED ou OUT_OF_RANGE ; recipient.addressLines OUT_OF_RANGE ; issueDate REQUIRED ou INVALID_FORMAT ; dueTerm REQUIRED ou INVALID_VALUE ; dueOn REQUIRED (échéance date), OUT_OF_RANGE (avant la date d''émission), INVALID_VALUE (hors échéance date) ou INVALID_FORMAT ; footerNote OUT_OF_RANGE (500 caractères) ; lines REQUIRED (null) ; lines OUT_OF_RANGE (plus de 100 lignes libres ou de 200 lignes de séance) ; lines[i].label REQUIRED ou OUT_OF_RANGE (200 caractères) ; lines[i].quantity OUT_OF_RANGE (1 à 999) ou INVALID_FORMAT ; lines[i].unitPrice REQUIRED, OUT_OF_RANGE (-10000000 à 10000000) ou INVALID_FORMAT (nombre décimal, chaîne) ; lines[i].serviceId INVALID_VALUE (prestation inconnue, archivée ou d''un autre praticien) ; lines[i].sessionEntryId INVALID_VALUE (séance en double, ou d''un autre patient) ; lines[i].occurredOn INVALID_FORMAT ; UNKNOWN_FIELD (champ refusé).'
+          description: 'VALIDATION_FAILED avec errors[] : patientId REQUIRED, INVALID_FORMAT ou INVALID_VALUE (le brouillon garde des lignes de séance) ; recipient.name REQUIRED ou OUT_OF_RANGE ; recipient.addressLines OUT_OF_RANGE ; issueDate REQUIRED ou INVALID_FORMAT ; dueTerm REQUIRED ou INVALID_VALUE ; dueOn REQUIRED (échéance date), OUT_OF_RANGE (avant la date d''émission), INVALID_VALUE (hors échéance date) ou INVALID_FORMAT ; footerNote OUT_OF_RANGE (500 caractères) ; lines REQUIRED (null) ; lines OUT_OF_RANGE (plus de 100 lignes libres ou de 200 lignes de séance) ; lines[i].label REQUIRED ou OUT_OF_RANGE (200 caractères) ; lines[i].quantity OUT_OF_RANGE (1 à 999) ou INVALID_FORMAT ; lines[i].unitPrice REQUIRED, OUT_OF_RANGE (-10000000 à 10000000) ou INVALID_FORMAT (nombre décimal, chaîne) ; lines[i].serviceId INVALID_VALUE (prestation inconnue, d''un autre praticien, ou archivée et absente des lignes actuelles du brouillon) ; lines[i].sessionEntryId INVALID_VALUE (séance en double, ou d''un autre patient) ; lines[i].occurredOn INVALID_FORMAT ; UNKNOWN_FIELD (champ refusé).'
         '429':
           content:
             application/problem+json:

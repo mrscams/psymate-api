@@ -65,7 +65,7 @@ class InvoiceController {
           + " lines[i].label REQUIRED ou OUT_OF_RANGE (200 caractères) ; lines[i].quantity"
           + " OUT_OF_RANGE (1 à 999) ou INVALID_FORMAT ; lines[i].unitPrice REQUIRED, OUT_OF_RANGE"
           + " (-10000000 à 10000000) ou INVALID_FORMAT (nombre décimal, chaîne) ;"
-          + " lines[i].serviceId INVALID_VALUE (prestation inconnue, archivée ou d'un autre praticien) ;"
+          + " lines[i].serviceId INVALID_VALUE (prestation inconnue, d'un autre praticien, ou archivée et absente des lignes actuelles du brouillon) ;"
           + " lines[i].sessionEntryId INVALID_VALUE (séance en double, ou d'un autre patient) ;"
           + " lines[i].occurredOn INVALID_FORMAT ; UNKNOWN_FIELD (champ refusé).";
 

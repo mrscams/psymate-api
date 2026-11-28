@@ -8,9 +8,9 @@ import com.psymate.billing.model.BillingPatient;
 import com.psymate.billing.repository.BillingPatientRepository;
 import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.patients.api.PatientAccessException;
+import com.psymate.patients.api.PatientBillingView;
 import com.psymate.patients.api.PatientFacade;
 import com.psymate.patients.api.PatientOwnershipGuard;
-import com.psymate.patients.api.PatientRef;
 import com.psymate.shared.problem.ProblemException;
 import java.time.Clock;
 import java.time.OffsetDateTime;
@@ -52,8 +52,12 @@ public class BillingProfileService {
   /** Profil du patient ; vide (champs à null) tant que rien n'est enregistré. */
   @Transactional(readOnly = true)
   public BillingProfileDto get(UUID patientId) {
+    CurrentPractitioner me = me();
     requireOwned(patientId);
-    return profiles.findById(patientId).map(mapper::toDto).orElseGet(BillingProfileDto::empty);
+    return profiles
+        .findByPatientIdAndPractitionerId(patientId, me.id())
+        .map(mapper::toDto)
+        .orElseGet(BillingProfileDto::empty);
   }
 
   /** Remplace le profil (PUT) : un champ null, ou une chaîne vide, est effacé. */
@@ -66,7 +70,7 @@ public class BillingProfileService {
     }
     BillingPatient profile =
         profiles
-            .findById(patientId)
+            .findByPatientIdAndPractitionerId(patientId, me.id())
             .orElseGet(() -> new BillingPatient(patientId, me.tenantId(), me.id()));
     profile.replace(
         me.tenantId(),
@@ -104,14 +108,14 @@ public class BillingProfileService {
   }
 
   /**
-   * Patient archivé, lu par la liste des patients du praticien (la façade n'expose l'indicateur que
-   * là, comme pour l'agenda). Absent de la liste après la garde : course avec un transfert, 404.
+   * Patient archivé, lu par l'identité de facturation de la façade des patients (M15-04). Une vue
+   * absente, ou d'un autre praticien, répond 404 comme la garde.
    */
   private boolean archived(UUID patientId, CurrentPractitioner me) {
-    return patients.ownedBy(me.id()).stream()
-        .filter(ref -> ref.id().equals(patientId))
-        .findFirst()
-        .map(PatientRef::archived)
+    return patients
+        .billingIdentity(patientId)
+        .filter(view -> me.id().equals(view.ownerId()))
+        .map(PatientBillingView::archived)
         .orElseThrow(PatientAccessException::notFound);
   }
 

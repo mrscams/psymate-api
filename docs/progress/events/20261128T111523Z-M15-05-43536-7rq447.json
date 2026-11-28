@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-28T11:15:23.318Z",
+  "task": "M15-05",
+  "agent": "reviewer",
+  "status": "review",
+  "summary": "0 bloquant(s), 1 à corriger, 5 remarque(s)",
+  "notes": "aucun",
+  "branch": "m15-05-billing-socle",
+  "checkout": "m15-05-billing-socle-4a7edd"
+}

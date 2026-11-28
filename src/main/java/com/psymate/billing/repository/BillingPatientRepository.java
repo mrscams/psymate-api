@@ -1,6 +1,7 @@
 package com.psymate.billing.repository;
 
 import com.psymate.billing.model.BillingPatient;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -8,4 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * Accès JPA à {@code billing_patient} (V18, G Q32), une ligne par patient. L'appelant vérifie la
  * propriété du patient (garde des patients) avant toute lecture ou écriture.
  */
-public interface BillingPatientRepository extends JpaRepository<BillingPatient, UUID> {}
+public interface BillingPatientRepository extends JpaRepository<BillingPatient, UUID> {
+
+  /** Profil du patient, filtré par praticien (L5 : toute ressource est filtrée par praticien). */
+  Optional<BillingPatient> findByPatientIdAndPractitionerId(UUID patientId, UUID practitionerId);
+}

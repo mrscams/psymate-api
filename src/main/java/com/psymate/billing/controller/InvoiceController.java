@@ -5,8 +5,11 @@ import com.psymate.billing.dto.CreateInvoiceRequest;
 import com.psymate.billing.dto.InvoiceBatchDto;
 import com.psymate.billing.dto.InvoiceDto;
 import com.psymate.billing.dto.InvoicePageDto;
+import com.psymate.billing.dto.IssueInvoiceRequest;
 import com.psymate.billing.dto.UpdateInvoiceRequest;
+import com.psymate.billing.service.InvoiceIssueService;
 import com.psymate.billing.service.InvoiceListService;
+import com.psymate.billing.service.InvoicePdfService;
 import com.psymate.billing.service.InvoiceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -19,8 +22,12 @@ import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -34,7 +41,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Factures : brouillons et liste (M15-08, L5.3 jusqu'à DELETE, fiches 35 et 36). Montants en
  * centimes d'euro entiers (G Q84) ; tarif des séances selon G Q87 ; cycle selon G Q88 (seul un
- * brouillon se modifie ou se supprime). L'émission, le numéro et le PDF viennent de M15-09.
+ * brouillon se modifie ou se supprime). Émission, numéro, lecture par numéro, PDF et duplication :
+ * M15-09 (L5.3 de issue à duplicate).
  */
 @Tag(
     name = "Facturation : factures",
@@ -69,12 +77,216 @@ class InvoiceController {
           + " lines[i].sessionEntryId INVALID_VALUE (séance en double, ou d'un autre patient) ;"
           + " lines[i].occurredOn INVALID_FORMAT ; UNKNOWN_FIELD (champ refusé).";
 
+  private static final String PDF = "application/pdf";
+
   private final InvoiceService invoices;
   private final InvoiceListService list;
+  private final InvoiceIssueService issuing;
+  private final InvoicePdfService pdfs;
 
-  InvoiceController(InvoiceService invoices, InvoiceListService list) {
+  InvoiceController(
+      InvoiceService invoices,
+      InvoiceListService list,
+      InvoiceIssueService issuing,
+      InvoicePdfService pdfs) {
     this.invoices = invoices;
     this.list = list;
+    this.issuing = issuing;
+    this.pdfs = pdfs;
+  }
+
+  @PostMapping("/api/invoices/{id}/issue")
+  @Operation(
+      summary = "Émet un brouillon",
+      description =
+          """
+          Session praticien. Émission d'un brouillon, en une transaction : numéro attribué dans \
+          la suite du praticien et de l'année de la date d'émission (préfixe-année-0001, \
+          continue, sans trou), à condition que expectedNumber soit encore le suivant ; statut \
+          issued ; échéance calculée (à réception : la date d'émission ; 15 ou 30 jours ; ou la \
+          date choisie) ; émetteur (réglages du moment) et destinataire figés ; montants figés ; \
+          historique issued. La date d'émission est celle du brouillon : passée permise, future \
+          refusée, et jamais antérieure à la dernière facture émise de la même suite. \
+          alreadyPaid enregistre dans la même transaction un paiement du total (historique \
+          payment_recorded). Le PDF est rendu une fois, maintenant, et rangé chiffré : si le \
+          rendu échoue, rien n'est émis. Les séances restent facturées. Répond la facture \
+          émise.\
+          """)
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Facture émise."),
+    @ApiResponse(
+        responseCode = "400",
+        description = MALFORMED,
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = NOT_FOUND,
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "409",
+        description =
+            "INVOICE_NUMBER_CHANGED : expectedNumber n'est plus le suivant (une autre facture"
+                + " vient d'être émise) ; nextNumber dans le problème ; rien n'est émis. "
+                + ISSUED,
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "422",
+        description =
+            "BILLING_SETTINGS_INCOMPLETE avec errors[] (siret, addressLines, service ; code"
+                + " REQUIRED) : réglages incomplets, comme missing des réglages. EMPTY_INVOICE :"
+                + " aucune ligne, ou sous-total nul ou négatif. RATE_REQUIRED : une ligne de"
+                + " séance sans prix positif (sessionEntryId dans le problème)."
+                + " VALIDATION_FAILED avec errors[] : expectedNumber REQUIRED ou OUT_OF_RANGE ;"
+                + " issueDate OUT_OF_RANGE (date future) ou INVALID_VALUE (antérieure à la"
+                + " dernière facture émise de la même année) ; recipient.name REQUIRED ;"
+                + " alreadyPaid.mode REQUIRED, INVALID_VALUE ou MODE_NOT_ACCEPTED (absent des"
+                + " modes acceptés, other toujours accepté) ; alreadyPaid.receivedOn REQUIRED,"
+                + " INVALID_FORMAT ou OUT_OF_RANGE (date future) ; alreadyPaid.reference"
+                + " OUT_OF_RANGE ; UNKNOWN_FIELD.",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "PDF_UNAVAILABLE : le PDF n'a pas pu être produit ; rien n'est émis.",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class)))
+  })
+  InvoiceDto issueInvoice(
+      @Parameter(description = "Identifiant du brouillon.", example = ID_EXAMPLE) @PathVariable
+          UUID id,
+      @Valid @RequestBody IssueInvoiceRequest request) {
+    return issuing.issue(id, request);
+  }
+
+  @GetMapping("/api/invoices/by-number/{number}")
+  @Operation(
+      summary = "Lit une facture par son numéro",
+      description =
+          "Session praticien. Même réponse que la lecture par identifiant, pour une facture ou un"
+              + " avoir émis du praticien (numéro exact, casse comprise).")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "La facture."),
+    @ApiResponse(
+        responseCode = "404",
+        description = "INVOICE_NOT_FOUND : numéro inconnu ou d'un autre praticien.",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class)))
+  })
+  InvoiceDto getInvoiceByNumber(
+      @Parameter(description = "Numéro de la facture ou de l'avoir.", example = "F-2026-0001")
+          @PathVariable
+          String number) {
+    return invoices.getByNumber(number);
+  }
+
+  @GetMapping(value = "/api/invoices/{id}/pdf")
+  @Operation(
+      summary = "Télécharge le PDF d'une facture",
+      description =
+          """
+          Session praticien. application/pdf, A4, en français. Brouillon : rendu à la demande \
+          avec le filigrane « Brouillon » et les réglages du moment ; fichier \
+          facture-brouillon.pdf. Facture émise ou avoir : le fichier rangé à l'émission, tel \
+          quel (il ne change pas si les réglages changent) ; fichier {numéro}.pdf. \
+          variant=receipted : facture acquittée rendue à la demande (titre « Facture \
+          acquittée », tampon « Acquittée », paiements), pour une facture entièrement réglée ; \
+          fichier {numéro}-acquittee.pdf.\
+          """)
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Le PDF, en pièce jointe (Content-Disposition).",
+        content = @Content(mediaType = PDF, schema = @Schema(type = "string", format = "binary"))),
+    @ApiResponse(
+        responseCode = "400",
+        description = MALFORMED,
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = NOT_FOUND,
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "409",
+        description =
+            "INVOICE_NOT_PAID : variant=receipted sur un brouillon, un avoir, une facture"
+                + " annulée ou pas entièrement réglée.",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "422",
+        description = "VALIDATION_FAILED avec errors[] : variant INVALID_VALUE.",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "PDF_UNAVAILABLE : le PDF n'a pas pu être produit ou relu.",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class)))
+  })
+  ResponseEntity<byte[]> invoicePdf(
+      @Parameter(description = "Identifiant de la facture.", example = ID_EXAMPLE) @PathVariable
+          UUID id,
+      @Parameter(
+              description = "receipted : facture acquittée. Absent : le document lui-même.",
+              schema =
+                  @Schema(
+                      type = "string",
+                      allowableValues = {"receipted"}))
+          @RequestParam(required = false)
+          String variant) {
+    InvoicePdfService.PdfFile file = pdfs.pdf(id, variant);
+    return ResponseEntity.ok()
+        .header(
+            HttpHeaders.CONTENT_DISPOSITION,
+            ContentDisposition.attachment().filename(file.filename()).build().toString())
+        .header(HttpHeaders.CACHE_CONTROL, "no-store")
+        .contentType(MediaType.APPLICATION_PDF)
+        .body(file.content());
+  }
+
+  @PostMapping("/api/invoices/{id}/duplicate")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+      summary = "Duplique une facture",
+      description =
+          """
+          Session praticien. Nouveau brouillon du même patient avec les mêmes lignes \
+          (désignation, date, prestation, quantité, prix unitaire) mais sans leurs séances : \
+          aucune séance ne change d'état. Destinataire par défaut, date du jour, échéance et \
+          mention des réglages, montants recalculés ; historique draft_created avec \
+          duplicateOf. La facture d'origine, brouillon, émise ou annulée, ne change pas. Répond \
+          le brouillon créé.\
+          """)
+  @ApiResponses({
+    @ApiResponse(responseCode = "201", description = "Brouillon créé."),
+    @ApiResponse(
+        responseCode = "400",
+        description = MALFORMED,
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = NOT_FOUND,
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "409",
+        description =
+            "PATIENT_ARCHIVED : patient archivé, plus de nouveau brouillon (patientId dans le"
+                + " problème). CREDIT_NOTE_NOT_DUPLICABLE : un avoir ne se duplique pas.",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class)))
+  })
+  InvoiceDto duplicateInvoice(
+      @Parameter(description = "Identifiant de la facture à copier.", example = ID_EXAMPLE)
+          @PathVariable
+          UUID id) {
+    return invoices.duplicate(id);
   }
 
   @PostMapping("/api/invoices")

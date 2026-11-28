@@ -91,7 +91,14 @@ class BillingExceptionHandler {
       BillingException ex, HttpServletRequest request, HttpServletResponse response) {
     Locale locale = messages.localeOf(request);
     if (!ex.fieldProblems().isEmpty()) {
-      return validation(ex.fieldProblems(), locale);
+      ProblemDetail pd = validation(ex.fieldProblems(), locale);
+      if (!"VALIDATION_FAILED".equals(ex.code())) {
+        // Code racine propre avec errors[] par champ (BILLING_SETTINGS_INCOMPLETE, L3.3).
+        pd.setTitle(ex.title());
+        pd.setDetail(messages.domain(ex.messageKey(), ex.detail(), locale));
+        pd.setProperty("code", ex.code());
+      }
+      return pd;
     }
     String detail = messages.domain(ex.messageKey(), ex.detail(), locale);
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.status(), detail);

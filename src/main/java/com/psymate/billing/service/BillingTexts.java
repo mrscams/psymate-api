@@ -12,10 +12,11 @@ import org.springframework.stereotype.Component;
  * Textes des documents de facturation, toujours lus dans {@code messages_fr.properties}, quelle que
  * soit la langue servie (G Q92 : mentions de TVA ; les factures et leurs modèles d'e-mail restent
  * en français, comme la feuille de facture du web, G Q70 du web). Clés {@code
- * billing.vat.mention.*}, {@code billing.title.*}, {@code billing.template.*} et {@code
- * billing.line.*} (désignation d'une ligne de séance, M15-08) ; messages_en et messages_ar en
- * portent une copie identique pour la parité des fichiers, jamais lue. Les messages d'erreur, eux,
- * suivent la langue servie ({@code BillingMessages}).
+ * billing.vat.mention.*}, {@code billing.title.*}, {@code billing.template.*}, {@code
+ * billing.pdf.*} (feuille PDF, M15-09) et {@code billing.line.*} (désignation d'une ligne de
+ * séance, M15-08) ; messages_en et messages_ar en portent une copie identique pour la parité des
+ * fichiers, jamais lue. Les messages d'erreur, eux, suivent la langue servie ({@code
+ * BillingMessages}).
  */
 @Component
 public class BillingTexts {
@@ -66,6 +67,15 @@ public class BillingTexts {
         .getMessage("billing.line.service", null, FRENCH)
         .replace("{date}", date)
         .replace("{label}", serviceLabel.strip());
+  }
+
+  /**
+   * Texte fixe de la feuille PDF (M15-09) : clé {@code billing.pdf.<key>}, toujours en français (G
+   * Q93), lu sans MessageFormat : les accolades nommées ({@code {number}}) sont remplacées par
+   * l'appelant.
+   */
+  public String pdf(String key) {
+    return source.getMessage("billing.pdf." + key, null, FRENCH);
   }
 
   /** Texte par défaut d'un modèle d'e-mail : {@code kind} invoice ou reminder, {@code part}. */

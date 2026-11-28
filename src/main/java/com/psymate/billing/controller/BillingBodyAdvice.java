@@ -7,6 +7,7 @@ import com.psymate.billing.dto.BillingSettingsRequest;
 import com.psymate.billing.dto.CreateBillingServiceRequest;
 import com.psymate.billing.dto.CreateInvoiceBatchRequest;
 import com.psymate.billing.dto.CreateInvoiceRequest;
+import com.psymate.billing.dto.IssueInvoiceRequest;
 import com.psymate.billing.dto.UpdateBillableSessionRequest;
 import com.psymate.billing.dto.UpdateBillingServiceRequest;
 import com.psymate.billing.dto.UpdateInvoiceRequest;
@@ -181,7 +182,18 @@ class BillingBodyAdvice extends RequestBodyAdviceAdapter {
                   "sessionEntryIds", Field.TEXT_LIST,
                   "lines", INVOICE_LINES)),
           Map.entry(CreateInvoiceBatchRequest.class, Map.of("sessionEntryIds", Field.TEXT_LIST)),
-          Map.entry(UpdateInvoiceRequest.class, UPDATE_INVOICE_FIELDS));
+          Map.entry(UpdateInvoiceRequest.class, UPDATE_INVOICE_FIELDS),
+          Map.entry(
+              IssueInvoiceRequest.class,
+              Map.of(
+                  "expectedNumber",
+                  Field.TEXT,
+                  "alreadyPaid",
+                  Field.object(
+                      Map.of(
+                          "mode", Field.TEXT,
+                          "receivedOn", Field.TEXT,
+                          "reference", Field.TEXT)))));
 
   private final JsonMapper json;
   private final BillingMessages messages;

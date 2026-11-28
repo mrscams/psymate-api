@@ -84,7 +84,11 @@ class ContractIT {
             "/api/billing/billable-sessions/{sessionEntryId}/restore",
             "/api/invoices",
             "/api/invoices/batch",
-            "/api/invoices/{id}");
+            "/api/invoices/{id}",
+            "/api/invoices/{id}/issue",
+            "/api/invoices/by-number/{number}",
+            "/api/invoices/{id}/pdf",
+            "/api/invoices/{id}/duplicate");
     @SuppressWarnings("unchecked")
     Map<String, Object> info = (Map<String, Object>) doc.get("info");
     assertThat(info.get("version")).isEqualTo(contractVersion);

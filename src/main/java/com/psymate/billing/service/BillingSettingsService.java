@@ -210,6 +210,19 @@ public class BillingSettingsService {
   }
 
   /**
+   * Ce qui empêche d'émettre (M15-09) : même calcul que {@code missing} des réglages, sur
+   * l'émetteur du moment ({@link #issuerOfTheMoment}), dont l'adresse est déjà l'adresse effective
+   * (enregistrée, sinon proposée par identity).
+   */
+  @Transactional(readOnly = true)
+  public List<String> missingToIssue(UUID practitionerId, BillingIssuer issuer) {
+    return missing(
+        issuer.siret(),
+        issuer.addressLines(),
+        services.existsByPractitionerIdAndArchivedAtIsNull(practitionerId));
+  }
+
+  /**
    * Taux de TVA des réglages du moment en régime assujetti, null sinon : total des brouillons dans
    * la liste des factures (M15-08), sans lire l'identité du praticien.
    */

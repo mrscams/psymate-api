@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-28T14:42:51.967Z",
+  "task": "M15-09",
+  "agent": "backend-module-dev",
+  "status": "in-progress",
+  "summary": "Emission, numerotation, PDF",
+  "branch": "m15-09-invoice-issue",
+  "checkout": "m15-05-billing-socle-4a7edd"
+}

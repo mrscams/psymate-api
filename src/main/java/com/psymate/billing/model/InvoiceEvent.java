@@ -22,15 +22,22 @@ import org.springframework.data.domain.Persistable;
  * ({@code @Immutable}, E3.15) ; il ne se modifie jamais. Il ne disparaît qu'avec son brouillon
  * ({@code on delete cascade}, E9) ; celui d'une facture émise reste à jamais (G Q95). {@code
  * detail} ne porte ni nom de patient, ni montant, ni adresse e-mail hors des cas prévus (M15-11 :
- * adresse d'envoi). M15-08 écrit {@code draft_created}.
+ * adresse d'envoi). M15-08 écrit {@code draft_created} ; M15-09 {@code issued}, {@code
+ * payment_recorded} (paiement à l'émission) et {@code draft_created} d'une duplication.
  */
 @Entity
 @Table(name = "invoice_event")
 @Immutable
 public class InvoiceEvent implements Persistable<UUID> {
 
-  /** Brouillon créé (M15-08). */
+  /** Brouillon créé (M15-08), ou dupliqué (M15-09). */
   public static final String DRAFT_CREATED = "draft_created";
+
+  /** Facture émise (M15-09) : {@code detail = { number }}. */
+  public static final String ISSUED = "issued";
+
+  /** Paiement enregistré (M15-09 à l'émission, M15-10) : {@code detail = { paymentId, mode }}. */
+  public static final String PAYMENT_RECORDED = "payment_recorded";
 
   @Id private UUID id;
 

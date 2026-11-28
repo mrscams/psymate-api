@@ -7,6 +7,7 @@ import com.psymate.billing.model.InvoiceLine;
 import com.psymate.billing.model.InvoiceRecipients;
 import com.psymate.billing.model.InvoiceSummaryRow;
 import com.psymate.billing.model.InvoiceTotals;
+import com.psymate.billing.model.Payment;
 import com.psymate.patients.api.PatientBillingView;
 import java.util.List;
 import java.util.Objects;
@@ -44,7 +45,8 @@ public class InvoiceAssembler {
 
   /**
    * Facture complète. {@code totals} : recalculés pour un brouillon, figés sinon ; {@code
-   * nextNumberPreview} null hors brouillon ; {@code cancels} null hors avoir.
+   * nextNumberPreview} null hors brouillon ; {@code cancels} null hors avoir ; {@code payments} du
+   * plus ancien au plus récent.
    */
   public InvoiceDto toDto(
       Invoice invoice,
@@ -57,7 +59,8 @@ public class InvoiceAssembler {
       List<Invoice> creditNotes,
       Invoice cancels,
       List<InvoiceEvent> history,
-      String nextNumberPreview) {
+      String nextNumberPreview,
+      List<Payment> payments) {
     String patientName = patient == null ? null : InvoiceRecipients.fullName(patient);
     return new InvoiceDto(
         invoice.getId(),
@@ -105,7 +108,21 @@ public class InvoiceAssembler {
         invoice.getCreditedCents(),
         invoice.getRefundDueCents(),
         nextNumberPreview,
-        List.of(),
+        payments.stream()
+            .map(
+                p ->
+                    new BillingPaymentDto(
+                        p.getId(),
+                        p.getInvoiceId(),
+                        invoice.getNumber(),
+                        p.getKind(),
+                        p.getMode(),
+                        p.getAmountCents(),
+                        p.getReceivedOn(),
+                        p.getReference(),
+                        p.getNote(),
+                        p.getCancelledAt() == null ? null : p.getCancelledAt().toInstant()))
+            .toList(),
         creditNotes.stream()
             .map(
                 c ->

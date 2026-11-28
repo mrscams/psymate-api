@@ -34,11 +34,12 @@ Marquages : **[À valider pilotes]** = contenu clinique livré avec les valeurs 
 | Projections | `search`, `overview` | `patient_overview` (+ colonne `entry.search_vector` et ses triggers) | Lecture rapide |
 | Annuaire | `directory` | `practitioner_profile`, `directory_vocabulary`, `contact_request` | Profil public, liste fermée des spécialités et publics, relais de contact |
 | Agenda (M11, 15 novembre 2026) | `agenda` | `appointment`, `booking_request` | Rendez-vous planifiés, séries, annulation par statut, rendez-vous invités purgés à 6 mois (E3.14, V12, V13, G Q50–Q60) ; prise de rendez-vous en ligne (M14, 22 novembre 2026) : origine d'un rendez-vous, e-mail de l'invité, demandes publiques vérifiées par e-mail (E3.14, V15, G Q71–Q82) |
+| Facturation (M15, 28 novembre 2026) | `billing` | `billing_settings`, `billing_service`, `billing_patient`, `invoice`, `invoice_line`, `billable_session`, `billing_counter`, `payment`, `invoice_event` | Réglages de facturation, prestations, tarif et adresse de facturation d'un patient, séances à facturer, factures et avoirs (brouillon supprimable, document émis figé), paiements, compteurs de numérotation, historique ; montants en centimes entiers (E3.15, V18, G Q83–Q95, proposées par le plan L, non relues par l'utilisateur) ; neuf tables, là où le plan L en annonce dix |
 | **Réservé V2** | `ai` | `entry_embedding`, `entry_chunk`, `ai_feedback` | Vides en V1 |
 | **Réservé compagnon** | `companion` | `patient_device`, `patient_submission` + colonnes `entry.author_type`, `entry.submission_id` | Vides en V1 |
 | **Conditionnel** | `directory`, `identity.admin` (V1.1, G Q26) ; synchronisation Google de l'agenda (M12, hors V1, G Q51) | `directory_profile_version`, `directory_report` ; `practitioner_integration` et colonnes `google_event_id`, `google_etag`, `source` d'`appointment` | DDL prêt, pas de migration en V1 |
 
-Quarante-deux tables (trente-neuf au 27 octobre 2026, plus `appointment` ajoutée le 15 novembre 2026 par V12, jalon M11, `patient_profile_item` ajoutée le 18 novembre 2026 par V14, jalon M13, et `booking_request` ajoutée le 22 novembre 2026 par V15, jalon M14), dont six réservées et vides (`entry_embedding`, `entry_chunk`, `ai_feedback`, `patient_device`, `patient_submission`, `patient_access`), plus trois conditionnelles. Le DDL complet a été exécuté sur un PostgreSQL 16 vierge le 27 octobre 2026 (hors extension `vector`, remplacée pour le test) : il s'applique sans erreur, le seed compte 6 types, 29 émotions et 8 types de liens, et les contraintes `ck_entry_session_required`, `ux_link_active`, `ck_link_not_self`, `ck_decision_message` et les deux triggers `search_vector` se comportent comme décrit. Les tables `directory_vocabulary` et `export_job` (ajoutées le 29 octobre) n'ont pas encore été rejouées.
+Cinquante et une tables (trente-neuf au 27 octobre 2026, plus `appointment` ajoutée le 15 novembre 2026 par V12, jalon M11, `patient_profile_item` ajoutée le 18 novembre 2026 par V14, jalon M13, `booking_request` ajoutée le 22 novembre 2026 par V15, jalon M14, et les neuf tables de la facturation inscrites le 28 novembre 2026 pour V18, jalon M15, E3.15), dont six réservées et vides (`entry_embedding`, `entry_chunk`, `ai_feedback`, `patient_device`, `patient_submission`, `patient_access`), plus trois conditionnelles. Le DDL complet a été exécuté sur un PostgreSQL 16 vierge le 27 octobre 2026 (hors extension `vector`, remplacée pour le test) : il s'applique sans erreur, le seed compte 6 types, 29 émotions et 8 types de liens, et les contraintes `ck_entry_session_required`, `ux_link_active`, `ck_link_not_self`, `ck_decision_message` et les deux triggers `search_vector` se comportent comme décrit. Les tables `directory_vocabulary` et `export_job` (ajoutées le 29 octobre) n'ont pas encore été rejouées.
 
 ### Diagramme entité-relation complet
 
@@ -97,6 +98,19 @@ erDiagram
   PATIENT ||--o{ APPOINTMENT : a_cond
   PRACTITIONER ||--o{ BOOKING_REQUEST : recoit_en_ligne
   BOOKING_REQUEST |o--o| APPOINTMENT : devient
+
+  PRACTITIONER ||--o| BILLING_SETTINGS : regle
+  PRACTITIONER ||--o{ BILLING_SERVICE : tarife
+  PATIENT ||--o| BILLING_PATIENT : facture_a
+  PRACTITIONER ||--o{ BILLING_COUNTER : numerote
+  PATIENT ||--o{ INVOICE : destinataire
+  INVOICE ||--o{ INVOICE_LINE : detaille
+  INVOICE |o--o{ INVOICE : avoir_de
+  INVOICE_LINE |o--o{ INVOICE_LINE : credite
+  ENTRY ||--o| BILLABLE_SESSION : a_facturer
+  INVOICE |o--o{ BILLABLE_SESSION : contient
+  INVOICE ||--o{ PAYMENT : encaisse
+  INVOICE ||--o{ INVOICE_EVENT : historise
 ```
 
 Les suffixes `_v2`, `_reserve`, `_cond` marquent les relations qui n'ont aucune ligne en V1.
@@ -1030,6 +1044,172 @@ CREATE INDEX ix_booking_request_created ON booking_request(created_at) WHERE ver
 CREATE INDEX ix_booking_request_appointment ON booking_request(appointment_id) WHERE appointment_id IS NOT NULL;
 ```
 
+### E3.15 Facturation (M15, G Q83–Q95)
+
+Ajouté le 28 novembre 2026 par M15-01. Module propriétaire : `billing` (G Q83), pour les neuf tables ci-dessous (`TableOwnershipTests`, M15-05) ; le plan L parle de « dix tables », son DDL en crée neuf. Migration `V18__billing.sql` (M15-05), DDL identique octet pour octet au bloc L4 de `docs/L-plan-facturation-api.md` ; ce bloc l'est lui aussi. Décisions techniques, modèle et contrat **proposés par le plan L, non relus par l'utilisateur**, appliqués à sa demande du 28 novembre 2026. Montants en centimes d'euro entiers (`integer` / `bigint`), taux de TVA en points de base (G Q84). Les colonnes `tenant_id`, `practitioner_id`, `patient_id`, `session_entry_id` et `service_id` sont des UUID nus, sans clé étrangère vers les tables d'un autre module ni association JPA (règle ArchUnit). Une facture `draft` se modifie et se supprime (E9) ; émise (`issued`), elle ne change plus jamais, ni ne se supprime ; `void` = annulée en totalité par un avoir (G Q88, Q91). `invoice_event` est append-only (`@Immutable`) ; `payment` ne se modifie que par `cancelled_at`, jamais supprimé (G Q90, Q95). L'IBAN n'est pas en base : seuls ses quatre derniers caractères (`billing_settings.iban_last4`) ; l'IBAN est rangé chiffré par `EncryptedStorageFacade` (G Q95), comme le PDF d'un document émis (`invoice.pdf_storage_key`, G Q93).
+
+```sql
+create table billing_settings (
+  practitioner_id     uuid primary key,
+  tenant_id           uuid not null,
+  siret               varchar(14),
+  address_lines       varchar(300),
+  display_email       varchar(320),
+  display_phone       varchar(30),
+  vat_regime          varchar(20) not null default 'health_exempt'
+                      check (vat_regime in ('health_exempt', 'franchise', 'liable')),
+  vat_rate_bp         integer check (vat_rate_bp between 0 and 10000),
+  vat_number          varchar(20),
+  invoice_prefix      varchar(10) not null default 'F',
+  credit_note_prefix  varchar(10) not null default 'AV',
+  due_term            varchar(20) not null default 'on_receipt'
+                      check (due_term in ('on_receipt', 'days_15', 'days_30')),
+  cheque_payee        varchar(120),
+  accepted_modes      jsonb not null default '["transfer","cheque","cash"]',
+  show_bank_details   boolean not null default false,
+  iban_last4          varchar(4),
+  footer_note         varchar(500),
+  email_templates     jsonb not null default '{}',
+  created_at          timestamptz not null default now(),
+  updated_at          timestamptz not null default now(),
+  check (vat_regime <> 'liable' or vat_rate_bp is not null)
+);
+
+create table billing_service (
+  id               uuid primary key,
+  tenant_id        uuid not null,
+  practitioner_id  uuid not null,
+  label            varchar(120) not null,
+  duration_min     integer check (duration_min between 1 and 600),
+  price_cents      integer not null check (price_cents > 0),
+  is_default       boolean not null default false,
+  archived_at      timestamptz,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
+);
+create unique index billing_service_one_default
+  on billing_service (practitioner_id) where is_default and archived_at is null;
+create index billing_service_by_practitioner on billing_service (practitioner_id) where archived_at is null;
+
+create table billing_patient (
+  patient_id           uuid primary key,
+  tenant_id            uuid not null,
+  practitioner_id      uuid not null,
+  rate_cents           integer check (rate_cents > 0),
+  address_lines        varchar(300),
+  third_party_name     varchar(200),
+  third_party_address  varchar(300),
+  updated_at           timestamptz not null default now()
+);
+
+create table invoice (
+  id                 uuid primary key,
+  tenant_id          uuid not null,
+  practitioner_id    uuid not null,
+  patient_id         uuid not null,
+  kind               varchar(12) not null check (kind in ('invoice', 'credit_note')),
+  status             varchar(8) not null check (status in ('draft', 'issued', 'void')),
+  number             varchar(30),
+  cancels_invoice_id uuid references invoice (id),
+  recipient_name     varchar(200),
+  recipient_address  varchar(300),
+  issue_date         date not null,
+  due_term           varchar(20) not null check (due_term in ('on_receipt', 'days_15', 'days_30', 'date')),
+  due_on             date,
+  footer_note        varchar(500),
+  reason_code        varchar(30),
+  reason_text        varchar(300),
+  issuer_snapshot    jsonb,
+  subtotal_cents     bigint not null default 0,
+  vat_cents          bigint not null default 0,
+  total_cents        bigint not null default 0,
+  paid_cents         bigint not null default 0 check (paid_cents >= 0),
+  credited_cents     bigint not null default 0 check (credited_cents >= 0),
+  refund_due_cents   bigint not null default 0 check (refund_due_cents >= 0),
+  pdf_storage_key    varchar(120),
+  created_at         timestamptz not null default now(),
+  updated_at         timestamptz not null default now(),
+  issued_at          timestamptz,
+  voided_at          timestamptz,
+  check ((status = 'draft') = (number is null)),
+  check (status = 'draft' or issuer_snapshot is not null),
+  check ((kind = 'credit_note') = (cancels_invoice_id is not null)),
+  check (kind = 'invoice' or status <> 'draft')
+);
+create unique index invoice_number_per_practitioner on invoice (practitioner_id, number) where number is not null;
+create index invoice_by_practitioner on invoice (practitioner_id, issue_date desc, id);
+create index invoice_by_patient on invoice (patient_id, issue_date desc, id);
+
+create table invoice_line (
+  id                uuid primary key,
+  invoice_id        uuid not null references invoice (id) on delete cascade,
+  position          integer not null,
+  service_id        uuid,
+  label             varchar(200) not null,
+  occurred_on       date,
+  quantity          integer not null check (quantity between 1 and 999),
+  unit_price_cents  integer not null,
+  amount_cents      bigint not null,
+  session_entry_id  uuid,
+  source_line_id    uuid references invoice_line (id),
+  unique (invoice_id, position)
+);
+create index invoice_line_by_session on invoice_line (session_entry_id) where session_entry_id is not null;
+
+create table billable_session (
+  session_entry_id  uuid primary key,
+  tenant_id         uuid not null,
+  practitioner_id   uuid not null,
+  patient_id        uuid not null,
+  occurred_on       date not null,
+  modality          varchar(20) not null,
+  duration_min      integer,
+  state             varchar(10) not null check (state in ('pending', 'dismissed', 'invoiced')),
+  service_id        uuid,
+  amount_cents      integer check (amount_cents > 0),
+  invoice_id        uuid references invoice (id) on delete set null,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  check ((state = 'invoiced') = (invoice_id is not null))
+);
+create index billable_session_pending on billable_session (practitioner_id, occurred_on) where state = 'pending';
+
+create table billing_counter (
+  practitioner_id  uuid not null,
+  kind             varchar(12) not null check (kind in ('invoice', 'credit_note')),
+  year             integer not null,
+  last_number      integer not null check (last_number >= 0),
+  primary key (practitioner_id, kind, year)
+);
+
+create table payment (
+  id               uuid primary key,
+  tenant_id        uuid not null,
+  practitioner_id  uuid not null,
+  invoice_id       uuid not null references invoice (id),
+  kind             varchar(8) not null check (kind in ('payment', 'refund')),
+  mode             varchar(10) not null check (mode in ('cash', 'cheque', 'transfer', 'card', 'other')),
+  amount_cents     bigint not null check (amount_cents > 0),
+  received_on      date not null,
+  reference        varchar(120),
+  note             varchar(500),
+  cancelled_at     timestamptz,
+  created_at       timestamptz not null default now()
+);
+create index payment_by_practitioner on payment (practitioner_id, received_on desc, id);
+create index payment_by_invoice on payment (invoice_id);
+
+create table invoice_event (
+  id          uuid primary key,
+  invoice_id  uuid not null references invoice (id) on delete cascade,
+  kind        varchar(24) not null check (kind in ('draft_created', 'issued', 'sent', 'payment_recorded',
+              'payment_cancelled', 'credit_note_issued', 'voided')),
+  at          timestamptz not null default now(),
+  detail      jsonb not null default '{}'
+);
+create index invoice_event_by_invoice on invoice_event (invoice_id, at desc);
+```
+
 ## E4. Découpage en migrations Flyway
 
 ### Règles
@@ -1061,6 +1241,7 @@ CREATE INDEX ix_booking_request_appointment ON booking_request(appointment_id) W
 | `V15__agenda_booking.sql` | M14-04 (agenda) | M14-A | E3.14 prise de rendez-vous en ligne : colonnes `guest_email` et `origin` d'`appointment`, `ck_appointment_subject` refaite, `ix_appointment_online_pending`, table `booking_request` (G Q71–Q82) | V13 |
 | `V16` (nom au choix de la tâche, réservé le 23 novembre 2026 par M16-01) | M16-02 (shared, identity, agenda) | M16-B | Version arabe : contraintes `CHECK (locale IN ('fr','en'))` de `practitioner.locale` et `booking_request.locale` élargies à `ar` (G Q97) | V15 |
 | `V17__catalog_label_ar.sql` (réservé le 23 novembre 2026 par M16-01) | M16-03 (vocabulary, directory, linking) | M16-C | Version arabe : `label_ar` sur `entry_type`, `emotion`, `link_type`, `directory_vocabulary`, `inverse_label_ar` sur `link_type`, libellés arabes des lignes globales (G Q98) | V16 |
+| `V18__billing.sql` (réservé le 28 novembre 2026 par M15-01) | M15-05 (billing) | M15-A | E3.15 facturation : `billing_settings`, `billing_service`, `billing_patient`, `invoice`, `invoice_line`, `billable_session`, `billing_counter`, `payment`, `invoice_event` (G Q83–Q95 ; DDL de L4 de `docs/L-plan-facturation-api.md`, identique octet pour octet) | V01 |
 | *conditionnelles* | voir E6 | — | `directory_profile_version`, `directory_report` (V1.1, G Q26) ; `practitioner_integration` et colonnes Google d'`appointment` (M12, hors V1, G Q51) | — |
 
 Ce que ce plan change par rapport à C (reporté en E8) : M0-03 crée `practitioner` **avec** ses colonnes A10.2 (M1-10 ne fait plus d'`ALTER`, il crée les tables de vérification) ; M0-03 ne crée plus `entry_embedding` / `entry_chunk` / `ai_feedback`, impossibles avant `entry` et `link` ; M5-01 reçoit sa propre migration.
@@ -1295,7 +1476,7 @@ Les lignes de ce tableau ont été reportées dans A (A4, A10) et C (M0-03, M1-1
 
 ## E9. Suppressions physiques autorisées (G Q37, 2 novembre 2026)
 
-Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `entry_version`, `link` et les tables de détail courantes s'archivent (`archived_at`, statut `superseded`). Ce tableau est la liste fermée de ce qui peut l'être ; une tâche qui ajoute une suppression physique ajoute sa ligne ici. Le test d'appartenance des tables (C8, M9-02) refuse tout `DELETE` sur une table clinique. `appointment` (E3.14) n'y figure pas comme ligne : un rendez-vous s'annule par statut (G Q53) ; seules les colonnes d'identité d'un invité sont purgées (G Q60, Q82, ligne « Colonnes invité » du tableau). `booking_request` (E3.14, M14) y figure : ses lignes sont supprimées par paliers (G Q82).
+Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `entry_version`, `link` et les tables de détail courantes s'archivent (`archived_at`, statut `superseded`). Ce tableau est la liste fermée de ce qui peut l'être ; une tâche qui ajoute une suppression physique ajoute sa ligne ici. Le test d'appartenance des tables (C8, M9-02) refuse tout `DELETE` sur une table clinique. `appointment` (E3.14) n'y figure pas comme ligne : un rendez-vous s'annule par statut (G Q53) ; seules les colonnes d'identité d'un invité sont purgées (G Q60, Q82, ligne « Colonnes invité » du tableau). `booking_request` (E3.14, M14) y figure : ses lignes sont supprimées par paliers (G Q82). Les brouillons de facture (`invoice` à l'état `draft`, E3.15, M15) y figurent ; une facture émise, un avoir, un paiement et un événement d'historique, jamais (G Q88, Q95).
 
 | Table ou fichier | Ce qui est supprimé | Par qui | Raison |
 | --- | --- | --- | --- |
@@ -1309,3 +1490,4 @@ Aucune donnée clinique n'est supprimée physiquement : `patient`, `entry`, `ent
 | Photos de profil (`practitioner_profile`) | L'ancien fichier, quand la photo est remplacée ou retirée | directory | Seule la photo courante est publiée |
 | Colonnes invité d'`appointment` (`guest_first_name`, `guest_last_name`, `guest_phone`, `guest_email`) | Les **valeurs**, mises à `NULL` (`UPDATE`, jamais de `DELETE`) 6 mois (`app.agenda.guest-purge.retention`, `P180D`) après la fin du rendez-vous invité ou après son annulation ; pour un rendez-vous en ligne (`origin = online`) annulé, **30 jours** après l'annulation (`app.agenda.guest-purge.online-cancelled-retention`, `P30D`, G Q82 c) ; `guest_purged_at` est posé, **la ligne reste** | agenda, `GuestPurgeJob` (M11-10, complété par M14-04) | Minimisation : un invité n'a pas de fiche patient (G Q60, Q82) ; seul le rendez-vous reste dans l'agenda |
 | `booking_request` | La ligne : 24 h après sa création si l'e-mail n'a jamais été vérifié (`app.booking.unverified-retention`, `PT24H`) ; sinon 30 jours après la fin ou l'annulation du rendez-vous (`app.booking.closed-retention`, `P30D`). Le rendez-vous reste | agenda, `BookingPurgeJob` (M14-07) | Minimisation : demande publique d'un inconnu, identité effacée dès la vérification (G Q73, Q82) ; ne restent que des empreintes et des jetons hachés |
+| `invoice` à l'état `draft`, ses `invoice_line` et ses `invoice_event` | La ligne du brouillon, à la demande du praticien (`DELETE /api/invoices/{id}`, brouillon seulement), avec ses lignes et son historique (`on delete cascade`) ; ses séances reviennent à `pending`. **Jamais** une facture émise, un avoir, un paiement | billing (M15-08) | Un brouillon n'est pas un document comptable : il n'a ni numéro ni destinataire figé (G Q88). Une facture émise, un avoir, un paiement et leur historique ne sont jamais supprimés (obligation de conservation, G Q90, Q95) |

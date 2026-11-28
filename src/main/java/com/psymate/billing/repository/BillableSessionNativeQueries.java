@@ -9,8 +9,9 @@ import java.util.UUID;
 
 /**
  * SQL natif des séances à facturer (G Q38 : fragment Spring Data sur l'{@code EntityManager} du
- * module). Ne lit que les tables de billing : {@code billable_session} et, en lecture seule tant
- * que les factures n'ont pas d'entité (M15-08), {@code invoice}.
+ * module). Ne lit que les tables de billing : {@code billable_session} et, en lecture seule, {@code
+ * invoice} (brouillons et dernière facture d'un patient ; les factures s'écrivent par leur entité
+ * depuis M15-08).
  */
 public interface BillableSessionNativeQueries {
 

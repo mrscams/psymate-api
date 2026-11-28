@@ -11,6 +11,7 @@ import com.psymate.billing.dto.BillingVatRequest;
 import com.psymate.billing.model.BillingCounter;
 import com.psymate.billing.model.BillingCounterId;
 import com.psymate.billing.model.BillingException;
+import com.psymate.billing.model.BillingIssuer;
 import com.psymate.billing.model.BillingNumbering;
 import com.psymate.billing.model.BillingSettings;
 import com.psymate.billing.model.Siret;
@@ -172,6 +173,64 @@ public class BillingSettingsService {
             .findById(me.id())
             .orElseGet(() -> BillingSettings.defaults(me.id(), me.tenantId(), now()));
     return view(me, current);
+  }
+
+  /**
+   * Émetteur d'une facture selon les réglages du moment (bloc {@code issuer} d'un brouillon,
+   * M15-08, et instantané de l'émission, M15-09) : identité lue dans identity, adresse et e-mail
+   * effectifs (enregistrés, sinon proposés), mention de TVA du régime, taux en régime assujetti,
+   * modalités ; préfixe, échéance et mention de bas de page par défaut d'un nouveau brouillon.
+   */
+  @Transactional(readOnly = true)
+  public BillingIssuer issuerOfTheMoment(CurrentPractitioner me) {
+    BillingSettings current =
+        settings
+            .findById(me.id())
+            .orElseGet(() -> BillingSettings.defaults(me.id(), me.tenantId(), now()));
+    IssuerView issuer = practitioners.issuerOf(me.id()).orElse(null);
+    String profession = issuer != null ? issuer.profession() : me.profession();
+    return new BillingIssuer(
+        issuer == null ? me.displayName() : issuer.displayName(),
+        texts.title(profession),
+        issuer == null ? null : issuer.professionalNumber(),
+        current.getSiret(),
+        effectiveAddress(current, issuer),
+        effectiveEmail(current, issuer, me),
+        current.getDisplayPhone(),
+        current.getVatRegime(),
+        texts.vatMention(current.getVatRegime()),
+        current.getVatRateBp(),
+        current.getVatNumber(),
+        current.getChequePayee(),
+        current.getAcceptedModes(),
+        current.isShowBankDetails() && current.getIbanLast4() != null,
+        current.getInvoicePrefix(),
+        current.getDueTerm(),
+        current.getFooterNote());
+  }
+
+  /**
+   * Taux de TVA des réglages du moment en régime assujetti, null sinon : total des brouillons dans
+   * la liste des factures (M15-08), sans lire l'identité du praticien.
+   */
+  @Transactional(readOnly = true)
+  public Integer draftVatRateBp(UUID practitionerId) {
+    return settings
+        .findById(practitionerId)
+        .filter(s -> BillingSettings.LIABLE.equals(s.getVatRegime()))
+        .map(BillingSettings::getVatRateBp)
+        .orElse(null);
+  }
+
+  /**
+   * Prochain numéro de facture de la suite d'une année ({@code nextNumberPreview} d'un brouillon,
+   * M15-08) : dernier numéro attribué plus un, formaté avec le préfixe donné. Simple aperçu : le
+   * numéro n'est attribué qu'à l'émission, sous verrou (M15-09).
+   */
+  @Transactional(readOnly = true)
+  public String nextInvoiceNumber(UUID practitionerId, String prefix, int year) {
+    return BillingNumbering.format(
+        prefix, year, next(last(practitionerId, BillingNumbering.INVOICE, year)));
   }
 
   // ---- écriture
@@ -392,12 +451,8 @@ public class BillingSettingsService {
 
   private BillingSettingsDto view(CurrentPractitioner me, BillingSettings current) {
     IssuerView issuer = practitioners.issuerOf(me.id()).orElse(null);
-    String address =
-        current.getAddressLines() != null ? current.getAddressLines() : proposedAddress(issuer);
-    String email =
-        current.getDisplayEmail() != null
-            ? current.getDisplayEmail()
-            : (issuer != null ? issuer.email() : me.email());
+    String address = effectiveAddress(current, issuer);
+    String email = effectiveEmail(current, issuer, me);
     int year = BillingNumbering.currentYear(clock);
     String nextInvoice =
         BillingNumbering.format(
@@ -424,6 +479,20 @@ public class BillingSettingsService {
             current.getSiret(),
             address,
             services.existsByPractitionerIdAndArchivedAtIsNull(me.id())));
+  }
+
+  /** Adresse effective : enregistrée, sinon proposée depuis identity. */
+  private static String effectiveAddress(BillingSettings current, IssuerView issuer) {
+    return current.getAddressLines() != null ? current.getAddressLines() : proposedAddress(issuer);
+  }
+
+  /** E-mail affiché effectif : enregistré, sinon celui du compte. */
+  private static String effectiveEmail(
+      BillingSettings current, IssuerView issuer, CurrentPractitioner me) {
+    if (current.getDisplayEmail() != null) {
+      return current.getDisplayEmail();
+    }
+    return issuer != null ? issuer.email() : me.email();
   }
 
   private int last(UUID practitionerId, String kind, int year) {

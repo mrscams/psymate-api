@@ -265,6 +265,28 @@ public class BillableSessionService {
     return assembler.toDto(saved, pricing(List.of(saved), Set.of(saved.getPatientId()), me));
   }
 
+  // ---- mise en facture (M15-08)
+
+  /**
+   * Séance à mettre dans une facture, verrouillée jusqu'à la fin de la transaction : la ligne
+   * existante du praticien, ou créée à la demande si la séance est close (G Q86). Une séance
+   * écartée dont la séance a été archivée depuis n'est pas facturable (404 SESSION_NOT_BILLABLE),
+   * comme pour {@link #restore}. L'état (déjà facturée ailleurs…) est contrôlé par l'appelant.
+   * Exige une transaction en cours.
+   */
+  public BillableSession lockForInvoice(UUID sessionEntryId, CurrentPractitioner me) {
+    BillableSession session = locate(sessionEntryId, me);
+    if (session.isDismissed() && billableView(sessionEntryId, me).isEmpty()) {
+      throw BillingException.sessionNotBillable();
+    }
+    return session;
+  }
+
+  /** Tarifs de ces séances du praticien (G Q87), comme la liste des séances à facturer. */
+  public BillingPricing pricingOf(List<BillableSession> rows, CurrentPractitioner me) {
+    return pricing(rows, patientIdsOf(rows), me);
+  }
+
   // ---- outils
 
   /**

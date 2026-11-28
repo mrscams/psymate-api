@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-28T13:31:08.424Z",
+  "task": "M15-08",
+  "agent": "backend-module-dev",
+  "status": "in-progress",
+  "summary": "Factures : brouillons et liste",
+  "branch": "m15-08-invoice-drafts",
+  "checkout": "m15-05-billing-socle-4a7edd"
+}

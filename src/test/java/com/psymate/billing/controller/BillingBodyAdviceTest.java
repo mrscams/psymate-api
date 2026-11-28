@@ -7,6 +7,9 @@ import com.psymate.billing.dto.BillingIbanRequest;
 import com.psymate.billing.dto.BillingProfileRequest;
 import com.psymate.billing.dto.BillingSettingsRequest;
 import com.psymate.billing.dto.CreateBillingServiceRequest;
+import com.psymate.billing.dto.CreateInvoiceBatchRequest;
+import com.psymate.billing.dto.CreateInvoiceRequest;
+import com.psymate.billing.dto.UpdateInvoiceRequest;
 import com.psymate.shared.problem.FieldProblem;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -141,5 +144,45 @@ class BillingBodyAdviceTest {
         .containsExactly("ibanLast4:UNKNOWN_FIELD");
     assertThat(problems(BillingIbanDeleteRequest.class, "{\"currentPassword\":1,\"iban\":\"x\"}"))
         .containsExactly("currentPassword:INVALID_FORMAT", "iban:UNKNOWN_FIELD");
+  }
+
+  @Test
+  void invoiceLinesAreCheckedOneByOneAndANegativeUnitPricePasses() {
+    assertThat(
+            problems(
+                CreateInvoiceRequest.class,
+                "{\"patientId\":\"x\",\"sessionEntryIds\":[\"a\"],\"lines\":[{\"label\":\"Remise\","
+                    + "\"unitPrice\":-1500,\"quantity\":1,\"occurredOn\":\"2026-11-05\"}]}"))
+        .isEmpty();
+    assertThat(
+            problems(
+                CreateInvoiceRequest.class,
+                "{\"lines\":[{\"label\":\"A\",\"unitPrice\":60.5},{\"unitPrice\":\"6000\","
+                    + "\"amount\":6000},null,3]}"))
+        .containsExactly(
+            "lines[0].unitPrice:INVALID_FORMAT",
+            "lines[1].unitPrice:INVALID_FORMAT",
+            "lines[1].amount:UNKNOWN_FIELD",
+            "lines[2]:REQUIRED",
+            "lines[3]:INVALID_FORMAT");
+    assertThat(problems(CreateInvoiceRequest.class, "{\"lines\":{},\"total\":1}"))
+        .containsExactly("lines:INVALID_FORMAT", "total:UNKNOWN_FIELD");
+    assertThat(problems(CreateInvoiceRequest.class, "{\"lines\":[{\"unitPrice\":-6000.0}]}"))
+        .containsExactly("lines[0].unitPrice:INVALID_FORMAT");
+  }
+
+  @Test
+  void invoiceBodiesAcceptOnlyTheirFields() {
+    assertThat(problems(CreateInvoiceBatchRequest.class, "{\"sessionEntryIds\":[],\"x\":1}"))
+        .containsExactly("x:UNKNOWN_FIELD");
+    assertThat(problems(CreateInvoiceBatchRequest.class, "{\"sessionEntryIds\":[1]}"))
+        .containsExactly("sessionEntryIds:INVALID_FORMAT");
+    assertThat(
+            problems(
+                UpdateInvoiceRequest.class,
+                "{\"recipient\":{\"name\":\"A\",\"patientName\":\"B\"},\"status\":\"issued\","
+                    + "\"number\":\"F-1\",\"dueOn\":null,\"footerNote\":null}"))
+        .containsExactly(
+            "recipient.patientName:UNKNOWN_FIELD", "status:UNKNOWN_FIELD", "number:UNKNOWN_FIELD");
   }
 }

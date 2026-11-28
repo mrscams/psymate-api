@@ -1089,6 +1089,51 @@ components:
           format: uuid
           type: string
       type: object
+    BillingPaymentDto:
+      description: Paiement ou remboursement. Montant en centimes d'euro entiers.
+      properties:
+        amount:
+          description: Montant en centimes.
+          example: 6000
+          format: int64
+          type: integer
+        cancelledAt:
+          description: Instant d'annulation, ISO 8601 UTC. Null si le paiement vaut.
+          format: date-time
+          type: string
+        id:
+          description: Identifiant du paiement.
+          format: uuid
+          type: string
+        invoiceId:
+          description: Facture payée (ou avoir remboursé).
+          format: uuid
+          type: string
+        invoiceNumber:
+          description: Numéro de la facture.
+          example: F-2026-0042
+          type: string
+        kind:
+          description: 'Nature : payment ou refund.'
+          enum:
+          - payment
+          - refund
+          type: string
+        mode:
+          description: 'Mode : cash, cheque, transfer, card ou other.'
+          example: transfer
+          type: string
+        note:
+          description: Note. Null sans note.
+          type: string
+        receivedOn:
+          description: Date de réception (AAAA-MM-JJ).
+          format: date
+          type: string
+        reference:
+          description: Référence (numéro de chèque…). Null sans référence.
+          type: string
+      type: object
     BillingPaymentTermsDto:
       description: Modalités de règlement proposées par défaut sur chaque facture.
       properties:
@@ -1792,6 +1837,45 @@ components:
           type: string
       required:
       - type
+      type: object
+    CreateInvoiceBatchRequest:
+      description: 'Séances à facturer, de 1 à 200, sans doublon : un brouillon par patient, tout ou rien. Tout autre champ est refusé (UNKNOWN_FIELD).'
+      properties:
+        sessionEntryIds:
+          description: Séances à facturer, de 1 à 200, sans doublon.
+          items:
+            format: uuid
+            type: string
+          maxItems: 200
+          minItems: 1
+          type: array
+      required:
+      - sessionEntryIds
+      type: object
+    CreateInvoiceRequest:
+      description: 'Nouveau brouillon : une ligne par séance de sessionEntryIds (désignation sans texte clinique, tarif de la séance), par date, puis les lignes données dans leur ordre. Tout autre champ est refusé (UNKNOWN_FIELD).'
+      properties:
+        lines:
+          description: 'Lignes à ajouter après les séances : 100 lignes libres au plus. Facultatif.'
+          items:
+            $ref: '#/components/schemas/InvoiceLineRequest'
+          maxItems: 300
+          minItems: 0
+          type: array
+        patientId:
+          description: Patient de la facture.
+          format: uuid
+          type: string
+        sessionEntryIds:
+          description: 'Séances à facturer, 200 au plus, sans doublon : séances closes du patient, à facturer ou écartées. Facultatif.'
+          items:
+            format: uuid
+            type: string
+          maxItems: 200
+          minItems: 0
+          type: array
+      required:
+      - patientId
       type: object
     CreateLinkRequest:
       description: Lien à poser entre l'entrée de l'URL et une autre entrée du même patient. La provenance (manual) et le statut (accepted) ne s'envoient pas.
@@ -3550,6 +3634,506 @@ components:
           type: string
       required:
       - lastName
+      type: object
+    InvoiceBatchDto:
+      description: Brouillons créés, un par patient, dans l'ordre où chaque patient apparaît la première fois dans la demande.
+      properties:
+        invoices:
+          description: Brouillons créés.
+          items:
+            $ref: '#/components/schemas/InvoiceBatchItemDto'
+          type: array
+      type: object
+    InvoiceBatchItemDto:
+      description: Brouillon créé pour un patient. Total en centimes d'euro entiers.
+      properties:
+        id:
+          description: Identifiant du brouillon.
+          format: uuid
+          type: string
+        patient:
+          $ref: '#/components/schemas/BillingPatientRefDto'
+          description: Patient du brouillon.
+        total:
+          description: Total du brouillon en centimes.
+          example: 18000
+          format: int64
+          type: integer
+      type: object
+    InvoiceCreditNoteRefDto:
+      description: Avoir émis sur cette facture.
+      properties:
+        id:
+          description: Identifiant de l'avoir.
+          format: uuid
+          type: string
+        issueDate:
+          description: Date d'émission (AAAA-MM-JJ).
+          format: date
+          type: string
+        number:
+          description: Numéro de l'avoir.
+          example: AV-2026-0003
+          type: string
+        total:
+          description: Total de l'avoir en centimes.
+          example: 6000
+          format: int64
+          type: integer
+      type: object
+    InvoiceDto:
+      description: Facture ou avoir, avec ses lignes, son émetteur, son destinataire et son historique. Montants en centimes d'euro entiers (6000 = 60,00 €).
+      properties:
+        balanceDue:
+          description: Reste dû en centimes, jamais négatif ; 0 pour un avoir.
+          example: 18000
+          format: int64
+          type: integer
+        cancels:
+          $ref: '#/components/schemas/InvoiceRefDto'
+          description: 'Pour un avoir : la facture annulée. Null sinon.'
+        cancelsNumber:
+          description: 'Pour un avoir : numéro de la facture annulée. Null sinon.'
+          type: string
+        creditNoteNumber:
+          description: Numéro du dernier avoir émis sur cette facture. Null sans avoir.
+          type: string
+        creditNotes:
+          description: Avoirs émis sur cette facture (M15-11).
+          items:
+            $ref: '#/components/schemas/InvoiceCreditNoteRefDto'
+          type: array
+        credited:
+          description: Total crédité par avoir en centimes (M15-11).
+          example: 0
+          format: int64
+          type: integer
+        dueOn:
+          description: Échéance effective (AAAA-MM-JJ).
+          example: 2026-11-28T00:00:00Z
+          format: date
+          type: string
+        dueTerm:
+          description: 'Échéance : on_receipt, days_15, days_30 ou date (dueOn choisie).'
+          enum:
+          - on_receipt
+          - days_15
+          - days_30
+          - date
+          example: on_receipt
+          type: string
+        footerNote:
+          description: Mention de bas de page. Null sans mention.
+          type: string
+        history:
+          description: Historique, du plus ancien au plus récent.
+          items:
+            $ref: '#/components/schemas/InvoiceHistoryDto'
+          type: array
+        id:
+          description: Identifiant de la facture.
+          format: uuid
+          type: string
+        issueDate:
+          description: Date d'émission (AAAA-MM-JJ) ; pour un brouillon, la date d'émission prévue.
+          example: 2026-11-28T00:00:00Z
+          format: date
+          type: string
+        issuer:
+          $ref: '#/components/schemas/InvoiceIssuerDto'
+          description: Émetteur.
+        kind:
+          description: 'Nature : invoice (facture) ou credit_note (avoir).'
+          enum:
+          - invoice
+          - credit_note
+          example: invoice
+          type: string
+        lastPaymentMode:
+          description: Mode du dernier paiement non annulé. Null sans paiement.
+          type: string
+        lines:
+          description: Lignes, par position.
+          items:
+            $ref: '#/components/schemas/InvoiceLineDto'
+          type: array
+        nextNumberPreview:
+          description: 'Brouillon : numéro que la facture recevrait si elle était émise maintenant, dans la suite de l''année de sa date d''émission prévue (simple aperçu, attribué à l''émission). Null pour un document émis.'
+          example: F-2026-0043
+          type: string
+        number:
+          description: Numéro attribué à l'émission. Null pour un brouillon.
+          example: F-2026-0042
+          type: string
+        overdue:
+          description: 'En retard : facture émise, échéance passée (au jour de Europe/Paris), reste dû positif.'
+          type: boolean
+        overdueDays:
+          description: Jours de retard. Null sans retard.
+          example: 12
+          format: int32
+          type: integer
+        paid:
+          description: Total payé en centimes (M15-10).
+          example: 0
+          format: int64
+          type: integer
+        patient:
+          $ref: '#/components/schemas/BillingPatientRefDto'
+          description: Patient de la facture.
+        payments:
+          description: Paiements (M15-10) ; vide tant qu'il n'y en a pas.
+          items:
+            $ref: '#/components/schemas/BillingPaymentDto'
+          type: array
+        recipient:
+          $ref: '#/components/schemas/InvoiceRecipientDto'
+          description: Destinataire.
+        refundDue:
+          description: 'Pour un avoir : montant à rembourser en centimes (M15-11).'
+          example: 0
+          format: int64
+          type: integer
+        status:
+          description: 'Statut calculé : draft, due, partial, paid, void ; issued pour un avoir.'
+          enum:
+          - draft
+          - due
+          - partial
+          - paid
+          - void
+          - issued
+          example: draft
+          type: string
+        subject:
+          $ref: '#/components/schemas/InvoiceSubjectDto'
+          description: Ce que la facture couvre.
+        subtotal:
+          description: Sous-total (somme des lignes) en centimes.
+          example: 18000
+          format: int64
+          type: integer
+        total:
+          description: Total en centimes.
+          example: 18000
+          format: int64
+          type: integer
+        updatedAt:
+          description: Dernière modification, ISO 8601 UTC.
+          format: date-time
+          type: string
+        vat:
+          description: TVA en centimes, 0 hors régime assujetti.
+          example: 0
+          format: int64
+          type: integer
+      type: object
+    InvoiceHistoryDto:
+      description: Événement de l'historique de la facture.
+      properties:
+        at:
+          description: Instant de l'événement, ISO 8601 UTC.
+          format: date-time
+          type: string
+        detail:
+          additionalProperties: {}
+          description: 'Détail de l''événement ; pour draft_created : sessionCount (lignes de séance à la création) et batch (créé par lot).'
+          type: object
+        kind:
+          description: 'Nature : draft_created, issued, sent, payment_recorded, payment_cancelled, credit_note_issued, voided.'
+          example: draft_created
+          type: string
+      type: object
+    InvoiceIssuerDto:
+      description: 'Émetteur : pour un brouillon, les réglages de facturation du moment ; pour un document émis, l''instantané pris à l''émission.'
+      properties:
+        acceptedModes:
+          description: Modes de paiement acceptés, parmi transfer, cheque, cash, card, other.
+          items:
+            type: string
+          type: array
+        addressLines:
+          description: Adresse, lignes séparées par des sauts de ligne.
+          type: string
+        bankDetailsShown:
+          description: 'Coordonnées bancaires imprimées : réglage activé et IBAN enregistré (l''IBAN n''est jamais renvoyé).'
+          type: boolean
+        chequePayee:
+          description: Ordre des chèques.
+          type: string
+        displayEmail:
+          description: E-mail affiché.
+          type: string
+        displayPhone:
+          description: Téléphone affiché.
+          type: string
+        name:
+          description: Nom affiché du praticien.
+          example: Dr Maya Kaddour
+          type: string
+        professionalNumber:
+          description: Numéro professionnel (ADELI, RPPS). Null s'il n'est pas renseigné.
+          type: string
+        siret:
+          description: SIRET (14 chiffres). Null s'il n'est pas renseigné.
+          type: string
+        title:
+          description: Titre imprimé de la profession.
+          example: Psychologue
+          type: string
+        vatMention:
+          description: Mention légale du régime de TVA (G Q92) ; null en régime assujetti, qui imprime HT, TVA et TTC.
+          example: TVA non applicable, article 261-4-1° du Code général des impôts
+          type: string
+        vatNumber:
+          description: Numéro de TVA intracommunautaire, en régime assujetti.
+          type: string
+        vatRateBp:
+          description: Taux de TVA en points de base (2000 = 20 %), en régime assujetti.
+          example: 2000
+          format: int32
+          type: integer
+      type: object
+    InvoiceLineDto:
+      description: 'Ligne de facture. Aucun texte clinique : une date et une désignation. Montants en centimes d''euro entiers.'
+      properties:
+        amount:
+          description: 'Montant : quantité × prix unitaire, en centimes.'
+          example: 6000
+          format: int64
+          type: integer
+        credited:
+          description: Ligne annulée par un avoir (M15-11).
+          type: boolean
+        id:
+          description: Identifiant de la ligne (change quand les lignes sont remplacées).
+          format: uuid
+          type: string
+        label:
+          description: Désignation.
+          example: Séance individuelle du 05/11/2026
+          type: string
+        occurredOn:
+          description: Date de la ligne (AAAA-MM-JJ). Null sans date.
+          example: 2026-11-05T00:00:00Z
+          format: date
+          type: string
+        position:
+          description: Position, à partir de 1.
+          example: 1
+          format: int32
+          type: integer
+        quantity:
+          description: Quantité, de 1 à 999.
+          example: 1
+          format: int32
+          type: integer
+        serviceId:
+          description: Prestation de la ligne. Null sans prestation.
+          format: uuid
+          type: string
+        sessionEntryId:
+          description: Séance facturée par cette ligne. Null pour une ligne libre.
+          format: uuid
+          type: string
+        unitPrice:
+          description: Prix unitaire en centimes ; négatif pour une remise.
+          example: 6000
+          format: int32
+          type: integer
+      type: object
+    InvoiceLineRequest:
+      description: 'Ligne de facture. Avec sessionEntryId : ligne de la séance (désignation et prix donnés, date de la séance) ; sans : ligne libre. Prix en centimes d''euro entiers, négatif pour une remise ; un nombre décimal ou une chaîne est refusé (INVALID_FORMAT). Tout autre champ est refusé (UNKNOWN_FIELD).'
+      properties:
+        label:
+          description: Désignation, obligatoire, 200 caractères au plus. Aucun texte clinique.
+          example: Bilan psychologique
+          maxLength: 200
+          minLength: 0
+          type: string
+        occurredOn:
+          description: Date de la ligne (AAAA-MM-JJ), facultative ; pour une ligne de séance, toujours le jour de la séance (la valeur envoyée est ignorée).
+          example: 2026-11-05T00:00:00Z
+          format: date
+          type: string
+        quantity:
+          description: Quantité, de 1 à 999 ; 1 si absente.
+          example: 1
+          format: int32
+          maximum: 999
+          minimum: 1
+          type: integer
+        serviceId:
+          description: Prestation du praticien, non archivée (une prestation archivée depuis reste admise si une ligne actuelle du brouillon la porte). Facultative.
+          format: uuid
+          type: string
+        sessionEntryId:
+          description: 'Séance facturée par la ligne : séance close du patient de la facture, à facturer, écartée ou déjà dans ce brouillon. Absent pour une ligne libre.'
+          format: uuid
+          type: string
+        unitPrice:
+          description: Prix unitaire en centimes d'euro, entier de -10000000 à 10000000 ; négatif pour une remise.
+          example: 6000
+          format: int32
+          maximum: 10000000
+          minimum: -10000000
+          type: integer
+      required:
+      - label
+      - unitPrice
+      type: object
+    InvoicePageDto:
+      description: 'Une page de factures : brouillons d''abord, puis date d''émission décroissante, puis identifiant.'
+      properties:
+        items:
+          description: Factures de la page.
+          items:
+            $ref: '#/components/schemas/InvoiceSummaryDto'
+          type: array
+        nextCursor:
+          description: Curseur opaque de la page suivante (paramètre cursor). Null sur la dernière page.
+          type: string
+      type: object
+    InvoiceRecipientDto:
+      description: 'Destinataire : posé à la création depuis le patient (ou le tiers payeur) et son profil de facturation, modifiable sur un brouillon.'
+      properties:
+        addressLines:
+          description: Adresse, lignes séparées par des sauts de ligne. Null sans adresse.
+          type: string
+        name:
+          description: Nom du destinataire.
+          example: Hélène Roux
+          type: string
+        patientName:
+          description: Nom du patient quand le destinataire est quelqu'un d'autre (tiers payeur) ; null sinon.
+          type: string
+      type: object
+    InvoiceRecipientRequest:
+      description: 'Destinataire du brouillon : remplace nom et adresse. Tout autre champ est refusé (UNKNOWN_FIELD).'
+      properties:
+        addressLines:
+          description: Adresse, 300 caractères au plus ; null ou vide l'efface.
+          maxLength: 300
+          minLength: 0
+          type: string
+        name:
+          description: Nom, obligatoire, 200 caractères au plus.
+          maxLength: 200
+          minLength: 0
+          type: string
+      required:
+      - name
+      type: object
+    InvoiceRefDto:
+      description: Facture que cet avoir annule.
+      properties:
+        id:
+          description: Identifiant de la facture.
+          format: uuid
+          type: string
+        number:
+          description: Numéro de la facture.
+          example: F-2026-0042
+          type: string
+      type: object
+    InvoiceSubjectDto:
+      description: 'Ce que la facture couvre : nombre de lignes de séance, première et dernière date des lignes, et, pour une facture sans séance, la désignation de sa première ligne.'
+      properties:
+        firstOn:
+          description: Plus ancienne date des lignes (AAAA-MM-JJ). Null sans date.
+          example: 2026-11-05T00:00:00Z
+          format: date
+          type: string
+        label:
+          description: Désignation de la première ligne quand la facture n'a aucune ligne de séance ; null sinon.
+          example: Bilan psychologique
+          type: string
+        lastOn:
+          description: Plus récente date des lignes (AAAA-MM-JJ). Null sans date.
+          example: 2026-11-19T00:00:00Z
+          format: date
+          type: string
+        sessionCount:
+          description: Nombre de lignes de séance.
+          example: 3
+          format: int32
+          type: integer
+      type: object
+    InvoiceSummaryDto:
+      description: Facture ou avoir dans la liste. Montants en centimes d'euro entiers (6000 = 60,00 €).
+      properties:
+        balanceDue:
+          description: 'Reste dû en centimes : total moins payé moins crédité, jamais négatif ; 0 pour un avoir.'
+          example: 18000
+          format: int64
+          type: integer
+        cancelsNumber:
+          description: 'Pour un avoir : numéro de la facture qu''il annule. Null sinon.'
+          example: F-2026-0042
+          type: string
+        creditNoteNumber:
+          description: Numéro du dernier avoir émis sur cette facture. Null sans avoir.
+          example: AV-2026-0003
+          type: string
+        dueOn:
+          description: 'Échéance effective (AAAA-MM-JJ) : la date choisie, sinon la date d''émission plus le délai (0, 15 ou 30 jours).'
+          example: 2026-12-13T00:00:00Z
+          format: date
+          type: string
+        id:
+          description: Identifiant de la facture.
+          format: uuid
+          type: string
+        issueDate:
+          description: Date d'émission (AAAA-MM-JJ) ; pour un brouillon, la date d'émission prévue.
+          example: 2026-11-28T00:00:00Z
+          format: date
+          type: string
+        kind:
+          description: 'Nature : invoice (facture) ou credit_note (avoir).'
+          enum:
+          - invoice
+          - credit_note
+          example: invoice
+          type: string
+        lastPaymentMode:
+          description: Mode du dernier paiement non annulé (M15-10). Null sans paiement.
+          example: transfer
+          type: string
+        number:
+          description: Numéro attribué à l'émission. Null pour un brouillon.
+          example: F-2026-0042
+          type: string
+        overdue:
+          description: 'En retard : facture émise dont l''échéance est passée (au jour de Europe/Paris) et dont le reste dû est positif.'
+          type: boolean
+        overdueDays:
+          description: Jours de retard (aujourd'hui moins l'échéance). Null sans retard.
+          example: 12
+          format: int32
+          type: integer
+        patient:
+          $ref: '#/components/schemas/BillingPatientRefDto'
+          description: Patient de la facture.
+        status:
+          description: 'Statut calculé : draft (brouillon), due (à payer), partial (en partie payée ou créditée), paid (soldée), void (annulée par un avoir) ; issued pour un avoir.'
+          enum:
+          - draft
+          - due
+          - partial
+          - paid
+          - void
+          - issued
+          example: due
+          type: string
+        subject:
+          $ref: '#/components/schemas/InvoiceSubjectDto'
+          description: Ce que la facture couvre.
+        total:
+          description: Total en centimes (sous-total plus TVA). Pour un brouillon, TVA calculée avec les réglages du moment.
+          example: 18000
+          format: int64
+          type: integer
       type: object
     Item:
       description: Entrée d'une liste fermée de l'annuaire, avec ses libellés fr, en et ar.
@@ -6163,6 +6747,51 @@ components:
           format: int32
           minimum: 1
           type: integer
+      type: object
+    UpdateInvoiceRequest:
+      description: 'Modification partielle d''un brouillon : un champ absent reste inchangé. lines remplace toutes les lignes (une ligne de séance retirée rend la séance à facturer). Montants en centimes d''euro entiers : un nombre décimal ou une chaîne est refusé (INVALID_FORMAT). Tout autre champ est refusé (UNKNOWN_FIELD).'
+      properties:
+        dueOn:
+          description: Date d'échéance (AAAA-MM-JJ), seulement avec l'échéance date, au plus tôt la date d'émission ; null l'efface.
+          format: date
+          type:
+          - string
+          - 'null'
+        dueTerm:
+          description: 'Échéance : on_receipt, days_15, days_30, ou date (dueOn obligatoire).'
+          enum:
+          - on_receipt
+          - days_15
+          - days_30
+          - date
+          example: days_15
+          type: string
+        footerNote:
+          description: Mention de bas de page, 500 caractères au plus ; null ou vide l'efface.
+          maxLength: 500
+          minLength: 0
+          type:
+          - string
+          - 'null'
+        issueDate:
+          description: Date d'émission prévue (AAAA-MM-JJ).
+          example: 2026-11-30T00:00:00Z
+          format: date
+          type: string
+        lines:
+          description: 'Toutes les lignes, dans l''ordre (remplacement complet) : 100 lignes libres et 200 lignes de séance au plus. Les lignes sont recréées (leur id change).'
+          items:
+            $ref: '#/components/schemas/InvoiceLineRequest'
+          maxItems: 300
+          minItems: 0
+          type: array
+        patientId:
+          description: Nouveau patient, tant que le brouillon n'a aucune ligne de séance (sinon 422 INVALID_VALUE) ; le destinataire repasse à celui du nouveau patient, sauf si recipient est donné.
+          format: uuid
+          type: string
+        recipient:
+          $ref: '#/components/schemas/InvoiceRecipientRequest'
+          description: Destinataire ; null revient au destinataire par défaut du patient.
       type: object
     UpdatePatientProfileItemRequest:
       description: 'Correction partielle : une clé absente reste inchangée ; null efface detail, periodLabel ou periodYear ; title ne peut pas devenir vide. La rubrique peut changer : en quittant history, la période est effacée par le serveur ; une période envoyée avec une rubrique autre que history est refusée (422 INVALID_VALUE). Toute autre clé est refusée (422 UNKNOWN_FIELD).'
@@ -9469,6 +10098,444 @@ paths:
       summary: Liste les versions d'une entrée, de la plus récente à la plus ancienne
       tags:
       - Entrées
+  /api/invoices:
+    get:
+      description: 'Session praticien. Factures et avoirs du praticien : brouillons d''abord, puis date d''émission décroissante, puis identifiant ; pagination par curseur. Statut calculé (draft, due, partial, paid, void ; issued pour un avoir) et retard au jour de Europe/Paris. q cherche, sans tenir compte de la casse ni des accents, dans le numéro, le nom du destinataire et le nom affiché du patient.'
+      operationId: listInvoices
+      parameters:
+      - description: 'Statut calculé : draft, due, partial, paid ou void. Absent : tous (avoirs compris).'
+        example: due
+        in: query
+        name: status
+        required: false
+        schema:
+          type: string
+      - description: 'true : en retard seulement ; false : pas en retard.'
+        in: query
+        name: overdue
+        required: false
+        schema:
+          type: boolean
+      - description: 'Nature : invoice ou credit_note. Absent : les deux.'
+        in: query
+        name: kind
+        required: false
+        schema:
+          type: string
+      - description: Un seul patient.
+        example: 3f8e2b1a-6c4d-4e57-9a0b-1d2c3e4f5a6b
+        in: query
+        name: patientId
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: 'Recherche, 2 à 100 caractères : numéro, nom du destinataire ou nom affiché du patient.'
+        example: roux
+        in: query
+        name: q
+        required: false
+        schema:
+          type: string
+      - description: Date d'émission minimale incluse (AAAA-MM-JJ).
+        example: 2026-01-01T00:00:00Z
+        in: query
+        name: from
+        required: false
+        schema:
+          format: date
+          type: string
+      - description: Curseur opaque (nextCursor de la page précédente).
+        in: query
+        name: cursor
+        required: false
+        schema:
+          type: string
+      - description: Taille de la page, de 1 à 100 ; 50 par défaut.
+        in: query
+        name: limit
+        required: false
+        schema:
+          format: int32
+          maximum: 100
+          minimum: 1
+          type: integer
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/InvoicePageDto'
+          description: Une page de factures.
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PATIENT_NOT_FOUND : patientId inexistant ou d''un autre praticien.'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'VALIDATION_FAILED avec errors[] : status ou kind INVALID_VALUE ; q OUT_OF_RANGE (moins de 2 ou plus de 100 caractères) ; limit OUT_OF_RANGE (1 à 100) ou INVALID_FORMAT ; cursor INVALID_FORMAT ; overdue, from, patientId INVALID_FORMAT.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Liste les factures
+      tags:
+      - 'Facturation : factures'
+    post:
+      description: 'Session praticien. Brouillon d''un patient du praticien : une ligne par séance de sessionEntryIds, par date (désignation « {prestation retenue} du JJ/MM/AAAA » ou « Séance du JJ/MM/AAAA », prix = tarif de la séance selon G Q87, quantité 1, date et prestation de la séance), puis les lignes données dans leur ordre. Chaque séance passe à l''état invoiced. Destinataire par défaut : le tiers payeur du profil de facturation s''il existe, sinon le patient avec l''adresse de son profil. Date d''émission prévue : aujourd''hui (Europe/Paris) ; échéance et mention de bas de page : celles des réglages. Une séance encore inconnue de la facturation mais close est créée à la demande. Répond la facture créée.'
+      operationId: createInvoice
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvoiceRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/InvoiceDto'
+          description: Brouillon créé.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : identifiant qui n''est pas un UUID, ou corps JSON illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PATIENT_NOT_FOUND : patient inexistant ou d''un autre praticien. SESSION_NOT_BILLABLE : séance inexistante, ouverte, d''accueil, de contact, d''un autre praticien, ou écartée puis archivée.'
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PATIENT_ARCHIVED : patient archivé, plus de nouveau brouillon (patientId dans le problème). SESSION_ALREADY_INVOICED : séance déjà dans une autre facture, brouillon compris ; sessionEntryId dans le problème.'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_REQUIRED : une séance demandée n''a aucun tarif (ni montant fixé, ni tarif du patient, ni prestation) ; sessionEntryId dans le problème. VALIDATION_FAILED avec errors[] : patientId REQUIRED ou INVALID_FORMAT ; sessionEntryIds OUT_OF_RANGE (plus de 200) ou INVALID_FORMAT ; sessionEntryIds[i] INVALID_VALUE (doublon, ou séance d''un autre patient) ; lines OUT_OF_RANGE (plus de 100 lignes libres ou de 200 lignes de séance) ; lines[i].label REQUIRED ou OUT_OF_RANGE (200 caractères) ; lines[i].quantity OUT_OF_RANGE (1 à 999) ou INVALID_FORMAT ; lines[i].unitPrice REQUIRED, OUT_OF_RANGE (-10000000 à 10000000) ou INVALID_FORMAT (nombre décimal, chaîne) ; lines[i].serviceId INVALID_VALUE (prestation inconnue, d''un autre praticien, ou archivée et absente des lignes actuelles du brouillon) ; lines[i].sessionEntryId INVALID_VALUE (séance en double, ou d''un autre patient) ; lines[i].occurredOn INVALID_FORMAT ; UNKNOWN_FIELD (champ refusé).'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Crée un brouillon de facture
+      tags:
+      - 'Facturation : factures'
+  /api/invoices/batch:
+    post:
+      description: 'Session praticien. De 1 à 200 séances : un brouillon par patient, avec les mêmes lignes de séance que la création d''un brouillon. Tout ou rien : à la première erreur, aucun brouillon n''est créé et aucune séance ne change d''état. Répond les brouillons, dans l''ordre où chaque patient apparaît la première fois.'
+      operationId: createInvoiceBatch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvoiceBatchRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/InvoiceBatchDto'
+          description: Brouillons créés.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : identifiant qui n''est pas un UUID, ou corps JSON illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'SESSION_NOT_BILLABLE : séance inexistante, ouverte, d''accueil, de contact, d''un autre praticien, ou écartée puis archivée.'
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PATIENT_ARCHIVED : le patient d''une séance est archivé (patientId dans le problème). SESSION_ALREADY_INVOICED : séance déjà dans une autre facture, brouillon compris ; sessionEntryId dans le problème.'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_REQUIRED : une séance n''a aucun tarif ; sessionEntryId dans le problème. VALIDATION_FAILED avec errors[] : sessionEntryIds REQUIRED (absent), OUT_OF_RANGE (vide ou plus de 200) ou INVALID_FORMAT ; sessionEntryIds[i] INVALID_VALUE (doublon) ; UNKNOWN_FIELD.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Crée des brouillons par lot
+      tags:
+      - 'Facturation : factures'
+  /api/invoices/{id}:
+    delete:
+      description: 'Session praticien. Brouillon seulement : suppression physique (E9), avec ses lignes et son historique ; ses séances reviennent à facturer (pending).'
+      operationId: deleteInvoice
+      parameters:
+      - description: Identifiant de la facture.
+        example: 3f8e2b1a-6c4d-4e57-9a0b-1d2c3e4f5a6b
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: Brouillon supprimé.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : identifiant qui n''est pas un UUID, ou corps JSON illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'INVOICE_NOT_FOUND : facture inexistante ou d''un autre praticien.'
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'INVOICE_ISSUED : la facture est émise, annulée, ou c''est un avoir : elle ne se modifie plus et ne se supprime pas.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Supprime un brouillon
+      tags:
+      - 'Facturation : factures'
+    get:
+      description: 'Session praticien. Facture complète : lignes, émetteur, destinataire, montants, historique. Pour un brouillon, l''émetteur reflète les réglages du moment, la TVA est calculée avec eux et nextNumberPreview donne le numéro qu''il recevrait s''il était émis maintenant ; pour un document émis, l''instantané de l''émission.'
+      operationId: getInvoice
+      parameters:
+      - description: Identifiant de la facture.
+        example: 3f8e2b1a-6c4d-4e57-9a0b-1d2c3e4f5a6b
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/InvoiceDto'
+          description: La facture.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : identifiant qui n''est pas un UUID, ou corps JSON illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'INVOICE_NOT_FOUND : facture inexistante ou d''un autre praticien.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Lit une facture
+      tags:
+      - 'Facturation : factures'
+    patch:
+      description: 'Session praticien. Brouillon seulement. Fusion partielle : un champ absent reste inchangé. patientId : tant que le brouillon n''a aucune ligne de séance (le destinataire repasse à celui du nouveau patient, sauf si recipient est donné) ; recipient : null revient au destinataire par défaut ; dueTerm date exige dueOn ; footerNote null l''efface ; lines remplace toutes les lignes (100 lignes libres et 200 lignes de séance au plus) : une ligne de séance retirée rend la séance à facturer (pending), une séance ajoutée passe à invoiced. Montants recalculés. Répond la facture relue.'
+      operationId: updateInvoice
+      parameters:
+      - description: Identifiant de la facture.
+        example: 3f8e2b1a-6c4d-4e57-9a0b-1d2c3e4f5a6b
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInvoiceRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/InvoiceDto'
+          description: Brouillon modifié.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : identifiant qui n''est pas un UUID, ou corps JSON illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'INVOICE_NOT_FOUND : facture inexistante ou d''un autre praticien. PATIENT_NOT_FOUND : nouveau patient inexistant ou d''un autre praticien. SESSION_NOT_BILLABLE : séance inexistante, ouverte, d''accueil, de contact, d''un autre praticien, ou écartée puis archivée.'
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'INVOICE_ISSUED : la facture est émise, annulée, ou c''est un avoir : elle ne se modifie plus et ne se supprime pas. PATIENT_ARCHIVED : nouveau patient archivé. SESSION_ALREADY_INVOICED : séance déjà dans une autre facture, brouillon compris ; sessionEntryId dans le problème.'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'VALIDATION_FAILED avec errors[] : patientId REQUIRED, INVALID_FORMAT ou INVALID_VALUE (le brouillon garde des lignes de séance) ; recipient.name REQUIRED ou OUT_OF_RANGE ; recipient.addressLines OUT_OF_RANGE ; issueDate REQUIRED ou INVALID_FORMAT ; dueTerm REQUIRED ou INVALID_VALUE ; dueOn REQUIRED (échéance date), OUT_OF_RANGE (avant la date d''émission), INVALID_VALUE (hors échéance date) ou INVALID_FORMAT ; footerNote OUT_OF_RANGE (500 caractères) ; lines REQUIRED (null) ; lines OUT_OF_RANGE (plus de 100 lignes libres ou de 200 lignes de séance) ; lines[i].label REQUIRED ou OUT_OF_RANGE (200 caractères) ; lines[i].quantity OUT_OF_RANGE (1 à 999) ou INVALID_FORMAT ; lines[i].unitPrice REQUIRED, OUT_OF_RANGE (-10000000 à 10000000) ou INVALID_FORMAT (nombre décimal, chaîne) ; lines[i].serviceId INVALID_VALUE (prestation inconnue, d''un autre praticien, ou archivée et absente des lignes actuelles du brouillon) ; lines[i].sessionEntryId INVALID_VALUE (séance en double, ou d''un autre patient) ; lines[i].occurredOn INVALID_FORMAT ; UNKNOWN_FIELD (champ refusé).'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Modifie un brouillon
+      tags:
+      - 'Facturation : factures'
   /api/links/{id}:
     delete:
       description: 'Session praticien propriétaire du patient du lien. Le lien passe superseded (jamais supprimé physiquement) et ses deux entrées perdent un lien dans linkCount. Idempotent : supprimer un lien déjà remplacé ou supprimé renvoie aussi 204, sans effet.'
@@ -15170,6 +16237,8 @@ tags:
   name: 'Administration : vocabulaire de l''annuaire'
 - description: 'Agenda du praticien : rendez-vous planifiés, fenêtre de la grille, conflits d''un créneau et rendez-vous d''un patient. Dates en UTC ISO 8601 ; le client convertit dans le fuseau du praticien. Aucune synchronisation externe dans cette version.'
   name: Agenda
+- description: 'Brouillons de facture, liste et lecture des factures. Montants en centimes d''euro entiers (6000 = 60,00 €). Une ligne de séance ne porte aucun texte clinique : une date et une désignation.'
+  name: 'Facturation : factures'
 - description: 'Prestations du praticien et leurs prix, en centimes d''euro entiers (6000 = 60,00 €). Une prestation par défaut au plus, 50 prestations actives au plus. Une prestation ne se supprime jamais : elle s''archive.'
   name: 'Facturation : prestations'
 - description: 'Profil de facturation d''un patient : tarif en centimes d''euro entiers (5500 = 55,00 €), adresse de facturation, tiers payeur. Ce n''est pas une donnée clinique.'

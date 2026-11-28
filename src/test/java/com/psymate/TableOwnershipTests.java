@@ -122,7 +122,12 @@ class TableOwnershipTests {
           "spring_session_attributes",
           "event_publication",
           // M14-07 : demandes de rendez-vous en ligne, BookingPurgeJob (G Q82 a et f).
-          "booking_request");
+          "booking_request",
+          // M15-08 : un brouillon de facture et ses lignes (E9, G Q88), condition status = 'draft'
+          // dans la requête ; jamais une facture émise, un avoir ni un paiement. Son historique
+          // (invoice_event) ne part que par la cascade de V18, jamais par le code (G Q95).
+          "invoice",
+          "invoice_line");
 
   /**
    * Acces encore tolere a une table d'un autre module (lecture et ecriture), par module. Cette

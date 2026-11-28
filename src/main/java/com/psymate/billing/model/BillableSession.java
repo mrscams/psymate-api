@@ -17,11 +17,11 @@ import org.springframework.data.domain.Persistable;
  * Séance à facturer (table {@code billable_session}, V18, L4 ; G Q86) : une séance de kind {@code
  * session} close, identifiée par l'entrée de la séance. États : {@code pending} (à facturer),
  * {@code dismissed} (« ne pas facturer », réversible), {@code invoiced} (dans une facture,
- * brouillon compris : {@code invoice_id} renseigné, M15-08). La ligne ne porte aucun texte clinique
- * : date, modalité, durée, prestation et montant choisis. Tous les identifiants sont des UUID nus :
- * aucune association JPA, aucune lecture d'une table de clinical ou de patients. Une ligne naît par
- * l'écoute de {@code SessionClosed} ou à la demande (insertion idempotente du fragment natif) ;
- * elle ne se supprime jamais.
+ * brouillon compris : {@code invoice_id} renseigné, M15-08 : {@link #attachTo}, {@link #release}).
+ * La ligne ne porte aucun texte clinique : date, modalité, durée, prestation et montant choisis.
+ * Tous les identifiants sont des UUID nus : aucune association JPA, aucune lecture d'une table de
+ * clinical ou de patients. Une ligne naît par l'écoute de {@code SessionClosed} ou à la demande
+ * (insertion idempotente du fragment natif) ; elle ne se supprime jamais.
  */
 @Entity
 @Table(name = "billable_session")
@@ -182,6 +182,36 @@ public class BillableSession implements Persistable<UUID> {
     requireNotInvoiced();
     this.serviceId = serviceId;
     this.updatedAt = Objects.requireNonNull(now);
+  }
+
+  /**
+   * Mise en facture (L3.1) : pending ou dismissed → invoiced, rattachée au brouillon. Sans effet si
+   * elle est déjà dans ce brouillon ; 409 SESSION_ALREADY_INVOICED (avec {@code sessionEntryId}) si
+   * elle est dans une autre facture.
+   */
+  public void attachTo(UUID invoiceId, OffsetDateTime now) {
+    Objects.requireNonNull(invoiceId);
+    if (isInvoiced()) {
+      if (invoiceId.equals(this.invoiceId)) {
+        return;
+      }
+      throw BillingException.sessionAlreadyInvoiced(sessionEntryId);
+    }
+    this.state = INVOICED;
+    this.invoiceId = invoiceId;
+    this.updatedAt = Objects.requireNonNull(now);
+  }
+
+  /**
+   * Retour à facturer (L3.1, G Q86) : ligne retirée d'un brouillon ou brouillon supprimé → pending,
+   * jamais dismissed ; sans effet si elle n'est pas facturée.
+   */
+  public void release(OffsetDateTime now) {
+    if (isInvoiced()) {
+      this.state = PENDING;
+      this.invoiceId = null;
+      this.updatedAt = Objects.requireNonNull(now);
+    }
   }
 
   private void requireNotInvoiced() {

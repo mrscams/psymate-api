@@ -28,8 +28,7 @@ public record InvoiceLineRequest(
                 "Séance facturée par la ligne : séance close du patient de la facture, à facturer,"
                     + " écartée ou déjà dans ce brouillon. Absent pour une ligne libre.")
         UUID sessionEntryId,
-    @Schema(description = "Prestation du praticien (archivée comprise). Facultative.")
-        UUID serviceId,
+    @Schema(description = "Prestation non archivée du praticien. Facultative.") UUID serviceId,
     @Schema(
             description = "Désignation, obligatoire, 200 caractères au plus. Aucun texte clinique.",
             maxLength = 200,

@@ -35,17 +35,15 @@ public interface BillableSessionRepository
       @Param("id") UUID sessionEntryId, @Param("practitionerId") UUID practitionerId);
 
   /**
-   * Séances rattachées à une facture du praticien, verrouillées ({@code select … for update}), par
-   * identifiant : modification des lignes et suppression d'un brouillon (M15-08).
+   * Identifiants des séances rattachées à une facture du praticien, sans verrou : l'appelant les
+   * verrouille ensuite, avec les autres séances de sa demande, dans un ordre unique (M15-08).
    */
-  @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query(
       """
-      select s from BillableSession s
+      select s.sessionEntryId from BillableSession s
       where s.invoiceId = :invoiceId and s.practitionerId = :practitionerId
-      order by s.sessionEntryId
       """)
-  List<BillableSession> findByInvoiceForUpdate(
+  List<UUID> findIdsByInvoice(
       @Param("invoiceId") UUID invoiceId, @Param("practitionerId") UUID practitionerId);
 
   /** Séances d'un état du praticien jusqu'au {@code until} inclus, par date. */

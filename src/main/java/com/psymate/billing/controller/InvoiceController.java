@@ -54,16 +54,18 @@ class InvoiceController {
   private static final String ISSUED =
       "INVOICE_ISSUED : la facture est émise, annulée, ou c'est un avoir : elle ne se modifie"
           + " plus et ne se supprime pas.";
-  private static final String SESSION_CODES =
-      "SESSION_NOT_BILLABLE (404) : séance inexistante, ouverte, archivée, d'accueil, de"
-          + " contact, ou d'un autre praticien. SESSION_ALREADY_INVOICED (409) : séance déjà dans"
-          + " une autre facture, brouillon compris ; sessionEntryId dans le problème.";
+  private static final String NOT_BILLABLE =
+      "SESSION_NOT_BILLABLE : séance inexistante, ouverte, d'accueil, de contact, d'un autre"
+          + " praticien, ou écartée puis archivée.";
+  private static final String ALREADY_INVOICED =
+      "SESSION_ALREADY_INVOICED : séance déjà dans une autre facture, brouillon compris ;"
+          + " sessionEntryId dans le problème.";
   private static final String LINE_FIELDS =
       " lines OUT_OF_RANGE (plus de 100 lignes libres ou de 200 lignes de séance) ;"
           + " lines[i].label REQUIRED ou OUT_OF_RANGE (200 caractères) ; lines[i].quantity"
           + " OUT_OF_RANGE (1 à 999) ou INVALID_FORMAT ; lines[i].unitPrice REQUIRED, OUT_OF_RANGE"
           + " (-10000000 à 10000000) ou INVALID_FORMAT (nombre décimal, chaîne) ;"
-          + " lines[i].serviceId INVALID_VALUE (prestation inconnue ou d'un autre praticien) ;"
+          + " lines[i].serviceId INVALID_VALUE (prestation inconnue, archivée ou d'un autre praticien) ;"
           + " lines[i].sessionEntryId INVALID_VALUE (séance en double, ou d'un autre patient) ;"
           + " lines[i].occurredOn INVALID_FORMAT ; UNKNOWN_FIELD (champ refusé).";
 
@@ -101,8 +103,7 @@ class InvoiceController {
     @ApiResponse(
         responseCode = "404",
         description =
-            "PATIENT_NOT_FOUND : patient inexistant ou d'un autre praticien. "
-                + "SESSION_NOT_BILLABLE : voir 409.",
+            "PATIENT_NOT_FOUND : patient inexistant ou d'un autre praticien. " + NOT_BILLABLE,
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
@@ -110,7 +111,7 @@ class InvoiceController {
         description =
             "PATIENT_ARCHIVED : patient archivé, plus de nouveau brouillon (patientId dans le"
                 + " problème). "
-                + SESSION_CODES,
+                + ALREADY_INVOICED,
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
@@ -149,7 +150,7 @@ class InvoiceController {
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
         responseCode = "404",
-        description = "SESSION_NOT_BILLABLE : voir 409.",
+        description = NOT_BILLABLE,
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
@@ -157,15 +158,15 @@ class InvoiceController {
         description =
             "PATIENT_ARCHIVED : le patient d'une séance est archivé (patientId dans le"
                 + " problème). "
-                + SESSION_CODES,
+                + ALREADY_INVOICED,
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
         responseCode = "422",
         description =
             "RATE_REQUIRED : une séance n'a aucun tarif ; sessionEntryId dans le problème."
-                + " VALIDATION_FAILED avec errors[] : sessionEntryIds REQUIRED (vide ou absent),"
-                + " OUT_OF_RANGE (plus de 200) ou INVALID_FORMAT ; sessionEntryIds[i]"
+                + " VALIDATION_FAILED avec errors[] : sessionEntryIds REQUIRED (absent),"
+                + " OUT_OF_RANGE (vide ou plus de 200) ou INVALID_FORMAT ; sessionEntryIds[i]"
                 + " INVALID_VALUE (doublon) ; UNKNOWN_FIELD.",
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class)))
@@ -298,12 +299,13 @@ class InvoiceController {
         description =
             NOT_FOUND
                 + " PATIENT_NOT_FOUND : nouveau patient inexistant ou d'un autre praticien."
-                + " SESSION_NOT_BILLABLE : voir 409.",
+                + " "
+                + NOT_BILLABLE,
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
         responseCode = "409",
-        description = ISSUED + " PATIENT_ARCHIVED : nouveau patient archivé. " + SESSION_CODES,
+        description = ISSUED + " PATIENT_ARCHIVED : nouveau patient archivé. " + ALREADY_INVOICED,
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(

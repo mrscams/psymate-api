@@ -2,7 +2,6 @@ package com.psymate.billing.dto;
 
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
@@ -24,6 +23,6 @@ public record CreateInvoiceBatchRequest(
                     requiredMode = Schema.RequiredMode.REQUIRED),
             minItems = 1,
             maxItems = 200)
-        @NotEmpty
-        @Size(max = 200)
+        @NotNull
+        @Size(min = 1, max = 200)
         List<@NotNull UUID> sessionEntryIds) {}

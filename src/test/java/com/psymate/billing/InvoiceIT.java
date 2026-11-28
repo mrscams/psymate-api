@@ -1,11 +1,11 @@
 package com.psymate.billing;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.oneOf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -16,9 +16,11 @@ import com.psymate.testsupport.SharedPostgres;
 import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -63,6 +65,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 class InvoiceIT {
 
   private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
+  private static final Duration WAIT = Duration.ofSeconds(30);
   private static final String INVOICES = "/api/invoices";
   private static final DateTimeFormatter LINE_DATE =
       DateTimeFormatter.ofPattern("dd/MM/uuuu", Locale.ROOT);
@@ -425,6 +428,171 @@ class InvoiceIT {
   }
 
   @Test
+  void anArchivedServiceIsRefusedOnALine() throws Exception {
+    UUID archived = service(alice, "Ancienne", 6000, false);
+    jdbc.update("update billing_service set archived_at = now() where id = ?", archived);
+    expectFieldError(
+        create(
+            alice,
+            "{\"patientId\":\""
+                + lea
+                + "\",\"lines\":[{\"label\":\"A\",\"unitPrice\":1,\"serviceId\":\""
+                + archived
+                + "\"}]}"),
+        "lines[0].serviceId",
+        "INVALID_VALUE");
+  }
+
+  @Test
+  void aSessionTwiceInSessionEntryIdsAndLinesIsRefused() throws Exception {
+    rate(theo, 5000);
+    UUID session = row(alice, theo, day1, "pending");
+    expectFieldError(
+        create(
+            alice,
+            "{\"patientId\":\""
+                + theo
+                + "\",\"sessionEntryIds\":[\""
+                + session
+                + "\"],\"lines\":["
+                + sessionLine(session)
+                + "]}"),
+        "lines[0].sessionEntryId",
+        "INVALID_VALUE");
+    assertThat(state(session)).isEqualTo("pending");
+  }
+
+  @Test
+  void aDraftHasAtMostTwoHundredSessionLines() throws Exception {
+    String sessionIds =
+        IntStream.range(0, 150)
+            .mapToObj(i -> "\"" + UUID.randomUUID() + "\"")
+            .collect(Collectors.joining(","));
+    String sessionLines =
+        IntStream.range(0, 51)
+            .mapToObj(i -> sessionLine(UUID.randomUUID()))
+            .collect(Collectors.joining(","));
+    expectFieldError(
+        create(
+            alice,
+            "{\"patientId\":\""
+                + theo
+                + "\",\"sessionEntryIds\":["
+                + sessionIds
+                + "],\"lines\":["
+                + sessionLines
+                + "]}"),
+        "lines",
+        "OUT_OF_RANGE");
+    UUID draft = id(create(alice, "{\"patientId\":\"" + theo + "\"}").andReturn());
+    String twoHundredOne =
+        IntStream.range(0, 201)
+            .mapToObj(i -> sessionLine(UUID.randomUUID()))
+            .collect(Collectors.joining(","));
+    expectFieldError(
+        patch(alice, draft, "{\"lines\":[" + twoHundredOne + "]}"), "lines", "OUT_OF_RANGE");
+  }
+
+  @Test
+  void aClosedSessionNotYetKnownToBillingEntersADraftAndABatch() throws Exception {
+    rate(theo, 5500);
+    UUID single = closedSession(alice, theo);
+    UUID batched = closedSession(alice, theo);
+    forget(single);
+    forget(batched);
+
+    create(alice, body(theo, single))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.lines[0].sessionEntryId").value(single.toString()))
+        .andExpect(jsonPath("$.lines[0].unitPrice").value(5500));
+    assertThat(state(single)).isEqualTo("invoiced");
+    batch(alice, ids(batched))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.invoices[0].patient.id").value(theo.toString()));
+    assertThat(state(batched)).isEqualTo("invoiced");
+  }
+
+  @Test
+  void aDismissedSessionCanEnterADraftAndComesBackPending() throws Exception {
+    rate(theo, 5500);
+    UUID session = closedSession(alice, theo);
+    awaitState(session, "pending");
+    perform(
+            MockMvcRequestBuilders.post("/api/billing/billable-sessions/" + session + "/dismiss"),
+            alice,
+            null)
+        .andExpect(status().isNoContent());
+
+    UUID invoice =
+        id(create(alice, body(theo, session)).andExpect(status().isCreated()).andReturn());
+    assertThat(invoiceOf(session)).isEqualTo(invoice);
+    // Retirée du brouillon, elle revient à facturer, pas à « ne pas facturer » (L3.1).
+    patch(alice, invoice, "{\"lines\":[]}").andExpect(status().isOk());
+    assertThat(state(session)).isEqualTo("pending");
+  }
+
+  @Test
+  void aDismissedSessionArchivedSinceIsNotBillable() throws Exception {
+    rate(theo, 5500);
+    UUID session = closedSession(alice, theo);
+    awaitState(session, "pending");
+    perform(
+            MockMvcRequestBuilders.post("/api/billing/billable-sessions/" + session + "/dismiss"),
+            alice,
+            null)
+        .andExpect(status().isNoContent());
+    perform(MockMvcRequestBuilders.delete("/api/entries/" + session), alice, null)
+        .andExpect(status().isNoContent());
+
+    create(alice, body(theo, session))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("SESSION_NOT_BILLABLE"));
+    batch(alice, ids(session))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("SESSION_NOT_BILLABLE"));
+    assertThat(state(session)).isEqualTo("dismissed");
+    assertThat(invoiceCount(alice)).isZero();
+  }
+
+  @Test
+  void theListAndTheDetailGiveTheSameTotalOnAHalfCentAndANegativeSubtotal() throws Exception {
+    jdbc.update(
+        "insert into billing_settings (practitioner_id, tenant_id, vat_regime, vat_rate_bp,"
+            + " vat_number) values (?, ?, 'liable', 500, 'FR40303265045')",
+        alice,
+        tenant);
+    // 1 010 × 5 % = 50,5 → 51 ; -1 010 × 5 % = -50,5 → -50 (demi supérieur).
+    UUID half =
+        id(
+            create(
+                    alice,
+                    "{\"patientId\":\""
+                        + lea
+                        + "\",\"lines\":[{\"label\":\"A\",\"unitPrice\":1010}]}")
+                .andExpect(jsonPath("$.vat").value(51))
+                .andExpect(jsonPath("$.total").value(1061))
+                .andReturn());
+    UUID negative =
+        id(
+            create(
+                    alice,
+                    "{\"patientId\":\""
+                        + lea
+                        + "\",\"lines\":[{\"label\":\"Remise\",\"unitPrice\":-1010}]}")
+                .andExpect(jsonPath("$.subtotal").value(-1010))
+                .andExpect(jsonPath("$.vat").value(-50))
+                .andExpect(jsonPath("$.total").value(-1060))
+                .andExpect(jsonPath("$.balanceDue").value(0))
+                .andReturn());
+    get(alice, half).andExpect(jsonPath("$.total").value(1061));
+    get(alice, negative).andExpect(jsonPath("$.total").value(-1060));
+    list(alice, "")
+        .andExpect(jsonPath("$.items[?(@.id=='" + half + "')].total", contains(1061)))
+        .andExpect(jsonPath("$.items[?(@.id=='" + negative + "')].total", contains(-1060)))
+        .andExpect(jsonPath("$.items[?(@.id=='" + negative + "')].balanceDue", contains(0)));
+  }
+
+  @Test
   void aDraftHasAtMostOneHundredFreeLines() throws Exception {
     String hundred = freeLines(100);
     create(alice, "{\"patientId\":\"" + lea + "\",\"lines\":[" + hundred + "]}")
@@ -514,7 +682,7 @@ class InvoiceIT {
 
   @Test
   void batchValidatesItsBody() throws Exception {
-    expectFieldError(batch(alice, "{\"sessionEntryIds\":[]}"), "sessionEntryIds", "REQUIRED");
+    expectFieldError(batch(alice, "{\"sessionEntryIds\":[]}"), "sessionEntryIds", "OUT_OF_RANGE");
     expectFieldError(batch(alice, "{}"), "sessionEntryIds", "REQUIRED");
     String tooMany =
         IntStream.range(0, 201)
@@ -633,7 +801,9 @@ class InvoiceIT {
 
     list(alice, "?overdue=true")
         .andExpect(jsonPath("$.items[0].overdue").value(true))
-        .andExpect(jsonPath("$.items[0].overdueDays").value(oneOf(5, 6)))
+        .andExpect(
+            jsonPath("$.items[0].overdueDays")
+                .value((int) ChronoUnit.DAYS.between(today.minusDays(5), today())))
         .andExpect(jsonPath("$.items[0].dueOn").value(today.minusDays(5).toString()))
         .andExpect(jsonPath("$.items[0].balanceDue").value(8000));
     list(alice, "?status=partial")
@@ -674,6 +844,10 @@ class InvoiceIT {
     expectFieldError(list(alice, "?overdue=maybe"), "overdue", "INVALID_FORMAT");
     expectFieldError(list(alice, "?limit=0"), "limit", "OUT_OF_RANGE");
     expectFieldError(list(alice, "?limit=101"), "limit", "OUT_OF_RANGE");
+    expectFieldError(list(alice, "?limit=beaucoup"), "limit", "INVALID_FORMAT");
+    expectFieldError(list(alice, "?patientId=abc"), "patientId", "INVALID_FORMAT");
+    expectFieldError(list(alice, "?q=" + "a".repeat(101)), "q", "OUT_OF_RANGE");
+    list(alice, "?q=" + "a".repeat(100)).andExpect(status().isOk());
     list(alice, "?patientId=" + bobsPatient)
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("PATIENT_NOT_FOUND"));
@@ -880,6 +1054,22 @@ class InvoiceIT {
   }
 
   @Test
+  void aNewPatientKeepsTheRecipientGivenInTheSamePatch() throws Exception {
+    UUID draft = id(create(alice, "{\"patientId\":\"" + theo + "\"}").andReturn());
+    patch(
+            alice,
+            draft,
+            "{\"patientId\":\""
+                + lea
+                + "\",\"recipient\":{\"name\":\"Tuteur L.\",\"addressLines\":\"5 rue D\"}}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.patient.id").value(lea.toString()))
+        .andExpect(jsonPath("$.recipient.name").value("Tuteur L."))
+        .andExpect(jsonPath("$.recipient.addressLines").value("5 rue D"))
+        .andExpect(jsonPath("$.recipient.patientName").value("Léa M."));
+  }
+
+  @Test
   void patchAndDeleteOfAnIssuedInvoiceAnswer409() throws Exception {
     UUID invoice = issued(alice, theo, "F-2026-0009", today.minusDays(2), 6000, 0, 0, "issued");
     UUID voided = issued(alice, theo, "F-2026-0010", today.minusDays(2), 6000, 0, 6000, "void");
@@ -962,6 +1152,62 @@ class InvoiceIT {
     assertThat(invoiceOf(session)).isEqualTo(draft);
     assertThat(state(aliceSession)).isEqualTo("pending");
     expectIds(list(alice, ""), draft, issuedOne);
+  }
+
+  // ---- outils : chemin réel de clinical
+
+  private UUID closedSession(UUID who, UUID patient) throws Exception {
+    MvcResult started =
+        perform(
+                MockMvcRequestBuilders.post("/api/patients/" + patient + "/sessions/start"),
+                who,
+                "{\"modality\":\"in_person\"}")
+            .andExpect(status().isCreated())
+            .andReturn();
+    String location = started.getResponse().getHeader("Location");
+    UUID session = UUID.fromString(location.substring(location.lastIndexOf('/') + 1));
+    perform(
+            MockMvcRequestBuilders.post("/api/sessions/" + session + "/close"),
+            who,
+            "{\"durationMin\":50}")
+        .andExpect(status().isOk());
+    return session;
+  }
+
+  /**
+   * La séance close n'est pas encore connue de la facturation : l'écoute de la clôture est traitée
+   * puis sa ligne retirée, comme si l'événement n'était pas encore arrivé (création à la demande).
+   */
+  private void forget(UUID session) {
+    awaitState(session, "pending");
+    await()
+        .atMost(WAIT)
+        .until(
+            () ->
+                jdbc.queryForObject(
+                        "select count(*) from event_publication where listener_id ="
+                            + " 'billing.session-closed' and serialized_event like ? and"
+                            + " completion_date is not null",
+                        Integer.class,
+                        "%" + session + "%")
+                    >= 1);
+    jdbc.update("delete from billable_session where session_entry_id = ?", session);
+  }
+
+  private void awaitState(UUID session, String expected) {
+    await()
+        .atMost(WAIT)
+        .until(
+            () ->
+                expected.equals(
+                    jdbc
+                        .queryForList(
+                            "select state from billable_session where session_entry_id = ?",
+                            String.class,
+                            session)
+                        .stream()
+                        .findFirst()
+                        .orElse(null)));
   }
 
   // ---- outils : jour de Paris, lu sur l'horloge injectée du serveur

@@ -79,7 +79,7 @@ class InvoiceNativeQueriesImpl implements InvoiceNativeQueries {
       left join lateral (
         select y.label from invoice_line y where y.invoice_id = s.id
         order by y.position limit 1) fl on true
-      left join invoice ci on ci.id = s.cancels_invoice_id
+      left join invoice ci on ci.id = s.cancels_invoice_id and ci.practitioner_id = :practitioner
       where true
       """;
 

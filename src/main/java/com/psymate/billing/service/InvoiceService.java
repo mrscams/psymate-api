@@ -317,11 +317,11 @@ public class InvoiceService {
     throwIfAny(problems);
 
     OffsetDateTime now = now();
-    List<BillableSession> attached = sessions.findByInvoiceForUpdate(invoice.getId(), me.id());
+    // Séances rattachées lues sans verrou : la facture est verrouillée, aucune autre écriture ne
+    // les rattache ni ne les détache ; elles sont verrouillées plus bas avec les nouvelles, en une
+    // seule passe et dans l'ordre de lock() (le même que la création et la suppression).
     Set<UUID> attachedIds =
-        attached.stream()
-            .map(BillableSession::getSessionEntryId)
-            .collect(Collectors.toCollection(LinkedHashSet::new));
+        new LinkedHashSet<>(sessions.findIdsByInvoice(invoice.getId(), me.id()));
     boolean patientChanges = !targetPatient.equals(invoice.getPatientId());
 
     InvoiceTotals totals;
@@ -331,13 +331,9 @@ public class InvoiceService {
       if (patientChanges && wanted.stream().anyMatch(attachedIds::contains)) {
         throw BillingException.invalidField("patientId", "INVALID_VALUE");
       }
-      Map<UUID, BillableSession> locked = new HashMap<>();
-      attached.forEach(s -> locked.put(s.getSessionEntryId(), s));
-      for (UUID sessionId : new TreeSet<>(wanted)) {
-        if (!locked.containsKey(sessionId)) {
-          locked.put(sessionId, billable.lockForInvoice(sessionId, me));
-        }
-      }
+      Set<UUID> all = new LinkedHashSet<>(attachedIds);
+      all.addAll(wanted);
+      Map<UUID, BillableSession> locked = lock(all, me);
       samePatient(given, locked, targetPatient, problems);
       throwIfAny(problems);
       for (UUID sessionId : new TreeSet<>(wanted)) {
@@ -346,16 +342,16 @@ public class InvoiceService {
           throw BillingException.sessionAlreadyInvoiced(sessionId);
         }
       }
-      for (BillableSession s : attached) {
-        if (!wanted.contains(s.getSessionEntryId())) {
-          s.release(now);
+      for (UUID sessionId : attachedIds) {
+        if (!wanted.contains(sessionId)) {
+          locked.get(sessionId).release(now);
         }
       }
       lines.deleteAllOfDraft(invoice.getId());
       List<PlannedLine> planned = given.stream().map(l -> planned(l, locked)).toList();
       totals = writeLines(invoice, planned, locked, issuer, now);
     } else {
-      if (patientChanges && !attached.isEmpty()) {
+      if (patientChanges && !attachedIds.isEmpty()) {
         throw BillingException.invalidField("patientId", "INVALID_VALUE");
       }
       List<Long> amounts =
@@ -400,7 +396,8 @@ public class InvoiceService {
   /**
    * Supprime un brouillon (E9, 204) : ses séances reviennent à {@code pending}, puis la ligne de la
    * facture est effacée (ses lignes et son historique en cascade). 409 INVOICE_ISSUED pour une
-   * facture émise, un avoir ou une facture annulée ; 404 INVOICE_NOT_FOUND sinon.
+   * facture émise, un avoir ou une facture annulée ; 404 INVOICE_NOT_FOUND sinon. La suppression
+   * porte elle-même la condition « brouillon » en SQL : une facture émise ne part jamais.
    */
   @Transactional
   public void delete(UUID id) {
@@ -409,12 +406,14 @@ public class InvoiceService {
         invoices.findForUpdate(id, me.id()).orElseThrow(BillingException::invoiceNotFound);
     invoice.requireDraft();
     OffsetDateTime now = now();
-    for (BillableSession s : sessions.findByInvoiceForUpdate(invoice.getId(), me.id())) {
-      s.release(now);
+    Set<UUID> attachedIds =
+        new LinkedHashSet<>(sessions.findIdsByInvoice(invoice.getId(), me.id()));
+    lock(attachedIds, me).values().forEach(session -> session.release(now));
+    // Les séances quittent la facture avant elle (écrites avant la suppression en bloc) : la
+    // contrainte état/invoice_id tient.
+    if (invoices.deleteDraft(invoice.getId(), me.id()) != 1) {
+      throw BillingException.invoiceIssued();
     }
-    // Les séances quittent la facture avant elle : la contrainte état/invoice_id tient.
-    sessions.flush();
-    invoices.delete(invoice);
   }
 
   // ---- outils : lignes
@@ -422,7 +421,7 @@ public class InvoiceService {
   /**
    * Règles des lignes que Jakarta n'exprime pas : 100 lignes libres et 200 lignes de séance au
    * plus, une séance une seule fois (ni deux lignes, ni une ligne et {@code sessionEntryIds}),
-   * prestation du praticien.
+   * prestation non archivée du praticien (comme le PATCH d'une séance à facturer, M15-07).
    */
   private void checkLines(
       List<InvoiceLineRequest> given,
@@ -451,6 +450,7 @@ public class InvoiceService {
     Set<UUID> known =
         services.findAllById(serviceIds).stream()
             .filter(s -> me.id().equals(s.getPractitionerId()))
+            .filter(s -> !s.isArchived())
             .map(BillingService::getId)
             .collect(Collectors.toSet());
     for (int i = 0; i < given.size(); i++) {
@@ -664,8 +664,9 @@ public class InvoiceService {
   // ---- outils : séances, patients, erreurs
 
   /**
-   * Verrouille les séances du praticien par identifiant croissant (ordre stable : pas d'étreinte
-   * fatale entre deux demandes), en les créant à la demande si besoin (G Q86).
+   * Verrouille les séances du praticien par identifiant croissant (ordre de {@link UUID#compareTo},
+   * le même pour la création, le lot, la modification et la suppression : pas d'étreinte fatale
+   * entre deux demandes), en les créant à la demande si besoin (G Q86).
    */
   private Map<UUID, BillableSession> lock(Set<UUID> ids, CurrentPractitioner me) {
     Map<UUID, BillableSession> locked = new HashMap<>();

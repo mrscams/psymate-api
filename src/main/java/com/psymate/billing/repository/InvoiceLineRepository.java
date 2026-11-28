@@ -22,10 +22,17 @@ public interface InvoiceLineRepository extends JpaRepository<InvoiceLine, UUID> 
   /**
    * Supprime toutes les lignes d'un brouillon, tout de suite (requête en bloc, après écriture des
    * changements en attente) : les nouvelles lignes reprennent les positions 1, 2… sans heurter
-   * l'unicité {@code (invoice_id, position)}. Réservé à un brouillon verrouillé (E9).
+   * l'unicité {@code (invoice_id, position)}. Réservé à un brouillon verrouillé (E9) ; la condition
+   * {@code status = 'draft'} est aussi dans la requête : les lignes d'une facture émise ne partent
+   * jamais.
    */
   @Modifying(flushAutomatically = true)
-  @Query("delete from InvoiceLine l where l.invoiceId = :invoiceId")
+  @Query(
+      """
+      delete from InvoiceLine l
+      where l.invoiceId = :invoiceId
+        and l.invoiceId in (select i.id from Invoice i where i.id = :invoiceId and i.status = 'draft')
+      """)
   int deleteAllOfDraft(@Param("invoiceId") UUID invoiceId);
 
   /** Parmi ces lignes, celles qu'un avoir a annulées ({@code source_line_id}, M15-11). */

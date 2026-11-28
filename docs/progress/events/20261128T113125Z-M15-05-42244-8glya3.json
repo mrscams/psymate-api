@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-28T11:31:25.110Z",
+  "task": "M15-05",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Module billing : V18 (9 tables, identique a L4), prestations, profil de facturation ; contrat 0.17.0",
+  "notes": "Aucun ecart avec L4 ; montants entiers controles par BillingBodyAdvice ; termes arabes manquants au glossaire signales",
+  "next": "M15-06 apres fusion de M15-03",
+  "pr": "https://github.com/mrscams/psymate-api/pull/121",
+  "branch": "m15-05-billing-socle",
+  "checkout": "m15-05-billing-socle-4a7edd"
+}

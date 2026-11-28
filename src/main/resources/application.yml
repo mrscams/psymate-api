@@ -67,7 +67,7 @@ app:
     email: ${APP_SUPPORT_EMAIL:support@example.test}
   contract:
     # Version du contrat OpenAPI publie ; a bumper avant de poser un tag contract-vX.Y.Z.
-    version: 0.16.0
+    version: 0.17.0
   # Profil 360 (M13-02, G Q70) : plafond d informations actives par patient ; au-dela, la creation
   # repond 422 PROFILE_ITEM_LIMIT_REACHED. Abaisse seulement par les tests.
   patients:

@@ -1,0 +1,8 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.psymate.billing`
+|Bean references
+|* `c.p.p.api.PatientFacade` (in Patients)
+* `c.p.p.api.PatientOwnershipGuard` (in Patients)
+|===

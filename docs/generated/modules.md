@@ -6,6 +6,7 @@ Fichier genere par `ModularityTests.writesModuleDocumentation` (`./mvnw verify`)
 | --- | --- | --- | --- | --- |
 | agenda | `com.psymate.agenda` | directory, events, identity, patients, shared | directory, events, identity, patients, shared | api |
 | ai | `com.psymate.ai` | clinical, events, linking, shared | — | — |
+| billing | `com.psymate.billing` | clinical, events, identity, patients, shared | identity, patients, shared | — |
 | clinical | `com.psymate.clinical` | agenda, events, identity, patients, shared, vocabulary | agenda, events, identity, patients, shared, vocabulary | api |
 | companion | `com.psymate.companion` | clinical, events, patients, shared | — | — |
 | directory | `com.psymate.directory` | events, identity, shared | events, identity, shared | api |

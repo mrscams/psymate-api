@@ -71,7 +71,10 @@ class ContractIT {
             "/api/auth/me",
             "/api/vocabulary/emotions",
             "/api/tags",
-            "/api/me/emotions");
+            "/api/me/emotions",
+            "/api/me/billing-services",
+            "/api/me/billing-services/{id}",
+            "/api/patients/{id}/billing-profile");
     @SuppressWarnings("unchecked")
     Map<String, Object> info = (Map<String, Object>) doc.get("info");
     assertThat(info.get("version")).isEqualTo(contractVersion);
@@ -80,8 +83,9 @@ class ContractIT {
     // de rendez-vous (M11-07) ; 0.13.0 = rendez-vous invité et rattachement (M11-10) ; 0.14.0 =
     // Profil 360 (M13-02) ; 0.15.0 = prise de rendez-vous en ligne (M14, premier pas M14-04 :
     // origin, guest.email, GET /api/agenda/requests) ; 0.16.0 = version arabe (M16, premier pas
-    // M16-02 : locale = ar dans les préférences et la demande de rendez-vous en ligne).
-    assertThat(contractVersion).isEqualTo("0.16.0");
+    // M16-02 : locale = ar dans les préférences et la demande de rendez-vous en ligne) ; 0.17.0 =
+    // facturation (M15, premier pas M15-05 : prestations et profil de facturation du patient).
+    assertThat(contractVersion).isEqualTo("0.17.0");
     assertThat(info.get("title")).isEqualTo("PsyMate API");
   }
 

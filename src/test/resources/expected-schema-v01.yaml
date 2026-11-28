@@ -508,3 +508,123 @@ booking_request:
   - appointment_id
   - closed_by
   - created_at
+billing_settings:
+  - practitioner_id
+  - tenant_id
+  - siret
+  - address_lines
+  - display_email
+  - display_phone
+  - vat_regime
+  - vat_rate_bp
+  - vat_number
+  - invoice_prefix
+  - credit_note_prefix
+  - due_term
+  - cheque_payee
+  - accepted_modes
+  - show_bank_details
+  - iban_last4
+  - footer_note
+  - email_templates
+  - created_at
+  - updated_at
+billing_service:
+  - id
+  - tenant_id
+  - practitioner_id
+  - label
+  - duration_min
+  - price_cents
+  - is_default
+  - archived_at
+  - created_at
+  - updated_at
+billing_patient:
+  - patient_id
+  - tenant_id
+  - practitioner_id
+  - rate_cents
+  - address_lines
+  - third_party_name
+  - third_party_address
+  - updated_at
+invoice:
+  - id
+  - tenant_id
+  - practitioner_id
+  - patient_id
+  - kind
+  - status
+  - number
+  - cancels_invoice_id
+  - recipient_name
+  - recipient_address
+  - issue_date
+  - due_term
+  - due_on
+  - footer_note
+  - reason_code
+  - reason_text
+  - issuer_snapshot
+  - subtotal_cents
+  - vat_cents
+  - total_cents
+  - paid_cents
+  - credited_cents
+  - refund_due_cents
+  - pdf_storage_key
+  - created_at
+  - updated_at
+  - issued_at
+  - voided_at
+invoice_line:
+  - id
+  - invoice_id
+  - position
+  - service_id
+  - label
+  - occurred_on
+  - quantity
+  - unit_price_cents
+  - amount_cents
+  - session_entry_id
+  - source_line_id
+billable_session:
+  - session_entry_id
+  - tenant_id
+  - practitioner_id
+  - patient_id
+  - occurred_on
+  - modality
+  - duration_min
+  - state
+  - service_id
+  - amount_cents
+  - invoice_id
+  - created_at
+  - updated_at
+billing_counter:
+  - practitioner_id
+  - kind
+  - year
+  - last_number
+payment:
+  - id
+  - tenant_id
+  - practitioner_id
+  - invoice_id
+  - kind
+  - mode
+  - amount_cents
+  - received_on
+  - reference
+  - note
+  - cancelled_at
+  - created_at
+invoice_event:
+  - id
+  - invoice_id
+  - kind
+  - at
+  - detail

@@ -11,6 +11,7 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,7 +113,17 @@ class FlywayMigrationIT {
             "ix_appointment_online_pending",
             "ix_booking_request_email",
             "ix_booking_request_created",
-            "ix_booking_request_appointment");
+            "ix_booking_request_appointment",
+            "billing_service_one_default",
+            "billing_service_by_practitioner",
+            "invoice_number_per_practitioner",
+            "invoice_by_practitioner",
+            "invoice_by_patient",
+            "invoice_line_by_session",
+            "billable_session_pending",
+            "payment_by_practitioner",
+            "payment_by_invoice",
+            "invoice_event_by_invoice");
   }
 
   @Test
@@ -533,5 +544,160 @@ class FlywayMigrationIT {
                         + " where t.relname = 'booking_request' and c.contype = 'f'",
                     String.class))
         .containsExactlyInAnyOrder("tenant", "practitioner", "appointment");
+  }
+
+  /**
+   * V18 (M15-05, L4, G Q83 a Q95) : les neuf tables de la facturation, sans cle etrangere vers un
+   * autre module (UUID nus), leurs contraintes CHECK (montants en centimes entiers, regimes de TVA,
+   * cycle d'une facture) et leurs index partiels. Les ecritures refusees le sont par PostgreSQL.
+   */
+  @Test
+  void v18CreatesTheBillingTablesWithTheirChecksAndPartialIndexes() throws Exception {
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select version from flyway_schema_history where success order by"
+                        + " installed_rank",
+                    String.class))
+        .contains("18");
+    List<String> tables =
+        List.of(
+            "billing_settings",
+            "billing_service",
+            "billing_patient",
+            "invoice",
+            "invoice_line",
+            "billable_session",
+            "billing_counter",
+            "payment",
+            "invoice_event");
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select table_name from information_schema.tables where table_schema ="
+                        + " 'public' and table_type = 'BASE TABLE' and (table_name like"
+                        + " 'billing%' or table_name like 'invoice%' or table_name in"
+                        + " ('billable_session', 'payment'))",
+                    String.class))
+        .containsExactlyInAnyOrderElementsOf(tables);
+    // Seules cles etrangeres : celles de la facturation vers ses propres tables.
+    assertThat(
+            jdbc()
+                .queryForList(
+                    "select distinct ft.relname from pg_constraint c join pg_class t on t.oid ="
+                        + " c.conrelid join pg_class ft on ft.oid = c.confrelid where c.contype ="
+                        + " 'f' and t.relname in ('billing_settings', 'billing_service',"
+                        + " 'billing_patient', 'invoice', 'invoice_line', 'billable_session',"
+                        + " 'billing_counter', 'payment', 'invoice_event')",
+                    String.class))
+        .containsExactlyInAnyOrder("invoice", "invoice_line");
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select indexdef from pg_indexes where indexname ="
+                        + " 'billing_service_one_default'",
+                    String.class))
+        .startsWith("CREATE UNIQUE INDEX")
+        .contains("(practitioner_id)")
+        .contains("is_default")
+        .contains("(archived_at IS NULL)");
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select indexdef from pg_indexes where indexname ="
+                        + " 'invoice_number_per_practitioner'",
+                    String.class))
+        .startsWith("CREATE UNIQUE INDEX")
+        .contains("(practitioner_id, number)")
+        .contains("(number IS NOT NULL)");
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select data_type from information_schema.columns where table_schema ="
+                        + " 'public' and table_name = 'billing_service' and column_name ="
+                        + " 'price_cents'",
+                    String.class))
+        .isEqualTo("integer");
+    assertThat(
+            jdbc()
+                .queryForObject(
+                    "select data_type from information_schema.columns where table_schema ="
+                        + " 'public' and table_name = 'invoice' and column_name = 'total_cents'",
+                    String.class))
+        .isEqualTo("bigint");
+
+    UUID practitioner = UUID.randomUUID();
+    UUID tenant = UUID.randomUUID();
+    try (Connection connection = dataSource.getConnection();
+        Statement statement = connection.createStatement()) {
+      connection.setAutoCommit(false);
+      try {
+        // Prix nul ou negatif refuse (check_violation).
+        for (String price : List.of("0", "-100")) {
+          assertThatThrownBy(
+                  () ->
+                      statement.execute(
+                          "insert into billing_service (id, tenant_id, practitioner_id, label,"
+                              + " price_cents) values (gen_random_uuid(), '"
+                              + tenant
+                              + "', '"
+                              + practitioner
+                              + "', 'Seance', "
+                              + price
+                              + ")"))
+              .as("price_cents = " + price)
+              .isInstanceOf(SQLException.class)
+              .extracting(e -> ((SQLException) e).getSQLState())
+              .isEqualTo("23514");
+          connection.rollback();
+        }
+        // Deux prestations par defaut non archivees pour un praticien : refuse (unique_violation).
+        String insertDefault =
+            "insert into billing_service (id, tenant_id, practitioner_id, label, price_cents,"
+                + " is_default) values (gen_random_uuid(), '"
+                + tenant
+                + "', '"
+                + practitioner
+                + "', 'Seance', 6000, true)";
+        statement.execute(insertDefault);
+        assertThatThrownBy(() -> statement.execute(insertDefault))
+            .isInstanceOf(SQLException.class)
+            .extracting(e -> ((SQLException) e).getSQLState())
+            .isEqualTo("23505");
+        connection.rollback();
+        // Regime assujetti sans taux : refuse.
+        assertThatThrownBy(
+                () ->
+                    statement.execute(
+                        "insert into billing_settings (practitioner_id, tenant_id, vat_regime)"
+                            + " values ('"
+                            + practitioner
+                            + "', '"
+                            + tenant
+                            + "', 'liable')"))
+            .isInstanceOf(SQLException.class)
+            .extracting(e -> ((SQLException) e).getSQLState())
+            .isEqualTo("23514");
+        connection.rollback();
+        // Facture emise sans numero : refuse.
+        assertThatThrownBy(
+                () ->
+                    statement.execute(
+                        "insert into invoice (id, tenant_id, practitioner_id, patient_id, kind,"
+                            + " status, issue_date, due_term, issuer_snapshot) values"
+                            + " (gen_random_uuid(), '"
+                            + tenant
+                            + "', '"
+                            + practitioner
+                            + "', gen_random_uuid(), 'invoice', 'issued', current_date,"
+                            + " 'on_receipt', '{}')"))
+            .isInstanceOf(SQLException.class)
+            .extracting(e -> ((SQLException) e).getSQLState())
+            .isEqualTo("23514");
+      } finally {
+        connection.rollback();
+        connection.setAutoCommit(true);
+      }
+    }
   }
 }

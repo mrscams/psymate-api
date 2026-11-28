@@ -74,7 +74,9 @@ class ContractIT {
             "/api/me/emotions",
             "/api/me/billing-services",
             "/api/me/billing-services/{id}",
-            "/api/patients/{id}/billing-profile");
+            "/api/patients/{id}/billing-profile",
+            "/api/me/billing-settings",
+            "/api/me/billing-settings/iban");
     @SuppressWarnings("unchecked")
     Map<String, Object> info = (Map<String, Object>) doc.get("info");
     assertThat(info.get("version")).isEqualTo(contractVersion);

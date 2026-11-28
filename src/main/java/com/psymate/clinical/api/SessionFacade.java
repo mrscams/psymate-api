@@ -1,6 +1,5 @@
 package com.psymate.clinical.api;
 
-import com.psymate.shared.Reserved;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -8,9 +7,6 @@ import java.util.UUID;
  * Lecture d'une séance par les autres modules (G Q85). Sert à billing quand le praticien agit sur
  * une séance avant que {@link SessionClosed} n'ait été traité (G Q86).
  */
-@Reserved(
-    consumer = "M15-07, G Q86 : module billing (création à la demande d'une séance à facturer)",
-    reason = "G Q85 : exposée dès M15-02, avant son premier appelant")
 public interface SessionFacade {
 
   /**

@@ -3,8 +3,13 @@
 |Base package
 |`com.psymate.billing`
 |Bean references
-|* `c.p.i.api.EncryptedStorageFacade` (in Identity)
+|* `c.p.c.api.SessionFacade` (in Clinical)
+* `c.p.e.api.EventDeduplicator` (in Events)
+* `c.p.i.api.EncryptedStorageFacade` (in Identity)
 * `c.p.i.api.PractitionerFacade` (in Identity)
 * `c.p.p.api.PatientFacade` (in Patients)
 * `c.p.p.api.PatientOwnershipGuard` (in Patients)
+|Events listened to
+|* `c.p.c.api.EntryArchived` (async) 
+* `c.p.c.api.SessionClosed` (async) 
 |===

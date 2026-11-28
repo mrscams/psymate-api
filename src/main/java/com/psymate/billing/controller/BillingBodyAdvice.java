@@ -5,6 +5,7 @@ import com.psymate.billing.dto.BillingIbanRequest;
 import com.psymate.billing.dto.BillingProfileRequest;
 import com.psymate.billing.dto.BillingSettingsRequest;
 import com.psymate.billing.dto.CreateBillingServiceRequest;
+import com.psymate.billing.dto.UpdateBillableSessionRequest;
 import com.psymate.billing.dto.UpdateBillingServiceRequest;
 import com.psymate.shared.i18n.ServedLanguage;
 import com.psymate.shared.problem.AdviceOrder;
@@ -131,7 +132,9 @@ class BillingBodyAdvice extends RequestBodyAdviceAdapter {
           BillingProfileRequest.class, PROFILE_FIELDS,
           BillingSettingsRequest.class, SETTINGS_FIELDS,
           BillingIbanRequest.class, Map.of("iban", Field.TEXT, "currentPassword", Field.TEXT),
-          BillingIbanDeleteRequest.class, Map.of("currentPassword", Field.TEXT));
+          BillingIbanDeleteRequest.class, Map.of("currentPassword", Field.TEXT),
+          UpdateBillableSessionRequest.class,
+              Map.of("amount", Field.INTEGER, "serviceId", Field.TEXT));
 
   private final JsonMapper json;
   private final BillingMessages messages;

@@ -76,7 +76,12 @@ class ContractIT {
             "/api/me/billing-services/{id}",
             "/api/patients/{id}/billing-profile",
             "/api/me/billing-settings",
-            "/api/me/billing-settings/iban");
+            "/api/me/billing-settings/iban",
+            "/api/billing/billable-sessions",
+            "/api/billing/billable-sessions/dismissed",
+            "/api/billing/billable-sessions/{sessionEntryId}",
+            "/api/billing/billable-sessions/{sessionEntryId}/dismiss",
+            "/api/billing/billable-sessions/{sessionEntryId}/restore");
     @SuppressWarnings("unchecked")
     Map<String, Object> info = (Map<String, Object>) doc.get("info");
     assertThat(info.get("version")).isEqualTo(contractVersion);

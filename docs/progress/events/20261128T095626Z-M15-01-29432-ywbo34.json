@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-28T09:56:26.451Z",
+  "task": "M15-01",
+  "agent": "claude",
+  "status": "in-progress",
+  "summary": "Facturation : décisions et documentation, en cours",
+  "branch": "claude/m15-01-facturation-docs-b328e6",
+  "checkout": "m15-01-facturation-docs-b328e6"
+}

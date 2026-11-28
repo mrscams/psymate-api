@@ -1,6 +1,8 @@
 package com.psymate.billing.service;
 
 import com.psymate.shared.i18n.ServedLanguage;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -10,14 +12,19 @@ import org.springframework.stereotype.Component;
  * Textes des documents de facturation, toujours lus dans {@code messages_fr.properties}, quelle que
  * soit la langue servie (G Q92 : mentions de TVA ; les factures et leurs modèles d'e-mail restent
  * en français, comme la feuille de facture du web, G Q70 du web). Clés {@code
- * billing.vat.mention.*}, {@code billing.title.*} et {@code billing.template.*} ; messages_en et
- * messages_ar en portent une copie identique pour la parité des fichiers, jamais lue. Les messages
- * d'erreur, eux, suivent la langue servie ({@code BillingMessages}).
+ * billing.vat.mention.*}, {@code billing.title.*}, {@code billing.template.*} et {@code
+ * billing.line.*} (désignation d'une ligne de séance, M15-08) ; messages_en et messages_ar en
+ * portent une copie identique pour la parité des fichiers, jamais lue. Les messages d'erreur, eux,
+ * suivent la langue servie ({@code BillingMessages}).
  */
 @Component
 public class BillingTexts {
 
   private static final Locale FRENCH = ServedLanguage.FR.locale();
+
+  /** Date d'une désignation de ligne, à la française, motif fixe sans dépendance à la langue. */
+  private static final DateTimeFormatter LINE_DATE =
+      DateTimeFormatter.ofPattern("dd/MM/uuuu", Locale.ROOT);
 
   private final MessageSource source;
 
@@ -43,6 +50,22 @@ public class BillingTexts {
       return null;
     }
     return source.getMessage("billing.title." + profession, null, null, FRENCH);
+  }
+
+  /**
+   * Désignation d'une ligne de séance (M15-08), sans aucun texte clinique (G Q83) : « {libellé de
+   * la prestation} du 05/11/2026 » si une prestation est retenue, sinon « Séance du 05/11/2026 ».
+   * Accolades {@code {label}} et {@code {date}} remplacées ici (message lu sans MessageFormat).
+   */
+  public String sessionLineLabel(String serviceLabel, LocalDate day) {
+    String date = LINE_DATE.format(day);
+    if (serviceLabel == null || serviceLabel.isBlank()) {
+      return source.getMessage("billing.line.session", null, FRENCH).replace("{date}", date);
+    }
+    return source
+        .getMessage("billing.line.service", null, FRENCH)
+        .replace("{date}", date)
+        .replace("{label}", serviceLabel.strip());
   }
 
   /** Texte par défaut d'un modèle d'e-mail : {@code kind} invoice ou reminder, {@code part}. */

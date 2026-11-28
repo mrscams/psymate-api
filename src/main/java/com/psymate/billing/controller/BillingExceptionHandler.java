@@ -82,8 +82,9 @@ class BillingExceptionHandler {
   }
 
   /**
-   * Erreur métier : statut et code de l'exception, message localisé. Une règle de champ hors
-   * Jakarta (code racine VALIDATION_FAILED) prend la forme des erreurs Jakarta.
+   * Erreur métier : statut et code de l'exception, message localisé (clé {@code
+   * billing.error.<messageKey>}), propriétés du problème. Une règle de champ hors Jakarta (code
+   * racine VALIDATION_FAILED) prend la forme des erreurs Jakarta.
    */
   @ExceptionHandler(BillingException.class)
   ProblemDetail domain(
@@ -92,10 +93,12 @@ class BillingExceptionHandler {
     if (!ex.fieldProblems().isEmpty()) {
       return validation(ex.fieldProblems(), locale);
     }
-    String detail = messages.domain(ex.code(), ex.detail(), locale);
+    String detail = messages.domain(ex.messageKey(), ex.detail(), locale);
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.status(), detail);
     pd.setTitle(ex.title());
     pd.setProperty("code", ex.code());
+    // Propriétés métier du problème (sessionEntryId de SESSION_ALREADY_INVOICED, RATE_REQUIRED…).
+    ex.properties().forEach(pd::setProperty);
     if (ex.retryAfterSeconds() != null) {
       // Comme le 429 RATE_LIMITED de shared : en-tête Retry-After et champ retryAfterSeconds.
       pd.setProperty("retryAfterSeconds", ex.retryAfterSeconds());

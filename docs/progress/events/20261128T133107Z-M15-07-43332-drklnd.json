@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-28T13:31:07.968Z",
+  "task": "M15-07",
+  "agent": "claude",
+  "status": "merged",
+  "summary": "PR 123 fusionnee en squash",
+  "pr": "https://github.com/mrscams/psymate-api/pull/123",
+  "branch": "m15-08-invoice-drafts",
+  "checkout": "m15-05-billing-socle-4a7edd"
+}

@@ -3,7 +3,11 @@ package com.psymate.billing.model;
 import com.psymate.shared.problem.FieldProblem;
 import com.psymate.shared.problem.ProblemException;
 import com.psymate.shared.problem.Problems;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.springframework.http.HttpStatusCode;
 
 /**
@@ -15,7 +19,11 @@ import org.springframework.http.HttpStatusCode;
  * M15-06 : NUMBERING_LOCKED (409), PASSWORD_INVALID (403), TOO_MANY_ATTEMPTS (429), et en
  * VALIDATION_FAILED les codes de champ SIRET_INVALID, VAT_RATE_REQUIRED, VAT_NUMBER_REQUIRED,
  * IBAN_INVALID, OUT_OF_RANGE, INVALID_VALUE ({@link #invalidFields}). Codes de M15-07 (L5.2) :
- * SESSION_NOT_BILLABLE (404) et SESSION_ALREADY_INVOICED (409).
+ * SESSION_NOT_BILLABLE (404) et SESSION_ALREADY_INVOICED (409). Codes de M15-08 (L5.3) :
+ * INVOICE_NOT_FOUND (404), INVOICE_ISSUED (409), RATE_REQUIRED (422, {@code sessionEntryId} dans le
+ * problème), SESSION_ALREADY_INVOICED avec {@code sessionEntryId} et PATIENT_ARCHIVED (409) à la
+ * création d'un brouillon. Une propriété de problème ({@link #properties}) s'ajoute à la réponse ;
+ * une clé de message propre ({@link #messageKey}) donne un texte adapté à la route.
  */
 public class BillingException extends ProblemException {
 
@@ -26,6 +34,8 @@ public class BillingException extends ProblemException {
   private final String fieldCode;
   private final List<FieldProblem> fieldProblems;
   private Long retryAfterSeconds;
+  private final Map<String, Object> properties = new LinkedHashMap<>();
+  private String messageKey;
 
   private BillingException(int status, String code, String field, String fieldCode, String detail) {
     this(
@@ -50,6 +60,29 @@ public class BillingException extends ProblemException {
   /** Attente conseillée en secondes (en-tête Retry-After d'un 429), null sinon. */
   public Long retryAfterSeconds() {
     return retryAfterSeconds;
+  }
+
+  /** Propriétés ajoutées au problème RFC 9457 ({@code sessionEntryId}…), vide sinon. */
+  public Map<String, Object> properties() {
+    return Collections.unmodifiableMap(properties);
+  }
+
+  /**
+   * Suffixe de la clé de message ({@code billing.error.<messageKey>}) : le code, ou une variante
+   * propre à la route ({@code PATIENT_ARCHIVED.invoice}).
+   */
+  public String messageKey() {
+    return messageKey == null ? code() : messageKey;
+  }
+
+  private BillingException with(String property, Object value) {
+    properties.put(property, value);
+    return this;
+  }
+
+  private BillingException message(String key) {
+    this.messageKey = key;
+    return this;
   }
 
   /** Erreurs de champ (sans message : le handler les localise), vide hors validation. */
@@ -129,6 +162,47 @@ public class BillingException extends ProblemException {
   public static BillingException sessionAlreadyInvoiced() {
     return new BillingException(
         409, "SESSION_ALREADY_INVOICED", null, null, "Cette séance est déjà facturée.");
+  }
+
+  /**
+   * La séance est déjà dans une autre facture, brouillon compris (L3.3) : {@code sessionEntryId}
+   * dans le problème (routes des factures, où la séance n'est pas dans l'URL).
+   */
+  public static BillingException sessionAlreadyInvoiced(UUID sessionEntryId) {
+    return sessionAlreadyInvoiced()
+        .with("sessionEntryId", sessionEntryId.toString())
+        .message("SESSION_ALREADY_INVOICED.invoice");
+  }
+
+  /** Patient archivé : plus de nouveau brouillon (L3.3) ; {@code patientId} dans le problème. */
+  public static BillingException patientArchivedForInvoice(UUID patientId) {
+    return patientArchived()
+        .with("patientId", patientId.toString())
+        .message("PATIENT_ARCHIVED.invoice");
+  }
+
+  /** Facture inexistante ou d'un autre praticien (L5 : 404). */
+  public static BillingException invoiceNotFound() {
+    return new BillingException(404, "INVOICE_NOT_FOUND", null, null, "Facture introuvable.");
+  }
+
+  /** Facture émise, annulée, ou avoir : plus aucune modification ni suppression (G Q88). */
+  public static BillingException invoiceIssued() {
+    return new BillingException(
+        409,
+        "INVOICE_ISSUED",
+        null,
+        null,
+        "Cette facture est émise : elle ne se modifie plus et ne se supprime pas.");
+  }
+
+  /**
+   * Séance sans tarif (G Q87, {@code rateSource = none}) : elle ne peut pas entrer dans une facture
+   * ; {@code sessionEntryId} dans le problème.
+   */
+  public static BillingException rateRequired(UUID sessionEntryId) {
+    return new BillingException(422, "RATE_REQUIRED", null, null, "Cette séance n'a pas de tarif.")
+        .with("sessionEntryId", sessionEntryId.toString());
   }
 
   /** Un préfixe de numérotation change alors qu'un numéro a déjà été attribué (G Q89). */

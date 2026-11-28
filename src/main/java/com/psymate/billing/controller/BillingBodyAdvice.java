@@ -5,8 +5,11 @@ import com.psymate.billing.dto.BillingIbanRequest;
 import com.psymate.billing.dto.BillingProfileRequest;
 import com.psymate.billing.dto.BillingSettingsRequest;
 import com.psymate.billing.dto.CreateBillingServiceRequest;
+import com.psymate.billing.dto.CreateInvoiceBatchRequest;
+import com.psymate.billing.dto.CreateInvoiceRequest;
 import com.psymate.billing.dto.UpdateBillableSessionRequest;
 import com.psymate.billing.dto.UpdateBillingServiceRequest;
+import com.psymate.billing.dto.UpdateInvoiceRequest;
 import com.psymate.shared.i18n.ServedLanguage;
 import com.psymate.shared.problem.AdviceOrder;
 import com.psymate.shared.problem.FieldProblem;
@@ -48,7 +51,11 @@ import tools.jackson.databind.json.JsonMapper;
  *   <li>un bloc (réglages : {@code vat}, {@code numbering}, {@code payment}, {@code
  *       emailTemplates}) doit être un objet JSON, contrôlé de la même façon, champ par champ
  *       ({@code vat.rateBp}) ; une liste de textes ({@code payment.acceptedModes}) un tableau de
- *       chaînes.
+ *       chaînes ;
+ *   <li>une liste d'objets (lignes d'une facture : {@code lines}) doit être un tableau d'objets,
+ *       chacun contrôlé champ par champ ({@code lines[2].unitPrice}) ; un élément null est
+ *       REQUIRED, un élément qui n'est pas un objet INVALID_FORMAT. Un prix unitaire peut être
+ *       négatif (remise) mais jamais décimal.
  * </ul>
  *
  * Une valeur {@code null} passe : sa règle est celle de la requête (obligatoire, efface…). Le
@@ -66,10 +73,14 @@ class BillingBodyAdvice extends RequestBodyAdviceAdapter {
     INTEGER,
     BOOLEAN,
     TEXT_LIST,
-    OBJECT
+    OBJECT,
+    OBJECT_LIST
   }
 
-  /** Champ de requête : son type JSON et, pour un bloc ({@link Kind#OBJECT}), ses champs. */
+  /**
+   * Champ de requête : son type JSON et, pour un bloc ({@link Kind#OBJECT}) ou une liste d'objets
+   * ({@link Kind#OBJECT_LIST}), les champs de chaque objet.
+   */
   record Field(Kind kind, Map<String, Field> fields) {
 
     static final Field TEXT = new Field(Kind.TEXT, Map.of());
@@ -79,6 +90,10 @@ class BillingBodyAdvice extends RequestBodyAdviceAdapter {
 
     static Field object(Map<String, Field> fields) {
       return new Field(Kind.OBJECT, fields);
+    }
+
+    static Field objectList(Map<String, Field> fields) {
+      return new Field(Kind.OBJECT_LIST, fields);
     }
   }
 
@@ -124,17 +139,49 @@ class BillingBodyAdvice extends RequestBodyAdviceAdapter {
           "footerNote", Field.TEXT,
           "emailTemplates", Field.object(Map.of("invoice", TEMPLATE, "reminder", TEMPLATE)));
 
+  /** Champs d'une ligne de facture (M15-08) : unitPrice entier, négatif permis. */
+  private static final Field INVOICE_LINES =
+      Field.objectList(
+          Map.of(
+              "sessionEntryId", Field.TEXT,
+              "serviceId", Field.TEXT,
+              "label", Field.TEXT,
+              "occurredOn", Field.TEXT,
+              "quantity", Field.INTEGER,
+              "unitPrice", Field.INTEGER));
+
+  /** Champs modifiables d'un brouillon de facture (PATCH, M15-08). */
+  private static final Map<String, Field> UPDATE_INVOICE_FIELDS =
+      Map.of(
+          "patientId", Field.TEXT,
+          "recipient", Field.object(Map.of("name", Field.TEXT, "addressLines", Field.TEXT)),
+          "issueDate", Field.TEXT,
+          "dueTerm", Field.TEXT,
+          "dueOn", Field.TEXT,
+          "footerNote", Field.TEXT,
+          "lines", INVOICE_LINES);
+
   /** Champs admis, et leur type JSON, par type de corps. */
   static final Map<Class<?>, Map<String, Field>> FIELDS =
-      Map.of(
-          CreateBillingServiceRequest.class, SERVICE_FIELDS,
-          UpdateBillingServiceRequest.class, SERVICE_FIELDS,
-          BillingProfileRequest.class, PROFILE_FIELDS,
-          BillingSettingsRequest.class, SETTINGS_FIELDS,
-          BillingIbanRequest.class, Map.of("iban", Field.TEXT, "currentPassword", Field.TEXT),
-          BillingIbanDeleteRequest.class, Map.of("currentPassword", Field.TEXT),
-          UpdateBillableSessionRequest.class,
-              Map.of("amount", Field.INTEGER, "serviceId", Field.TEXT));
+      Map.ofEntries(
+          Map.entry(CreateBillingServiceRequest.class, SERVICE_FIELDS),
+          Map.entry(UpdateBillingServiceRequest.class, SERVICE_FIELDS),
+          Map.entry(BillingProfileRequest.class, PROFILE_FIELDS),
+          Map.entry(BillingSettingsRequest.class, SETTINGS_FIELDS),
+          Map.entry(
+              BillingIbanRequest.class, Map.of("iban", Field.TEXT, "currentPassword", Field.TEXT)),
+          Map.entry(BillingIbanDeleteRequest.class, Map.of("currentPassword", Field.TEXT)),
+          Map.entry(
+              UpdateBillableSessionRequest.class,
+              Map.of("amount", Field.INTEGER, "serviceId", Field.TEXT)),
+          Map.entry(
+              CreateInvoiceRequest.class,
+              Map.of(
+                  "patientId", Field.TEXT,
+                  "sessionEntryIds", Field.TEXT_LIST,
+                  "lines", INVOICE_LINES)),
+          Map.entry(CreateInvoiceBatchRequest.class, Map.of("sessionEntryIds", Field.TEXT_LIST)),
+          Map.entry(UpdateInvoiceRequest.class, UPDATE_INVOICE_FIELDS));
 
   private final JsonMapper json;
   private final BillingMessages messages;
@@ -194,6 +241,22 @@ class BillingBodyAdvice extends RequestBodyAdviceAdapter {
         } else {
           problems.add(new FieldProblem(name, "INVALID_FORMAT"));
         }
+      } else if (field.kind() == Kind.OBJECT_LIST) {
+        if (!value.isArray()) {
+          problems.add(new FieldProblem(name, "INVALID_FORMAT"));
+          continue;
+        }
+        for (int i = 0; i < value.size(); i++) {
+          JsonNode element = value.get(i);
+          String elementName = name + "[" + i + "]";
+          if (element.isNull()) {
+            problems.add(new FieldProblem(elementName, "REQUIRED"));
+          } else if (element.isObject()) {
+            collect(element, field.fields(), elementName + ".", problems);
+          } else {
+            problems.add(new FieldProblem(elementName, "INVALID_FORMAT"));
+          }
+        }
       } else {
         String code = check(field.kind(), value);
         if (code != null) {
@@ -226,6 +289,7 @@ class BillingBodyAdvice extends RequestBodyAdviceAdapter {
         yield null;
       }
       case OBJECT -> value.isObject() ? null : "INVALID_FORMAT";
+      case OBJECT_LIST -> value.isArray() ? null : "INVALID_FORMAT";
     };
   }
 

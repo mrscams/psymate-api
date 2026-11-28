@@ -122,7 +122,12 @@ class TableOwnershipTests {
           "spring_session_attributes",
           "event_publication",
           // M14-07 : demandes de rendez-vous en ligne, BookingPurgeJob (G Q82 a et f).
-          "booking_request");
+          "booking_request",
+          // M15-08 : un brouillon de facture, ses lignes et son historique (E9, G Q88) ; jamais
+          // une facture émise, un avoir ni un paiement (contrôle de l'état par le service).
+          "invoice",
+          "invoice_line",
+          "invoice_event");
 
   /**
    * Acces encore tolere a une table d'un autre module (lecture et ecriture), par module. Cette

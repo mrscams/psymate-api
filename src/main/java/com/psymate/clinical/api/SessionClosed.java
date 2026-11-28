@@ -57,7 +57,10 @@ public class SessionClosed extends DomainEvent {
     return patientId;
   }
 
-  /** Praticien qui a clos la séance (le propriétaire du patient). */
+  /**
+   * Praticien propriétaire du patient, qui seul peut clore la séance ; même valeur que {@link
+   * SessionView#practitionerId()} (en V1 le propriétaire d'un patient ne change pas).
+   */
   public UUID getPractitionerId() {
     return practitionerId;
   }

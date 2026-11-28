@@ -40,7 +40,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * M15-02 : règle de publication de {@link SessionClosed} par {@link SessionService}, sans base
- * (collaborateurs simulés ; la base réelle est couverte par SessionServiceIT et SessionClosedIT).
+ * (collaborateurs simulés ; la base réelle est couverte par SessionServiceIT et SessionFacadeIT).
  */
 class SessionServiceTest {
 

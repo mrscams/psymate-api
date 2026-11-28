@@ -493,6 +493,30 @@ class SessionServiceIT {
   }
 
   @Test
+  void closingTheIntakeSessionPublishesSessionClosedWithKindIntake() {
+    entries.createIntakeSession(fx.tenant, patient, fx.practitioner, T0);
+    UUID intake =
+        jdbc.queryForObject(
+            "select e.id from entry e join entry_session s on s.entry_id = e.id"
+                + " where e.patient_id = ? and s.kind = 'intake'",
+            UUID.class,
+            patient);
+    clock.advance(Duration.ofMinutes(30));
+    events.clear();
+
+    sessions.close(intake, new CloseSessionCommand(30, null));
+
+    assertThat(events.stream(SessionClosed.class).toList())
+        .singleElement()
+        .satisfies(
+            e -> {
+              assertThat(e.getSessionId()).isEqualTo(intake);
+              assertThat(e.getKind()).isEqualTo("intake");
+              assertThat(e.getDurationMin()).isEqualTo(30);
+            });
+  }
+
+  @Test
   void startingASessionPublishesNoSessionClosed() {
     events.clear();
 

@@ -3,7 +3,6 @@ package com.psymate.billing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -606,14 +605,83 @@ class BillingSettingsIT {
   }
 
   @Test
-  void anonymousRequestsAreRefused() throws Exception {
+  void fivePasswordFailuresBlockTheIbanRoutesEvenWithTheRightPassword() throws Exception {
+    for (int i = 0; i < 5; i++) {
+      String body = "{\"iban\":\"" + IBAN + "\",\"currentPassword\":\"mauvais-" + i + "\"}";
+      ResultActions attempt =
+          i % 2 == 0
+              ? putIban(alice, body)
+              : deleteIban(alice, "{\"currentPassword\":\"x" + i + "\"}");
+      attempt
+          .andExpect(status().isForbidden())
+          .andExpect(jsonPath("$.code").value("PASSWORD_INVALID"));
+    }
+
+    String retryAfter =
+        putIban(alice, "{\"iban\":\"" + IBAN + "\",\"currentPassword\":\"" + PASSWORD + "\"}")
+            .andExpect(status().isTooManyRequests())
+            .andExpect(jsonPath("$.code").value("TOO_MANY_ATTEMPTS"))
+            .andExpect(jsonPath("$.detail").isNotEmpty())
+            .andExpect(jsonPath("$.retryAfterSeconds").isNumber())
+            .andReturn()
+            .getResponse()
+            .getHeader("Retry-After");
+    assertThat(Long.parseLong(retryAfter)).isBetween(1L, 15 * 60L);
+    deleteIban(alice, "{\"currentPassword\":\"" + PASSWORD + "\"}")
+        .andExpect(status().isTooManyRequests())
+        .andExpect(jsonPath("$.code").value("TOO_MANY_ATTEMPTS"));
+    // Un IBAN invalide ne passe pas avant le plafond : 429 aussi.
+    putIban(alice, "{\"iban\":\"FR76\",\"currentPassword\":\"" + PASSWORD + "\"}")
+        .andExpect(status().isTooManyRequests());
+    assertThat(storage.exists(key(alice))).isFalse();
+    assertThat(rows(alice)).isZero();
+
+    // Un autre praticien n'est pas touché.
+    putIban(bob, "{\"iban\":\"" + OTHER_IBAN + "\",\"currentPassword\":\"" + BOB_PASSWORD + "\"}")
+        .andExpect(status().isNoContent());
+  }
+
+  @Test
+  void aRightPasswordResetsTheFailureCount() throws Exception {
+    for (int i = 0; i < 4; i++) {
+      putIban(alice, "{\"iban\":\"" + IBAN + "\",\"currentPassword\":\"mauvais\"}")
+          .andExpect(status().isForbidden());
+    }
+    putIban(alice, "{\"iban\":\"" + IBAN + "\",\"currentPassword\":\"" + PASSWORD + "\"}")
+        .andExpect(status().isNoContent());
+    for (int i = 0; i < 4; i++) {
+      deleteIban(alice, "{\"currentPassword\":\"mauvais\"}").andExpect(status().isForbidden());
+    }
+    deleteIban(alice, "{\"currentPassword\":\"" + PASSWORD + "\"}")
+        .andExpect(status().isNoContent());
+  }
+
+  @Test
+  void anonymousRequestsAreRefusedAndStoreNothing() throws Exception {
     mvc.perform(MockMvcRequestBuilders.get("/api/me/billing-settings"))
-        .andExpect(status().isUnauthorized());
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+    mvc.perform(
+            MockMvcRequestBuilders.put("/api/me/billing-settings")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"siret\":\"" + SIRET + "\"}"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
     mvc.perform(
             MockMvcRequestBuilders.put("/api/me/billing-settings/iban")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"iban\":\"" + IBAN + "\",\"currentPassword\":\"x\"}"))
-        .andExpect(status().is(not(204)));
+                .content("{\"iban\":\"" + IBAN + "\",\"currentPassword\":\"" + PASSWORD + "\"}"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+    mvc.perform(
+            MockMvcRequestBuilders.delete("/api/me/billing-settings/iban")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"currentPassword\":\"" + PASSWORD + "\"}"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+    assertThat(tablesContaining(IBAN)).isEmpty();
+    assertThat(storage.exists(key(alice))).isFalse();
+    assertThat(rows(alice)).isZero();
   }
 
   // ---- outils

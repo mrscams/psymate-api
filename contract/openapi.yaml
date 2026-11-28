@@ -9699,7 +9699,7 @@ paths:
       - 'Facturation : réglages'
   /api/me/billing-settings/iban:
     delete:
-      description: 'Session praticien. Exige le mot de passe actuel du compte, dans le corps. L''IBAN rangé est effacé et payment.ibanLast4 passe à null. Idempotent : sans IBAN, 204. Tout champ autre que currentPassword est refusé (UNKNOWN_FIELD).'
+      description: 'Session praticien. Exige le mot de passe actuel du compte, dans le corps. L''IBAN rangé est effacé et payment.ibanLast4 passe à null. Idempotent : sans IBAN, 204. Même plafond d''essais du mot de passe que le PUT (429). Tout champ autre que currentPassword est refusé (UNKNOWN_FIELD).'
       operationId: deleteIban
       requestBody:
         content:
@@ -9739,7 +9739,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          description: 'TOO_MANY_ATTEMPTS : cinq mots de passe faux en quinze minutes (PUT et DELETE de l''IBAN confondus) ; le mot de passe n''est plus vérifié jusqu''à la sortie du plus ancien échec de la fenêtre. En-tête Retry-After et champ retryAfterSeconds en secondes. RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
           headers:
             Retry-After:
               description: Secondes avant nouvel essai.
@@ -9750,7 +9750,7 @@ paths:
       tags:
       - 'Facturation : réglages'
     put:
-      description: Session praticien. Exige le mot de passe actuel du compte. L'IBAN est normalisé (espaces retirés, majuscules), contrôlé (format et clé mod 97), puis rangé chiffré hors de la base ; seuls ses quatre derniers caractères sont gardés (payment.ibanLast4 des réglages). Il n'est jamais renvoyé. Remplace l'IBAN précédent. Tout champ autre que iban et currentPassword est refusé (UNKNOWN_FIELD).
+      description: Session praticien. Exige le mot de passe actuel du compte. L'IBAN est normalisé (espaces retirés, majuscules), contrôlé (format et clé mod 97), puis rangé chiffré hors de la base ; seuls ses quatre derniers caractères sont gardés (payment.ibanLast4 des réglages). Il n'est jamais renvoyé. Remplace l'IBAN précédent. Après cinq mots de passe faux en quinze minutes, 429 sans vérifier le mot de passe. Tout champ autre que iban et currentPassword est refusé (UNKNOWN_FIELD).
       operationId: putIban
       requestBody:
         content:
@@ -9790,7 +9790,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          description: 'TOO_MANY_ATTEMPTS : cinq mots de passe faux en quinze minutes (PUT et DELETE de l''IBAN confondus) ; le mot de passe n''est plus vérifié jusqu''à la sortie du plus ancien échec de la fenêtre. En-tête Retry-After et champ retryAfterSeconds en secondes. RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
           headers:
             Retry-After:
               description: Secondes avant nouvel essai.

@@ -7,6 +7,7 @@ import com.psymate.billing.dto.BillingSettingsRequest;
 import com.psymate.billing.service.BillingIbanService;
 import com.psymate.billing.service.BillingSettingsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -38,6 +39,10 @@ class BillingSettingsController {
 
   private static final String PROBLEM = "application/problem+json";
   private static final String MALFORMED = "MALFORMED_REQUEST : corps JSON absent ou illisible.";
+  private static final String TOO_MANY_ATTEMPTS =
+      "TOO_MANY_ATTEMPTS : cinq mots de passe faux en quinze minutes (PUT et DELETE de l'IBAN"
+          + " confondus) ; le mot de passe n'est plus vérifié jusqu'à la sortie du plus ancien"
+          + " échec de la fenêtre. En-tête Retry-After et champ retryAfterSeconds en secondes.";
 
   private final BillingSettingsService settings;
   private final BillingIbanService ibans;
@@ -121,7 +126,8 @@ class BillingSettingsController {
           Session praticien. Exige le mot de passe actuel du compte. L'IBAN est normalisé \
           (espaces retirés, majuscules), contrôlé (format et clé mod 97), puis rangé chiffré hors \
           de la base ; seuls ses quatre derniers caractères sont gardés (payment.ibanLast4 des \
-          réglages). Il n'est jamais renvoyé. Remplace l'IBAN précédent. Tout champ autre que \
+          réglages). Il n'est jamais renvoyé. Remplace l'IBAN précédent. Après cinq mots de \
+          passe faux en quinze minutes, 429 sans vérifier le mot de passe. Tout champ autre que \
           iban et currentPassword est refusé (UNKNOWN_FIELD).\
           """)
   @ApiResponses({
@@ -134,6 +140,16 @@ class BillingSettingsController {
     @ApiResponse(
         responseCode = "403",
         description = "PASSWORD_INVALID : le mot de passe ne correspond pas au compte.",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "429",
+        description = TOO_MANY_ATTEMPTS,
+        headers =
+            @Header(
+                name = "Retry-After",
+                description = "Secondes avant le prochain essai permis.",
+                schema = @Schema(type = "integer", format = "int64")),
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(
@@ -156,7 +172,8 @@ class BillingSettingsController {
       description =
           """
           Session praticien. Exige le mot de passe actuel du compte, dans le corps. L'IBAN rangé \
-          est effacé et payment.ibanLast4 passe à null. Idempotent : sans IBAN, 204. Tout champ \
+          est effacé et payment.ibanLast4 passe à null. Idempotent : sans IBAN, 204. Même \
+          plafond d'essais du mot de passe que le PUT (429). Tout champ \
           autre que currentPassword est refusé (UNKNOWN_FIELD).\
           """)
   @ApiResponses({
@@ -169,6 +186,16 @@ class BillingSettingsController {
     @ApiResponse(
         responseCode = "403",
         description = "PASSWORD_INVALID : le mot de passe ne correspond pas au compte.",
+        content =
+            @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
+    @ApiResponse(
+        responseCode = "429",
+        description = TOO_MANY_ATTEMPTS,
+        headers =
+            @Header(
+                name = "Retry-After",
+                description = "Secondes avant le prochain essai permis.",
+                schema = @Schema(type = "integer", format = "int64")),
         content =
             @Content(mediaType = PROBLEM, schema = @Schema(implementation = ProblemDetail.class))),
     @ApiResponse(

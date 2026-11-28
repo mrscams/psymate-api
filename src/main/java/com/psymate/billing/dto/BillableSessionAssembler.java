@@ -25,11 +25,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class BillableSessionAssembler {
 
-  /** Ordre des noms affichés : sans tenir compte de la casse ni des accents. */
+  /**
+   * Ordre des noms affichés : sans tenir compte de la casse ni des accents (collation racine UCA ;
+   * la langue servie ne joue pas, G Q96).
+   */
   private static final Comparator<String> NAME_ORDER = nameOrder();
 
   private static Comparator<String> nameOrder() {
-    Collator collator = Collator.getInstance(Locale.FRENCH);
+    Collator collator = Collator.getInstance(Locale.ROOT);
     collator.setStrength(Collator.PRIMARY);
     return Comparator.<String, String>comparing(s -> s, collator::compare)
         .thenComparing(Comparator.naturalOrder());

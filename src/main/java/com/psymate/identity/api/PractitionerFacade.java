@@ -27,8 +27,9 @@ public interface PractitionerFacade {
    * Vrai si {@code password} est le mot de passe actuel du compte (M15-03, G Q95 : confirmation
    * d'une opération sensible, par exemple le changement d'IBAN). Même encodeur que la connexion et
    * le changement de mot de passe. Aucun effet de bord : ni compteur de tentatives, ni verrou, ni
-   * événement de sécurité, et le mot de passe n'est jamais journalisé ; limiter les essais revient à
-   * l'appelant. Faux pour un praticien inconnu, un compte sans mot de passe ou un mot de passe vide.
+   * événement de sécurité, et le mot de passe n'est jamais journalisé ; limiter les essais revient
+   * à l'appelant. Faux pour un praticien inconnu, un compte sans mot de passe ou un mot de passe
+   * vide.
    */
   boolean passwordMatches(UUID id, CharSequence password);
 

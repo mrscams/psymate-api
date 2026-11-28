@@ -3,6 +3,8 @@
 |Base package
 |`com.psymate.billing`
 |Bean references
-|* `c.p.p.api.PatientFacade` (in Patients)
+|* `c.p.i.api.EncryptedStorageFacade` (in Identity)
+* `c.p.i.api.PractitionerFacade` (in Identity)
+* `c.p.p.api.PatientFacade` (in Patients)
 * `c.p.p.api.PatientOwnershipGuard` (in Patients)
 |===

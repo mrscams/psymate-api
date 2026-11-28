@@ -86,8 +86,8 @@ class BillingExceptionHandler {
   @ExceptionHandler(BillingException.class)
   ProblemDetail domain(BillingException ex, HttpServletRequest request) {
     Locale locale = messages.localeOf(request);
-    if (ex.field() != null) {
-      return validation(List.of(new FieldProblem(ex.field(), ex.fieldCode())), locale);
+    if (!ex.fieldProblems().isEmpty()) {
+      return validation(ex.fieldProblems(), locale);
     }
     String detail = messages.domain(ex.code(), ex.detail(), locale);
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.status(), detail);

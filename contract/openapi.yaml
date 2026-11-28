@@ -845,6 +845,180 @@ components:
             $ref: '#/components/schemas/AppointmentDto'
           type: array
       type: object
+    BillingEmailTemplateDto:
+      description: 'Modèle d''e-mail : objet et message. Variables remplacées à l''envoi : {numéro}, {montant}, {reste dû}, {échéance}.'
+      properties:
+        body:
+          description: Message, 5 000 caractères au plus.
+          type: string
+        subject:
+          description: Objet, 200 caractères au plus.
+          example: Facture {numéro}
+          type: string
+      type: object
+    BillingEmailTemplateRequest:
+      description: Modèle d'e-mail. Un objet ou un message absent, null ou vide reprend le texte par défaut de l'application.
+      properties:
+        body:
+          description: Message, 5 000 caractères au plus.
+          maxLength: 5000
+          minLength: 0
+          type: string
+        subject:
+          description: Objet, 200 caractères au plus, sur une seule ligne (INVALID_VALUE sinon).
+          maxLength: 200
+          minLength: 0
+          type: string
+      type: object
+    BillingEmailTemplatesDto:
+      description: Modèles d'e-mail du praticien. Sans modèle enregistré, le texte par défaut de l'application, en français.
+      properties:
+        invoice:
+          $ref: '#/components/schemas/BillingEmailTemplateDto'
+        reminder:
+          $ref: '#/components/schemas/BillingEmailTemplateDto'
+      type: object
+    BillingEmailTemplatesRequest:
+      description: 'Modèles d''e-mail : envoi d''une facture (invoice) et relance (reminder). Absent ou null : textes par défaut.'
+      properties:
+        invoice:
+          $ref: '#/components/schemas/BillingEmailTemplateRequest'
+        reminder:
+          $ref: '#/components/schemas/BillingEmailTemplateRequest'
+      type: object
+    BillingIbanDeleteRequest:
+      description: Mot de passe actuel du compte, exigé pour effacer l'IBAN.
+      properties:
+        currentPassword:
+          description: Mot de passe actuel du compte (403 PASSWORD_INVALID s'il est faux).
+          minLength: 1
+          type: string
+      required:
+      - currentPassword
+      type: object
+    BillingIbanRequest:
+      description: IBAN à enregistrer et mot de passe actuel du compte. L'IBAN est rangé chiffré, jamais renvoyé ; seuls ses quatre derniers caractères restent lisibles (ibanLast4).
+      properties:
+        currentPassword:
+          description: Mot de passe actuel du compte (403 PASSWORD_INVALID s'il est faux).
+          minLength: 1
+          type: string
+        iban:
+          description: IBAN, espaces admis, lettres en majuscules ou minuscules ; format et clé mod 97 vérifiés (IBAN_INVALID).
+          example: FR76 3000 6000 0112 3456 7890 189
+          minLength: 1
+          type: string
+      required:
+      - currentPassword
+      - iban
+      type: object
+    BillingIssuerIdentityDto:
+      description: 'Identité du praticien sur les factures, en lecture seule : elle vient du dossier professionnel et se modifie là-bas.'
+      properties:
+        name:
+          description: Nom affiché du praticien.
+          example: Dr Maya Kaddour
+          type: string
+        professionalNumber:
+          description: Numéro professionnel (ADELI ou RPPS) ; null s'il n'est pas renseigné.
+          example: '689712345'
+          type: string
+        title:
+          description: Titre tiré de la profession, en français comme sur la facture (Psychologue, Psychiatre, Coach). Null si la profession est inconnue.
+          example: Psychologue
+          type: string
+      type: object
+    BillingNumberingDto:
+      description: 'Numérotation continue, sans trou, par nature et par année civile (Europe/Paris) : préfixe, année, numéro sur quatre chiffres. Aucun champ ne permet de choisir le prochain numéro.'
+      properties:
+        creditNotePrefix:
+          description: Préfixe des avoirs, 10 caractères au plus.
+          example: AV
+          type: string
+        invoicePrefix:
+          description: Préfixe des factures, 10 caractères au plus.
+          example: F
+          type: string
+        locked:
+          description: 'Vrai dès qu''un numéro (facture ou avoir) a été attribué : les préfixes ne changent plus (409 NUMBERING_LOCKED).'
+          type: boolean
+        nextCreditNoteNumber:
+          description: Prochain numéro d'avoir de l'année en cours, à titre indicatif.
+          example: AV-2026-0001
+          type: string
+        nextInvoiceNumber:
+          description: 'Prochain numéro de facture de l''année en cours, à titre indicatif : il est attribué à l''émission.'
+          example: F-2026-0001
+          type: string
+      type: object
+    BillingNumberingRequest:
+      description: 'Préfixes de numérotation. Absent, null ou vide : préfixe par défaut (F, AV). Lettres et chiffres, tirets ou soulignés entre eux, 10 caractères au plus ; les deux préfixes diffèrent. Ils ne changent plus dès qu''un numéro a été attribué (409 NUMBERING_LOCKED).'
+      properties:
+        creditNotePrefix:
+          description: Préfixe des avoirs.
+          example: AV
+          maxLength: 10
+          minLength: 0
+          type: string
+        invoicePrefix:
+          description: Préfixe des factures.
+          example: F
+          maxLength: 10
+          minLength: 0
+          type: string
+      type: object
+    BillingPaymentTermsDto:
+      description: Modalités de règlement proposées par défaut sur chaque facture.
+      properties:
+        acceptedModes:
+          description: Modes de paiement acceptés, sans doublon, parmi transfer, cheque, cash, card, other.
+          items:
+            type: string
+          type: array
+        chequePayee:
+          description: Ordre des chèques, 120 caractères au plus ; null si non renseigné.
+          type: string
+        dueTerm:
+          description: 'Échéance par défaut : on_receipt (à réception), days_15, days_30 (jours après l''émission).'
+          enum:
+          - on_receipt
+          - days_15
+          - days_30
+          example: on_receipt
+          type: string
+        ibanLast4:
+          description: Quatre derniers caractères de l'IBAN enregistré, null sans IBAN. L'IBAN entier n'est jamais renvoyé.
+          example: '0189'
+          type: string
+        showBankDetails:
+          description: Afficher les coordonnées bancaires sur les factures.
+          type: boolean
+      type: object
+    BillingPaymentTermsRequest:
+      description: 'Modalités de règlement. Un champ absent ou null prend sa valeur par défaut : dueTerm on_receipt, acceptedModes [transfer, cheque, cash], showBankDetails false, chequePayee effacé.'
+      properties:
+        acceptedModes:
+          description: Modes acceptés, au moins un, parmi transfer, cheque, cash, card, other (INVALID_VALUE sinon) ; les doublons sont retirés.
+          items:
+            type: string
+          type: array
+        chequePayee:
+          description: Ordre des chèques, 120 caractères au plus.
+          maxLength: 120
+          minLength: 0
+          type: string
+        dueTerm:
+          description: on_receipt, days_15 ou days_30 (INVALID_VALUE sinon).
+          enum:
+          - on_receipt
+          - days_15
+          - days_30
+          example: on_receipt
+          type: string
+        showBankDetails:
+          description: Afficher les coordonnées bancaires sur les factures.
+          type: boolean
+      type: object
     BillingProfileDto:
       description: Profil de facturation d'un patient. Tous les champs sont null tant que rien n'est enregistré.
       properties:
@@ -929,6 +1103,131 @@ components:
           items:
             $ref: '#/components/schemas/BillingServiceDto'
           type: array
+      type: object
+    BillingSettingsDto:
+      description: 'Réglages de facturation du praticien. Ils existent toujours : sans réglages enregistrés, valeurs par défaut, adresse et e-mail proposés depuis le dossier professionnel.'
+      properties:
+        addressLines:
+          description: Adresse du cabinet sur les factures, lignes séparées par des sauts de ligne. Tant qu'elle n'est pas enregistrée, adresse du dossier professionnel proposée (null s'il n'en a pas).
+          maxLength: 300
+          type: string
+        displayEmail:
+          description: E-mail affiché sur les factures. Tant qu'il n'est pas enregistré, e-mail du compte proposé.
+          maxLength: 320
+          type: string
+        displayPhone:
+          description: Téléphone affiché, facultatif ; null s'il n'est pas renseigné.
+          maxLength: 30
+          type: string
+        emailTemplates:
+          $ref: '#/components/schemas/BillingEmailTemplatesDto'
+        footerNote:
+          description: Mention au bas de chaque facture, 500 caractères au plus ; null sinon.
+          maxLength: 500
+          type: string
+        identity:
+          $ref: '#/components/schemas/BillingIssuerIdentityDto'
+        missing:
+          description: 'Ce qui empêche d''émettre une facture, dans cet ordre : siret (absent), addressLines (aucune adresse, ni enregistrée ni proposée), service (aucune prestation active). Vide quand tout est prêt.'
+          items:
+            type: string
+          type: array
+        numbering:
+          $ref: '#/components/schemas/BillingNumberingDto'
+        payment:
+          $ref: '#/components/schemas/BillingPaymentTermsDto'
+        siret:
+          description: SIRET, 14 chiffres ; null s'il n'est pas renseigné.
+          example: '73282932000074'
+          type: string
+        vat:
+          $ref: '#/components/schemas/BillingVatDto'
+      type: object
+    BillingSettingsRequest:
+      description: 'Réglages complets : remplacent l''existant. Un texte absent, null ou vide est effacé ; un bloc absent ou null (vat, numbering, payment, emailTemplates) prend ses valeurs par défaut. Les champs en lecture seule de la réponse (identity, vat.mention, numbering.nextInvoiceNumber, numbering.nextCreditNoteNumber, numbering.locked, payment.ibanLast4, missing) et tout autre champ sont refusés (UNKNOWN_FIELD).'
+      properties:
+        addressLines:
+          description: Adresse du cabinet, 300 caractères au plus.
+          maxLength: 300
+          minLength: 0
+          type: string
+        displayEmail:
+          description: E-mail affiché (INVALID_VALUE s'il est mal formé).
+          maxLength: 320
+          minLength: 0
+          type: string
+        displayPhone:
+          description: 'Téléphone affiché : chiffres, espaces, +, parenthèses, points et tirets.'
+          maxLength: 30
+          minLength: 0
+          type: string
+        emailTemplates:
+          $ref: '#/components/schemas/BillingEmailTemplatesRequest'
+        footerNote:
+          description: Mention au bas de chaque facture, 500 caractères au plus.
+          maxLength: 500
+          minLength: 0
+          type: string
+        numbering:
+          $ref: '#/components/schemas/BillingNumberingRequest'
+        payment:
+          $ref: '#/components/schemas/BillingPaymentTermsRequest'
+        siret:
+          description: 'SIRET : 14 chiffres dont la clé de Luhn (SIRET_INVALID sinon) ; les espaces sont retirés.'
+          example: '73282932000074'
+          type: string
+        vat:
+          $ref: '#/components/schemas/BillingVatRequest'
+      type: object
+    BillingVatDto:
+      description: Régime de TVA et mention portée sur chaque facture (G Q92).
+      properties:
+        mention:
+          description: 'Mention légale du régime, fournie par l''application et toujours en français, quelle que soit la langue servie : ce n''est pas un champ libre. health_exempt : « TVA non applicable, article 261-4-1° du Code général des impôts » ; franchise : « TVA non applicable, article 293 B du Code général des impôts » ; null en régime liable (aucune mention d''exonération).'
+          example: TVA non applicable, article 261-4-1° du Code général des impôts
+          type: string
+        rateBp:
+          description: Taux de TVA en points de base (2000 = 20 %), de 0 à 10000. Renseigné en régime liable seulement, null sinon.
+          example: 2000
+          format: int32
+          maximum: 10000
+          minimum: 0
+          type: integer
+        regime:
+          description: 'Régime : health_exempt (exonérée, soins à la personne), franchise (franchise en base) ou liable (assujettie : prix hors taxes, la facture montre HT, TVA, TTC).'
+          enum:
+          - health_exempt
+          - franchise
+          - liable
+          example: health_exempt
+          type: string
+        vatNumber:
+          description: Numéro de TVA intracommunautaire, en régime liable seulement, null sinon.
+          example: FR40303265045
+          type: string
+      type: object
+    BillingVatRequest:
+      description: 'Régime de TVA. Absent ou null : health_exempt. En régime liable, rateBp (VAT_RATE_REQUIRED) et vatNumber (VAT_NUMBER_REQUIRED) sont obligatoires ; hors régime liable, ils sont ignorés et effacés.'
+      properties:
+        rateBp:
+          description: Taux en points de base, de 0 à 10000 (2000 = 20 %).
+          example: 2000
+          format: int32
+          maximum: 10000
+          minimum: 0
+          type: integer
+        regime:
+          description: health_exempt, franchise ou liable (INVALID_VALUE sinon).
+          enum:
+          - health_exempt
+          - franchise
+          - liable
+          example: health_exempt
+          type: string
+        vatNumber:
+          description: 'Numéro de TVA intracommunautaire : deux lettres de pays puis 2 à 18 caractères alphanumériques, 20 au plus ; espaces retirés, lettres en majuscules.'
+          example: FR40303265045
+          type: string
       type: object
     BookingRequestsDto:
       description: 'Demandes de rendez-vous en ligne en attente de réponse (G Q74) : rendez-vous à confirmer nés d''une demande en ligne, à venir.'
@@ -9299,6 +9598,208 @@ paths:
       summary: Modifie une prestation
       tags:
       - 'Facturation : prestations'
+  /api/me/billing-settings:
+    get:
+      description: 'Session praticien. Les réglages existent toujours : sans réglages enregistrés, valeurs par défaut (régime health_exempt, préfixes F et AV, échéance on_receipt, modes transfer, cheque, cash), adresse et e-mail proposés depuis le dossier professionnel tant qu''ils ne sont pas enregistrés. identity est en lecture seule. vat.mention est fournie par l''application, en français quelle que soit la langue servie. numbering.next* sont les prochains numéros de l''année en cours (Europe/Paris) ; numbering.locked est vrai dès qu''un numéro a été attribué. missing liste ce qui empêche d''émettre une facture (siret, addressLines, service). L''IBAN n''est jamais renvoyé : payment.ibanLast4 seulement.'
+      operationId: getBillingSettings
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BillingSettingsDto'
+          description: Réglages de facturation.
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Réglages de facturation
+      tags:
+      - 'Facturation : réglages'
+    put:
+      description: 'Session praticien. Remplace tous les champs modifiables : un texte absent, null ou vide est effacé ; un bloc absent ou null (vat, numbering, payment, emailTemplates) prend ses valeurs par défaut. Les règles de champ sont toutes rapportées ensemble (422). Les préfixes ne changent plus dès qu''un numéro a été attribué (409). Les champs en lecture seule de la réponse et tout autre champ sont refusés (UNKNOWN_FIELD). Répond les réglages enregistrés.'
+      operationId: putBillingSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingSettingsRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BillingSettingsDto'
+          description: Réglages enregistrés.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : corps JSON absent ou illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'NUMBERING_LOCKED : un préfixe change alors qu''un numéro de facture ou d''avoir a déjà été attribué.'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'VALIDATION_FAILED avec errors[] : siret SIRET_INVALID (pas 14 chiffres, ou clé de Luhn fausse) ; vat.rateBp VAT_RATE_REQUIRED (régime liable sans taux) ou OUT_OF_RANGE (hors 0 à 10000) ; vat.vatNumber VAT_NUMBER_REQUIRED (régime liable sans numéro), OUT_OF_RANGE ou INVALID_VALUE ; vat.regime, payment.dueTerm, payment.acceptedModes (vide ou mode inconnu), numbering.invoicePrefix, numbering.creditNotePrefix (caractère refusé, ou égal au préfixe des factures), displayEmail, displayPhone, emailTemplates.*.subject (saut de ligne) INVALID_VALUE ; OUT_OF_RANGE (texte trop long) ; INVALID_FORMAT (type JSON) ; UNKNOWN_FIELD (champ refusé).'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Remplace les réglages de facturation
+      tags:
+      - 'Facturation : réglages'
+  /api/me/billing-settings/iban:
+    delete:
+      description: 'Session praticien. Exige le mot de passe actuel du compte, dans le corps. L''IBAN rangé est effacé et payment.ibanLast4 passe à null. Idempotent : sans IBAN, 204. Tout champ autre que currentPassword est refusé (UNKNOWN_FIELD).'
+      operationId: deleteIban
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingIbanDeleteRequest'
+        required: true
+      responses:
+        '204':
+          description: IBAN effacé.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : corps JSON absent ou illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PASSWORD_INVALID : le mot de passe ne correspond pas au compte. EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'VALIDATION_FAILED avec errors[] : currentPassword REQUIRED ou OUT_OF_RANGE ; INVALID_FORMAT ; UNKNOWN_FIELD.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Efface l'IBAN
+      tags:
+      - 'Facturation : réglages'
+    put:
+      description: Session praticien. Exige le mot de passe actuel du compte. L'IBAN est normalisé (espaces retirés, majuscules), contrôlé (format et clé mod 97), puis rangé chiffré hors de la base ; seuls ses quatre derniers caractères sont gardés (payment.ibanLast4 des réglages). Il n'est jamais renvoyé. Remplace l'IBAN précédent. Tout champ autre que iban et currentPassword est refusé (UNKNOWN_FIELD).
+      operationId: putIban
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingIbanRequest'
+        required: true
+      responses:
+        '204':
+          description: IBAN enregistré.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : corps JSON absent ou illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PASSWORD_INVALID : le mot de passe ne correspond pas au compte. EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'VALIDATION_FAILED avec errors[] : iban IBAN_INVALID (format ou clé mod 97) ou REQUIRED ; currentPassword REQUIRED ou OUT_OF_RANGE ; INVALID_FORMAT ; UNKNOWN_FIELD.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Enregistre l'IBAN
+      tags:
+      - 'Facturation : réglages'
   /api/me/emotions:
     post:
       description: Session praticien. L'émotion lui appartient et reste invisible aux autres praticiens ; son code est généré (« c_ » plus 8 caractères hexadécimaux) et son niveau d'intensité est non renseigné. Elle devient aussitôt disponible dans GET /api/vocabulary/emotions. Réponse 201 avec l'émotion.
@@ -14171,6 +14672,8 @@ tags:
   name: 'Facturation : prestations'
 - description: 'Profil de facturation d''un patient : tarif en centimes d''euro entiers (5500 = 55,00 €), adresse de facturation, tiers payeur. Ce n''est pas une donnée clinique.'
   name: 'Facturation : profil du patient'
+- description: 'Réglages de facturation du praticien : identité sur les factures (lecture seule), SIRET, coordonnées, régime de TVA et sa mention, numérotation, modalités de règlement, modèles d''e-mail ; IBAN rangé chiffré, jamais renvoyé, protégé par le mot de passe du compte.'
+  name: 'Facturation : réglages'
 - description: 'Pages publiques de prise de rendez-vous d''un praticien, sans compte ni session : réglages publics, créneaux offerts, demande de rendez-vous, vérification de l''e-mail par un lien à usage unique, puis suivi et annulation par un lien de gestion personnel. Aucune réponse ne révèle un rendez-vous, un nom ou un créneau pris ; « non offerte » a une seule réponse, quelle qu''en soit la cause, et la réponse à une demande ne dépend jamais de l''adresse saisie.'
   name: Prise de rendez-vous en ligne
 - description: 'Ce qui décrit la personne elle-même, hors séance, rangé en quatre rubriques (history, family, health, values_goals) : lecture de tout le profil, ajout, correction sur place et retrait d''une information. Une information n''appartient à aucune séance et n''a pas d''historique de versions.'

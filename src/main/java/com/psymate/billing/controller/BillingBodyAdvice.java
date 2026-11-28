@@ -1,6 +1,9 @@
 package com.psymate.billing.controller;
 
+import com.psymate.billing.dto.BillingIbanDeleteRequest;
+import com.psymate.billing.dto.BillingIbanRequest;
 import com.psymate.billing.dto.BillingProfileRequest;
+import com.psymate.billing.dto.BillingSettingsRequest;
 import com.psymate.billing.dto.CreateBillingServiceRequest;
 import com.psymate.billing.dto.UpdateBillingServiceRequest;
 import com.psymate.shared.i18n.ServedLanguage;
@@ -40,7 +43,11 @@ import tools.jackson.databind.json.JsonMapper;
  *       {@code 60.0} ou {@code "6000"} sont refusés (INVALID_FORMAT), au lieu d'être tronqués ou
  *       convertis par Jackson ({@code ACCEPT_FLOAT_AS_INT} et la conversion des chaînes sont actifs
  *       par défaut) ; un entier hors de l'intervalle d'un {@code int} est OUT_OF_RANGE ;
- *   <li>un booléen doit être un booléen JSON, un texte une chaîne JSON (INVALID_FORMAT).
+ *   <li>un booléen doit être un booléen JSON, un texte une chaîne JSON (INVALID_FORMAT) ;
+ *   <li>un bloc (réglages : {@code vat}, {@code numbering}, {@code payment}, {@code
+ *       emailTemplates}) doit être un objet JSON, contrôlé de la même façon, champ par champ
+ *       ({@code vat.rateBp}) ; une liste de textes ({@code payment.acceptedModes}) un tableau de
+ *       chaînes.
  * </ul>
  *
  * Une valeur {@code null} passe : sa règle est celle de la requête (obligatoire, efface…). Le
@@ -56,31 +63,75 @@ class BillingBodyAdvice extends RequestBodyAdviceAdapter {
   enum Kind {
     TEXT,
     INTEGER,
-    BOOLEAN
+    BOOLEAN,
+    TEXT_LIST,
+    OBJECT
+  }
+
+  /** Champ de requête : son type JSON et, pour un bloc ({@link Kind#OBJECT}), ses champs. */
+  record Field(Kind kind, Map<String, Field> fields) {
+
+    static final Field TEXT = new Field(Kind.TEXT, Map.of());
+    static final Field INTEGER = new Field(Kind.INTEGER, Map.of());
+    static final Field BOOLEAN = new Field(Kind.BOOLEAN, Map.of());
+    static final Field TEXT_LIST = new Field(Kind.TEXT_LIST, Map.of());
+
+    static Field object(Map<String, Field> fields) {
+      return new Field(Kind.OBJECT, fields);
+    }
   }
 
   /** Champs d'une prestation (création et modification). */
-  private static final Map<String, Kind> SERVICE_FIELDS =
+  private static final Map<String, Field> SERVICE_FIELDS =
       Map.of(
-          "label", Kind.TEXT,
-          "durationMin", Kind.INTEGER,
-          "price", Kind.INTEGER,
-          "isDefault", Kind.BOOLEAN);
+          "label", Field.TEXT,
+          "durationMin", Field.INTEGER,
+          "price", Field.INTEGER,
+          "isDefault", Field.BOOLEAN);
 
   /** Champs du profil de facturation d'un patient. */
-  private static final Map<String, Kind> PROFILE_FIELDS =
+  private static final Map<String, Field> PROFILE_FIELDS =
       Map.of(
-          "rate", Kind.INTEGER,
-          "addressLines", Kind.TEXT,
-          "thirdPartyName", Kind.TEXT,
-          "thirdPartyAddress", Kind.TEXT);
+          "rate", Field.INTEGER,
+          "addressLines", Field.TEXT,
+          "thirdPartyName", Field.TEXT,
+          "thirdPartyAddress", Field.TEXT);
+
+  /** Champs d'un modèle d'e-mail des réglages. */
+  private static final Field TEMPLATE =
+      Field.object(Map.of("subject", Field.TEXT, "body", Field.TEXT));
+
+  /** Champs modifiables des réglages de facturation (M15-06). */
+  private static final Map<String, Field> SETTINGS_FIELDS =
+      Map.of(
+          "siret", Field.TEXT,
+          "addressLines", Field.TEXT,
+          "displayEmail", Field.TEXT,
+          "displayPhone", Field.TEXT,
+          "vat",
+              Field.object(
+                  Map.of("regime", Field.TEXT, "rateBp", Field.INTEGER, "vatNumber", Field.TEXT)),
+          "numbering",
+              Field.object(Map.of("invoicePrefix", Field.TEXT, "creditNotePrefix", Field.TEXT)),
+          "payment",
+              Field.object(
+                  Map.of(
+                      "dueTerm", Field.TEXT,
+                      "chequePayee", Field.TEXT,
+                      "acceptedModes", Field.TEXT_LIST,
+                      "showBankDetails", Field.BOOLEAN)),
+          "footerNote", Field.TEXT,
+          "emailTemplates", Field.object(Map.of("invoice", TEMPLATE, "reminder", TEMPLATE)));
 
   /** Champs admis, et leur type JSON, par type de corps. */
-  static final Map<Class<?>, Map<String, Kind>> FIELDS =
+  static final Map<Class<?>, Map<String, Field>> FIELDS =
       Map.of(
           CreateBillingServiceRequest.class, SERVICE_FIELDS,
           UpdateBillingServiceRequest.class, SERVICE_FIELDS,
-          BillingProfileRequest.class, PROFILE_FIELDS);
+          BillingProfileRequest.class, PROFILE_FIELDS,
+          BillingSettingsRequest.class, SETTINGS_FIELDS,
+          BillingIbanRequest.class, Map.of("iban", Field.TEXT, "currentPassword", Field.TEXT),
+          BillingIbanDeleteRequest.class, Map.of("currentPassword", Field.TEXT));
 
   private final JsonMapper json;
   private final BillingMessages messages;
@@ -117,22 +168,36 @@ class BillingBodyAdvice extends RequestBodyAdviceAdapter {
   }
 
   /** Problèmes de forme d'un corps, dans l'ordre de ses clés. */
-  static List<FieldProblem> problems(JsonNode root, Map<String, Kind> fields) {
+  static List<FieldProblem> problems(JsonNode root, Map<String, Field> fields) {
     List<FieldProblem> problems = new ArrayList<>();
-    for (Map.Entry<String, JsonNode> property : root.properties()) {
-      String name = property.getKey();
+    collect(root, fields, "", problems);
+    return problems;
+  }
+
+  /** Problèmes d'un objet JSON, champs nommés {@code prefix + nom} ({@code vat.rateBp}). */
+  private static void collect(
+      JsonNode object, Map<String, Field> fields, String prefix, List<FieldProblem> problems) {
+    for (Map.Entry<String, JsonNode> property : object.properties()) {
+      String name = prefix + property.getKey();
       JsonNode value = property.getValue();
-      Kind kind = fields.get(name);
-      if (kind == null) {
+      Field field = fields.get(property.getKey());
+      if (field == null) {
         problems.add(new FieldProblem(name, "UNKNOWN_FIELD"));
-      } else if (!value.isNull()) {
-        String code = check(kind, value);
+      } else if (value.isNull()) {
+        continue;
+      } else if (field.kind() == Kind.OBJECT) {
+        if (value.isObject()) {
+          collect(value, field.fields(), name + ".", problems);
+        } else {
+          problems.add(new FieldProblem(name, "INVALID_FORMAT"));
+        }
+      } else {
+        String code = check(field.kind(), value);
         if (code != null) {
           problems.add(new FieldProblem(name, code));
         }
       }
     }
-    return problems;
   }
 
   /** Code d'erreur d'une valeur non nulle, ou null si elle a le type attendu. */
@@ -146,6 +211,18 @@ class BillingBodyAdvice extends RequestBodyAdviceAdapter {
         }
         yield value.canConvertToInt() ? null : "OUT_OF_RANGE";
       }
+      case TEXT_LIST -> {
+        if (!value.isArray()) {
+          yield "INVALID_FORMAT";
+        }
+        for (JsonNode element : value) {
+          if (!element.isString()) {
+            yield "INVALID_FORMAT";
+          }
+        }
+        yield null;
+      }
+      case OBJECT -> value.isObject() ? null : "INVALID_FORMAT";
     };
   }
 

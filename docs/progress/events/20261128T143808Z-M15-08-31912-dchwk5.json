@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-28T14:38:08.434Z",
+  "task": "M15-08",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Brouillons de facture et liste : 6 routes, calculs L3.2, lot tout ou rien",
+  "notes": "Ecarts en L5.6 ; revue : 4 points corriges",
+  "next": "M15-09",
+  "pr": "https://github.com/mrscams/psymate-api/pull/124",
+  "branch": "m15-08-invoice-drafts",
+  "checkout": "m15-05-billing-socle-4a7edd"
+}

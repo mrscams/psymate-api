@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-28T11:10:03.884Z",
+  "task": "M15-03",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "PractitionerFacade.issuerOf -> IssuerView et passwordMatches sans effet de bord ; 8 IT ; contrat inchangé",
+  "notes": "Vérification en méthode de façade (pas de PasswordCheck @Reserved) ; limite d'essais à la charge de billing (M15-06)",
+  "next": "M15-06 consomme issuerOf et passwordMatches",
+  "pr": "https://github.com/mrscams/psymate-api/pull/120",
+  "branch": "claude/m15-03-identity-emetteur-05d321",
+  "checkout": "m15-03-identity-emetteur-05d321"
+}

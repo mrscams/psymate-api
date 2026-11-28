@@ -1,7 +1,6 @@
 package com.psymate.clinical.api;
 
 import com.psymate.events.api.DomainEvent;
-import com.psymate.shared.Reserved;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -11,9 +10,6 @@ import java.util.UUID;
  * porte aucun texte clinique : ni titre, ni compte rendu. S'ajoute à {@link EntryCorrected},
  * toujours publiée par la clôture.
  */
-@Reserved(
-    consumer = "M15-07, G Q86 : module billing (séances à facturer)",
-    reason = "G Q85 : publiée dès M15-02, avant son premier abonné")
 public class SessionClosed extends DomainEvent {
 
   private UUID sessionId;

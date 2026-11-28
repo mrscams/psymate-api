@@ -14,7 +14,8 @@ import org.springframework.http.HttpStatusCode;
  * VALIDATION_FAILED (422) pour une règle de champ que Jakarta Validation n'exprime pas. Codes de
  * M15-06 : NUMBERING_LOCKED (409), PASSWORD_INVALID (403), TOO_MANY_ATTEMPTS (429), et en
  * VALIDATION_FAILED les codes de champ SIRET_INVALID, VAT_RATE_REQUIRED, VAT_NUMBER_REQUIRED,
- * IBAN_INVALID, OUT_OF_RANGE, INVALID_VALUE ({@link #invalidFields}).
+ * IBAN_INVALID, OUT_OF_RANGE, INVALID_VALUE ({@link #invalidFields}). Codes de M15-07 (L5.2) :
+ * SESSION_NOT_BILLABLE (404) et SESSION_ALREADY_INVOICED (409).
  */
 public class BillingException extends ProblemException {
 
@@ -113,6 +114,21 @@ public class BillingException extends ProblemException {
       throw new IllegalArgumentException("au moins une erreur de champ");
     }
     return new BillingException(422, "VALIDATION_FAILED", "VALIDATION_FAILED", problems);
+  }
+
+  /**
+   * Séance inconnue de la facturation et qu'elle ne peut pas créer à la demande (G Q86) : séance
+   * inexistante, ouverte, archivée, d'accueil, de contact, ou d'un autre praticien.
+   */
+  public static BillingException sessionNotBillable() {
+    return new BillingException(
+        404, "SESSION_NOT_BILLABLE", null, null, "Cette séance ne peut pas être facturée.");
+  }
+
+  /** La séance est déjà dans une facture, brouillon compris (L3.1). */
+  public static BillingException sessionAlreadyInvoiced() {
+    return new BillingException(
+        409, "SESSION_ALREADY_INVOICED", null, null, "Cette séance est déjà facturée.");
   }
 
   /** Un préfixe de numérotation change alors qu'un numéro a déjà été attribué (G Q89). */

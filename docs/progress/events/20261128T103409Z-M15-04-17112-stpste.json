@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-28T10:34:09.353Z",
+  "task": "M15-04",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Patients : PatientBillingView et PatientFacade.billingIdentity / billingIdentities (une requete par lot, sans follow_up)",
+  "notes": "Pas de @Reserved : la vue est referencee par PatientFacade, deja utilisee. Revue : 0 bloquant, 6 remarques. Test d'isolement par ownerId a exiger en M15-07.",
+  "next": "M15-07 consomme la facade",
+  "pr": "https://github.com/mrscams/psymate-api/pull/118",
+  "branch": "claude/m15-04-patients-identite-facturation-7b125a",
+  "checkout": "m15-04-patients-identite-facturation-7b125a"
+}

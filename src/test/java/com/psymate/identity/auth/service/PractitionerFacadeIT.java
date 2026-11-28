@@ -105,6 +105,27 @@ class PractitionerFacadeIT extends AbstractLoginIT {
   }
 
   @Test
+  void eachPractitionerIsReadOnItsOwn() throws Exception {
+    UUID a = idOf(account("approved"));
+    UUID b = idOf(account("approved"));
+    String passwordOfB = "Autre-Tournesol-88";
+    jdbc.update(
+        "update practitioner set password_hash = ?, last_name = 'Lambert',"
+            + " professional_number = '109876543' where id = ?",
+        encoder.encode(passwordOfB),
+        b);
+
+    assertThat(facade.passwordMatches(a, passwordOfB)).isFalse();
+    assertThat(facade.passwordMatches(b, PASSWORD)).isFalse();
+    assertThat(facade.passwordMatches(b, passwordOfB)).isTrue();
+    IssuerView issuerA = facade.issuerOf(a).orElseThrow();
+    assertThat(issuerA.id()).isEqualTo(a);
+    assertThat(issuerA.lastName()).isEqualTo("Kaddour");
+    assertThat(issuerA.professionalNumber()).isNull();
+    assertThat(facade.issuerOf(b).orElseThrow().lastName()).isEqualTo("Lambert");
+  }
+
+  @Test
   void wrongPasswordsChangeNeitherTheAccountNorTheLoginCounters(CapturedOutput output)
       throws Exception {
     String email = account("approved");

@@ -5,6 +5,7 @@ import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.patients.api.FollowUpView;
 import com.psymate.patients.api.PatientAccessException;
 import com.psymate.patients.api.PatientArchived;
+import com.psymate.patients.api.PatientBillingView;
 import com.psymate.patients.api.PatientCreated;
 import com.psymate.patients.api.PatientFacade;
 import com.psymate.patients.api.PatientOwnershipGuard;
@@ -24,6 +25,7 @@ import com.psymate.patients.model.PatientFlag;
 import com.psymate.patients.model.PatientTag;
 import com.psymate.patients.model.PatientTagId;
 import com.psymate.patients.model.PatientVersion;
+import com.psymate.patients.repository.PatientBillingIdentity;
 import com.psymate.patients.repository.PatientFlagRepository;
 import com.psymate.patients.repository.PatientJpaRepository;
 import com.psymate.patients.repository.PatientOwnership;
@@ -41,6 +43,8 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -163,6 +167,41 @@ public class PatientService implements PatientFacade, PatientOwnershipGuard {
   @Transactional(readOnly = true)
   public Optional<FollowUpView> followUp(UUID patientId) {
     return patients.findById(patientId).map(p -> followUpView(p.getFollowUp()));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Optional<PatientBillingView> billingIdentity(UUID patientId) {
+    if (patientId == null) {
+      return Optional.empty();
+    }
+    return patients.findBillingIdentities(List.of(patientId)).stream()
+        .findFirst()
+        .map(PatientService::billingView);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Map<UUID, PatientBillingView> billingIdentities(Collection<UUID> patientIds) {
+    Set<UUID> ids = new LinkedHashSet<>(patientIds);
+    ids.remove(null);
+    if (ids.isEmpty()) {
+      return Map.of();
+    }
+    Map<UUID, PatientBillingView> views = new LinkedHashMap<>();
+    patients.findBillingIdentities(ids).forEach(p -> views.put(p.id(), billingView(p)));
+    return Collections.unmodifiableMap(views);
+  }
+
+  private static PatientBillingView billingView(PatientBillingIdentity p) {
+    return new PatientBillingView(
+        p.id(),
+        p.ownerId(),
+        p.displayName(),
+        p.firstName(),
+        p.lastName(),
+        p.email(),
+        p.archivedAt() != null);
   }
 
   /**

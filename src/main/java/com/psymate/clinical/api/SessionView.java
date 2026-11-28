@@ -5,8 +5,10 @@ import java.util.UUID;
 
 /**
  * Séance telle que l'en-tête patient l'affiche (« en cours depuis n min », « dernière séance : 17
- * oct. »).
+ * oct. ») et que {@link SessionFacade} la rend.
  *
+ * @param practitionerId praticien propriétaire du patient, qui a créé la séance (entry.created_by ;
+ *     même valeur que {@link SessionClosed#getPractitionerId()})
  * @param kind intake, session ou contact
  * @param modality in_person, video, phone ou email
  * @param occurredFrom début de la séance
@@ -16,6 +18,7 @@ import java.util.UUID;
 public record SessionView(
     UUID id,
     UUID patientId,
+    UUID practitionerId,
     String kind,
     String modality,
     Instant occurredFrom,

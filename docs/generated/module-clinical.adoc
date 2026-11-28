@@ -6,6 +6,7 @@
 |_Services_
 
 * `c.p.c.api.EntryFacade` (via `c.p.c.service.EntryFacadeService`)
+* `c.p.c.api.SessionFacade` (via `c.p.c.service.SessionFacadeService`)
 |Bean references
 |* `c.p.a.api.AppointmentExportFacade` (in Agenda)
 * `c.p.e.api.DomainEventPublisher` (in Events)

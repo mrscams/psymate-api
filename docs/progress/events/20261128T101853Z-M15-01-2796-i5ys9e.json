@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-28T10:18:53.063Z",
+  "task": "M15-01",
+  "agent": "claude",
+  "status": "done",
+  "summary": "Facturation : G11 (Q83-Q95, proposées par le plan L, non relues), docs/L-plan-facturation-api.md, A3/A5, C1/C14, D1/D3/D5, E1/E3.15 (DDL de L4 octet pour octet)/E4 V18/E9, F, CLAUDE.md, agent ; revue : 0 bloquant, 3 remarques corrigées",
+  "notes": "Écart : le DDL de L4 crée neuf tables, le plan en annonce dix ; numéros G11, C14, E3.15, V18, 0.17.0 libres",
+  "pr": "https://github.com/mrscams/psymate-api/pull/117",
+  "branch": "claude/m15-01-facturation-docs-b328e6",
+  "checkout": "m15-01-facturation-docs-b328e6"
+}

@@ -1,7 +1,9 @@
 package com.psymate.patients.api;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,6 +37,22 @@ public interface PatientFacade {
    * {@link PatientOwnershipGuard}. Ni {@code fee} ni {@code prescriber} (G Q56, M11-03).
    */
   Optional<FollowUpView> followUp(UUID patientId);
+
+  /**
+   * Identité de facturation d'un patient, archivé ou non (M15-04, G Q85) : vide si le patient
+   * n'existe pas. Sans contrôle d'accès : l'appelant passe d'abord par {@link
+   * PatientOwnershipGuard} ou compare {@link PatientBillingView#ownerId()} au praticien courant. Ni
+   * {@code fee}, ni {@code prescriber}, ni contexte, ni téléphone (G Q56).
+   */
+  Optional<PatientBillingView> billingIdentity(UUID patientId);
+
+  /**
+   * Identités de facturation de plusieurs patients, archivés compris, en une seule requête (M15-04,
+   * G Q85), indexées par identifiant ; les identifiants inconnus et les null sont ignorés, une
+   * collection vide donne une map vide sans requête. Même absence de contrôle d'accès que {@link
+   * #billingIdentity(UUID)} : l'appelant écarte les vues dont {@code ownerId} n'est pas le sien.
+   */
+  Map<UUID, PatientBillingView> billingIdentities(Collection<UUID> patientIds);
 
   /**
    * Incrémente patient.clinical_rev : à appeler par les services d'écriture clinical et linking à

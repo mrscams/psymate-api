@@ -392,7 +392,14 @@ class ArchitectureTests {
 
   /** Modules et sous-domaines JPA (G Q32) : le SQL natif y passe par des fragments (G Q38). */
   static final List<String> JPA_PACKAGES =
-      List.of("patients", "vocabulary", "directory", "identity", "clinical.export", "agenda");
+      List.of(
+          "patients",
+          "vocabulary",
+          "directory",
+          "identity",
+          "clinical.export",
+          "agenda",
+          "billing");
 
   /** Modules et sous-domaines {@code JdbcClient} (G Q32) : aucune API JPA. */
   static final List<String> JDBC_PACKAGES = List.of("search", "overview", "linking", "clinical");
@@ -674,6 +681,21 @@ class ArchitectureTests {
   void directoryAndIdentityAdminDoNotTouchAgenda() {
     moduleMustNotDependOn(ROOT, "directory", "agenda").check(PRODUCTION);
     moduleMustNotDependOn(ROOT, "identity.admin", "agenda").check(PRODUCTION);
+  }
+
+  /**
+   * G Q83 : aucun module ne dépend de la facturation (billing n'a pas de package api) ; search et
+   * overview ne lisent pas ses tables (TableOwnershipTests).
+   */
+  @Test
+  void noModuleDependsOnBilling() {
+    noClasses()
+        .that()
+        .resideOutsideOfPackage(ROOT + ".billing..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage(ROOT + ".billing..")
+        .check(MAIN);
   }
 
   @Test

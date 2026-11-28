@@ -18,6 +18,7 @@ top to bottom direction
 System_Boundary("App_boundary", "App", $tags="") {
   Container_Boundary("App.App_boundary", "App", $tags="") {
     Component(App.App.Agenda, "Agenda", $techn="Module", $descr="", $tags="", $link="")
+    Component(App.App.Billing, "Billing", $techn="Module", $descr="", $tags="", $link="")
     Component(App.App.Clinical, "Clinical", $techn="Module", $descr="", $tags="", $link="")
     Component(App.App.Directory, "Directory", $techn="Module", $descr="", $tags="", $link="")
     Component(App.App.Events, "Events", $techn="Module", $descr="", $tags="", $link="")
@@ -37,6 +38,9 @@ Rel(App.App.Agenda, App.App.Events, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Agenda, App.App.Identity, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Agenda, App.App.Patients, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Agenda, App.App.Shared, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Billing, App.App.Identity, "depends on", $techn="", $tags="", $link="")
+Rel(App.App.Billing, App.App.Patients, "uses", $techn="", $tags="", $link="")
+Rel(App.App.Billing, App.App.Shared, "depends on", $techn="", $tags="", $link="")
 Rel(App.App.Clinical, App.App.Agenda, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Clinical, App.App.Events, "uses", $techn="", $tags="", $link="")
 Rel(App.App.Clinical, App.App.Identity, "uses", $techn="", $tags="", $link="")

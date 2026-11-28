@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-28T09:56:39.574Z",
+  "task": "M15-05",
+  "agent": "backend-module-dev",
+  "status": "in-progress",
+  "summary": "Module billing : socle, V18, prestations, profil de facturation du patient",
+  "branch": "m15-05-billing-socle",
+  "checkout": "m15-05-billing-socle-4a7edd"
+}

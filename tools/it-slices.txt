@@ -14,4 +14,4 @@
 # sinon il engloberait tous les modules.
 clinical=com/psymate/clinical/**/*IT.java,com/psymate/agenda/**/*IT.java,com/psymate/vocabulary/**/*IT.java,com/psymate/patients/**/*IT.java,com/psymate/events/**/*IT.java,!**/perf/**
 identity=com/psymate/identity/**/*IT.java,com/psymate/directory/**/*IT.java,!**/perf/**
-core=com/psymate/linking/**/*IT.java,com/psymate/overview/**/*IT.java,com/psymate/search/**/*IT.java,com/psymate/shared/**/*IT.java,com/psymate/*IT.java,!**/perf/**
+core=com/psymate/linking/**/*IT.java,com/psymate/overview/**/*IT.java,com/psymate/search/**/*IT.java,com/psymate/shared/**/*IT.java,com/psymate/*IT.java,com/psymate/billing/**/*IT.java,!**/perf/**

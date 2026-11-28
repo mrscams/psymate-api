@@ -845,6 +845,91 @@ components:
             $ref: '#/components/schemas/AppointmentDto'
           type: array
       type: object
+    BillingProfileDto:
+      description: Profil de facturation d'un patient. Tous les champs sont null tant que rien n'est enregistré.
+      properties:
+        addressLines:
+          description: Adresse de facturation, lignes séparées par des sauts de ligne.
+          maxLength: 300
+          type: string
+        rate:
+          description: 'Tarif du patient en centimes d''euro (entier strictement positif) : 5500 = 55,00 €. Null : le tarif vient de la prestation par défaut (G Q87).'
+          example: 5500
+          format: int32
+          minimum: 1
+          type: integer
+        thirdPartyAddress:
+          description: Adresse du tiers.
+          maxLength: 300
+          type: string
+        thirdPartyName:
+          description: Nom du tiers à qui adresser la facture.
+          maxLength: 200
+          type: string
+      type: object
+    BillingProfileRequest:
+      description: 'Profil de facturation complet : remplace l''existant ; un champ absent, null ou vide est effacé. Montant en centimes d''euro entiers : un nombre décimal est refusé (INVALID_FORMAT). Tout autre champ est refusé (UNKNOWN_FIELD).'
+      properties:
+        addressLines:
+          description: Adresse de facturation, 300 caractères au plus.
+          maxLength: 300
+          minLength: 0
+          type: string
+        rate:
+          description: Tarif en centimes d'euro, entier strictement positif ; null l'efface.
+          example: 5500
+          exclusiveMinimum: 0
+          format: int32
+          minimum: 1
+          type: integer
+        thirdPartyAddress:
+          description: Adresse du tiers, 300 caractères au plus.
+          maxLength: 300
+          minLength: 0
+          type: string
+        thirdPartyName:
+          description: Nom du tiers, 200 caractères au plus.
+          maxLength: 200
+          minLength: 0
+          type: string
+      type: object
+    BillingServiceDto:
+      description: Prestation du praticien. Montant en centimes d'euro entiers.
+      properties:
+        durationMin:
+          description: Durée en minutes, de 1 à 600. Null si non précisée.
+          example: 50
+          format: int32
+          maximum: 600
+          minimum: 1
+          type: integer
+        id:
+          description: Identifiant de la prestation.
+          format: uuid
+          type: string
+        isDefault:
+          description: 'Prestation par défaut : son prix sert de tarif quand ni la séance ni le patient n''en ont (G Q87). Une seule par praticien.'
+          type: boolean
+        label:
+          description: Libellé, 120 caractères au plus.
+          example: Séance individuelle
+          type: string
+        price:
+          description: 'Prix en centimes d''euro (entier strictement positif) : 6000 = 60,00 €. Hors taxes si le praticien est assujetti à la TVA.'
+          example: 6000
+          format: int32
+          minimum: 1
+          type: integer
+      type: object
+    BillingServicesDto:
+      description: 'Prestations non archivées du praticien : la prestation par défaut d''abord, puis par libellé.'
+      properties:
+        services:
+          description: Prestations, 50 au plus.
+          items:
+            $ref: '#/components/schemas/BillingServiceDto'
+          type: array
+      type: object
     BookingRequestsDto:
       description: 'Demandes de rendez-vous en ligne en attente de réponse (G Q74) : rendez-vous à confirmer nés d''une demande en ligne, à venir.'
       properties:
@@ -1092,6 +1177,36 @@ components:
       - durationMin
       - modality
       - startsAt
+      type: object
+    CreateBillingServiceRequest:
+      description: 'Nouvelle prestation. Montant en centimes d''euro entiers : un nombre décimal est refusé (INVALID_FORMAT). Tout autre champ est refusé (UNKNOWN_FIELD).'
+      properties:
+        durationMin:
+          description: Durée en minutes, de 1 à 600, facultative.
+          example: 50
+          format: int32
+          maximum: 600
+          minimum: 1
+          type: integer
+        isDefault:
+          description: 'Devient la prestation par défaut (retire le défaut de l''autre). Facultatif : la première prestation créée devient la prestation par défaut de toute façon.'
+          type: boolean
+        label:
+          description: Libellé, obligatoire, 120 caractères au plus.
+          example: Séance individuelle
+          maxLength: 120
+          minLength: 0
+          type: string
+        price:
+          description: 'Prix en centimes d''euro, entier strictement positif : 6000 = 60,00 €.'
+          example: 6000
+          exclusiveMinimum: 0
+          format: int32
+          minimum: 1
+          type: integer
+      required:
+      - label
+      - price
       type: object
     CreateBookingRequest:
       description: 'Demande de rendez-vous en ligne (G Q72). Aucun champ libre : ni motif, ni message. La demande n''est rattachée à aucun dossier ; rien n''entre dans l''agenda avant la vérification de l''e-mail.'
@@ -5523,6 +5638,35 @@ components:
           format: date-time
           type: string
       type: object
+    UpdateBillingServiceRequest:
+      description: 'Modification partielle : un champ absent ou null reste inchangé ; durationMin à null efface la durée ; isDefault à true fait de cette prestation la prestation par défaut et retire le défaut de l''autre. Montant en centimes d''euro entiers : un nombre décimal est refusé (INVALID_FORMAT). Tout autre champ est refusé (UNKNOWN_FIELD).'
+      properties:
+        durationMin:
+          description: Nouvelle durée en minutes, de 1 à 600 ; null l'efface.
+          example: 50
+          format: int32
+          maximum: 600
+          minimum: 1
+          type:
+          - integer
+          - 'null'
+        isDefault:
+          description: 'true : devient la prestation par défaut. false sur la prestation par défaut est refusé (INVALID_VALUE) : il faut désigner une autre prestation par défaut.'
+          type: boolean
+        label:
+          description: Nouveau libellé, non vide, 120 caractères au plus.
+          example: Séance de couple
+          maxLength: 120
+          minLength: 0
+          type: string
+        price:
+          description: Nouveau prix en centimes d'euro, entier strictement positif.
+          example: 7000
+          exclusiveMinimum: 0
+          format: int32
+          minimum: 1
+          type: integer
+      type: object
     UpdatePatientProfileItemRequest:
       description: 'Correction partielle : une clé absente reste inchangée ; null efface detail, periodLabel ou periodYear ; title ne peut pas devenir vide. La rubrique peut changer : en quittant history, la période est effacée par le serveur ; une période envoyée avec une rubrique autre que history est refusée (422 INVALID_VALUE). Toute autre clé est refusée (422 UNKNOWN_FIELD).'
       properties:
@@ -5766,7 +5910,7 @@ info:
 
     **Version du contrat** : `info.version` est incrémentée à chaque changement du contrat et un tag `contract-vX.Y.Z` est posé. Les tags regroupent les opérations par contrôleur, dans l'ordre d'usage : identité, dossier clinique, exploration, annuaire, administration.
   title: PsyMate API
-  version: 0.16.0
+  version: 0.17.0
 openapi: 3.1.0
 paths:
   /api/admin/appeals:
@@ -8931,6 +9075,230 @@ paths:
       summary: Dépose le recours d'un compte refusé ou suspendu
       tags:
       - Recours
+  /api/me/billing-services:
+    get:
+      description: 'Session praticien. Prestations non archivées du praticien courant : la prestation par défaut d''abord, puis par libellé. Prix en centimes d''euro entiers.'
+      operationId: listServices
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BillingServicesDto'
+          description: Prestations.
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Prestations du praticien
+      tags:
+      - 'Facturation : prestations'
+    post:
+      description: 'Session praticien. Le praticien et le cabinet viennent de la session. La première prestation créée devient la prestation par défaut, quel que soit isDefault ; avec isDefault = true, la nouvelle prestation devient la prestation par défaut et retire le défaut de l''autre. 50 prestations non archivées au plus. price est un entier en centimes d''euro (6000 = 60,00 €) : un nombre décimal ou une chaîne est refusé (INVALID_FORMAT). Tout champ autre que label, durationMin, price et isDefault est refusé (UNKNOWN_FIELD).'
+      operationId: createService
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBillingServiceRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BillingServiceDto'
+          description: Prestation créée.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : corps JSON absent ou illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'SERVICE_LIMIT_REACHED : le praticien a déjà 50 prestations non archivées ; VALIDATION_FAILED avec errors[] : label REQUIRED ou OUT_OF_RANGE (plus de 120 caractères) ; price REQUIRED, OUT_OF_RANGE (zéro, négatif ou au-delà d''un entier 32 bits) ou INVALID_FORMAT (nombre décimal, chaîne) ; durationMin OUT_OF_RANGE (hors 1 à 600) ou INVALID_FORMAT ; isDefault INVALID_FORMAT (pas un booléen) ; UNKNOWN_FIELD (champ refusé).'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Crée une prestation
+      tags:
+      - 'Facturation : prestations'
+  /api/me/billing-services/{id}:
+    delete:
+      description: 'Session praticien. La prestation est archivée, jamais supprimée : elle disparaît de la liste. Idempotent : une prestation déjà archivée répond 204. La prestation par défaut ne s''archive pas tant qu''il reste d''autres prestations (409) ; seule, elle s''archive. La prestation d''un autre praticien répond 404.'
+      operationId: archiveService
+      parameters:
+      - description: Identifiant de la prestation.
+        example: 5d2f6a1e-8b3c-4d7e-9f10-2a3b4c5d6e7f
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: Prestation archivée.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : identifiant qui n''est pas un UUID, ou corps JSON illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'SERVICE_NOT_FOUND : prestation inexistante ou d''un autre praticien.'
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'SERVICE_IS_DEFAULT : prestation par défaut alors que d''autres prestations restent ; en désigner une autre par défaut d''abord.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Archive une prestation
+      tags:
+      - 'Facturation : prestations'
+    patch:
+      description: 'Session praticien. Fusion partielle : label, price et isDefault absents ou null restent inchangés ; durationMin à null efface la durée. isDefault = true fait de cette prestation la prestation par défaut et retire le défaut de l''autre ; isDefault = false sur la prestation par défaut est refusé (il faut en désigner une autre). La prestation d''un autre praticien, ou archivée, répond 404. Tout champ autre que label, durationMin, price et isDefault est refusé (UNKNOWN_FIELD).'
+      operationId: updateService
+      parameters:
+      - description: Identifiant de la prestation.
+        example: 5d2f6a1e-8b3c-4d7e-9f10-2a3b4c5d6e7f
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBillingServiceRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BillingServiceDto'
+          description: Prestation modifiée.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : identifiant qui n''est pas un UUID, ou corps JSON illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'SERVICE_NOT_FOUND : prestation inexistante, archivée ou d''un autre praticien.'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'VALIDATION_FAILED avec errors[] : label REQUIRED (vide) ou OUT_OF_RANGE (plus de 120 caractères) ; price OUT_OF_RANGE (zéro, négatif ou au-delà d''un entier 32 bits) ou INVALID_FORMAT (nombre décimal, chaîne) ; durationMin OUT_OF_RANGE (hors 1 à 600) ou INVALID_FORMAT ; isDefault INVALID_VALUE (false sur la prestation par défaut) ou INVALID_FORMAT ; UNKNOWN_FIELD (champ refusé).'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Modifie une prestation
+      tags:
+      - 'Facturation : prestations'
   /api/me/emotions:
     post:
       description: Session praticien. L'émotion lui appartient et reste invisible aux autres praticiens ; son code est généré (« c_ » plus 8 caractères hexadécimaux) et son niveau d'intensité est non renseigné. Elle devient aussitôt disponible dans GET /api/vocabulary/emotions. Réponse 201 avec l'émotion.
@@ -10740,6 +11108,141 @@ paths:
       summary: Liste les rendez-vous à venir d'un patient et ses défauts de création
       tags:
       - Agenda
+  /api/patients/{id}/billing-profile:
+    get:
+      description: Session praticien, propriétaire du patient. Tous les champs sont null tant que rien n'est enregistré. Lisible aussi pour un patient archivé. Le patient d'un autre praticien répond 404.
+      operationId: getBillingProfile
+      parameters:
+      - description: Identifiant du patient.
+        example: 5d2f6a1e-8b3c-4d7e-9f10-2a3b4c5d6e7f
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BillingProfileDto'
+          description: Profil de facturation.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : identifiant qui n''est pas un UUID, ou corps JSON illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PATIENT_NOT_FOUND : patient inexistant ou d''un autre praticien.'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Profil de facturation d'un patient
+      tags:
+      - 'Facturation : profil du patient'
+    put:
+      description: 'Session praticien, propriétaire du patient. Remplace tout le profil : un champ absent, null ou vide est effacé. rate est un entier en centimes d''euro (5500 = 55,00 €) : un nombre décimal ou une chaîne est refusé (INVALID_FORMAT). Refusé pour un patient archivé (409). Tout champ autre que rate, addressLines, thirdPartyName et thirdPartyAddress est refusé (UNKNOWN_FIELD). Répond le profil enregistré.'
+      operationId: putBillingProfile
+      parameters:
+      - description: Identifiant du patient.
+        example: 5d2f6a1e-8b3c-4d7e-9f10-2a3b4c5d6e7f
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingProfileRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BillingProfileDto'
+          description: Profil enregistré.
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'MALFORMED_REQUEST : identifiant qui n''est pas un UUID, ou corps JSON illisible.'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'UNAUTHENTICATED : aucune session valide (cookie absent, expiré ou révoqué).'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'EMAIL_NOT_CONFIRMED : adresse e-mail du compte non confirmée.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PATIENT_NOT_FOUND : patient inexistant ou d''un autre praticien.'
+        '409':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'PATIENT_ARCHIVED : le patient est archivé.'
+        '422':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'VALIDATION_FAILED avec errors[] : rate OUT_OF_RANGE (zéro, négatif ou au-delà d''un entier 32 bits) ou INVALID_FORMAT (nombre décimal, chaîne) ; addressLines, thirdPartyAddress OUT_OF_RANGE (plus de 300 caractères) ; thirdPartyName OUT_OF_RANGE (plus de 200 caractères) ; INVALID_FORMAT (texte attendu) ; UNKNOWN_FIELD (champ refusé).'
+        '429':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'RATE_LIMITED : limite de débit atteinte (en-tête Retry-After et champ retryAfterSeconds, en secondes).'
+          headers:
+            Retry-After:
+              description: Secondes avant nouvel essai.
+              schema:
+                format: int32
+                type: integer
+      summary: Remplace le profil de facturation d'un patient
+      tags:
+      - 'Facturation : profil du patient'
   /api/patients/{id}/entries:
     post:
       description: 'Session praticien, propriétaire du patient. L''entrée appartient à une séance : sessionId explicite, sinon la séance courante du patient (SESSION_REQUIRED s''il n''en a aucune). Un corps de type session démarre une séance (une seule ouverte à la fois). Les liens demandés (links, 20 au plus) sont posés dans la même transaction, tout ou rien. authorType et submissionId sont en lecture seule (UNKNOWN_FIELD). Réponse 201 avec Location et liens posés dans links.'
@@ -13664,6 +14167,10 @@ tags:
   name: 'Administration : vocabulaire de l''annuaire'
 - description: 'Agenda du praticien : rendez-vous planifiés, fenêtre de la grille, conflits d''un créneau et rendez-vous d''un patient. Dates en UTC ISO 8601 ; le client convertit dans le fuseau du praticien. Aucune synchronisation externe dans cette version.'
   name: Agenda
+- description: 'Prestations du praticien et leurs prix, en centimes d''euro entiers (6000 = 60,00 €). Une prestation par défaut au plus, 50 prestations actives au plus. Une prestation ne se supprime jamais : elle s''archive.'
+  name: 'Facturation : prestations'
+- description: 'Profil de facturation d''un patient : tarif en centimes d''euro entiers (5500 = 55,00 €), adresse de facturation, tiers payeur. Ce n''est pas une donnée clinique.'
+  name: 'Facturation : profil du patient'
 - description: 'Pages publiques de prise de rendez-vous d''un praticien, sans compte ni session : réglages publics, créneaux offerts, demande de rendez-vous, vérification de l''e-mail par un lien à usage unique, puis suivi et annulation par un lien de gestion personnel. Aucune réponse ne révèle un rendez-vous, un nom ou un créneau pris ; « non offerte » a une seule réponse, quelle qu''en soit la cause, et la réponse à une demande ne dépend jamais de l''adresse saisie.'
   name: Prise de rendez-vous en ligne
 - description: 'Ce qui décrit la personne elle-même, hors séance, rangé en quatre rubriques (history, family, health, values_goals) : lecture de tout le profil, ajout, correction sur place et retrait d''une information. Une information n''appartient à aucune séance et n''a pas d''historique de versions.'

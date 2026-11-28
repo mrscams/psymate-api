@@ -39,6 +39,7 @@ class ModularityTests {
           "events",
           "directory",
           "agenda",
+          "billing",
           "shared",
           "ai",
           "companion");
@@ -55,9 +56,12 @@ class ModularityTests {
    * de leur jalon (G Q50 pour agenda) alors que leurs premieres taches n'en utilisent qu'une
    * partie. Exception temporaire a « autorise ⊆ utilise » : agenda y est entre avec M11-02 et en
    * est sorti avec M11-11 (G Q61 : sa dependance inutilisee {@code clinical :: api} retiree, toutes
-   * les autres utilisees). Vide tant qu'aucun module n'est en construction.
+   * les autres utilisees). Vide tant qu'aucun module n'est en construction. billing y entre avec
+   * M15-05 (G Q83 : {@code clinical :: api} et {@code events :: api} declarees, utilisees a partir
+   * de M15-07 par l'ecoute de SessionClosed) et en sort quand toutes ses dependances sont
+   * utilisees.
    */
-  static final Set<String> PENDING_MODULES = Set.of();
+  static final Set<String> PENDING_MODULES = Set.of("billing");
 
   /**
    * Cible jamais tenue pour inutilisee : le module ouvert {@code shared}. Pour vocabulary,

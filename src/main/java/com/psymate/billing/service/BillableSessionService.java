@@ -36,6 +36,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -106,12 +109,18 @@ public class BillableSessionService {
   // ---- événements (sans praticien connecté)
 
   /**
-   * Séance close : crée sa ligne {@code pending} si c'est une séance de kind session et qu'aucune
-   * ligne n'existe encore. Idempotent.
+   * Séance close : crée sa ligne {@code pending} si c'est une séance de kind session, toujours
+   * close et non archivée dans clinical, et qu'aucune ligne n'existe encore. Idempotent. Le
+   * contrôle auprès de clinical couvre l'ordre non garanti des écouteurs asynchrones (et la
+   * republication au redémarrage) : si {@code EntryArchived} est traité avant {@code
+   * SessionClosed}, la séance archivée ne naît pas {@code pending}.
    */
   @Transactional
   public void recordClosed(SessionClosed event) {
     if (!billableKind(event.getKind()) || event.getOccurredFrom() == null) {
+      return;
+    }
+    if (!stillClosed(event)) {
       return;
     }
     sessions.insertPendingIfAbsent(
@@ -124,13 +133,37 @@ public class BillableSessionService {
         event.getDurationMin());
   }
 
-  /** Séance archivée : sa ligne encore {@code pending} passe à {@code dismissed}. Idempotent. */
+  /**
+   * Séance archivée : sa ligne encore {@code pending} passe à {@code dismissed}, par une mise à
+   * jour conditionnelle (ni lecture préalable, ni réécriture des autres colonnes). Idempotent ; une
+   * ligne écartée ou facturée n'est pas touchée.
+   */
   @Transactional
   public void dismissArchived(UUID sessionEntryId) {
-    sessions
-        .findById(sessionEntryId)
-        .filter(BillableSession::isPending)
-        .ifPresent(s -> s.dismiss(now()));
+    sessions.dismissIfPending(sessionEntryId, now());
+  }
+
+  /**
+   * La séance de l'événement est-elle encore close et non archivée ? La façade de clinical ne
+   * répond qu'à un praticien connecté (ADR-09) : l'écouteur, hors requête, pose sur son fil le
+   * principal du praticien de l'événement le temps de l'appel, puis rétablit le contexte d'avant.
+   */
+  private boolean stillClosed(SessionClosed event) {
+    SecurityContext previous = SecurityContextHolder.getContext();
+    SecurityContext context = SecurityContextHolder.createEmptyContext();
+    CurrentPractitioner principal =
+        new CurrentPractitioner(event.getPractitionerId(), event.getTenantId(), "", "", null, null);
+    context.setAuthentication(
+        UsernamePasswordAuthenticationToken.authenticated(principal, null, List.of()));
+    SecurityContextHolder.setContext(context);
+    try {
+      return clinicalSessions
+          .closedSession(event.getSessionId())
+          .filter(v -> billableKind(v.kind()))
+          .isPresent();
+    } finally {
+      SecurityContextHolder.setContext(previous);
+    }
   }
 
   // ---- lecture

@@ -15,7 +15,7 @@ import org.springframework.data.repository.query.Param;
  * Accès JPA à {@code billable_session} (V18, G Q32, Q86) ; insertion idempotente et lectures des
  * factures par le fragment {@link BillableSessionNativeQueries} (G Q38). Toute lecture faite pour
  * une requête est filtrée par praticien ; seule l'écoute de {@code EntryArchived}, sans praticien
- * connecté, lit par identifiant.
+ * connecté, écrit par identifiant (mise à jour conditionnelle du fragment).
  */
 public interface BillableSessionRepository
     extends JpaRepository<BillableSession, UUID>, BillableSessionNativeQueries {

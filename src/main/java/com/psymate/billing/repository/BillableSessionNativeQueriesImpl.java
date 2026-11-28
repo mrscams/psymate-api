@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +44,19 @@ class BillableSessionNativeQueriesImpl implements BillableSessionNativeQueries {
         .setParameter("occurredOn", occurredOn)
         .setParameter("modality", modality)
         .setParameter("duration", durationMin)
+        .executeUpdate();
+  }
+
+  @Override
+  @Transactional(propagation = Propagation.MANDATORY)
+  public int dismissIfPending(UUID sessionEntryId, OffsetDateTime now) {
+    return em.createNativeQuery(
+            """
+            update billable_session set state = 'dismissed', updated_at = :now
+            where session_entry_id = :id and state = 'pending'
+            """)
+        .setParameter("now", now)
+        .setParameter("id", sessionEntryId)
         .executeUpdate();
   }
 

@@ -2,6 +2,7 @@ package com.psymate.billing.repository;
 
 import com.psymate.billing.model.BillingInvoiceRef;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -29,6 +30,17 @@ public interface BillableSessionNativeQueries {
       LocalDate occurredOn,
       String modality,
       Integer durationMin);
+
+  /**
+   * Passe la ligne à {@code dismissed} si elle est encore {@code pending} ({@code update … where
+   * state = 'pending'}) : l'archivage d'une séance n'écrit que l'état et la date, sans lecture
+   * préalable, si bien qu'un changement de tarif concurrent n'est pas perdu et qu'une ligne passée
+   * entre-temps à {@code invoiced} ou {@code dismissed} n'est pas touchée. Exige une transaction en
+   * cours.
+   *
+   * @return 1 si la ligne a été écartée, 0 sinon
+   */
+  int dismissIfPending(UUID sessionEntryId, OffsetDateTime now);
 
   /**
    * Nombre de brouillons de facture ({@code kind = 'invoice'}, {@code status = 'draft'}) de chaque

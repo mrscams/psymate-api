@@ -16,6 +16,7 @@ import com.psymate.identity.api.CurrentPractitioner;
 import com.psymate.testsupport.SharedPostgres;
 import java.nio.charset.StandardCharsets;
 import java.sql.Date;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -67,6 +68,7 @@ class BillableSessionIT {
   @Autowired private JdbcTemplate jdbc;
   @Autowired private DomainEventPublisher publisher;
   @Autowired private TransactionTemplate tx;
+  @Autowired private Clock clock;
 
   private UUID tenant;
   private UUID alice;
@@ -84,7 +86,7 @@ class BillableSessionIT {
     bob = practitioner();
     theo = patient(alice, "Théo B.");
     bobsPatient = patient(bob, "Patient de Bob");
-    today = LocalDate.now(PARIS);
+    today = today();
   }
 
   @AfterEach
@@ -96,6 +98,7 @@ class BillableSessionIT {
 
   @Test
   void aClosedSessionAppearsInTheListThroughTheSessionClosedListener() throws Exception {
+    LocalDate before = today();
     UUID session = closedSession(alice, theo, "video", 50);
 
     awaitState(session, "pending");
@@ -105,8 +108,9 @@ class BillableSessionIT {
         .containsEntry("tenant_id", tenant)
         .containsEntry("patient_id", theo)
         .containsEntry("modality", "video")
-        .containsEntry("duration_min", 50)
-        .containsEntry("occurred_on", Date.valueOf(today));
+        .containsEntry("duration_min", 50);
+    LocalDate day = occurredOn(session);
+    assertIsTheDayOfTheRequest(day, before);
     list(alice, "")
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.groups", hasSize(1)))
@@ -116,7 +120,7 @@ class BillableSessionIT {
         .andExpect(jsonPath("$.groups[0].openDraftCount").value(0))
         .andExpect(jsonPath("$.groups[0].lastInvoice").value(nullValue()))
         .andExpect(jsonPath("$.groups[0].sessions[0].sessionEntryId").value(session.toString()))
-        .andExpect(jsonPath("$.groups[0].sessions[0].occurredOn").value(today.toString()))
+        .andExpect(jsonPath("$.groups[0].sessions[0].occurredOn").value(day.toString()))
         .andExpect(jsonPath("$.groups[0].sessions[0].modality").value("video"))
         .andExpect(jsonPath("$.groups[0].sessions[0].durationMin").value(50))
         .andExpect(jsonPath("$.dismissedCount").value(0));
@@ -186,8 +190,30 @@ class BillableSessionIT {
   }
 
   @Test
+  void aSessionClosedHandledAfterTheArchivingCreatesNoPendingSession() throws Exception {
+    // EntryArchived traité avant SessionClosed (ordre non garanti, republication) : la séance
+    // archivée ne naît pas à facturer.
+    UUID session = closedSession(alice, theo, "video", 50);
+    awaitState(session, "pending");
+    awaitCompleted(BillableSessionListenerIds.SESSION_CLOSED, session);
+    jdbc.update("delete from billable_session where session_entry_id = ?", session);
+    perform(MockMvcRequestBuilders.delete("/api/entries/" + session), alice, null)
+        .andExpect(status().isNoContent());
+    awaitCompleted(BillableSessionListenerIds.ENTRY_ARCHIVED, session);
+    assertThat(rows(session)).isZero();
+
+    replay(sessionClosed(session, theo, alice, "session"));
+
+    assertThat(rows(session)).isZero();
+    list(alice, "").andExpect(jsonPath("$.groups", hasSize(0)));
+    expectNotBillable(dismiss(alice, session));
+  }
+
+  @Test
   void replayingEntryArchivedOnlyDismissesPendingSessions() throws Exception {
     UUID pending = row(alice, theo, today, "pending");
+    jdbc.update(
+        "update billable_session set amount_cents = 7000 where session_entry_id = ?", pending);
     UUID invoiced = row(alice, theo, today, "pending");
     invoice(invoiced, "draft");
     UUID note = UUID.randomUUID();
@@ -198,7 +224,20 @@ class BillableSessionIT {
     replay(new EntryArchived(tenant, note, theo, "note", 1));
 
     assertThat(state(pending)).isEqualTo("dismissed");
+    // Mise à jour conditionnelle : seuls l'état et la date changent.
+    assertThat(
+            jdbc.queryForObject(
+                "select amount_cents from billable_session where session_entry_id = ?",
+                Integer.class,
+                pending))
+        .isEqualTo(7000);
     assertThat(state(invoiced)).isEqualTo("invoiced");
+    assertThat(
+            jdbc.queryForObject(
+                "select invoice_id is not null from billable_session where session_entry_id = ?",
+                Boolean.class,
+                invoiced))
+        .isTrue();
     assertThat(rows(note)).isZero();
   }
 
@@ -207,6 +246,7 @@ class BillableSessionIT {
   @Test
   void dismissRightAfterClosureSucceedsBeforeTheEventIsHandled() throws Exception {
     // Événement pas encore traité : la ligne n'existe pas (simulée en la retirant).
+    LocalDate before = today();
     UUID session = closedSession(alice, theo, "video", 50);
     awaitState(session, "pending");
     awaitCompleted(BillableSessionListenerIds.SESSION_CLOSED, session);
@@ -216,13 +256,13 @@ class BillableSessionIT {
     assertThat(state(session)).isEqualTo("dismissed");
     assertThat(
             jdbc.queryForMap(
-                "select modality, duration_min, occurred_on, patient_id from billable_session"
+                "select modality, duration_min, patient_id from billable_session"
                     + " where session_entry_id = ?",
                 session))
         .containsEntry("modality", "video")
         .containsEntry("duration_min", 50)
-        .containsEntry("occurred_on", Date.valueOf(today))
         .containsEntry("patient_id", theo);
+    assertIsTheDayOfTheRequest(occurredOn(session), before);
     // L'événement traité ensuite ne remet pas la séance à facturer.
     replay(sessionClosed(session, theo, alice, "session"));
     assertThat(state(session)).isEqualTo("dismissed");
@@ -287,16 +327,49 @@ class BillableSessionIT {
 
   @Test
   void dismissedListCoversTheLast90DaysMostRecentFirst() throws Exception {
-    UUID recent = row(alice, theo, today.minusDays(2), "dismissed");
-    UUID edge = row(alice, theo, today.minusDays(90), "dismissed");
-    UUID old = row(alice, theo, today.minusDays(91), "dismissed");
+    onOneParisDay(
+        day -> {
+          UUID owner = practitioner();
+          UUID patient = patient(owner, "Fenêtre");
+          UUID recent = row(owner, patient, day.minusDays(2), "dismissed");
+          UUID edge = row(owner, patient, day.minusDays(90), "dismissed");
+          UUID old = row(owner, patient, day.minusDays(91), "dismissed");
 
-    dismissedList(alice)
-        .andExpect(jsonPath("$.sessions", hasSize(2)))
-        .andExpect(jsonPath("$.sessions[0].sessionEntryId").value(recent.toString()))
-        .andExpect(jsonPath("$.sessions[1].sessionEntryId").value(edge.toString()));
-    list(alice, "").andExpect(jsonPath("$.dismissedCount").value(2));
-    assertThat(rows(old)).isEqualTo(1);
+          dismissedList(owner)
+              .andExpect(jsonPath("$.sessions", hasSize(2)))
+              .andExpect(jsonPath("$.sessions[0].sessionEntryId").value(recent.toString()))
+              .andExpect(jsonPath("$.sessions[1].sessionEntryId").value(edge.toString()));
+          list(owner, "").andExpect(jsonPath("$.dismissedCount").value(2));
+          assertThat(rows(old)).isEqualTo(1);
+        });
+  }
+
+  @Test
+  void dismissedCountFollowsThePatientFilter() throws Exception {
+    onOneParisDay(
+        day -> {
+          UUID owner = practitioner();
+          UUID first = patient(owner, "Premier");
+          UUID second = patient(owner, "Second");
+          row(owner, first, day, "pending");
+          row(owner, first, day.minusDays(1), "dismissed");
+          row(owner, second, day, "pending");
+          row(owner, second, day.minusDays(3), "dismissed");
+          row(owner, second, day.minusDays(4), "dismissed");
+          row(owner, second, day.minusDays(91), "dismissed");
+
+          list(owner, "").andExpect(jsonPath("$.dismissedCount").value(3));
+          list(owner, "?patientId=" + first)
+              .andExpect(jsonPath("$.groups", hasSize(1)))
+              .andExpect(jsonPath("$.dismissedCount").value(1));
+          list(owner, "?patientId=" + second)
+              .andExpect(jsonPath("$.groups", hasSize(1)))
+              .andExpect(jsonPath("$.dismissedCount").value(2));
+          // until ne restreint pas dismissedCount.
+          list(owner, "?patientId=" + second + "&until=" + day.minusDays(10))
+              .andExpect(jsonPath("$.groups", hasSize(0)))
+              .andExpect(jsonPath("$.dismissedCount").value(2));
+        });
   }
 
   // ---- tarif (G Q87)
@@ -664,6 +737,47 @@ class BillableSessionIT {
     await().atMost(WAIT).until(() -> expected.equals(state(session)));
   }
 
+  // ---- outils : jour de Paris, lu sur l'horloge injectée du serveur
+
+  /** Corps de test qui dépend du jour exact. */
+  @FunctionalInterface
+  private interface DayBody {
+    void run(LocalDate day) throws Exception;
+  }
+
+  /** Aujourd'hui à Paris selon l'horloge du contexte, celle que lit le serveur. */
+  private LocalDate today() {
+    return LocalDate.now(clock.withZone(PARIS));
+  }
+
+  /**
+   * Exécute le corps sur un jour stable : s'il a franchi minuit pendant son exécution, il est
+   * rejoué une fois (le corps crée ses propres praticien et patient, sans reste du premier
+   * passage).
+   */
+  private void onOneParisDay(DayBody body) throws Exception {
+    for (int attempt = 0; ; attempt++) {
+      LocalDate day = today();
+      body.run(day);
+      if (day.equals(today()) || attempt == 1) {
+        return;
+      }
+    }
+  }
+
+  /** Le jour d'une séance ouverte maintenant : celui d'avant la requête, ou d'après (minuit). */
+  private void assertIsTheDayOfTheRequest(LocalDate day, LocalDate before) {
+    assertThat(day).isIn(before, today());
+  }
+
+  private LocalDate occurredOn(UUID session) {
+    return jdbc.queryForObject(
+            "select occurred_on from billable_session where session_entry_id = ?",
+            Date.class,
+            session)
+        .toLocalDate();
+  }
+
   // ---- outils : base
 
   private UUID practitioner() {
@@ -834,5 +948,6 @@ class BillableSessionIT {
   /** Identifiants des écouteurs de billing, tels que stockés dans event_publication. */
   private static final class BillableSessionListenerIds {
     static final String SESSION_CLOSED = "billing.session-closed";
+    static final String ENTRY_ARCHIVED = "billing.entry-archived";
   }
 }

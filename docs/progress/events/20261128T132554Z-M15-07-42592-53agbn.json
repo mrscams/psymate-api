@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-28T13:25:54.386Z",
+  "task": "M15-07",
+  "agent": "backend-module-dev",
+  "status": "done",
+  "summary": "Seances a facturer : ecouteurs SessionClosed/EntryArchived, creation a la demande, 4 routes, tarif Q87",
+  "notes": "Ecarts en L5.6 ; revue : 2 courses corrigees",
+  "next": "M15-08",
+  "pr": "https://github.com/mrscams/psymate-api/pull/123",
+  "branch": "m15-07-billable-sessions",
+  "checkout": "m15-05-billing-socle-4a7edd"
+}
